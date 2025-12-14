@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
-import { Mail, MessageSquare, Calendar } from "lucide-react";
+import { Mail, MessageSquare, Calendar, Video } from "lucide-react";
 
-export type FeedType = "email" | "slack" | "calendar";
+export type FeedType = "email" | "slack" | "calendar" | "zoom";
 
 interface FeedItemProps {
   type: FeedType;
@@ -19,6 +19,7 @@ export function FeedItem({ type, title, subtitle, time, sender, avatar, urgent }
       case "email": return <Mail className="w-4 h-4 text-white" />;
       case "slack": return <MessageSquare className="w-4 h-4 text-white" />;
       case "calendar": return <Calendar className="w-4 h-4 text-white" />;
+      case "zoom": return <Video className="w-4 h-4 text-white" />;
     }
   };
 
@@ -27,6 +28,7 @@ export function FeedItem({ type, title, subtitle, time, sender, avatar, urgent }
       case "email": return "bg-red-500";
       case "slack": return "bg-purple-600";
       case "calendar": return "bg-blue-500";
+      case "zoom": return "bg-[#2D8CFF]";
     }
   };
 

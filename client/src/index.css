@@ -16,6 +16,7 @@
   --color-gmail: 5 81% 56%;
   --color-gcal: 217 89% 61%;
   --color-apple: 0 0% 15%;
+  --color-zoom: 222 84% 59%;
 
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));

@@ -1,7 +1,7 @@
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { ServiceCard } from "@/components/service-card";
 import { FeedItem, FeedType } from "@/components/feed-item";
-import { MessageCircle, Mail, Calendar as CalendarIcon, Search, Bell } from "lucide-react";
+import { MessageCircle, Mail, Calendar as CalendarIcon, Search, Bell, Video } from "lucide-react";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
 
 export default function Dashboard() {
@@ -19,6 +19,15 @@ export default function Dashboard() {
     },
     {
       id: 2,
+      type: "zoom" as FeedType,
+      title: "Weekly Standup",
+      subtitle: "Meeting ID: 893 234 1111",
+      time: "10m ago",
+      sender: "Zoom",
+      urgent: false,
+    },
+    {
+      id: 3,
       type: "slack" as FeedType,
       title: "New feedback on the dashboard prototypes",
       subtitle: "#design-system",
@@ -27,7 +36,7 @@ export default function Dashboard() {
       avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&h=100",
     },
     {
-      id: 3,
+      id: 4,
       type: "email" as FeedType,
       title: "Q4 Roadmap Review - Final Draft",
       subtitle: "Please review the attached document before...",
@@ -36,7 +45,7 @@ export default function Dashboard() {
       urgent: false,
     },
     {
-      id: 4,
+      id: 5,
       type: "slack" as FeedType,
       title: "Can we deploy the hotfix?",
       subtitle: "Direct Message",
@@ -45,7 +54,7 @@ export default function Dashboard() {
       avatar: "https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&w=100&h=100",
     },
     {
-      id: 5,
+      id: 6,
       type: "email" as FeedType,
       title: "Invitation: Lunch & Learn @ Fri Dec 15",
       subtitle: "RSVP needed by tomorrow",
@@ -88,7 +97,7 @@ export default function Dashboard() {
         </header>
 
         {/* Integration Status Grid */}
-        <section className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <section className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
           <ServiceCard 
             name="Slack" 
             description="5 unread mentions, 12 new messages"
@@ -116,6 +125,13 @@ export default function Dashboard() {
             icon={<CalendarIcon className="w-6 h-6" />}
             colorClass="bg-gray-800 text-white"
             connected={false}
+          />
+           <ServiceCard 
+            name="Zoom" 
+            description="Join upcoming meetings instantly"
+            icon={<Video className="w-6 h-6" />}
+            colorClass="bg-[#2D8CFF] text-white"
+            connected={true}
           />
         </section>
 
