@@ -5,12 +5,15 @@ import {
   type InsertService,
   type FeedItem,
   type InsertFeedItem,
+  type OAuthAccount,
+  type InsertOAuthAccount,
   users,
   services,
-  feedItems
+  feedItems,
+  oauthAccounts
 } from "@shared/schema";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import pg from "pg";
 
 const { Pool } = pg;
@@ -23,9 +26,16 @@ export const db = drizzle(pool);
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
+  createUser(user: UpsertUser): Promise<User>;
   getAllUsers(): Promise<User[]>;
   updateUserAdmin(id: string, isAdmin: boolean): Promise<User | undefined>;
+  updateUserPassword(id: string, passwordHash: string): Promise<User | undefined>;
+  
+  getOAuthAccount(provider: string, providerAccountId: string): Promise<OAuthAccount | undefined>;
+  createOAuthAccount(account: InsertOAuthAccount): Promise<OAuthAccount>;
+  linkOAuthAccount(userId: string, account: Omit<InsertOAuthAccount, 'userId'>): Promise<OAuthAccount>;
   
   getAllServices(): Promise<Service[]>;
   getService(id: number): Promise<Service | undefined>;
@@ -73,6 +83,51 @@ export class DbStorage implements IStorage {
       .where(eq(users.id, id))
       .returning();
     return user;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async createUser(userData: UpsertUser): Promise<User> {
+    const [user] = await db.insert(users).values(userData).returning();
+    return user;
+  }
+
+  async updateUserPassword(id: string, passwordHash: string): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set({ passwordHash, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  async getOAuthAccount(provider: string, providerAccountId: string): Promise<OAuthAccount | undefined> {
+    const [account] = await db
+      .select()
+      .from(oauthAccounts)
+      .where(
+        and(
+          eq(oauthAccounts.provider, provider),
+          eq(oauthAccounts.providerAccountId, providerAccountId)
+        )
+      );
+    return account;
+  }
+
+  async createOAuthAccount(account: InsertOAuthAccount): Promise<OAuthAccount> {
+    const [newAccount] = await db.insert(oauthAccounts).values(account).returning();
+    return newAccount;
+  }
+
+  async linkOAuthAccount(userId: string, account: Omit<InsertOAuthAccount, 'userId'>): Promise<OAuthAccount> {
+    const [newAccount] = await db
+      .insert(oauthAccounts)
+      .values({ ...account, userId })
+      .returning();
+    return newAccount;
   }
 
   async getAllServices(): Promise<Service[]> {

@@ -1,4 +1,5 @@
 import { Command } from "lucide-react";
+import { Link } from "wouter";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
 
 export default function Landing() {
@@ -29,16 +30,25 @@ export default function Landing() {
             All your tools in one place. Slack, Gmail, Calendar, and Zoom unified into a single, beautiful workspace.
           </p>
           
-          <a
-            href="/api/login"
-            className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-primary text-white font-semibold text-lg shadow-xl shadow-primary/30 hover:bg-primary/90 transition-all hover:scale-105"
-            data-testid="button-login"
-          >
-            Get Started
-          </a>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              href="/register"
+              className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-primary text-white font-semibold text-lg shadow-xl shadow-primary/30 hover:bg-primary/90 transition-all hover:scale-105"
+              data-testid="button-get-started"
+            >
+              Get Started
+            </Link>
+            <Link
+              href="/login"
+              className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl border border-primary/30 text-primary font-semibold text-lg hover:bg-primary/10 transition-all"
+              data-testid="button-login"
+            >
+              Sign In
+            </Link>
+          </div>
           
           <p className="mt-6 text-sm text-muted-foreground">
-            Sign in with Google, GitHub, or email
+            Sign in with Google or email
           </p>
         </div>
 

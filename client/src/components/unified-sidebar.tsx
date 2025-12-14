@@ -11,10 +11,21 @@ import {
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
+import { queryClient } from "@/lib/queryClient";
 
 export function UnifiedSidebar() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const { user } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      setLocation("/");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
 
   const navItems = [
     { icon: LayoutDashboard, label: "Overview", href: "/" },
@@ -94,14 +105,14 @@ export function UnifiedSidebar() {
             </div>
           </div>
           
-          <a 
-            href="/api/logout"
-            className="flex items-center gap-3 px-4 py-2 rounded-xl text-muted-foreground hover:bg-red-50 hover:text-red-600 transition-all duration-200 cursor-pointer"
+          <button 
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-4 py-2 rounded-xl text-muted-foreground hover:bg-red-50 hover:text-red-600 transition-all duration-200 cursor-pointer w-full"
             data-testid="button-logout"
           >
             <LogOut className="w-4 h-4" />
             <span className="text-sm font-medium">Log out</span>
-          </a>
+          </button>
         </div>
       </div>
     </div>
