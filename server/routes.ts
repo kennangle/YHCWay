@@ -6,6 +6,7 @@ import { setupAuth, isAuthenticated } from "./auth";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { getRecentEmails, isGmailConnected } from "./gmail";
+import { getUpcomingEvents, isCalendarConnected } from "./calendar";
 
 const isAdmin: RequestHandler = async (req: any, res, next) => {
   try {
@@ -270,6 +271,26 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error fetching emails:", error);
       res.status(500).json({ error: "Failed to fetch emails" });
+    }
+  });
+
+  // Google Calendar integration endpoints
+  app.get("/api/calendar/status", isAuthenticated, async (req, res) => {
+    try {
+      const connected = await isCalendarConnected();
+      res.json({ connected });
+    } catch (error) {
+      res.json({ connected: false });
+    }
+  });
+
+  app.get("/api/calendar/events", isAuthenticated, async (req, res) => {
+    try {
+      const events = await getUpcomingEvents(10);
+      res.json(events);
+    } catch (error) {
+      console.error("Error fetching calendar events:", error);
+      res.status(500).json({ error: "Failed to fetch calendar events" });
     }
   });
 
