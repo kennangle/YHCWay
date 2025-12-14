@@ -50,7 +50,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/services", async (req, res) => {
+  app.post("/api/services", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const validatedData = insertServiceSchema.parse(req.body);
       const newService = await storage.createService(validatedData);
@@ -65,7 +65,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/services/:id/connection", async (req, res) => {
+  app.patch("/api/services/:id/connection", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const { connected } = req.body;
@@ -96,7 +96,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/feed", async (req, res) => {
+  app.post("/api/feed", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const validatedData = insertFeedItemSchema.parse(req.body);
       const newItem = await storage.createFeedItem(validatedData);
@@ -111,7 +111,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/feed/:id", async (req, res) => {
+  app.delete("/api/feed/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       await storage.deleteFeedItem(id);

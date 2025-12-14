@@ -53,10 +53,13 @@ function updateUserSession(
 
 async function upsertUser(claims: any) {
   const email = claims["email"];
-  const isAdmin = email === ADMIN_EMAIL;
+  const userId = claims["sub"];
+  
+  const existingUser = await storage.getUser(userId);
+  const isAdmin = email === ADMIN_EMAIL ? true : (existingUser?.isAdmin ?? false);
   
   await storage.upsertUser({
-    id: claims["sub"],
+    id: userId,
     email: email,
     firstName: claims["first_name"],
     lastName: claims["last_name"],
