@@ -5,12 +5,15 @@ import {
   Calendar as CalendarIcon, 
   Settings, 
   PlusCircle,
-  Command
+  Command,
+  LogOut
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
+import { useAuth } from "@/hooks/useAuth";
 
 export function UnifiedSidebar() {
   const [location] = useLocation();
+  const { user } = useAuth();
 
   const navItems = [
     { icon: LayoutDashboard, label: "Overview", href: "/" },
@@ -22,6 +25,10 @@ export function UnifiedSidebar() {
     { icon: PlusCircle, label: "Connect App", href: "/connect" },
     { icon: Settings, label: "Settings", href: "/settings" },
   ];
+
+  const displayName = user?.firstName 
+    ? `${user.firstName}${user.lastName ? ` ${user.lastName}` : ''}`
+    : user?.email?.split('@')[0] || 'User';
 
   return (
     <div className="w-64 h-screen glass-panel flex flex-col border-r border-white/20 fixed left-0 top-0 z-50">
@@ -66,12 +73,33 @@ export function UnifiedSidebar() {
           </Link>
         ))}
         
-        <div className="mt-6 pt-6 border-t border-border px-2 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-400 to-blue-500 ring-2 ring-white"></div>
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold">Alex Chen</span>
-            <span className="text-xs text-muted-foreground">Pro Workspace</span>
+        <div className="mt-6 pt-6 border-t border-border px-2">
+          <div className="flex items-center gap-3 mb-3">
+            {user?.profileImageUrl ? (
+              <img 
+                src={user.profileImageUrl} 
+                alt={displayName}
+                className="w-8 h-8 rounded-full ring-2 ring-white object-cover"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-400 to-blue-500 ring-2 ring-white flex items-center justify-center text-white text-sm font-semibold">
+                {displayName[0]?.toUpperCase()}
+              </div>
+            )}
+            <div className="flex flex-col flex-1 min-w-0">
+              <span className="text-sm font-semibold truncate">{displayName}</span>
+              <span className="text-xs text-muted-foreground truncate">{user?.email}</span>
+            </div>
           </div>
+          
+          <a 
+            href="/api/logout"
+            className="flex items-center gap-3 px-4 py-2 rounded-xl text-muted-foreground hover:bg-red-50 hover:text-red-600 transition-all duration-200 cursor-pointer"
+            data-testid="button-logout"
+          >
+            <LogOut className="w-4 h-4" />
+            <span className="text-sm font-medium">Log out</span>
+          </a>
         </div>
       </div>
     </div>
