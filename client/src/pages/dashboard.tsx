@@ -1,11 +1,21 @@
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { ServiceCard } from "@/components/service-card";
 import { FeedItem } from "@/components/feed-item";
-import { Search, Bell } from "lucide-react";
+import { Search, Bell, Mail } from "lucide-react";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
 import { useQuery } from "@tanstack/react-query";
 import type { Service, FeedItem as FeedItemType } from "@shared/schema";
 import { useAuth } from "@/hooks/useAuth";
+
+interface GmailMessage {
+  id: string;
+  threadId: string;
+  subject: string;
+  from: string;
+  snippet: string;
+  date: string;
+  isUnread: boolean;
+}
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -37,6 +47,45 @@ export default function Dashboard() {
       return res.json();
     },
   });
+
+  const { data: gmailMessages = [], isLoading: gmailLoading, isError: gmailError } = useQuery<GmailMessage[]>({
+    queryKey: ["gmail-messages"],
+    queryFn: async () => {
+      const res = await fetch("/api/gmail/messages", { credentials: "include" });
+      if (!res.ok) {
+        if (res.status === 500) {
+          console.warn("Gmail integration not available");
+          return [];
+        }
+        throw new Error("Failed to fetch Gmail messages");
+      }
+      return res.json();
+    },
+    retry: false,
+  });
+
+  const formatGmailTime = (dateStr: string) => {
+    try {
+      const date = new Date(dateStr);
+      const now = new Date();
+      const diffMs = now.getTime() - date.getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+      
+      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffHours < 24) return `${diffHours}h ago`;
+      if (diffDays < 7) return `${diffDays}d ago`;
+      return date.toLocaleDateString();
+    } catch {
+      return dateStr;
+    }
+  };
+
+  const extractSenderName = (from: string) => {
+    const match = from.match(/^([^<]+)/);
+    return match ? match[1].trim().replace(/"/g, '') : from;
+  };
 
   const getIconName = (iconStr: string) => {
     const iconMap: Record<string, string> = {
@@ -108,23 +157,50 @@ export default function Dashboard() {
             </div>
 
             <div className="space-y-3">
-              {feedLoading ? (
+              {(feedLoading || gmailLoading) ? (
                 <div className="text-center text-muted-foreground py-8">Loading feed...</div>
-              ) : feedItems.length === 0 ? (
+              ) : (feedItems.length === 0 && gmailMessages.length === 0) ? (
                 <div className="text-center text-muted-foreground py-8">No feed items yet</div>
               ) : (
-                feedItems.map((item) => (
-                  <FeedItem 
-                    key={item.id} 
-                    type={item.type as any}
-                    title={item.title}
-                    subtitle={item.subtitle || undefined}
-                    time={item.time}
-                    sender={item.sender || undefined}
-                    avatar={item.avatar || undefined}
-                    urgent={item.urgent}
-                  />
-                ))
+                <>
+                  {gmailMessages.map((email) => (
+                    <div 
+                      key={`gmail-${email.id}`}
+                      className={`glass-panel p-4 rounded-xl hover:bg-white/80 transition-colors cursor-pointer ${email.isUnread ? 'border-l-4 border-l-red-500' : ''}`}
+                      data-testid={`feed-gmail-${email.id}`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                          <Mail className="w-5 h-5 text-red-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className={`text-sm ${email.isUnread ? 'font-semibold text-foreground' : 'font-medium text-muted-foreground'}`}>
+                              {extractSenderName(email.from)}
+                            </span>
+                            <span className="text-xs text-muted-foreground">{formatGmailTime(email.date)}</span>
+                          </div>
+                          <h4 className={`text-sm mb-1 ${email.isUnread ? 'font-semibold text-foreground' : 'text-foreground'}`}>
+                            {email.subject}
+                          </h4>
+                          <p className="text-xs text-muted-foreground line-clamp-2">{email.snippet}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {feedItems.map((item) => (
+                    <FeedItem 
+                      key={item.id} 
+                      type={item.type as any}
+                      title={item.title}
+                      subtitle={item.subtitle || undefined}
+                      time={item.time}
+                      sender={item.sender || undefined}
+                      avatar={item.avatar || undefined}
+                      urgent={item.urgent}
+                    />
+                  ))}
+                </>
               )}
             </div>
           </div>
