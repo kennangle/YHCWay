@@ -1,6 +1,6 @@
 import { 
   type User, 
-  type InsertUser,
+  type UpsertUser,
   type Service,
   type InsertService,
   type FeedItem,
@@ -22,18 +22,14 @@ const pool = new Pool({
 export const db = drizzle(pool);
 
 export interface IStorage {
-  // User methods
   getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  upsertUser(user: UpsertUser): Promise<User>;
   
-  // Service methods
   getAllServices(): Promise<Service[]>;
   getService(id: number): Promise<Service | undefined>;
   createService(service: InsertService): Promise<Service>;
   updateServiceConnection(id: number, connected: boolean): Promise<Service | undefined>;
   
-  // Feed item methods
   getAllFeedItems(): Promise<FeedItem[]>;
   getFeedItem(id: number): Promise<FeedItem | undefined>;
   createFeedItem(feedItem: InsertFeedItem): Promise<FeedItem>;
@@ -41,23 +37,26 @@ export interface IStorage {
 }
 
 export class DbStorage implements IStorage {
-  // User methods
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
     return user;
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db.insert(users).values(insertUser).returning();
-    return user;
-  }
-
-  // Service methods
   async getAllServices(): Promise<Service[]> {
     return await db.select().from(services);
   }
@@ -81,7 +80,6 @@ export class DbStorage implements IStorage {
     return service;
   }
 
-  // Feed item methods
   async getAllFeedItems(): Promise<FeedItem[]> {
     return await db.select().from(feedItems).orderBy(desc(feedItems.sortOrder), desc(feedItems.timestamp));
   }

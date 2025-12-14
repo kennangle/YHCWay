@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertServiceSchema, insertFeedItemSchema } from "@shared/schema";
+import { setupAuth, isAuthenticated } from "./replitAuth";
 import { z } from "zod";
 
 export async function registerRoutes(
@@ -9,7 +10,19 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
   
-  // Services routes
+  await setupAuth(app);
+
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
   app.get("/api/services", async (req, res) => {
     try {
       const allServices = await storage.getAllServices();
@@ -56,7 +69,6 @@ export async function registerRoutes(
     }
   });
 
-  // Feed items routes
   app.get("/api/feed", async (req, res) => {
     try {
       const allFeedItems = await storage.getAllFeedItems();
