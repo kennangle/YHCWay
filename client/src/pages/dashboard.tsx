@@ -1,7 +1,7 @@
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { ServiceCard } from "@/components/service-card";
 import { FeedItem } from "@/components/feed-item";
-import { Search, Bell, Mail } from "lucide-react";
+import { Search, Bell, Mail, Video } from "lucide-react";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
 import { useQuery } from "@tanstack/react-query";
 import type { Service, FeedItem as FeedItemType } from "@shared/schema";
@@ -25,6 +25,15 @@ interface CalendarEvent {
   location?: string;
   description?: string;
   isAllDay: boolean;
+}
+
+interface ZoomMeeting {
+  id: number;
+  topic: string;
+  startTime: string;
+  duration: number;
+  joinUrl: string;
+  type: number;
 }
 
 export default function Dashboard() {
@@ -89,6 +98,37 @@ export default function Dashboard() {
     },
     retry: false,
   });
+
+  const { data: zoomMeetings = [], isLoading: zoomLoading } = useQuery<ZoomMeeting[]>({
+    queryKey: ["zoom-meetings"],
+    queryFn: async () => {
+      const res = await fetch("/api/zoom/meetings", { credentials: "include" });
+      if (!res.ok) {
+        if (res.status === 500) {
+          console.warn("Zoom integration not available");
+          return [];
+        }
+        throw new Error("Failed to fetch Zoom meetings");
+      }
+      return res.json();
+    },
+    retry: false,
+  });
+
+  const formatZoomTime = (startTime: string) => {
+    if (!startTime) return "No time set";
+    try {
+      const date = new Date(startTime);
+      return date.toLocaleString("en-US", { 
+        month: "short", 
+        day: "numeric", 
+        hour: "numeric", 
+        minute: "2-digit" 
+      });
+    } catch {
+      return startTime;
+    }
+  };
 
   const formatGmailTime = (dateStr: string) => {
     try {
@@ -225,12 +265,36 @@ export default function Dashboard() {
             </div>
 
             <div className="space-y-3">
-              {(feedLoading || gmailLoading) ? (
+              {(feedLoading || gmailLoading || zoomLoading) ? (
                 <div className="text-center text-muted-foreground py-8">Loading feed...</div>
-              ) : (feedItems.length === 0 && gmailMessages.length === 0) ? (
+              ) : (feedItems.length === 0 && gmailMessages.length === 0 && zoomMeetings.length === 0) ? (
                 <div className="text-center text-muted-foreground py-8">No feed items yet</div>
               ) : (
                 <>
+                  {zoomMeetings.map((meeting) => (
+                    <a 
+                      key={`zoom-${meeting.id}`}
+                      href={meeting.joinUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="glass-panel p-4 rounded-xl hover:bg-white/80 transition-colors cursor-pointer block border-l-4 border-l-blue-500"
+                      data-testid={`feed-zoom-${meeting.id}`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                          <Video className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm font-semibold text-foreground">Zoom Meeting</span>
+                            <span className="text-xs text-muted-foreground">{formatZoomTime(meeting.startTime)}</span>
+                          </div>
+                          <h4 className="text-sm font-medium text-foreground mb-1">{meeting.topic}</h4>
+                          <p className="text-xs text-muted-foreground">{meeting.duration} minutes</p>
+                        </div>
+                      </div>
+                    </a>
+                  ))}
                   {gmailMessages.map((email) => (
                     <div 
                       key={`gmail-${email.id}`}

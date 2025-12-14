@@ -7,6 +7,7 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { getRecentEmails, isGmailConnected } from "./gmail";
 import { getUpcomingEvents, isCalendarConnected } from "./calendar";
+import { getUpcomingMeetings, isZoomConnected } from "./zoom";
 
 const isAdmin: RequestHandler = async (req: any, res, next) => {
   try {
@@ -291,6 +292,26 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error fetching calendar events:", error);
       res.status(500).json({ error: "Failed to fetch calendar events" });
+    }
+  });
+
+  // Zoom integration endpoints
+  app.get("/api/zoom/status", isAuthenticated, async (req, res) => {
+    try {
+      const connected = await isZoomConnected();
+      res.json({ connected });
+    } catch (error) {
+      res.json({ connected: false });
+    }
+  });
+
+  app.get("/api/zoom/meetings", isAuthenticated, async (req, res) => {
+    try {
+      const meetings = await getUpcomingMeetings(10);
+      res.json(meetings);
+    } catch (error) {
+      console.error("Error fetching Zoom meetings:", error);
+      res.status(500).json({ error: "Failed to fetch Zoom meetings" });
     }
   });
 
