@@ -5,9 +5,20 @@ import { Search, Bell } from "lucide-react";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
 import { useQuery } from "@tanstack/react-query";
 import type { Service, FeedItem as FeedItemType } from "@shared/schema";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Dashboard() {
+  const { user } = useAuth();
   const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+  
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 17) return "Good afternoon";
+    return "Good evening";
+  };
+  
+  const userName = user?.firstName || user?.email?.split("@")[0] || "there";
 
   const { data: services = [], isLoading: servicesLoading } = useQuery<Service[]>({
     queryKey: ["services"],
@@ -54,7 +65,7 @@ export default function Dashboard() {
         <header className="flex justify-between items-end mb-8">
           <div>
             <p className="text-muted-foreground font-medium mb-1">{today}</p>
-            <h1 className="font-display font-bold text-3xl">Good morning, Alex</h1>
+            <h1 className="font-display font-bold text-3xl">{getGreeting()}, {userName}</h1>
           </div>
           <div className="flex gap-4">
             <button className="w-10 h-10 rounded-full glass-panel flex items-center justify-center hover:bg-white/80 transition-colors" data-testid="button-search">
