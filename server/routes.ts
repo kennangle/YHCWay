@@ -8,6 +8,7 @@ import bcrypt from "bcryptjs";
 import { getRecentEmails, isGmailConnected } from "./gmail";
 import { getUpcomingEvents, isCalendarConnected } from "./calendar";
 import { getUpcomingMeetings, isZoomConnected } from "./zoom";
+import { getRecentMessages as getSlackMessages, isSlackConnected } from "./slack";
 
 const isAdmin: RequestHandler = async (req: any, res, next) => {
   try {
@@ -311,6 +312,26 @@ export async function registerRoutes(
       res.json(meetings);
     } catch (error) {
       console.error("Error fetching Zoom meetings:", error);
+      res.json([]);
+    }
+  });
+
+  // Slack integration endpoints
+  app.get("/api/slack/status", isAuthenticated, async (req, res) => {
+    try {
+      const connected = await isSlackConnected();
+      res.json({ connected });
+    } catch (error) {
+      res.json({ connected: false });
+    }
+  });
+
+  app.get("/api/slack/messages", isAuthenticated, async (req, res) => {
+    try {
+      const messages = await getSlackMessages(20);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching Slack messages:", error);
       res.json([]);
     }
   });
