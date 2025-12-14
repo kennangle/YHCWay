@@ -3,10 +3,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Redirect } from "wouter";
-import { Users, Server, Rss, Trash2, Edit2, Shield, ShieldOff, Plus, X } from "lucide-react";
+import { Users, Server, Rss, Trash2, Edit2, Shield, ShieldOff, Plus, X, Key } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import type { User, Service, FeedItem, InsertService, InsertFeedItem } from "@shared/schema";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
+import { useToast } from "@/hooks/use-toast";
 
 type TabType = "users" | "services" | "feed";
 
@@ -17,7 +18,9 @@ export default function Admin() {
   const [editingFeed, setEditingFeed] = useState<FeedItem | null>(null);
   const [showAddService, setShowAddService] = useState(false);
   const [showAddFeed, setShowAddFeed] = useState(false);
+  const [resetPasswordUser, setResetPasswordUser] = useState<User | null>(null);
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const { data: users = [] } = useQuery<User[]>({
     queryKey: ["/api/admin/users"],
@@ -39,6 +42,19 @@ export default function Admin() {
       return apiRequest("PATCH", `/api/admin/users/${id}`, { isAdmin });
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] }),
+  });
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: async ({ id, password }: { id: string; password: string }) => {
+      return apiRequest("POST", `/api/admin/users/${id}/reset-password`, { password });
+    },
+    onSuccess: () => {
+      toast({ title: "Password updated", description: "User password has been reset successfully." });
+      setResetPasswordUser(null);
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to reset password.", variant: "destructive" });
+    },
   });
 
   const createServiceMutation = useMutation({
@@ -174,6 +190,14 @@ export default function Admin() {
                     {u.isAdmin && (
                       <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded-full font-medium">Admin</span>
                     )}
+                    <button
+                      onClick={() => setResetPasswordUser(u)}
+                      className="p-2 hover:bg-amber-50 text-amber-500 rounded-lg transition-all"
+                      title="Reset password"
+                      data-testid={`button-reset-password-${u.id}`}
+                    >
+                      <Key className="w-4 h-4" />
+                    </button>
                     <button
                       onClick={() => toggleAdminMutation.mutate({ id: u.id, isAdmin: !u.isAdmin })}
                       className={`p-2 rounded-lg transition-all ${
@@ -314,6 +338,15 @@ export default function Admin() {
             feedItem={editingFeed}
             onClose={() => setEditingFeed(null)}
             onSave={(data) => updateFeedMutation.mutate({ id: editingFeed.id, data })}
+          />
+        )}
+
+        {resetPasswordUser && (
+          <PasswordResetModal
+            user={resetPasswordUser}
+            onClose={() => setResetPasswordUser(null)}
+            onSave={(password) => resetPasswordMutation.mutate({ id: resetPasswordUser.id, password })}
+            isLoading={resetPasswordMutation.isPending}
           />
         )}
       </main>
@@ -539,6 +572,92 @@ function FeedModal({
             </button>
             <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground rounded-lg" data-testid="button-save-feed">
               Save
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function PasswordResetModal({
+  user,
+  onClose,
+  onSave,
+  isLoading,
+}: {
+  user: User;
+  onClose: () => void;
+  onSave: (password: string) => void;
+  isLoading: boolean;
+}) {
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+    setError("");
+    onSave(password);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" data-testid="modal-password-reset">
+      <div className="bg-white rounded-2xl p-6 w-full max-w-md">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-lg">Reset Password</h3>
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <p className="text-sm text-muted-foreground mb-4">
+          Set a new password for {user.firstName || user.email}
+        </p>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">New Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-3 py-2 border rounded-lg"
+              placeholder="At least 8 characters"
+              required
+              data-testid="input-new-password"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Confirm Password</label>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full px-3 py-2 border rounded-lg"
+              placeholder="Confirm password"
+              required
+              data-testid="input-confirm-password"
+            />
+          </div>
+          {error && <p className="text-sm text-red-500">{error}</p>}
+          <div className="flex gap-2 justify-end">
+            <button type="button" onClick={onClose} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+              Cancel
+            </button>
+            <button 
+              type="submit" 
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg disabled:opacity-50" 
+              disabled={isLoading}
+              data-testid="button-save-password"
+            >
+              {isLoading ? "Saving..." : "Reset Password"}
             </button>
           </div>
         </form>

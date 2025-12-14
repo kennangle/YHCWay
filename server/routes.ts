@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { insertServiceSchema, insertFeedItemSchema, ADMIN_EMAIL } from "@shared/schema";
 import { setupAuth, isAuthenticated } from "./auth";
 import { z } from "zod";
+import bcrypt from "bcryptjs";
 
 const isAdmin: RequestHandler = async (req: any, res, next) => {
   try {
@@ -199,6 +200,24 @@ export async function registerRoutes(
         console.error("Error updating feed item:", error);
         res.status(500).json({ error: "Failed to update feed item" });
       }
+    }
+  });
+
+  app.post("/api/admin/users/:id/reset-password", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { password } = req.body;
+      if (!password || password.length < 8) {
+        return res.status(400).json({ error: "Password must be at least 8 characters" });
+      }
+      const passwordHash = await bcrypt.hash(password, 10);
+      const updatedUser = await storage.updateUserPassword(req.params.id, passwordHash);
+      if (!updatedUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      res.json({ message: "Password updated successfully" });
+    } catch (error) {
+      console.error("Error resetting password:", error);
+      res.status(500).json({ error: "Failed to reset password" });
     }
   });
 
