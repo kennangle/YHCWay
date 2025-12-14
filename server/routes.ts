@@ -1,7 +1,7 @@
 import type { Express, RequestHandler } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertServiceSchema, insertFeedItemSchema, ADMIN_EMAIL } from "@shared/schema";
+import { insertServiceSchema, insertFeedItemSchema, ADMIN_EMAIL, adminCreateUserSchema } from "@shared/schema";
 import { setupAuth, isAuthenticated } from "./auth";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
@@ -218,6 +218,37 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error resetting password:", error);
       res.status(500).json({ error: "Failed to reset password" });
+    }
+  });
+
+  app.post("/api/admin/users", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const validatedData = adminCreateUserSchema.parse(req.body);
+      
+      const existingUser = await storage.getUserByEmail(validatedData.email);
+      if (existingUser) {
+        return res.status(400).json({ error: "Email already registered" });
+      }
+      
+      const passwordHash = await bcrypt.hash(validatedData.password, 10);
+      const user = await storage.createUser({
+        email: validatedData.email,
+        passwordHash,
+        firstName: validatedData.firstName,
+        lastName: validatedData.lastName,
+        isAdmin: validatedData.isAdmin,
+        emailVerified: true,
+      });
+      
+      const { passwordHash: _, ...safeUser } = user;
+      res.status(201).json(safeUser);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: error.errors[0]?.message || "Validation failed" });
+      } else {
+        console.error("Error creating user:", error);
+        res.status(500).json({ error: "Failed to create user" });
+      }
     }
   });
 
