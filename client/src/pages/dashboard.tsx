@@ -1,7 +1,7 @@
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { ServiceCard } from "@/components/service-card";
 import { FeedItem } from "@/components/feed-item";
-import { Search, Bell, Mail, Video } from "lucide-react";
+import { Search, Bell, Mail, Video, MessageCircle } from "lucide-react";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
 import { useQuery } from "@tanstack/react-query";
 import type { Service, FeedItem as FeedItemType } from "@shared/schema";
