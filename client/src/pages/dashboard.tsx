@@ -36,6 +36,17 @@ interface ZoomMeeting {
   type: number;
 }
 
+interface SlackMessage {
+  id: string;
+  channelId: string;
+  channelName: string;
+  text: string;
+  userId: string;
+  userName: string;
+  timestamp: string;
+  permalink?: string;
+}
+
 export default function Dashboard() {
   const { user } = useAuth();
   const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
@@ -111,6 +122,37 @@ export default function Dashboard() {
     },
     retry: false,
   });
+
+  const { data: slackMessages = [], isLoading: slackLoading } = useQuery<SlackMessage[]>({
+    queryKey: ["slack-messages"],
+    queryFn: async () => {
+      const res = await fetch("/api/slack/messages", { credentials: "include" });
+      if (!res.ok) {
+        console.warn("Slack integration not available");
+        return [];
+      }
+      return res.json();
+    },
+    retry: false,
+  });
+
+  const formatSlackTime = (timestamp: string) => {
+    try {
+      const date = new Date(timestamp);
+      const now = new Date();
+      const diffMs = now.getTime() - date.getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+      
+      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffHours < 24) return `${diffHours}h ago`;
+      if (diffDays < 7) return `${diffDays}d ago`;
+      return date.toLocaleDateString();
+    } catch {
+      return "";
+    }
+  };
 
   const formatZoomTime = (startTime: string) => {
     if (!startTime) return "No time set";
@@ -262,9 +304,9 @@ export default function Dashboard() {
             </div>
 
             <div className="space-y-3">
-              {(feedLoading || gmailLoading || zoomLoading) ? (
+              {(feedLoading || gmailLoading || zoomLoading || slackLoading) ? (
                 <div className="text-center text-muted-foreground py-8">Loading feed...</div>
-              ) : (feedItems.length === 0 && gmailMessages.length === 0 && zoomMeetings.length === 0) ? (
+              ) : (feedItems.length === 0 && gmailMessages.length === 0 && zoomMeetings.length === 0 && slackMessages.length === 0) ? (
                 <div className="text-center text-muted-foreground py-8">No feed items yet</div>
               ) : (
                 <>
@@ -316,6 +358,29 @@ export default function Dashboard() {
                         </div>
                       </div>
                     </div>
+                  ))}
+                  {slackMessages.map((message) => (
+                    <a 
+                      key={`slack-${message.id}`}
+                      href={message.permalink || '#'}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="glass-panel p-4 rounded-xl hover:bg-white/80 transition-colors cursor-pointer block border-l-4 border-l-purple-500"
+                      data-testid={`feed-slack-${message.id}`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
+                          <MessageCircle className="w-5 h-5 text-purple-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm font-semibold text-foreground">#{message.channelName}</span>
+                            <span className="text-xs text-muted-foreground">{formatSlackTime(message.timestamp)}</span>
+                          </div>
+                          <p className="text-sm text-foreground line-clamp-2">{message.text}</p>
+                        </div>
+                      </div>
+                    </a>
                   ))}
                   {feedItems.map((item) => (
                     <FeedItem 
