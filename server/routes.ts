@@ -311,7 +311,7 @@ export async function registerRoutes(
       res.json(meetings);
     } catch (error) {
       console.error("Error fetching Zoom meetings:", error);
-      res.status(500).json({ error: "Failed to fetch Zoom meetings" });
+      res.json([]);
     }
   });
 

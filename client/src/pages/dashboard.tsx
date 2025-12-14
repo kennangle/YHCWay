@@ -104,11 +104,8 @@ export default function Dashboard() {
     queryFn: async () => {
       const res = await fetch("/api/zoom/meetings", { credentials: "include" });
       if (!res.ok) {
-        if (res.status === 500) {
-          console.warn("Zoom integration not available");
-          return [];
-        }
-        throw new Error("Failed to fetch Zoom meetings");
+        console.warn("Zoom integration not available");
+        return [];
       }
       return res.json();
     },
