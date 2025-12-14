@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Redirect } from "wouter";
 import { Users, Server, Rss, Trash2, Edit2, Shield, ShieldOff, Plus, X, Key } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
-import type { User, Service, FeedItem, InsertService, InsertFeedItem } from "@shared/schema";
+import type { User, Service, FeedItem, InsertService, InsertFeedItem, AdminCreateUser } from "@shared/schema";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
 import { useToast } from "@/hooks/use-toast";
 
@@ -18,6 +18,7 @@ export default function Admin() {
   const [editingFeed, setEditingFeed] = useState<FeedItem | null>(null);
   const [showAddService, setShowAddService] = useState(false);
   const [showAddFeed, setShowAddFeed] = useState(false);
+  const [showAddUser, setShowAddUser] = useState(false);
   const [resetPasswordUser, setResetPasswordUser] = useState<User | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -54,6 +55,20 @@ export default function Admin() {
     },
     onError: () => {
       toast({ title: "Error", description: "Failed to reset password.", variant: "destructive" });
+    },
+  });
+
+  const createUserMutation = useMutation({
+    mutationFn: async (data: AdminCreateUser) => {
+      return apiRequest("POST", "/api/admin/users", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      toast({ title: "User created", description: "New user has been created successfully." });
+      setShowAddUser(false);
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to create user.", variant: "destructive" });
     },
   });
 
@@ -169,7 +184,17 @@ export default function Admin() {
 
         {activeTab === "users" && (
           <div className="glass-card rounded-2xl p-6" data-testid="section-users">
-            <h2 className="font-semibold text-lg mb-4">User Management</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-semibold text-lg">User Management</h2>
+              <button
+                onClick={() => setShowAddUser(true)}
+                className="flex items-center gap-2 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium"
+                data-testid="button-add-user"
+              >
+                <Plus className="w-4 h-4" />
+                Add User
+              </button>
+            </div>
             <div className="space-y-3">
               {users.map((u) => (
                 <div key={u.id} className="flex items-center justify-between p-4 bg-white/50 rounded-xl" data-testid={`row-user-${u.id}`}>
@@ -347,6 +372,14 @@ export default function Admin() {
             onClose={() => setResetPasswordUser(null)}
             onSave={(password) => resetPasswordMutation.mutate({ id: resetPasswordUser.id, password })}
             isLoading={resetPasswordMutation.isPending}
+          />
+        )}
+
+        {showAddUser && (
+          <UserModal
+            onClose={() => setShowAddUser(false)}
+            onSave={(data) => createUserMutation.mutate(data)}
+            isLoading={createUserMutation.isPending}
           />
         )}
       </main>
@@ -658,6 +691,137 @@ function PasswordResetModal({
               data-testid="button-save-password"
             >
               {isLoading ? "Saving..." : "Reset Password"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function UserModal({
+  onClose,
+  onSave,
+  isLoading,
+}: {
+  onClose: () => void;
+  onSave: (data: AdminCreateUser) => void;
+  isLoading: boolean;
+}) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+    setError("");
+    onSave({ email, password, firstName: firstName || undefined, lastName: lastName || undefined, isAdmin });
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" data-testid="modal-create-user">
+      <div className="bg-white rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-lg">Create New User</h3>
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">First Name</label>
+              <input
+                type="text"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                className="w-full px-3 py-2 border rounded-lg"
+                placeholder="John"
+                data-testid="input-user-firstname"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Last Name</label>
+              <input
+                type="text"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                className="w-full px-3 py-2 border rounded-lg"
+                placeholder="Doe"
+                data-testid="input-user-lastname"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-3 py-2 border rounded-lg"
+              placeholder="user@example.com"
+              required
+              data-testid="input-user-email"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-3 py-2 border rounded-lg"
+              placeholder="At least 8 characters"
+              required
+              data-testid="input-user-password"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Confirm Password</label>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full px-3 py-2 border rounded-lg"
+              placeholder="Confirm password"
+              required
+              data-testid="input-user-confirm-password"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="isAdmin"
+              checked={isAdmin}
+              onChange={(e) => setIsAdmin(e.target.checked)}
+              data-testid="input-user-admin"
+            />
+            <label htmlFor="isAdmin" className="text-sm">Make this user an admin</label>
+          </div>
+          {error && <p className="text-sm text-red-500">{error}</p>}
+          <div className="flex gap-2 justify-end">
+            <button type="button" onClick={onClose} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+              Cancel
+            </button>
+            <button 
+              type="submit" 
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg disabled:opacity-50" 
+              disabled={isLoading}
+              data-testid="button-create-user"
+            >
+              {isLoading ? "Creating..." : "Create User"}
             </button>
           </div>
         </form>
