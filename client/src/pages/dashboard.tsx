@@ -1,72 +1,44 @@
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { ServiceCard } from "@/components/service-card";
-import { FeedItem, FeedType } from "@/components/feed-item";
-import { MessageCircle, Mail, Calendar as CalendarIcon, Search, Bell, Video } from "lucide-react";
+import { FeedItem } from "@/components/feed-item";
+import { Search, Bell } from "lucide-react";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
+import { useQuery } from "@tanstack/react-query";
+import type { Service, FeedItem as FeedItemType } from "@shared/schema";
 
 export default function Dashboard() {
   const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
 
-  const feedItems = [
-    {
-      id: 1,
-      type: "calendar" as FeedType,
-      title: "Product Design Sync",
-      subtitle: "10:00 AM - 11:00 AM • Zoom Meeting",
-      time: "In 15m",
-      sender: "Design Team",
-      urgent: true,
+  const { data: services = [], isLoading: servicesLoading } = useQuery<Service[]>({
+    queryKey: ["services"],
+    queryFn: async () => {
+      const res = await fetch("/api/services");
+      if (!res.ok) throw new Error("Failed to fetch services");
+      return res.json();
     },
-    {
-      id: 2,
-      type: "zoom" as FeedType,
-      title: "Weekly Standup",
-      subtitle: "Meeting ID: 893 234 1111",
-      time: "10m ago",
-      sender: "Zoom",
-      urgent: false,
+  });
+
+  const { data: feedItems = [], isLoading: feedLoading } = useQuery<FeedItemType[]>({
+    queryKey: ["feed"],
+    queryFn: async () => {
+      const res = await fetch("/api/feed");
+      if (!res.ok) throw new Error("Failed to fetch feed items");
+      return res.json();
     },
-    {
-      id: 3,
-      type: "slack" as FeedType,
-      title: "New feedback on the dashboard prototypes",
-      subtitle: "#design-system",
-      time: "2m ago",
-      sender: "Sarah Jenkins",
-      avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&h=100",
-    },
-    {
-      id: 4,
-      type: "email" as FeedType,
-      title: "Q4 Roadmap Review - Final Draft",
-      subtitle: "Please review the attached document before...",
-      time: "12m ago",
-      sender: "Michael Scott",
-      urgent: false,
-    },
-    {
-      id: 5,
-      type: "slack" as FeedType,
-      title: "Can we deploy the hotfix?",
-      subtitle: "Direct Message",
-      time: "1h ago",
-      sender: "David Chen",
-      avatar: "https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&w=100&h=100",
-    },
-    {
-      id: 6,
-      type: "email" as FeedType,
-      title: "Invitation: Lunch & Learn @ Fri Dec 15",
-      subtitle: "RSVP needed by tomorrow",
-      time: "2h ago",
-      sender: "HR Team",
-      urgent: false,
-    },
-  ];
+  });
+
+  const getIconName = (iconStr: string) => {
+    const iconMap: Record<string, string> = {
+      "MessageCircle": "MessageCircle",
+      "Mail": "Mail",
+      "Calendar": "Calendar",
+      "Video": "Video",
+    };
+    return iconMap[iconStr] || "Calendar";
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground flex font-sans">
-      {/* Background Image Layer */}
       <div 
         className="fixed inset-0 z-0 pointer-events-none opacity-40"
         style={{ 
@@ -79,84 +51,73 @@ export default function Dashboard() {
       <UnifiedSidebar />
 
       <main className="flex-1 ml-64 p-8 relative z-10">
-        {/* Header */}
         <header className="flex justify-between items-end mb-8">
           <div>
             <p className="text-muted-foreground font-medium mb-1">{today}</p>
             <h1 className="font-display font-bold text-3xl">Good morning, Alex</h1>
           </div>
           <div className="flex gap-4">
-            <button className="w-10 h-10 rounded-full glass-panel flex items-center justify-center hover:bg-white/80 transition-colors">
+            <button className="w-10 h-10 rounded-full glass-panel flex items-center justify-center hover:bg-white/80 transition-colors" data-testid="button-search">
               <Search className="w-5 h-5 text-muted-foreground" />
             </button>
-            <button className="w-10 h-10 rounded-full glass-panel flex items-center justify-center hover:bg-white/80 transition-colors relative">
+            <button className="w-10 h-10 rounded-full glass-panel flex items-center justify-center hover:bg-white/80 transition-colors relative" data-testid="button-notifications">
               <Bell className="w-5 h-5 text-muted-foreground" />
               <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full"></span>
             </button>
           </div>
         </header>
 
-        {/* Integration Status Grid */}
         <section className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
-          <ServiceCard 
-            name="Slack" 
-            description="5 unread mentions, 12 new messages"
-            icon={<MessageCircle className="w-6 h-6" />}
-            colorClass="bg-[#4A154B] text-white"
-            connected={true}
-          />
-          <ServiceCard 
-            name="Gmail" 
-            description="3 urgent emails, 18 total unread"
-            icon={<Mail className="w-6 h-6" />}
-            colorClass="bg-[#EA4335] text-white"
-            connected={true}
-          />
-          <ServiceCard 
-            name="Google Calendar" 
-            description="2 meetings remaining today"
-            icon={<CalendarIcon className="w-6 h-6" />}
-            colorClass="bg-[#4285F4] text-white"
-            connected={true}
-          />
-           <ServiceCard 
-            name="Apple Calendar" 
-            description="Sync your personal iCloud events"
-            icon={<CalendarIcon className="w-6 h-6" />}
-            colorClass="bg-gray-800 text-white"
-            connected={false}
-          />
-           <ServiceCard 
-            name="Zoom" 
-            description="Join upcoming meetings instantly"
-            icon={<Video className="w-6 h-6" />}
-            colorClass="bg-[#2D8CFF] text-white"
-            connected={true}
-          />
+          {servicesLoading ? (
+            <div className="col-span-5 text-center text-muted-foreground">Loading services...</div>
+          ) : (
+            services.map((service) => (
+              <ServiceCard 
+                key={service.id}
+                id={service.id}
+                name={service.name}
+                description={service.description}
+                icon={getIconName(service.icon)}
+                colorClass={service.colorClass}
+                connected={service.connected}
+              />
+            ))
+          )}
         </section>
 
-        {/* Main Content Split */}
         <div className="grid grid-cols-12 gap-8">
-          
-          {/* Left Column: Unified Feed */}
           <div className="col-span-8">
             <div className="flex items-center justify-between mb-6">
               <h2 className="font-display font-semibold text-xl">Unified Feed</h2>
               <div className="flex gap-2 text-sm">
-                <button className="px-3 py-1.5 rounded-full bg-white shadow-sm text-foreground font-medium">All</button>
-                <button className="px-3 py-1.5 rounded-full text-muted-foreground hover:bg-white/50 transition-colors">Mentions</button>
-                <button className="px-3 py-1.5 rounded-full text-muted-foreground hover:bg-white/50 transition-colors">Unread</button>
+                <button className="px-3 py-1.5 rounded-full bg-white shadow-sm text-foreground font-medium" data-testid="button-filter-all">All</button>
+                <button className="px-3 py-1.5 rounded-full text-muted-foreground hover:bg-white/50 transition-colors" data-testid="button-filter-mentions">Mentions</button>
+                <button className="px-3 py-1.5 rounded-full text-muted-foreground hover:bg-white/50 transition-colors" data-testid="button-filter-unread">Unread</button>
               </div>
             </div>
 
             <div className="space-y-3">
-              {feedItems.map((item) => (
-                <FeedItem key={item.id} {...item} />
-              ))}
+              {feedLoading ? (
+                <div className="text-center text-muted-foreground py-8">Loading feed...</div>
+              ) : feedItems.length === 0 ? (
+                <div className="text-center text-muted-foreground py-8">No feed items yet</div>
+              ) : (
+                feedItems.map((item) => (
+                  <FeedItem 
+                    key={item.id} 
+                    type={item.type as any}
+                    title={item.title}
+                    subtitle={item.subtitle || undefined}
+                    time={item.time}
+                    sender={item.sender || undefined}
+                    avatar={item.avatar || undefined}
+                    urgent={item.urgent}
+                  />
+                ))
+              )}
             </div>
           </div>
 
-          {/* Right Column: Upcoming & Quick Actions */}
           <div className="col-span-4 space-y-6">
             <div className="glass-panel p-6 rounded-2xl">
               <h3 className="font-display font-semibold text-lg mb-4">Upcoming</h3>
@@ -188,12 +149,11 @@ export default function Dashboard() {
             <div className="glass-panel p-6 rounded-2xl bg-gradient-to-br from-primary/10 to-transparent border-primary/10">
               <h3 className="font-display font-semibold text-lg mb-2">Quick Compose</h3>
               <p className="text-sm text-muted-foreground mb-4">Send a message to any connected service.</p>
-              <button className="w-full py-2.5 rounded-lg bg-primary text-white font-medium shadow-lg shadow-primary/30 hover:bg-primary/90 transition-colors">
+              <button className="w-full py-2.5 rounded-lg bg-primary text-white font-medium shadow-lg shadow-primary/30 hover:bg-primary/90 transition-colors" data-testid="button-new-message">
                 New Message
               </button>
             </div>
           </div>
-
         </div>
       </main>
     </div>
