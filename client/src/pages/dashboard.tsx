@@ -17,6 +17,16 @@ interface GmailMessage {
   isUnread: boolean;
 }
 
+interface CalendarEvent {
+  id: string;
+  title: string;
+  start: string;
+  end: string;
+  location?: string;
+  description?: string;
+  isAllDay: boolean;
+}
+
 export default function Dashboard() {
   const { user } = useAuth();
   const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
@@ -64,6 +74,22 @@ export default function Dashboard() {
     retry: false,
   });
 
+  const { data: calendarEvents = [], isLoading: calendarLoading } = useQuery<CalendarEvent[]>({
+    queryKey: ["calendar-events"],
+    queryFn: async () => {
+      const res = await fetch("/api/calendar/events", { credentials: "include" });
+      if (!res.ok) {
+        if (res.status === 500) {
+          console.warn("Calendar integration not available");
+          return [];
+        }
+        throw new Error("Failed to fetch calendar events");
+      }
+      return res.json();
+    },
+    retry: false,
+  });
+
   const formatGmailTime = (dateStr: string) => {
     try {
       const date = new Date(dateStr);
@@ -85,6 +111,48 @@ export default function Dashboard() {
   const extractSenderName = (from: string) => {
     const match = from.match(/^([^<]+)/);
     return match ? match[1].trim().replace(/"/g, '') : from;
+  };
+
+  const formatEventTime = (startStr: string, endStr: string, isAllDay: boolean) => {
+    if (isAllDay) return "All Day";
+    try {
+      const start = new Date(startStr);
+      const end = new Date(endStr);
+      const formatTime = (d: Date) => d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+      return `${formatTime(start)} - ${formatTime(end)}`;
+    } catch {
+      return "";
+    }
+  };
+
+  const isEventNow = (startStr: string, endStr: string, isAllDay: boolean) => {
+    if (isAllDay) {
+      try {
+        const now = new Date();
+        const todayStr = now.toISOString().split('T')[0];
+        return startStr === todayStr || (startStr <= todayStr && endStr > todayStr);
+      } catch {
+        return false;
+      }
+    }
+    try {
+      const now = new Date();
+      const start = new Date(startStr);
+      const end = new Date(endStr);
+      return now >= start && now <= end;
+    } catch {
+      return false;
+    }
+  };
+
+  const formatEventStartTime = (startStr: string, isAllDay: boolean) => {
+    if (isAllDay) return "All Day";
+    try {
+      const start = new Date(startStr);
+      return start.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+    } catch {
+      return "";
+    }
   };
 
   const getIconName = (iconStr: string) => {
@@ -209,28 +277,34 @@ export default function Dashboard() {
             <div className="glass-panel p-6 rounded-2xl">
               <h3 className="font-display font-semibold text-lg mb-4">Upcoming</h3>
               
-              <div className="relative pl-4 border-l-2 border-primary/20 space-y-6">
-                <div className="relative">
-                  <div className="absolute -left-[21px] top-1 w-3 h-3 rounded-full bg-primary ring-4 ring-white"></div>
-                  <p className="text-xs text-primary font-bold mb-1">NOW</p>
-                  <h4 className="font-medium text-foreground">Deep Work Session</h4>
-                  <p className="text-sm text-muted-foreground">9:00 AM - 10:00 AM</p>
+              {calendarLoading ? (
+                <div className="text-center text-muted-foreground py-4">Loading events...</div>
+              ) : calendarEvents.length === 0 ? (
+                <div className="text-center text-muted-foreground py-4">No upcoming events</div>
+              ) : (
+                <div className="relative pl-4 border-l-2 border-primary/20 space-y-6">
+                  {calendarEvents.slice(0, 5).map((event, index) => {
+                    const isNow = isEventNow(event.start, event.end, event.isAllDay);
+                    return (
+                      <div key={event.id} className="relative" data-testid={`calendar-event-${event.id}`}>
+                        <div className={`absolute -left-[21px] top-1 w-3 h-3 rounded-full ring-4 ring-white ${isNow ? 'bg-primary' : 'bg-muted-foreground/30'}`}></div>
+                        {isNow ? (
+                          <p className="text-xs text-primary font-bold mb-1">NOW</p>
+                        ) : (
+                          <p className="text-xs text-muted-foreground font-semibold mb-1">{formatEventStartTime(event.start, event.isAllDay)}</p>
+                        )}
+                        <h4 className="font-medium text-foreground">{event.title}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {formatEventTime(event.start, event.end, event.isAllDay)}
+                        </p>
+                        {event.location && (
+                          <p className="text-xs text-muted-foreground">{event.location}</p>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-                
-                <div className="relative">
-                  <div className="absolute -left-[21px] top-1 w-3 h-3 rounded-full bg-muted-foreground/30 ring-4 ring-white"></div>
-                  <p className="text-xs text-muted-foreground font-semibold mb-1">10:00 AM</p>
-                  <h4 className="font-medium text-foreground">Product Design Sync</h4>
-                  <p className="text-sm text-muted-foreground">Zoom Meeting</p>
-                </div>
-
-                <div className="relative">
-                  <div className="absolute -left-[21px] top-1 w-3 h-3 rounded-full bg-muted-foreground/30 ring-4 ring-white"></div>
-                  <p className="text-xs text-muted-foreground font-semibold mb-1">2:00 PM</p>
-                  <h4 className="font-medium text-foreground">Client Review</h4>
-                  <p className="text-sm text-muted-foreground">Google Meet</p>
-                </div>
-              </div>
+              )}
             </div>
 
             <div className="glass-panel p-6 rounded-2xl bg-gradient-to-br from-primary/10 to-transparent border-primary/10">
