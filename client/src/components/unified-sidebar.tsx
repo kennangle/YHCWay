@@ -1,0 +1,79 @@
+import { cn } from "@/lib/utils";
+import { 
+  LayoutDashboard, 
+  Inbox, 
+  Calendar as CalendarIcon, 
+  Settings, 
+  PlusCircle,
+  Command
+} from "lucide-react";
+import { Link, useLocation } from "wouter";
+
+export function UnifiedSidebar() {
+  const [location] = useLocation();
+
+  const navItems = [
+    { icon: LayoutDashboard, label: "Overview", href: "/" },
+    { icon: Inbox, label: "Unified Inbox", href: "/inbox" },
+    { icon: CalendarIcon, label: "Calendar", href: "/calendar" },
+  ];
+
+  const bottomItems = [
+    { icon: PlusCircle, label: "Connect App", href: "/connect" },
+    { icon: Settings, label: "Settings", href: "/settings" },
+  ];
+
+  return (
+    <div className="w-64 h-screen glass-panel flex flex-col border-r border-white/20 fixed left-0 top-0 z-50">
+      <div className="p-6 flex items-center gap-3">
+        <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/30">
+          <Command className="w-4 h-4" />
+        </div>
+        <span className="font-display font-bold text-xl tracking-tight text-foreground">
+          UniWork
+        </span>
+      </div>
+
+      <div className="flex-1 px-4 py-6 space-y-2">
+        <div className="text-xs font-medium text-muted-foreground px-4 mb-2 uppercase tracking-wider">
+          Menu
+        </div>
+        {navItems.map((item) => {
+          const isActive = location === item.href;
+          return (
+            <Link key={item.href} href={item.href}>
+              <div className={cn(
+                "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group cursor-pointer",
+                isActive 
+                  ? "bg-primary text-primary-foreground shadow-md shadow-primary/20" 
+                  : "text-muted-foreground hover:bg-white/50 hover:text-foreground"
+              )}>
+                <item.icon className={cn("w-5 h-5", isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-foreground")} />
+                <span className="font-medium">{item.label}</span>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+
+      <div className="p-4 space-y-2 mt-auto">
+        {bottomItems.map((item) => (
+          <Link key={item.href} href={item.href}>
+            <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-muted-foreground hover:bg-white/50 hover:text-foreground transition-all duration-200 cursor-pointer">
+              <item.icon className="w-5 h-5" />
+              <span className="font-medium">{item.label}</span>
+            </div>
+          </Link>
+        ))}
+        
+        <div className="mt-6 pt-6 border-t border-border px-2 flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-400 to-blue-500 ring-2 ring-white"></div>
+          <div className="flex flex-col">
+            <span className="text-sm font-semibold">Alex Chen</span>
+            <span className="text-xs text-muted-foreground">Pro Workspace</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
