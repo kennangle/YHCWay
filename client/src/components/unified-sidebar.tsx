@@ -6,7 +6,8 @@ import {
   Settings, 
   PlusCircle,
   Command,
-  LogOut
+  LogOut,
+  Shield
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
@@ -24,6 +25,7 @@ export function UnifiedSidebar() {
   const bottomItems = [
     { icon: PlusCircle, label: "Connect App", href: "/connect" },
     { icon: Settings, label: "Settings", href: "/settings" },
+    ...(user?.isAdmin ? [{ icon: Shield, label: "Admin", href: "/admin" }] : []),
   ];
 
   const displayName = user?.firstName 

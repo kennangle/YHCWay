@@ -9,6 +9,7 @@ import Dashboard from "@/pages/dashboard";
 import Connect from "@/pages/connect";
 import Settings from "@/pages/settings";
 import Landing from "@/pages/landing";
+import Admin from "@/pages/admin";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -30,6 +31,7 @@ function Router() {
           <Route path="/" component={Dashboard} />
           <Route path="/connect" component={Connect} />
           <Route path="/settings" component={Settings} />
+          <Route path="/admin" component={Admin} />
         </>
       )}
       <Route component={NotFound} />
