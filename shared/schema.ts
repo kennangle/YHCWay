@@ -81,3 +81,13 @@ export const insertFeedItemSchema = createInsertSchema(feedItems).omit({
 });
 export type InsertFeedItem = z.infer<typeof insertFeedItemSchema>;
 export type FeedItem = typeof feedItems.$inferSelect;
+
+// Admin create user schema (with plain-text password that will be hashed)
+export const adminCreateUserSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  isAdmin: z.boolean().default(false),
+});
+export type AdminCreateUser = z.infer<typeof adminCreateUserSchema>;
