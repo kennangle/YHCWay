@@ -2,6 +2,7 @@ import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { Search, Mail, MessageCircle, Users, MessageSquare } from "lucide-react";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
 import { useQuery } from "@tanstack/react-query";
+import { SlackChannelConfig } from "@/components/slack-channel-config";
 
 interface GmailMessage {
   id: string;
@@ -52,9 +53,9 @@ export default function Inbox() {
   });
 
   const { data: slackMessages = [], isLoading: slackLoading } = useQuery<SlackMessage[]>({
-    queryKey: ["slack-messages-inbox"],
+    queryKey: ["slack-messages"],
     queryFn: async () => {
-      const res = await fetch("/api/slack/messages?includeDms=true", { credentials: "include" });
+      const res = await fetch("/api/slack/messages/filtered", { credentials: "include" });
       if (!res.ok) return [];
       return res.json();
     },
@@ -133,7 +134,7 @@ export default function Inbox() {
           </div>
         </header>
 
-        <div className="flex gap-2 mb-6">
+        <div className="flex gap-2 mb-6 items-center">
           <button className="px-4 py-2 rounded-full bg-white shadow-sm font-medium" data-testid="button-filter-all">All</button>
           <button className="px-4 py-2 rounded-full text-muted-foreground hover:bg-white/50" data-testid="button-filter-gmail">
             <Mail className="w-4 h-4 inline mr-2" />Gmail
@@ -144,6 +145,9 @@ export default function Inbox() {
           <button className="px-4 py-2 rounded-full text-muted-foreground hover:bg-white/50" data-testid="button-filter-dms">
             <Users className="w-4 h-4 inline mr-2" />Direct Messages
           </button>
+          <div className="ml-auto">
+            <SlackChannelConfig />
+          </div>
         </div>
 
         <div className="space-y-2">
