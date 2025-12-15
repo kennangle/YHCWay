@@ -8,7 +8,7 @@ import bcrypt from "bcryptjs";
 import { getRecentEmails, isGmailConnected } from "./gmail";
 import { getUpcomingEvents, isCalendarConnected } from "./calendar";
 import { getUpcomingMeetings, isZoomConnected } from "./zoom";
-import { getRecentMessages as getSlackMessages, isSlackConnected } from "./slack";
+import { getRecentMessages as getSlackMessages, getAllMessages as getAllSlackMessages, getDirectMessages as getSlackDMs, getThreadReplies as getSlackThreadReplies, isSlackConnected } from "./slack";
 
 const isAdmin: RequestHandler = async (req: any, res, next) => {
   try {
@@ -328,11 +328,35 @@ export async function registerRoutes(
 
   app.get("/api/slack/messages", isAuthenticated, async (req, res) => {
     try {
-      const messages = await getSlackMessages(20);
+      const includeDms = req.query.includeDms === 'true';
+      const messages = includeDms 
+        ? await getAllSlackMessages(30)
+        : await getSlackMessages(20);
       res.json(messages);
     } catch (error: any) {
       console.error("Error fetching Slack messages:", error?.message || error);
       res.status(500).json({ error: error?.message || "Failed to fetch Slack messages" });
+    }
+  });
+
+  app.get("/api/slack/dms", isAuthenticated, async (req, res) => {
+    try {
+      const messages = await getSlackDMs(15);
+      res.json(messages);
+    } catch (error: any) {
+      console.error("Error fetching Slack DMs:", error?.message || error);
+      res.status(500).json({ error: error?.message || "Failed to fetch Slack DMs" });
+    }
+  });
+
+  app.get("/api/slack/thread/:channelId/:threadTs", isAuthenticated, async (req, res) => {
+    try {
+      const { channelId, threadTs } = req.params;
+      const replies = await getSlackThreadReplies(channelId, threadTs, 20);
+      res.json(replies);
+    } catch (error: any) {
+      console.error("Error fetching thread replies:", error?.message || error);
+      res.status(500).json({ error: error?.message || "Failed to fetch thread replies" });
     }
   });
 

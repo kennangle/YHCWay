@@ -1,7 +1,7 @@
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { ServiceCard } from "@/components/service-card";
 import { FeedItem } from "@/components/feed-item";
-import { Search, Bell, Mail, Video, MessageCircle } from "lucide-react";
+import { Search, Bell, Mail, Video, MessageCircle, Users, MessageSquare } from "lucide-react";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
 import { useQuery } from "@tanstack/react-query";
 import type { Service, FeedItem as FeedItemType } from "@shared/schema";
@@ -45,6 +45,9 @@ interface SlackMessage {
   userName: string;
   timestamp: string;
   permalink?: string;
+  threadTs?: string;
+  replyCount?: number;
+  isDm?: boolean;
 }
 
 export default function Dashboard() {
@@ -126,7 +129,7 @@ export default function Dashboard() {
   const { data: slackMessages = [], isLoading: slackLoading } = useQuery<SlackMessage[]>({
     queryKey: ["slack-messages"],
     queryFn: async () => {
-      const res = await fetch("/api/slack/messages", { credentials: "include" });
+      const res = await fetch("/api/slack/messages?includeDms=true", { credentials: "include" });
       if (!res.ok) {
         console.warn("Slack integration not available");
         return [];
@@ -365,18 +368,36 @@ export default function Dashboard() {
                       href={message.permalink || '#'}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="glass-panel p-4 rounded-xl hover:bg-white/80 transition-colors cursor-pointer block border-l-4 border-l-purple-500"
+                      className={`glass-panel p-4 rounded-xl hover:bg-white/80 transition-colors cursor-pointer block border-l-4 ${message.isDm ? 'border-l-pink-500' : 'border-l-purple-500'}`}
                       data-testid={`feed-slack-${message.id}`}
                     >
                       <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
-                          <MessageCircle className="w-5 h-5 text-purple-600" />
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${message.isDm ? 'bg-pink-100' : 'bg-purple-100'}`}>
+                          {message.isDm ? (
+                            <Users className="w-5 h-5 text-pink-600" />
+                          ) : (
+                            <MessageCircle className="w-5 h-5 text-purple-600" />
+                          )}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm font-semibold text-foreground">#{message.channelName}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-semibold text-foreground">
+                                {message.isDm ? message.channelName : `#${message.channelName}`}
+                              </span>
+                              {message.isDm && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-pink-100 text-pink-700 font-medium">DM</span>
+                              )}
+                              {message.replyCount && message.replyCount > 0 && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 font-medium flex items-center gap-1">
+                                  <MessageSquare className="w-3 h-3" />
+                                  {message.replyCount}
+                                </span>
+                              )}
+                            </div>
                             <span className="text-xs text-muted-foreground">{formatSlackTime(message.timestamp)}</span>
                           </div>
+                          <p className="text-xs text-muted-foreground mb-1">{message.userName}</p>
                           <p className="text-sm text-foreground line-clamp-2">{message.text}</p>
                         </div>
                       </div>

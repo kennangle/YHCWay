@@ -1,5 +1,5 @@
 import { UnifiedSidebar } from "@/components/unified-sidebar";
-import { Search, Mail, MessageCircle } from "lucide-react";
+import { Search, Mail, MessageCircle, Users, MessageSquare } from "lucide-react";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
 import { useQuery } from "@tanstack/react-query";
 
@@ -22,17 +22,22 @@ interface SlackMessage {
   userName: string;
   timestamp: string;
   permalink?: string;
+  threadTs?: string;
+  replyCount?: number;
+  isDm?: boolean;
 }
 
 type UnifiedMessage = {
   id: string;
-  type: 'gmail' | 'slack';
+  type: 'gmail' | 'slack' | 'slack-dm';
   title: string;
   subtitle: string;
   preview: string;
   timestamp: Date;
   isUnread?: boolean;
   link?: string;
+  userName?: string;
+  replyCount?: number;
 };
 
 export default function Inbox() {
@@ -47,9 +52,9 @@ export default function Inbox() {
   });
 
   const { data: slackMessages = [], isLoading: slackLoading } = useQuery<SlackMessage[]>({
-    queryKey: ["slack-messages"],
+    queryKey: ["slack-messages-inbox"],
     queryFn: async () => {
-      const res = await fetch("/api/slack/messages", { credentials: "include" });
+      const res = await fetch("/api/slack/messages?includeDms=true", { credentials: "include" });
       if (!res.ok) return [];
       return res.json();
     },
@@ -68,12 +73,14 @@ export default function Inbox() {
     })),
     ...slackMessages.map((msg): UnifiedMessage => ({
       id: `slack-${msg.id}`,
-      type: 'slack',
-      title: `#${msg.channelName}`,
-      subtitle: '',
+      type: msg.isDm ? 'slack-dm' : 'slack',
+      title: msg.isDm ? msg.channelName : `#${msg.channelName}`,
+      subtitle: msg.userName || '',
       preview: msg.text,
       timestamp: new Date(msg.timestamp),
       link: msg.permalink,
+      userName: msg.userName,
+      replyCount: msg.replyCount,
     })),
   ].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
@@ -132,7 +139,10 @@ export default function Inbox() {
             <Mail className="w-4 h-4 inline mr-2" />Gmail
           </button>
           <button className="px-4 py-2 rounded-full text-muted-foreground hover:bg-white/50" data-testid="button-filter-slack">
-            <MessageCircle className="w-4 h-4 inline mr-2" />Slack
+            <MessageCircle className="w-4 h-4 inline mr-2" />Slack Channels
+          </button>
+          <button className="px-4 py-2 rounded-full text-muted-foreground hover:bg-white/50" data-testid="button-filter-dms">
+            <Users className="w-4 h-4 inline mr-2" />Direct Messages
           </button>
         </div>
 
@@ -142,44 +152,62 @@ export default function Inbox() {
           ) : unifiedMessages.length === 0 ? (
             <div className="text-center text-muted-foreground py-12">No messages yet</div>
           ) : (
-            unifiedMessages.map((message) => (
-              <a
-                key={message.id}
-                href={message.link || '#'}
-                target={message.link ? "_blank" : undefined}
-                rel="noopener noreferrer"
-                className={`glass-panel p-4 rounded-xl hover:bg-white/80 transition-colors cursor-pointer block ${
-                  message.type === 'gmail' ? 'border-l-4 border-l-red-500' : 'border-l-4 border-l-purple-500'
-                } ${message.isUnread ? 'bg-white/90' : ''}`}
-                data-testid={`message-${message.id}`}
-              >
-                <div className="flex items-start gap-3">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                    message.type === 'gmail' ? 'bg-red-100' : 'bg-purple-100'
-                  }`}>
-                    {message.type === 'gmail' ? (
-                      <Mail className="w-5 h-5 text-red-600" />
-                    ) : (
-                      <MessageCircle className="w-5 h-5 text-purple-600" />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className={`text-sm ${message.isUnread ? 'font-semibold text-foreground' : 'font-medium text-muted-foreground'}`}>
-                        {message.title}
-                      </span>
-                      <span className="text-xs text-muted-foreground">{formatTime(message.timestamp)}</span>
+            unifiedMessages.map((message) => {
+              const borderColor = message.type === 'gmail' ? 'border-l-red-500' : message.type === 'slack-dm' ? 'border-l-pink-500' : 'border-l-purple-500';
+              const bgColor = message.type === 'gmail' ? 'bg-red-100' : message.type === 'slack-dm' ? 'bg-pink-100' : 'bg-purple-100';
+              const iconColor = message.type === 'gmail' ? 'text-red-600' : message.type === 'slack-dm' ? 'text-pink-600' : 'text-purple-600';
+              
+              return (
+                <a
+                  key={message.id}
+                  href={message.link || '#'}
+                  target={message.link ? "_blank" : undefined}
+                  rel="noopener noreferrer"
+                  className={`glass-panel p-4 rounded-xl hover:bg-white/80 transition-colors cursor-pointer block border-l-4 ${borderColor} ${message.isUnread ? 'bg-white/90' : ''}`}
+                  data-testid={`message-${message.id}`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${bgColor}`}>
+                      {message.type === 'gmail' ? (
+                        <Mail className={`w-5 h-5 ${iconColor}`} />
+                      ) : message.type === 'slack-dm' ? (
+                        <Users className={`w-5 h-5 ${iconColor}`} />
+                      ) : (
+                        <MessageCircle className={`w-5 h-5 ${iconColor}`} />
+                      )}
                     </div>
-                    {message.subtitle && (
-                      <h4 className={`text-sm mb-1 ${message.isUnread ? 'font-semibold text-foreground' : 'text-foreground'}`}>
-                        {message.subtitle}
-                      </h4>
-                    )}
-                    <p className="text-xs text-muted-foreground line-clamp-2">{message.preview}</p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-sm ${message.isUnread ? 'font-semibold text-foreground' : 'font-medium text-muted-foreground'}`}>
+                            {message.title}
+                          </span>
+                          {message.type === 'slack-dm' && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-pink-100 text-pink-700 font-medium">DM</span>
+                          )}
+                          {message.replyCount && message.replyCount > 0 && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 font-medium flex items-center gap-1">
+                              <MessageSquare className="w-3 h-3" />
+                              {message.replyCount}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs text-muted-foreground">{formatTime(message.timestamp)}</span>
+                      </div>
+                      {message.subtitle && message.type === 'gmail' && (
+                        <h4 className={`text-sm mb-1 ${message.isUnread ? 'font-semibold text-foreground' : 'text-foreground'}`}>
+                          {message.subtitle}
+                        </h4>
+                      )}
+                      {message.userName && message.type !== 'gmail' && (
+                        <p className="text-xs text-muted-foreground mb-1">{message.userName}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground line-clamp-2">{message.preview}</p>
+                    </div>
                   </div>
-                </div>
-              </a>
-            ))
+                </a>
+              );
+            })
           )}
         </div>
       </main>
