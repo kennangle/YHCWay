@@ -155,15 +155,6 @@ export default function Login() {
                 Continue with Google
               </Button>
 
-              <Button
-                variant="outline"
-                className="w-full mt-2"
-                onClick={() => window.location.href = "/api/login"}
-                data-testid="button-replit-login"
-              >
-                <Command className="w-5 h-5 mr-2" />
-                Continue with Replit
-              </Button>
             </div>
 
             <p className="mt-6 text-center text-sm text-muted-foreground">
