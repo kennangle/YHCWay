@@ -7,10 +7,13 @@ import {
   type InsertFeedItem,
   type OAuthAccount,
   type InsertOAuthAccount,
+  type SlackChannelPreference,
+  type InsertSlackChannelPreference,
   users,
   services,
   feedItems,
-  oauthAccounts
+  oauthAccounts,
+  slackChannelPreferences
 } from "@shared/schema";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq, desc, and } from "drizzle-orm";
@@ -49,6 +52,10 @@ export interface IStorage {
   createFeedItem(feedItem: InsertFeedItem): Promise<FeedItem>;
   updateFeedItem(id: number, feedItem: Partial<InsertFeedItem>): Promise<FeedItem | undefined>;
   deleteFeedItem(id: number): Promise<void>;
+  
+  // Slack channel preferences
+  getSlackChannelPreferences(userId: string): Promise<SlackChannelPreference[]>;
+  saveSlackChannelPreferences(userId: string, preferences: { channelId: string; channelName: string; isEnabled: boolean }[]): Promise<void>;
 }
 
 export class DbStorage implements IStorage {
@@ -191,6 +198,30 @@ export class DbStorage implements IStorage {
 
   async deleteFeedItem(id: number): Promise<void> {
     await db.delete(feedItems).where(eq(feedItems.id, id));
+  }
+
+  async getSlackChannelPreferences(userId: string): Promise<SlackChannelPreference[]> {
+    return await db.select()
+      .from(slackChannelPreferences)
+      .where(eq(slackChannelPreferences.userId, userId));
+  }
+
+  async saveSlackChannelPreferences(
+    userId: string, 
+    preferences: { channelId: string; channelName: string; isEnabled: boolean }[]
+  ): Promise<void> {
+    await db.delete(slackChannelPreferences)
+      .where(eq(slackChannelPreferences.userId, userId));
+    
+    if (preferences.length > 0) {
+      await db.insert(slackChannelPreferences)
+        .values(preferences.map(p => ({
+          userId,
+          channelId: p.channelId,
+          channelName: p.channelName,
+          isEnabled: p.isEnabled,
+        })));
+    }
   }
 }
 

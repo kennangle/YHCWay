@@ -108,3 +108,26 @@ export const appleCalendarConnectSchema = z.object({
   appleId: z.string().email("Apple ID must be a valid email"),
   appPassword: z.string().min(10, "App-specific password required"),
 });
+
+// Slack channel preferences - which channels each user wants to follow
+export const slackChannelPreferences = pgTable("slack_channel_preferences", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  channelId: varchar("channel_id").notNull(),
+  channelName: varchar("channel_name").notNull(),
+  isEnabled: boolean("is_enabled").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type SlackChannelPreference = typeof slackChannelPreferences.$inferSelect;
+export type InsertSlackChannelPreference = typeof slackChannelPreferences.$inferInsert;
+
+export const slackChannelPreferenceSchema = z.object({
+  channelId: z.string(),
+  channelName: z.string(),
+  isEnabled: z.boolean().default(true),
+});
+
+export const slackPreferencesUpdateSchema = z.object({
+  channels: z.array(slackChannelPreferenceSchema),
+});
