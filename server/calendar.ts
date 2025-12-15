@@ -91,28 +91,49 @@ export async function getEventsForMonth(year: number, month: number): Promise<Ca
   const startOfMonth = new Date(year, month, 1);
   const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59);
   
-  const response = await calendar.events.list({
-    calendarId: 'primary',
-    timeMin: startOfMonth.toISOString(),
-    timeMax: endOfMonth.toISOString(),
-    maxResults: 250,
-    singleEvents: true,
-    orderBy: 'startTime',
-  });
+  // First, get all calendars the user has access to
+  const calendarListResponse = await calendar.calendarList.list();
+  const calendars = calendarListResponse.data.items || [];
+  
+  const allEvents: CalendarEvent[] = [];
+  
+  // Fetch events from each calendar
+  for (const cal of calendars) {
+    if (!cal.id) continue;
+    
+    try {
+      const response = await calendar.events.list({
+        calendarId: cal.id,
+        timeMin: startOfMonth.toISOString(),
+        timeMax: endOfMonth.toISOString(),
+        maxResults: 100,
+        singleEvents: true,
+        orderBy: 'startTime',
+      });
 
-  if (!response.data.items) {
-    return [];
+      if (response.data.items) {
+        for (const event of response.data.items) {
+          allEvents.push({
+            id: event.id || '',
+            title: event.summary || '(No Title)',
+            start: event.start?.dateTime || event.start?.date || '',
+            end: event.end?.dateTime || event.end?.date || '',
+            location: event.location || undefined,
+            description: event.description || undefined,
+            isAllDay: !event.start?.dateTime,
+          });
+        }
+      }
+    } catch (error) {
+      // Skip calendars that fail (e.g., no access)
+      console.log(`Skipping calendar ${cal.id}:`, error);
+    }
   }
-
-  return response.data.items.map((event) => ({
-    id: event.id || '',
-    title: event.summary || '(No Title)',
-    start: event.start?.dateTime || event.start?.date || '',
-    end: event.end?.dateTime || event.end?.date || '',
-    location: event.location || undefined,
-    description: event.description || undefined,
-    isAllDay: !event.start?.dateTime,
-  }));
+  
+  // Sort by start time
+  allEvents.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
+  
+  return allEvents;
 }
 
 export async function isCalendarConnected(): Promise<boolean> {
