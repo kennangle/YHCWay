@@ -1,5 +1,6 @@
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { ServiceCard } from "@/components/service-card";
+import { AppleCalendarConnect } from "@/components/apple-calendar-connect";
 import { Search } from "lucide-react";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
 import { useQuery } from "@tanstack/react-query";
@@ -101,6 +102,14 @@ export default function Connect() {
                 </div>
               </section>
             )}
+
+            <section className="mt-10">
+              <h2 className="font-display font-semibold text-xl mb-4">Special Integrations</h2>
+              <p className="text-muted-foreground mb-4">These integrations require additional credentials.</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <AppleCalendarConnect variant="card" />
+              </div>
+            </section>
           </>
         )}
       </main>

@@ -80,6 +80,24 @@ Slack is connected at the workspace level by your admin using a Bot Token. Once 
 ### Zoom
 Zoom is connected at the workspace level by your admin. Once connected, you'll see your upcoming meetings.
 
+### Apple Calendar (iCloud)
+Apple Calendar requires special setup:
+
+1. Go to **Connect App** in the sidebar
+2. Scroll down to **Special Integrations**
+3. Click **Connect** on the Apple Calendar card
+4. You'll need to generate an **app-specific password**:
+   - Go to [appleid.apple.com](https://appleid.apple.com)
+   - Sign in to your Apple account
+   - Go to **Security** → **App-Specific Passwords**
+   - Click **Generate an app-specific password**
+   - Name it "UniWork"
+   - Copy the 16-character password that appears
+5. Enter your Apple ID (email) and the app-specific password in UniWork
+6. Click **Connect Apple Calendar**
+
+**Note**: Your app-specific password is stored server-side to fetch your calendar data. It's separate from your main Apple password and can be revoked at any time from your Apple ID settings.
+
 ---
 
 ## Using UniWork
@@ -100,7 +118,10 @@ Access all your messages in one place:
 ### Calendar
 View your schedule:
 - Monthly calendar grid with all events
-- Color-coded events (blue for calendar, purple for Zoom)
+- Color-coded events:
+  - Blue: Google Calendar events
+  - Gray: Apple Calendar events
+  - Purple: Zoom meetings
 - Upcoming events sidebar
 - Navigate between months with arrow buttons
 

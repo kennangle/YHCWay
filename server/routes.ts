@@ -9,6 +9,8 @@ import { getRecentEmails, isGmailConnected } from "./gmail";
 import { getUpcomingEvents, getEventsForMonth, isCalendarConnected } from "./calendar";
 import { getUpcomingMeetings, isZoomConnected } from "./zoom";
 import { getRecentMessages as getSlackMessages, getAllMessages as getAllSlackMessages, getDirectMessages as getSlackDMs, getThreadReplies as getSlackThreadReplies, isSlackConnected } from "./slack";
+import { isAppleCalendarConnected, testAppleCalendarConnection, saveAppleCalendarCredentials, deleteAppleCalendarCredentials, getAppleCalendarEvents, getAppleCalendarEventsForMonth } from "./appleCalendar";
+import { appleCalendarConnectSchema } from "@shared/schema";
 
 const isAdmin: RequestHandler = async (req: any, res, next) => {
   try {
@@ -369,6 +371,78 @@ export async function registerRoutes(
     } catch (error: any) {
       console.error("Error fetching thread replies:", error?.message || error);
       res.status(500).json({ error: error?.message || "Failed to fetch thread replies" });
+    }
+  });
+
+  // Apple Calendar integration endpoints
+  app.get("/api/apple-calendar/status", isAuthenticated, async (req: any, res) => {
+    try {
+      const connected = await isAppleCalendarConnected(req.user.id);
+      res.json({ connected });
+    } catch (error) {
+      res.json({ connected: false });
+    }
+  });
+
+  app.post("/api/apple-calendar/connect", isAuthenticated, async (req: any, res) => {
+    try {
+      const validatedData = appleCalendarConnectSchema.parse(req.body);
+      
+      const testResult = await testAppleCalendarConnection(
+        validatedData.appleId,
+        validatedData.appPassword
+      );
+      
+      if (!testResult.success) {
+        return res.status(400).json({ error: testResult.error || "Connection failed" });
+      }
+      
+      await saveAppleCalendarCredentials(
+        req.user.id,
+        validatedData.appleId,
+        validatedData.appPassword
+      );
+      
+      res.json({ success: true, message: "Apple Calendar connected successfully" });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: error.errors[0]?.message || "Validation failed" });
+      } else {
+        console.error("Error connecting Apple Calendar:", error);
+        res.status(500).json({ error: error?.message || "Failed to connect Apple Calendar" });
+      }
+    }
+  });
+
+  app.delete("/api/apple-calendar/disconnect", isAuthenticated, async (req: any, res) => {
+    try {
+      await deleteAppleCalendarCredentials(req.user.id);
+      res.json({ success: true, message: "Apple Calendar disconnected" });
+    } catch (error) {
+      console.error("Error disconnecting Apple Calendar:", error);
+      res.status(500).json({ error: "Failed to disconnect Apple Calendar" });
+    }
+  });
+
+  app.get("/api/apple-calendar/events", isAuthenticated, async (req: any, res) => {
+    try {
+      const events = await getAppleCalendarEvents(req.user.id);
+      res.json(events);
+    } catch (error) {
+      console.error("Error fetching Apple Calendar events:", error);
+      res.status(500).json({ error: "Failed to fetch Apple Calendar events" });
+    }
+  });
+
+  app.get("/api/apple-calendar/month/:year/:month", isAuthenticated, async (req: any, res) => {
+    try {
+      const year = parseInt(req.params.year);
+      const month = parseInt(req.params.month);
+      const events = await getAppleCalendarEventsForMonth(req.user.id, year, month);
+      res.json(events);
+    } catch (error) {
+      console.error("Error fetching Apple Calendar month events:", error);
+      res.status(500).json({ error: "Failed to fetch Apple Calendar events" });
     }
   });
 

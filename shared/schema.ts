@@ -91,3 +91,20 @@ export const adminCreateUserSchema = z.object({
   isAdmin: z.boolean().default(false),
 });
 export type AdminCreateUser = z.infer<typeof adminCreateUserSchema>;
+
+// Apple Calendar credentials table (CalDAV requires basic auth)
+export const appleCalendarCredentials = pgTable("apple_calendar_credentials", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  appleId: varchar("apple_id").notNull(),
+  appPassword: text("app_password").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type AppleCalendarCredential = typeof appleCalendarCredentials.$inferSelect;
+export type InsertAppleCalendarCredential = typeof appleCalendarCredentials.$inferInsert;
+
+export const appleCalendarConnectSchema = z.object({
+  appleId: z.string().email("Apple ID must be a valid email"),
+  appPassword: z.string().min(10, "App-specific password required"),
+});

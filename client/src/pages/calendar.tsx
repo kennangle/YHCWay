@@ -1,5 +1,5 @@
 import { UnifiedSidebar } from "@/components/unified-sidebar";
-import { Search, Bell, ChevronLeft, ChevronRight, Clock, MapPin, Video } from "lucide-react";
+import { Search, Bell, ChevronLeft, ChevronRight, Clock, MapPin, Video, Apple } from "lucide-react";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -12,6 +12,7 @@ interface CalendarEvent {
   location?: string;
   description?: string;
   isAllDay: boolean;
+  source?: 'google' | 'apple';
 }
 
 interface ZoomMeeting {
@@ -26,15 +27,41 @@ interface ZoomMeeting {
 export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   
-  const { data: calendarEvents = [], isLoading: calendarLoading } = useQuery<CalendarEvent[]>({
+  const { data: googleEvents = [], isLoading: googleLoading } = useQuery<CalendarEvent[]>({
     queryKey: ["calendar-month", currentDate.getFullYear(), currentDate.getMonth()],
     queryFn: async () => {
       const res = await fetch(`/api/calendar/month/${currentDate.getFullYear()}/${currentDate.getMonth()}`, { credentials: "include" });
       if (!res.ok) return [];
-      return res.json();
+      const events = await res.json();
+      return events.map((e: CalendarEvent) => ({ ...e, source: 'google' as const }));
     },
     retry: false,
   });
+
+  const { data: appleEvents = [], isLoading: appleLoading } = useQuery<CalendarEvent[]>({
+    queryKey: ["apple-calendar-month", currentDate.getFullYear(), currentDate.getMonth()],
+    queryFn: async () => {
+      const res = await fetch(`/api/apple-calendar/month/${currentDate.getFullYear()}/${currentDate.getMonth()}`, { credentials: "include" });
+      if (!res.ok) return [];
+      const events = await res.json();
+      return events.map((e: any) => ({ 
+        id: e.id,
+        title: e.title,
+        start: e.start,
+        end: e.end,
+        location: e.location,
+        description: e.description,
+        isAllDay: e.allDay,
+        source: 'apple' as const 
+      }));
+    },
+    retry: false,
+  });
+
+  const calendarEvents = [...googleEvents, ...appleEvents].sort(
+    (a, b) => new Date(a.start).getTime() - new Date(b.start).getTime()
+  );
+  const calendarLoading = googleLoading || appleLoading;
 
   const { data: zoomMeetings = [], isLoading: zoomLoading } = useQuery<ZoomMeeting[]>({
     queryKey: ["zoom-meetings"],
@@ -105,7 +132,7 @@ export default function Calendar() {
   };
 
   const allEvents = [
-    ...calendarEvents.map(e => ({ ...e, type: 'calendar' as const })),
+    ...calendarEvents.map(e => ({ ...e, type: e.source === 'apple' ? 'apple' as const : 'calendar' as const })),
     ...zoomMeetings.map(m => ({ 
       id: String(m.id), 
       title: m.topic, 
@@ -203,7 +230,11 @@ export default function Calendar() {
                           {dayEvents.slice(0, 2).map(event => (
                             <div 
                               key={event.id}
-                              className="text-[10px] px-1 py-0.5 rounded bg-blue-100 text-blue-700 truncate"
+                              className={`text-[10px] px-1 py-0.5 rounded truncate ${
+                                event.source === 'apple' 
+                                  ? 'bg-gray-200 text-gray-700' 
+                                  : 'bg-blue-100 text-blue-700'
+                              }`}
                             >
                               {event.title}
                             </div>
@@ -243,12 +274,20 @@ export default function Calendar() {
                   {upcomingEvents.map((event) => (
                     <div 
                       key={event.id}
-                      className={`p-3 rounded-xl border-l-4 ${event.type === 'zoom' ? 'border-l-purple-500 bg-purple-50/50' : 'border-l-blue-500 bg-blue-50/50'}`}
+                      className={`p-3 rounded-xl border-l-4 ${
+                        event.type === 'zoom' 
+                          ? 'border-l-purple-500 bg-purple-50/50' 
+                          : event.type === 'apple'
+                            ? 'border-l-gray-500 bg-gray-50/50'
+                            : 'border-l-blue-500 bg-blue-50/50'
+                      }`}
                       data-testid={`upcoming-event-${event.id}`}
                     >
                       <div className="flex items-start gap-2">
                         {event.type === 'zoom' ? (
                           <Video className="w-4 h-4 text-purple-600 mt-0.5" />
+                        ) : event.type === 'apple' ? (
+                          <Apple className="w-4 h-4 text-gray-600 mt-0.5" />
                         ) : (
                           <Clock className="w-4 h-4 text-blue-600 mt-0.5" />
                         )}

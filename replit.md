@@ -43,6 +43,13 @@ The server handles both API routes and serves the static frontend in production.
   - `sessions` - Session storage for authentication
   - `services` - Integrated service definitions (Slack, Gmail, etc.)
   - `feedItems` - Unified feed items from various services
+  - `apple_calendar_credentials` - Apple CalDAV credentials for users
+
+### Service Integrations
+- **Gmail & Google Calendar**: OAuth via Google APIs
+- **Slack**: Bot token for channel/DM access
+- **Zoom**: Server-to-server OAuth
+- **Apple Calendar**: CalDAV via tsdav library (requires user app-specific password)
 
 ### Authentication & Authorization
 - **Method**: Replit Auth (OpenID Connect)
