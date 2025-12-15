@@ -60,7 +60,9 @@ export async function setupAuth(app: Express) {
       { usernameField: "email" },
       async (email, password, done) => {
         try {
+          console.log("Login attempt for email:", email);
           const user = await storage.getUserByEmail(email);
+          console.log("User found:", user ? { id: user.id, email: user.email, hasPassword: !!user.passwordHash } : null);
           if (!user) {
             return done(null, false, { message: "Invalid email or password" });
           }
@@ -68,6 +70,7 @@ export async function setupAuth(app: Express) {
             return done(null, false, { message: "Please sign in with Google" });
           }
           const isValid = await bcrypt.compare(password, user.passwordHash);
+          console.log("Password valid:", isValid);
           if (!isValid) {
             return done(null, false, { message: "Invalid email or password" });
           }
