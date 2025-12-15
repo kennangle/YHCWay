@@ -8,9 +8,9 @@ import bcrypt from "bcryptjs";
 import { getRecentEmails, isGmailConnected } from "./gmail";
 import { getUpcomingEvents, getEventsForMonth, isCalendarConnected } from "./calendar";
 import { getUpcomingMeetings, isZoomConnected } from "./zoom";
-import { getRecentMessages as getSlackMessages, getAllMessages as getAllSlackMessages, getDirectMessages as getSlackDMs, getThreadReplies as getSlackThreadReplies, isSlackConnected } from "./slack";
+import { getRecentMessages as getSlackMessages, getAllMessages as getAllSlackMessages, getDirectMessages as getSlackDMs, getThreadReplies as getSlackThreadReplies, isSlackConnected, getChannels as getSlackChannels, getRecentMessagesFiltered } from "./slack";
 import { isAppleCalendarConnected, testAppleCalendarConnection, saveAppleCalendarCredentials, deleteAppleCalendarCredentials, getAppleCalendarEvents, getAppleCalendarEventsForMonth } from "./appleCalendar";
-import { appleCalendarConnectSchema } from "@shared/schema";
+import { appleCalendarConnectSchema, slackPreferencesUpdateSchema } from "@shared/schema";
 
 const isAdmin: RequestHandler = async (req: any, res, next) => {
   try {
@@ -371,6 +371,66 @@ export async function registerRoutes(
     } catch (error: any) {
       console.error("Error fetching thread replies:", error?.message || error);
       res.status(500).json({ error: error?.message || "Failed to fetch thread replies" });
+    }
+  });
+
+  app.get("/api/slack/channels", isAuthenticated, async (req, res) => {
+    try {
+      const channels = await getSlackChannels();
+      res.json(channels);
+    } catch (error: any) {
+      console.error("Error fetching Slack channels:", error?.message || error);
+      res.status(500).json({ error: error?.message || "Failed to fetch Slack channels" });
+    }
+  });
+
+  app.get("/api/slack/preferences", isAuthenticated, async (req: any, res) => {
+    try {
+      const preferences = await storage.getSlackChannelPreferences(req.user.id);
+      res.json(preferences);
+    } catch (error: any) {
+      console.error("Error fetching Slack preferences:", error?.message || error);
+      res.status(500).json({ error: error?.message || "Failed to fetch Slack preferences" });
+    }
+  });
+
+  app.post("/api/slack/preferences", isAuthenticated, async (req: any, res) => {
+    try {
+      const validatedData = slackPreferencesUpdateSchema.parse(req.body);
+      await storage.saveSlackChannelPreferences(req.user.id, validatedData.channels);
+      res.json({ success: true });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: error.errors[0]?.message || "Validation failed" });
+      } else {
+        console.error("Error saving Slack preferences:", error?.message || error);
+        res.status(500).json({ error: error?.message || "Failed to save Slack preferences" });
+      }
+    }
+  });
+
+  app.get("/api/slack/messages/filtered", isAuthenticated, async (req: any, res) => {
+    try {
+      const preferences = await storage.getSlackChannelPreferences(req.user.id);
+      const enabledChannelIds = preferences
+        .filter(p => p.isEnabled)
+        .map(p => p.channelId);
+      
+      if (enabledChannelIds.length === 0) {
+        const allMessages = await getAllSlackMessages(30);
+        res.json(allMessages);
+        return;
+      }
+      
+      const channelMessages = await getRecentMessagesFiltered(enabledChannelIds, 20);
+      const dmMessages = await getSlackDMs(10);
+      const allMessages = [...channelMessages, ...dmMessages]
+        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+        .slice(0, 30);
+      res.json(allMessages);
+    } catch (error: any) {
+      console.error("Error fetching filtered Slack messages:", error?.message || error);
+      res.status(500).json({ error: error?.message || "Failed to fetch Slack messages" });
     }
   });
 

@@ -319,3 +319,79 @@ export async function isSlackConnected(): Promise<boolean> {
     return false;
   }
 }
+
+export async function getRecentMessagesFiltered(
+  channelIds: string[], 
+  maxResults: number = 20
+): Promise<SlackMessage[]> {
+  if (channelIds.length === 0) {
+    return [];
+  }
+
+  const token = await getSlackToken();
+  const messages: SlackMessage[] = [];
+  const userNameCache: Record<string, string> = {};
+
+  const channelsResponse = await fetch('https://slack.com/api/conversations.list?types=public_channel,private_channel&limit=100', {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  });
+
+  const channelsData = await channelsResponse.json();
+  if (!channelsData.ok) {
+    return [];
+  }
+
+  const channelMap = new Map<string, string>();
+  for (const channel of channelsData.channels || []) {
+    channelMap.set(channel.id, channel.name);
+  }
+
+  for (const channelId of channelIds.slice(0, 10)) {
+    try {
+      const historyResponse = await fetch(
+        `https://slack.com/api/conversations.history?channel=${channelId}&limit=5`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      const historyData = await historyResponse.json();
+
+      if (historyData.ok && historyData.messages) {
+        for (const msg of historyData.messages) {
+          if (msg.type === 'message' && !msg.subtype) {
+            let userName = userNameCache[msg.user];
+            if (!userName && msg.user) {
+              userName = await getUserName(token, msg.user);
+              userNameCache[msg.user] = userName;
+            }
+
+            messages.push({
+              id: msg.ts,
+              channelId: channelId,
+              channelName: channelMap.get(channelId) || channelId,
+              text: msg.text || '',
+              userId: msg.user || '',
+              userName: userName || 'Unknown',
+              timestamp: new Date(parseFloat(msg.ts) * 1000).toISOString(),
+              threadTs: msg.thread_ts,
+              replyCount: msg.reply_count || 0,
+              isDm: false
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error(`Error fetching messages from channel ${channelId}:`, error);
+    }
+  }
+
+  messages.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  return messages.slice(0, maxResults);
+}
