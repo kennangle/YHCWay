@@ -270,9 +270,9 @@ export async function registerRoutes(
     try {
       const emails = await getRecentEmails(20);
       res.json(emails);
-    } catch (error) {
-      console.error("Error fetching emails:", error);
-      res.status(500).json({ error: "Failed to fetch emails" });
+    } catch (error: any) {
+      console.error("Error fetching emails:", error?.message || error);
+      res.status(500).json({ error: error?.message || "Failed to fetch emails" });
     }
   });
 
@@ -330,9 +330,9 @@ export async function registerRoutes(
     try {
       const messages = await getSlackMessages(20);
       res.json(messages);
-    } catch (error) {
-      console.error("Error fetching Slack messages:", error);
-      res.json([]);
+    } catch (error: any) {
+      console.error("Error fetching Slack messages:", error?.message || error);
+      res.status(500).json({ error: error?.message || "Failed to fetch Slack messages" });
     }
   });
 
