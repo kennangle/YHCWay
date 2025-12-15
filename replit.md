@@ -44,6 +44,7 @@ The server handles both API routes and serves the static frontend in production.
   - `services` - Integrated service definitions (Slack, Gmail, etc.)
   - `feedItems` - Unified feed items from various services
   - `apple_calendar_credentials` - Apple CalDAV credentials for users
+  - `slack_channel_preferences` - Per-user Slack channel filtering preferences
 
 ### Service Integrations
 - **Gmail & Google Calendar**: OAuth via Google APIs
