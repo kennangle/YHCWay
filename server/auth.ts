@@ -31,17 +31,21 @@ export function getSession() {
   const isProduction = process.env.NODE_ENV === "production";
   const isReplitEnv = !!process.env.REPLIT_DEV_DOMAIN || !!process.env.REPL_ID;
   
+  const cookieConfig = {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none" as const,
+    maxAge: sessionTtl,
+  };
+  
+  console.log("Session cookie config:", cookieConfig, "isReplitEnv:", isReplitEnv, "REPL_ID:", process.env.REPL_ID);
+  
   return session({
     secret: process.env.SESSION_SECRET!,
     store: sessionStore,
     resave: false,
     saveUninitialized: false,
-    cookie: {
-      httpOnly: true,
-      secure: isProduction || isReplitEnv,
-      sameSite: isReplitEnv ? "none" as const : "lax" as const,
-      maxAge: sessionTtl,
-    },
+    cookie: cookieConfig,
   });
 }
 
@@ -212,9 +216,17 @@ export async function setupAuth(app: Express) {
       }
       req.login(user, (loginErr) => {
         if (loginErr) {
+          console.error("Login error:", loginErr);
           return res.status(500).json({ message: "Login failed" });
         }
-        res.json({ message: "Login successful", user });
+        console.log("Login successful, session ID:", req.sessionID, "user:", user);
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            console.error("Session save error:", saveErr);
+          }
+          console.log("Session saved, cookie:", req.session.cookie);
+          res.json({ message: "Login successful", user });
+        });
       });
     })(req, res, next);
   });
