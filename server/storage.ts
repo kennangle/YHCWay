@@ -9,11 +9,14 @@ import {
   type InsertOAuthAccount,
   type SlackChannelPreference,
   type InsertSlackChannelPreference,
+  type PasswordResetToken,
+  type InsertPasswordResetToken,
   users,
   services,
   feedItems,
   oauthAccounts,
-  slackChannelPreferences
+  slackChannelPreferences,
+  passwordResetTokens
 } from "@shared/schema";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq, desc, and } from "drizzle-orm";
@@ -56,6 +59,11 @@ export interface IStorage {
   // Slack channel preferences
   getSlackChannelPreferences(userId: string): Promise<SlackChannelPreference[]>;
   saveSlackChannelPreferences(userId: string, preferences: { channelId: string; channelName: string; isEnabled: boolean }[]): Promise<void>;
+  
+  // Password reset tokens
+  createPasswordResetToken(userId: string, token: string, expiresAt: Date): Promise<PasswordResetToken>;
+  getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined>;
+  markTokenAsUsed(token: string): Promise<void>;
 }
 
 export class DbStorage implements IStorage {
@@ -222,6 +230,26 @@ export class DbStorage implements IStorage {
           isEnabled: p.isEnabled,
         })));
     }
+  }
+
+  async createPasswordResetToken(userId: string, token: string, expiresAt: Date): Promise<PasswordResetToken> {
+    const [resetToken] = await db.insert(passwordResetTokens)
+      .values({ userId, token, expiresAt })
+      .returning();
+    return resetToken;
+  }
+
+  async getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined> {
+    const [resetToken] = await db.select()
+      .from(passwordResetTokens)
+      .where(eq(passwordResetTokens.token, token));
+    return resetToken;
+  }
+
+  async markTokenAsUsed(token: string): Promise<void> {
+    await db.update(passwordResetTokens)
+      .set({ usedAt: new Date() })
+      .where(eq(passwordResetTokens.token, token));
   }
 }
 
