@@ -31,11 +31,12 @@ export function getSession() {
   const isProduction = process.env.NODE_ENV === "production";
   const isReplitEnv = !!process.env.REPLIT_DEV_DOMAIN || !!process.env.REPL_ID;
   
-  const cookieConfig = {
+  const cookieConfig: session.CookieOptions = {
     httpOnly: true,
     secure: true,
     sameSite: "none" as const,
     maxAge: sessionTtl,
+    partitioned: true,
   };
   
   console.log("Session cookie config:", cookieConfig, "isReplitEnv:", isReplitEnv, "REPL_ID:", process.env.REPL_ID);
