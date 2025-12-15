@@ -39,8 +39,6 @@ export function getSession() {
     partitioned: true,
   };
   
-  console.log("Session cookie config:", cookieConfig, "isReplitEnv:", isReplitEnv, "REPL_ID:", process.env.REPL_ID);
-  
   return session({
     secret: process.env.SESSION_SECRET!,
     store: sessionStore,
@@ -61,9 +59,7 @@ export async function setupAuth(app: Express) {
       { usernameField: "email" },
       async (email, password, done) => {
         try {
-          console.log("Login attempt for email:", email);
           const user = await storage.getUserByEmail(email);
-          console.log("User found:", user ? { id: user.id, email: user.email, hasPassword: !!user.passwordHash } : null);
           if (!user) {
             return done(null, false, { message: "Invalid email or password" });
           }
@@ -71,7 +67,6 @@ export async function setupAuth(app: Express) {
             return done(null, false, { message: "Please sign in with Google" });
           }
           const isValid = await bcrypt.compare(password, user.passwordHash);
-          console.log("Password valid:", isValid);
           if (!isValid) {
             return done(null, false, { message: "Invalid email or password" });
           }
@@ -220,15 +215,12 @@ export async function setupAuth(app: Express) {
       }
       req.login(user, (loginErr) => {
         if (loginErr) {
-          console.error("Login error:", loginErr);
           return res.status(500).json({ message: "Login failed" });
         }
-        console.log("Login successful, session ID:", req.sessionID, "user:", user);
         req.session.save((saveErr) => {
           if (saveErr) {
             console.error("Session save error:", saveErr);
           }
-          console.log("Session saved, cookie:", req.session.cookie);
           res.json({ message: "Login successful", user });
         });
       });
