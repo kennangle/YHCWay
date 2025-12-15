@@ -85,6 +85,36 @@ export async function getUpcomingEvents(maxResults: number = 10): Promise<Calend
   }));
 }
 
+export async function getEventsForMonth(year: number, month: number): Promise<CalendarEvent[]> {
+  const calendar = await getCalendarClient();
+  
+  const startOfMonth = new Date(year, month, 1);
+  const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59);
+  
+  const response = await calendar.events.list({
+    calendarId: 'primary',
+    timeMin: startOfMonth.toISOString(),
+    timeMax: endOfMonth.toISOString(),
+    maxResults: 250,
+    singleEvents: true,
+    orderBy: 'startTime',
+  });
+
+  if (!response.data.items) {
+    return [];
+  }
+
+  return response.data.items.map((event) => ({
+    id: event.id || '',
+    title: event.summary || '(No Title)',
+    start: event.start?.dateTime || event.start?.date || '',
+    end: event.end?.dateTime || event.end?.date || '',
+    location: event.location || undefined,
+    description: event.description || undefined,
+    isAllDay: !event.start?.dateTime,
+  }));
+}
+
 export async function isCalendarConnected(): Promise<boolean> {
   try {
     await getAccessToken();

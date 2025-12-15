@@ -27,9 +27,9 @@ export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   
   const { data: calendarEvents = [], isLoading: calendarLoading } = useQuery<CalendarEvent[]>({
-    queryKey: ["calendar-events"],
+    queryKey: ["calendar-month", currentDate.getFullYear(), currentDate.getMonth()],
     queryFn: async () => {
-      const res = await fetch("/api/calendar/events", { credentials: "include" });
+      const res = await fetch(`/api/calendar/month/${currentDate.getFullYear()}/${currentDate.getMonth()}`, { credentials: "include" });
       if (!res.ok) return [];
       return res.json();
     },

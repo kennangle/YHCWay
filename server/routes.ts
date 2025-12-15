@@ -6,7 +6,7 @@ import { setupAuth, isAuthenticated } from "./auth";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { getRecentEmails, isGmailConnected } from "./gmail";
-import { getUpcomingEvents, isCalendarConnected } from "./calendar";
+import { getUpcomingEvents, getEventsForMonth, isCalendarConnected } from "./calendar";
 import { getUpcomingMeetings, isZoomConnected } from "./zoom";
 import { getRecentMessages as getSlackMessages, getAllMessages as getAllSlackMessages, getDirectMessages as getSlackDMs, getThreadReplies as getSlackThreadReplies, isSlackConnected } from "./slack";
 
@@ -292,6 +292,18 @@ export async function registerRoutes(
       res.json(events);
     } catch (error) {
       console.error("Error fetching calendar events:", error);
+      res.status(500).json({ error: "Failed to fetch calendar events" });
+    }
+  });
+
+  app.get("/api/calendar/month/:year/:month", isAuthenticated, async (req, res) => {
+    try {
+      const year = parseInt(req.params.year);
+      const month = parseInt(req.params.month);
+      const events = await getEventsForMonth(year, month);
+      res.json(events);
+    } catch (error) {
+      console.error("Error fetching month events:", error);
       res.status(500).json({ error: "Failed to fetch calendar events" });
     }
   });
