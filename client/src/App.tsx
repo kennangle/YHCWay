@@ -14,6 +14,8 @@ import Login from "@/pages/login";
 import Register from "@/pages/register";
 import Inbox from "@/pages/inbox";
 import Calendar from "@/pages/calendar";
+import ForgotPassword from "@/pages/forgot-password";
+import ResetPassword from "@/pages/reset-password";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -33,6 +35,8 @@ function Router() {
           <Route path="/" component={Landing} />
           <Route path="/login" component={Login} />
           <Route path="/register" component={Register} />
+          <Route path="/forgot-password" component={ForgotPassword} />
+          <Route path="/reset-password" component={ResetPassword} />
           <Route path="/dashboard">{() => <Redirect to="/login" />}</Route>
         </>
       ) : (
