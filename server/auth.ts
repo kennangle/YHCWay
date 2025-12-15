@@ -4,9 +4,11 @@ import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import type { Express, RequestHandler } from "express";
 import { storage } from "./storage";
-import { ADMIN_EMAIL } from "@shared/schema";
+import { ADMIN_EMAIL, forgotPasswordSchema, resetPasswordSchema } from "@shared/schema";
+import { sendPasswordResetEmail } from "./email";
 
 declare global {
   namespace Express {
@@ -222,6 +224,68 @@ export async function setupAuth(app: Express) {
       }
       res.json({ message: "Logged out successfully" });
     });
+  });
+
+  app.post("/api/auth/forgot-password", async (req, res) => {
+    try {
+      const validatedData = forgotPasswordSchema.parse(req.body);
+      const user = await storage.getUserByEmail(validatedData.email);
+      
+      if (!user) {
+        return res.json({ message: "If an account exists with that email, you will receive a password reset link." });
+      }
+
+      const token = crypto.randomBytes(32).toString("hex");
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+      
+      await storage.createPasswordResetToken(user.id, token, expiresAt);
+
+      let baseUrl: string;
+      if (process.env.APP_URL) {
+        baseUrl = process.env.APP_URL;
+      } else if (process.env.REPLIT_DEV_DOMAIN) {
+        baseUrl = `https://${process.env.REPLIT_DEV_DOMAIN}`;
+      } else {
+        baseUrl = "http://localhost:5000";
+      }
+      
+      const resetLink = `${baseUrl}/reset-password?token=${token}`;
+      await sendPasswordResetEmail(validatedData.email, resetLink);
+      
+      res.json({ message: "If an account exists with that email, you will receive a password reset link." });
+    } catch (error) {
+      console.error("Forgot password error:", error);
+      res.status(500).json({ message: "Failed to process request" });
+    }
+  });
+
+  app.post("/api/auth/reset-password", async (req, res) => {
+    try {
+      const validatedData = resetPasswordSchema.parse(req.body);
+      
+      const resetToken = await storage.getPasswordResetToken(validatedData.token);
+      
+      if (!resetToken) {
+        return res.status(400).json({ message: "Invalid or expired reset link" });
+      }
+      
+      if (resetToken.usedAt) {
+        return res.status(400).json({ message: "This reset link has already been used" });
+      }
+      
+      if (new Date() > resetToken.expiresAt) {
+        return res.status(400).json({ message: "This reset link has expired" });
+      }
+
+      const passwordHash = await bcrypt.hash(validatedData.password, 10);
+      await storage.updateUserPassword(resetToken.userId, passwordHash);
+      await storage.markTokenAsUsed(validatedData.token);
+      
+      res.json({ message: "Password reset successfully" });
+    } catch (error) {
+      console.error("Reset password error:", error);
+      res.status(500).json({ message: "Failed to reset password" });
+    }
   });
 
   if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
