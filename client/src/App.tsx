@@ -12,6 +12,7 @@ import Landing from "@/pages/landing";
 import Admin from "@/pages/admin";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
+import Inbox from "@/pages/inbox";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -37,6 +38,7 @@ function Router() {
         <>
           <Route path="/" component={Dashboard} />
           <Route path="/dashboard" component={Dashboard} />
+          <Route path="/inbox" component={Inbox} />
           <Route path="/connect" component={Connect} />
           <Route path="/settings" component={Settings} />
           <Route path="/admin" component={Admin} />
