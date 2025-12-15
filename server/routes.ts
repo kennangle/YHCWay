@@ -38,7 +38,7 @@ export async function registerRoutes(
 
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user.claims?.sub || req.user.id;
       const user = await storage.getUser(userId);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
@@ -386,7 +386,8 @@ export async function registerRoutes(
 
   app.get("/api/slack/preferences", isAuthenticated, async (req: any, res) => {
     try {
-      const preferences = await storage.getSlackChannelPreferences(req.user.id);
+      const userId = req.user.claims?.sub || req.user.id;
+      const preferences = await storage.getSlackChannelPreferences(userId);
       res.json(preferences);
     } catch (error: any) {
       console.error("Error fetching Slack preferences:", error?.message || error);
@@ -396,8 +397,9 @@ export async function registerRoutes(
 
   app.post("/api/slack/preferences", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims?.sub || req.user.id;
       const validatedData = slackPreferencesUpdateSchema.parse(req.body);
-      await storage.saveSlackChannelPreferences(req.user.id, validatedData.channels);
+      await storage.saveSlackChannelPreferences(userId, validatedData.channels);
       res.json({ success: true });
     } catch (error: any) {
       if (error instanceof z.ZodError) {
@@ -411,7 +413,8 @@ export async function registerRoutes(
 
   app.get("/api/slack/messages/filtered", isAuthenticated, async (req: any, res) => {
     try {
-      const preferences = await storage.getSlackChannelPreferences(req.user.id);
+      const userId = req.user.claims?.sub || req.user.id;
+      const preferences = await storage.getSlackChannelPreferences(userId);
       const enabledChannelIds = preferences
         .filter(p => p.isEnabled)
         .map(p => p.channelId);
@@ -443,7 +446,8 @@ export async function registerRoutes(
   // Apple Calendar integration endpoints
   app.get("/api/apple-calendar/status", isAuthenticated, async (req: any, res) => {
     try {
-      const connected = await isAppleCalendarConnected(req.user.id);
+      const userId = req.user.claims?.sub || req.user.id;
+      const connected = await isAppleCalendarConnected(userId);
       res.json({ connected });
     } catch (error) {
       res.json({ connected: false });
@@ -452,6 +456,7 @@ export async function registerRoutes(
 
   app.post("/api/apple-calendar/connect", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims?.sub || req.user.id;
       const validatedData = appleCalendarConnectSchema.parse(req.body);
       
       const testResult = await testAppleCalendarConnection(
@@ -464,7 +469,7 @@ export async function registerRoutes(
       }
       
       await saveAppleCalendarCredentials(
-        req.user.id,
+        userId,
         validatedData.appleId,
         validatedData.appPassword
       );
@@ -482,7 +487,8 @@ export async function registerRoutes(
 
   app.delete("/api/apple-calendar/disconnect", isAuthenticated, async (req: any, res) => {
     try {
-      await deleteAppleCalendarCredentials(req.user.id);
+      const userId = req.user.claims?.sub || req.user.id;
+      await deleteAppleCalendarCredentials(userId);
       res.json({ success: true, message: "Apple Calendar disconnected" });
     } catch (error) {
       console.error("Error disconnecting Apple Calendar:", error);
@@ -492,7 +498,8 @@ export async function registerRoutes(
 
   app.get("/api/apple-calendar/events", isAuthenticated, async (req: any, res) => {
     try {
-      const events = await getAppleCalendarEvents(req.user.id);
+      const userId = req.user.claims?.sub || req.user.id;
+      const events = await getAppleCalendarEvents(userId);
       res.json(events);
     } catch (error) {
       console.error("Error fetching Apple Calendar events:", error);
@@ -502,9 +509,10 @@ export async function registerRoutes(
 
   app.get("/api/apple-calendar/month/:year/:month", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims?.sub || req.user.id;
       const year = parseInt(req.params.year);
       const month = parseInt(req.params.month);
-      const events = await getAppleCalendarEventsForMonth(req.user.id, year, month);
+      const events = await getAppleCalendarEventsForMonth(userId, year, month);
       res.json(events);
     } catch (error) {
       console.error("Error fetching Apple Calendar month events:", error);
