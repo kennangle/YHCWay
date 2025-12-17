@@ -46,6 +46,7 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/memoizee": "^0.4.12",
     "@types/passport-google-oauth20": "^2.0.17",
+    "asana": "^3.0.11",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
