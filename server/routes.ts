@@ -520,5 +520,66 @@ export async function registerRoutes(
     }
   });
 
+  // Integration status endpoint - returns connection status for all apps
+  app.get("/api/integrations/status", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      
+      const [gmailConnected, calendarConnected, zoomConnected, slackConnected, appleCalendarConnected] = await Promise.all([
+        isGmailConnected().catch(() => false),
+        isCalendarConnected().catch(() => false),
+        isZoomConnected().catch(() => false),
+        isSlackConnected().catch(() => false),
+        isAppleCalendarConnected(userId).catch(() => false),
+      ]);
+
+      res.json({
+        gmail: gmailConnected,
+        "google-calendar": calendarConnected,
+        zoom: zoomConnected,
+        slack: slackConnected,
+        "apple-calendar": appleCalendarConnected,
+        asana: false,
+        calendly: false,
+        typeform: false,
+      });
+    } catch (error) {
+      console.error("Error checking integration status:", error);
+      res.json({
+        gmail: false,
+        "google-calendar": false,
+        zoom: false,
+        slack: false,
+        "apple-calendar": false,
+        asana: false,
+        calendly: false,
+        typeform: false,
+      });
+    }
+  });
+
+  // Integration connect endpoint - initiates OAuth flow for apps
+  app.post("/api/integrations/:appId/connect", isAuthenticated, async (req: any, res) => {
+    try {
+      const { appId } = req.params;
+      
+      // For now, return a message that the app needs OAuth setup
+      // In a full implementation, this would redirect to the OAuth provider
+      const oauthApps = ["gmail", "google-calendar", "zoom", "slack", "asana", "calendly", "typeform"];
+      
+      if (oauthApps.includes(appId)) {
+        res.json({ 
+          message: `${appId} integration requires OAuth configuration`,
+          status: "pending"
+        });
+      } else {
+        res.status(400).json({ error: "Unknown integration" });
+      }
+    } catch (error) {
+      console.error("Error initiating connection:", error);
+      res.status(500).json({ error: "Failed to initiate connection" });
+    }
+  });
+
   return httpServer;
 }
