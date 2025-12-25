@@ -232,7 +232,7 @@ export default function Calendar() {
                               key={event.id}
                               className={`text-[10px] px-1 py-0.5 rounded truncate ${
                                 event.source === 'apple' 
-                                  ? 'bg-gray-200 text-gray-700' 
+                                  ? 'bg-green-100 text-green-700' 
                                   : 'bg-blue-100 text-blue-700'
                               }`}
                             >
@@ -278,7 +278,7 @@ export default function Calendar() {
                         event.type === 'zoom' 
                           ? 'border-l-purple-500 bg-purple-50/50' 
                           : event.type === 'apple'
-                            ? 'border-l-gray-500 bg-gray-50/50'
+                            ? 'border-l-green-500 bg-green-50/50'
                             : 'border-l-blue-500 bg-blue-50/50'
                       }`}
                       data-testid={`upcoming-event-${event.id}`}
@@ -287,7 +287,7 @@ export default function Calendar() {
                         {event.type === 'zoom' ? (
                           <Video className="w-4 h-4 text-purple-600 mt-0.5" />
                         ) : event.type === 'apple' ? (
-                          <Apple className="w-4 h-4 text-gray-600 mt-0.5" />
+                          <Apple className="w-4 h-4 text-green-600 mt-0.5" />
                         ) : (
                           <Clock className="w-4 h-4 text-blue-600 mt-0.5" />
                         )}
