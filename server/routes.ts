@@ -341,7 +341,7 @@ export async function registerRoutes(
   });
 
   // Gmail integration endpoints - Custom OAuth flow
-  app.get("/api/gmail-oauth/connect", isAuthenticated, async (req: any, res) => {
+  app.get("/api/gmail/connect", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -355,7 +355,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/gmail-oauth/callback", async (req, res) => {
+  app.get("/api/gmail/callback", async (req, res) => {
     try {
       const { code, state: userId } = req.query;
       
@@ -371,7 +371,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/gmail-oauth/disconnect", isAuthenticated, async (req: any, res) => {
+  app.post("/api/gmail/disconnect", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -674,8 +674,7 @@ export async function registerRoutes(
       const userId = req.user.claims?.sub || req.user.id;
       
       const [
-        gmailCustomConnected,
-        gmailConnectorConnected, 
+        gmailConnected,
         calendarConnected, 
         zoomConnected, 
         slackConnected, 
@@ -684,7 +683,6 @@ export async function registerRoutes(
         userIntegrations
       ] = await Promise.all([
         isGmailConnectedForUser(userId).catch(() => false),
-        isGmailConnected().catch(() => false),
         isCalendarConnected().catch(() => false),
         isZoomConnected().catch(() => false),
         isSlackConnected().catch(() => false),
@@ -692,8 +690,6 @@ export async function registerRoutes(
         isAsanaConnected().catch(() => false),
         storage.getUserIntegrations(userId).catch(() => []),
       ]);
-      
-      const gmailConnected = gmailCustomConnected || gmailConnectorConnected;
 
       const calendlyKey = userIntegrations.find(i => i.integrationName === 'calendly');
       const typeformKey = userIntegrations.find(i => i.integrationName === 'typeform');

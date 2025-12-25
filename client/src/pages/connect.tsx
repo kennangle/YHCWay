@@ -272,7 +272,7 @@ export default function Connect() {
 
   const gmailConnectMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch("/api/gmail-oauth/connect", { credentials: "include" });
+      const res = await fetch("/api/gmail/connect", { credentials: "include" });
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.error || "Failed to initiate Gmail connection");
@@ -296,7 +296,7 @@ export default function Connect() {
 
   const gmailDisconnectMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch("/api/gmail-oauth/disconnect", {
+      const res = await fetch("/api/gmail/disconnect", {
         method: "POST",
         credentials: "include",
       });

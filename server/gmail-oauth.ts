@@ -16,9 +16,8 @@ function getOAuth2Client() {
     throw new Error('Google OAuth credentials not configured');
   }
   
-  const redirectUri = process.env.REPLIT_DEV_DOMAIN
-    ? `https://${process.env.REPLIT_DEV_DOMAIN}/api/gmail-oauth/callback`
-    : `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co/api/gmail-oauth/callback`;
+  // Use the production URL for OAuth callback (must match Google Console configuration)
+  const redirectUri = 'https://sync-connect--ken196.replit.app/api/gmail/callback';
   
   return new google.auth.OAuth2(clientId, clientSecret, redirectUri);
 }
