@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
-import { User, Bell, Shield, Palette, HelpCircle, ChevronLeft, Check } from "lucide-react";
+import { User, Bell, Shield, Palette, HelpCircle, ChevronLeft, Check, Globe, Mail, MessageSquare, Calendar, Video, CheckSquare, MessageCircle, Volume2, Moon, ExternalLink, Trash2, Download, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
 
@@ -12,6 +15,37 @@ interface UserPreferences {
   appleCalendarColor: string;
   zoomColor: string;
   theme: string;
+  notifyGmail: boolean;
+  notifySlack: boolean;
+  notifyCalendar: boolean;
+  notifyZoom: boolean;
+  notifyAsana: boolean;
+  notifyChat: boolean;
+  notifyInApp: boolean;
+  notifyEmail: boolean;
+  notifySound: boolean;
+  quietHoursEnabled: boolean;
+  quietHoursStart: string;
+  quietHoursEnd: string;
+  showOnlineStatus: boolean;
+  timezone: string;
+  dateFormat: string;
+  firstDayOfWeek: string;
+}
+
+interface UserData {
+  id: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  profileImageUrl?: string;
+}
+
+interface ConnectedService {
+  name: string;
+  connected: boolean;
+  icon: any;
+  description: string;
 }
 
 const COLOR_OPTIONS = [
@@ -25,17 +59,51 @@ const COLOR_OPTIONS = [
   { value: "#ec4899", label: "Pink" },
 ];
 
-type SettingsSection = "main" | "account" | "notifications" | "privacy" | "appearance" | "help";
+const TIMEZONES = [
+  { value: "America/New_York", label: "Eastern Time (ET)" },
+  { value: "America/Chicago", label: "Central Time (CT)" },
+  { value: "America/Denver", label: "Mountain Time (MT)" },
+  { value: "America/Los_Angeles", label: "Pacific Time (PT)" },
+  { value: "America/Anchorage", label: "Alaska Time (AKT)" },
+  { value: "Pacific/Honolulu", label: "Hawaii Time (HT)" },
+  { value: "Europe/London", label: "London (GMT/BST)" },
+  { value: "Europe/Paris", label: "Paris (CET/CEST)" },
+  { value: "Europe/Berlin", label: "Berlin (CET/CEST)" },
+  { value: "Asia/Tokyo", label: "Tokyo (JST)" },
+  { value: "Asia/Shanghai", label: "Shanghai (CST)" },
+  { value: "Asia/Singapore", label: "Singapore (SGT)" },
+  { value: "Australia/Sydney", label: "Sydney (AEST/AEDT)" },
+];
+
+type SettingsSection = "main" | "account" | "notifications" | "privacy" | "appearance" | "language" | "help";
 
 export default function Settings() {
   const [activeSection, setActiveSection] = useState<SettingsSection>("main");
   const queryClient = useQueryClient();
+
+  const { data: user } = useQuery<UserData>({
+    queryKey: ["/api/auth/user"],
+    queryFn: async () => {
+      const res = await fetch("/api/auth/user", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch user");
+      return res.json();
+    },
+  });
 
   const { data: preferences, isLoading } = useQuery<UserPreferences>({
     queryKey: ["/api/preferences"],
     queryFn: async () => {
       const res = await fetch("/api/preferences", { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch preferences");
+      return res.json();
+    },
+  });
+
+  const { data: services } = useQuery<{ name: string; connected: boolean }[]>({
+    queryKey: ["/api/services"],
+    queryFn: async () => {
+      const res = await fetch("/api/services", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch services");
       return res.json();
     },
   });
@@ -51,25 +119,41 @@ export default function Settings() {
       if (!res.ok) throw new Error("Failed to update preferences");
       return res.json();
     },
+    onMutate: async (updates) => {
+      await queryClient.cancelQueries({ queryKey: ["/api/preferences"] });
+      const previousPreferences = queryClient.getQueryData<UserPreferences>(["/api/preferences"]);
+      queryClient.setQueryData<UserPreferences>(["/api/preferences"], (old) => ({
+        ...old!,
+        ...updates,
+      }));
+      return { previousPreferences };
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/preferences"] });
       toast.success("Preferences saved!");
     },
-    onError: () => {
+    onError: (err, updates, context) => {
+      if (context?.previousPreferences) {
+        queryClient.setQueryData(["/api/preferences"], context.previousPreferences);
+      }
       toast.error("Failed to save preferences");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/preferences"] });
     },
   });
 
-  const handleColorChange = (key: keyof UserPreferences, color: string) => {
-    updatePreferencesMutation.mutate({ [key]: color });
+  const handlePreferenceChange = (key: keyof UserPreferences, value: any) => {
+    updatePreferencesMutation.mutate({ [key]: value });
   };
+
+  const isSaving = updatePreferencesMutation.isPending;
 
   const settingsSections = [
     {
       id: "account" as const,
       icon: User,
       title: "Account",
-      description: "Manage your profile and preferences",
+      description: "Manage your profile and account details",
     },
     {
       id: "notifications" as const,
@@ -81,7 +165,7 @@ export default function Settings() {
       id: "privacy" as const,
       icon: Shield,
       title: "Privacy & Security",
-      description: "Manage your data and security settings",
+      description: "Manage your data and connected services",
     },
     {
       id: "appearance" as const,
@@ -90,12 +174,30 @@ export default function Settings() {
       description: "Customize the look and feel",
     },
     {
+      id: "language" as const,
+      icon: Globe,
+      title: "Language & Region",
+      description: "Set your timezone and date preferences",
+    },
+    {
       id: "help" as const,
       icon: HelpCircle,
       title: "Help & Support",
       description: "Get help or contact support",
     },
   ];
+
+  const renderBackButton = () => (
+    <Button
+      variant="ghost"
+      onClick={() => setActiveSection("main")}
+      className="mb-6 -ml-2"
+      data-testid="button-back-to-main"
+    >
+      <ChevronLeft className="w-4 h-4 mr-1" />
+      Back to Settings
+    </Button>
+  );
 
   const renderMainMenu = () => (
     <div className="max-w-2xl space-y-4">
@@ -122,6 +224,352 @@ export default function Settings() {
       ))}
     </div>
   );
+
+  const renderToggle = (
+    icon: any,
+    label: string,
+    description: string,
+    checked: boolean,
+    onChange: (val: boolean) => void,
+    testId: string
+  ) => {
+    const Icon = icon;
+    return (
+      <div className="flex items-center justify-between py-4 border-b border-white/10 last:border-0">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+            <Icon className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="font-medium text-foreground">{label}</p>
+            <p className="text-sm text-muted-foreground">{description}</p>
+          </div>
+        </div>
+        <Switch
+          checked={checked}
+          onCheckedChange={onChange}
+          disabled={isSaving}
+          data-testid={testId}
+        />
+      </div>
+    );
+  };
+
+  const renderAccountSection = () => (
+    <div className="max-w-2xl">
+      {renderBackButton()}
+      <div className="mb-8">
+        <h2 className="font-display font-bold text-2xl mb-2">Account</h2>
+        <p className="text-muted-foreground">Manage your profile and account details.</p>
+      </div>
+
+      <div className="space-y-4">
+        <div className="glass-card p-6 rounded-2xl">
+          <h3 className="text-lg font-semibold mb-4">Profile Information</h3>
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center text-primary text-2xl font-bold overflow-hidden">
+              {user?.profileImageUrl ? (
+                <img src={user.profileImageUrl} alt="Profile" className="w-full h-full object-cover" />
+              ) : (
+                user?.firstName?.[0] || user?.email?.[0]?.toUpperCase() || "U"
+              )}
+            </div>
+            <div>
+              <p className="font-semibold text-lg">{user?.firstName} {user?.lastName}</p>
+              <p className="text-muted-foreground">{user?.email}</p>
+            </div>
+          </div>
+          <div className="space-y-4">
+            <div>
+              <Label className="text-sm text-muted-foreground">First Name</Label>
+              <Input 
+                value={user?.firstName || ""} 
+                disabled 
+                className="mt-1 bg-white/50"
+                data-testid="input-first-name"
+              />
+            </div>
+            <div>
+              <Label className="text-sm text-muted-foreground">Last Name</Label>
+              <Input 
+                value={user?.lastName || ""} 
+                disabled 
+                className="mt-1 bg-white/50"
+                data-testid="input-last-name"
+              />
+            </div>
+            <div>
+              <Label className="text-sm text-muted-foreground">Email</Label>
+              <Input 
+                value={user?.email || ""} 
+                disabled 
+                className="mt-1 bg-white/50"
+                data-testid="input-email"
+              />
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground mt-4">
+            Profile information is managed through your login provider.
+          </p>
+        </div>
+
+        <div className="glass-card p-6 rounded-2xl">
+          <h3 className="text-lg font-semibold mb-4">Account Actions</h3>
+          <div className="space-y-3">
+            <Button 
+              variant="outline" 
+              className="w-full justify-start gap-2"
+              onClick={() => window.location.href = "/api/logout"}
+              data-testid="button-logout"
+            >
+              <ExternalLink className="w-4 h-4" />
+              Sign Out
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderNotificationsSection = () => (
+    <div className="max-w-2xl">
+      {renderBackButton()}
+      <div className="mb-8">
+        <h2 className="font-display font-bold text-2xl mb-2">Notifications</h2>
+        <p className="text-muted-foreground">Control how and when you receive alerts.</p>
+      </div>
+
+      {isLoading ? (
+        <div className="glass-card p-8 rounded-2xl text-center">
+          <p className="text-muted-foreground">Loading preferences...</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="glass-card p-6 rounded-2xl">
+            <h3 className="text-lg font-semibold mb-2">Service Notifications</h3>
+            <p className="text-sm text-muted-foreground mb-4">Choose which services can send you notifications.</p>
+            
+            {renderToggle(Mail, "Gmail", "New emails and important updates", 
+              preferences?.notifyGmail ?? true, 
+              (v) => handlePreferenceChange("notifyGmail", v),
+              "toggle-notify-gmail"
+            )}
+            {renderToggle(MessageSquare, "Slack", "Messages and mentions", 
+              preferences?.notifySlack ?? true, 
+              (v) => handlePreferenceChange("notifySlack", v),
+              "toggle-notify-slack"
+            )}
+            {renderToggle(Calendar, "Calendar", "Event reminders and invites", 
+              preferences?.notifyCalendar ?? true, 
+              (v) => handlePreferenceChange("notifyCalendar", v),
+              "toggle-notify-calendar"
+            )}
+            {renderToggle(Video, "Zoom", "Meeting starting alerts", 
+              preferences?.notifyZoom ?? true, 
+              (v) => handlePreferenceChange("notifyZoom", v),
+              "toggle-notify-zoom"
+            )}
+            {renderToggle(CheckSquare, "Asana", "Task updates and assignments", 
+              preferences?.notifyAsana ?? true, 
+              (v) => handlePreferenceChange("notifyAsana", v),
+              "toggle-notify-asana"
+            )}
+            {renderToggle(MessageCircle, "UniWork Chat", "Direct messages from teammates", 
+              preferences?.notifyChat ?? true, 
+              (v) => handlePreferenceChange("notifyChat", v),
+              "toggle-notify-chat"
+            )}
+          </div>
+
+          <div className="glass-card p-6 rounded-2xl">
+            <h3 className="text-lg font-semibold mb-2">Delivery Method</h3>
+            <p className="text-sm text-muted-foreground mb-4">How do you want to receive notifications?</p>
+            
+            {renderToggle(Bell, "In-App Notifications", "Show alerts within UniWork", 
+              preferences?.notifyInApp ?? true, 
+              (v) => handlePreferenceChange("notifyInApp", v),
+              "toggle-notify-inapp"
+            )}
+            {renderToggle(Mail, "Email Digest", "Receive a daily summary email", 
+              preferences?.notifyEmail ?? false, 
+              (v) => handlePreferenceChange("notifyEmail", v),
+              "toggle-notify-email"
+            )}
+            {renderToggle(Volume2, "Sound", "Play a sound for new notifications", 
+              preferences?.notifySound ?? true, 
+              (v) => handlePreferenceChange("notifySound", v),
+              "toggle-notify-sound"
+            )}
+          </div>
+
+          <div className="glass-card p-6 rounded-2xl">
+            <h3 className="text-lg font-semibold mb-2">Quiet Hours</h3>
+            <p className="text-sm text-muted-foreground mb-4">Silence notifications during specific times.</p>
+            
+            <div className="flex items-center justify-between py-4 border-b border-white/10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                  <Moon className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="font-medium text-foreground">Enable Quiet Hours</p>
+                  <p className="text-sm text-muted-foreground">Pause all notifications during set times</p>
+                </div>
+              </div>
+              <Switch
+                checked={preferences?.quietHoursEnabled ?? false}
+                onCheckedChange={(v) => handlePreferenceChange("quietHoursEnabled", v)}
+                disabled={isSaving}
+                data-testid="toggle-quiet-hours"
+              />
+            </div>
+            
+            {preferences?.quietHoursEnabled && (
+              <div className="mt-4 grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm text-muted-foreground">Start Time</Label>
+                  <Input
+                    type="time"
+                    value={preferences?.quietHoursStart || "22:00"}
+                    onChange={(e) => handlePreferenceChange("quietHoursStart", e.target.value)}
+                    className="mt-1 bg-white/50"
+                    disabled={isSaving}
+                    data-testid="input-quiet-start"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm text-muted-foreground">End Time</Label>
+                  <Input
+                    type="time"
+                    value={preferences?.quietHoursEnd || "08:00"}
+                    onChange={(e) => handlePreferenceChange("quietHoursEnd", e.target.value)}
+                    className="mt-1 bg-white/50"
+                    disabled={isSaving}
+                    data-testid="input-quiet-end"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderPrivacySection = () => {
+    const connectedServices = services?.filter(s => s.connected) || [];
+    
+    return (
+      <div className="max-w-2xl">
+        {renderBackButton()}
+        <div className="mb-8">
+          <h2 className="font-display font-bold text-2xl mb-2">Privacy & Security</h2>
+          <p className="text-muted-foreground">Manage your connected services and data.</p>
+        </div>
+
+        {isLoading ? (
+          <div className="glass-card p-8 rounded-2xl text-center">
+            <p className="text-muted-foreground">Loading preferences...</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="glass-card p-6 rounded-2xl">
+              <h3 className="text-lg font-semibold mb-2">Online Status</h3>
+              <p className="text-sm text-muted-foreground mb-4">Control who can see when you're active.</p>
+              
+              <div className="flex items-center justify-between py-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                    {preferences?.showOnlineStatus ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground">Show Online Status</p>
+                    <p className="text-sm text-muted-foreground">Others can see when you're active in UniWork Chat</p>
+                  </div>
+                </div>
+                <Switch
+                  checked={preferences?.showOnlineStatus ?? true}
+                  onCheckedChange={(v) => handlePreferenceChange("showOnlineStatus", v)}
+                  disabled={isSaving}
+                  data-testid="toggle-online-status"
+                />
+              </div>
+            </div>
+
+            <div className="glass-card p-6 rounded-2xl">
+              <h3 className="text-lg font-semibold mb-2">Connected Services</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Services you've connected to UniWork. You can manage connections on the Connect page.
+              </p>
+              
+              {connectedServices.length === 0 ? (
+                <p className="text-center py-4 text-muted-foreground">No services connected yet.</p>
+              ) : (
+                <div className="space-y-3">
+                  {connectedServices.map((service) => (
+                    <div key={service.name} className="flex items-center justify-between py-3 border-b border-white/10 last:border-0">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center text-green-600">
+                          <Check className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-foreground">{service.name}</p>
+                          <p className="text-sm text-green-600">Connected</p>
+                        </div>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => window.location.href = "/connect"}
+                        data-testid={`button-manage-${service.name.toLowerCase()}`}
+                      >
+                        Manage
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              <Button 
+                variant="outline" 
+                className="w-full mt-4"
+                onClick={() => window.location.href = "/connect"}
+                data-testid="button-go-to-connect"
+              >
+                Manage All Connections
+              </Button>
+            </div>
+
+            <div className="glass-card p-6 rounded-2xl">
+              <h3 className="text-lg font-semibold mb-2">Your Data</h3>
+              <p className="text-sm text-muted-foreground mb-4">Download or delete your data from UniWork.</p>
+              
+              <div className="space-y-3">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start gap-2"
+                  onClick={() => toast.info("Data export feature coming soon!")}
+                  data-testid="button-download-data"
+                >
+                  <Download className="w-4 h-4" />
+                  Download My Data
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                  onClick={() => toast.info("Please contact support to delete your account.")}
+                  data-testid="button-delete-account"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete My Account
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const renderColorPicker = (
     label: string, 
@@ -161,16 +609,7 @@ export default function Settings() {
 
   const renderAppearanceSection = () => (
     <div className="max-w-2xl">
-      <Button
-        variant="ghost"
-        onClick={() => setActiveSection("main")}
-        className="mb-6 -ml-2"
-        data-testid="button-back-to-main"
-      >
-        <ChevronLeft className="w-4 h-4 mr-1" />
-        Back to Settings
-      </Button>
-
+      {renderBackButton()}
       <div className="mb-8">
         <h2 className="font-display font-bold text-2xl mb-2">Appearance</h2>
         <p className="text-muted-foreground">Customize how UniWork looks for you.</p>
@@ -188,61 +627,179 @@ export default function Settings() {
             "Google Calendar",
             "Color for events from Google Calendar",
             preferences?.googleCalendarColor || "#3b82f6",
-            (color) => handleColorChange("googleCalendarColor", color)
+            (color) => handlePreferenceChange("googleCalendarColor", color)
           )}
 
           {renderColorPicker(
             "Apple Calendar",
             "Color for events from Apple iCloud Calendar",
             preferences?.appleCalendarColor || "#22c55e",
-            (color) => handleColorChange("appleCalendarColor", color)
+            (color) => handlePreferenceChange("appleCalendarColor", color)
           )}
 
           {renderColorPicker(
             "Zoom Meetings",
             "Color for Zoom meetings on the calendar",
             preferences?.zoomColor || "#a855f7",
-            (color) => handleColorChange("zoomColor", color)
+            (color) => handlePreferenceChange("zoomColor", color)
           )}
         </div>
       )}
     </div>
   );
 
-  const renderComingSoon = (title: string) => (
+  const renderLanguageSection = () => (
     <div className="max-w-2xl">
-      <Button
-        variant="ghost"
-        onClick={() => setActiveSection("main")}
-        className="mb-6 -ml-2"
-        data-testid="button-back-to-main"
-      >
-        <ChevronLeft className="w-4 h-4 mr-1" />
-        Back to Settings
-      </Button>
-
+      {renderBackButton()}
       <div className="mb-8">
-        <h2 className="font-display font-bold text-2xl mb-2">{title}</h2>
+        <h2 className="font-display font-bold text-2xl mb-2">Language & Region</h2>
+        <p className="text-muted-foreground">Set your timezone and formatting preferences.</p>
       </div>
 
-      <div className="glass-card p-8 rounded-2xl text-center">
-        <p className="text-muted-foreground">This section is coming soon.</p>
+      {isLoading ? (
+        <div className="glass-card p-8 rounded-2xl text-center">
+          <p className="text-muted-foreground">Loading preferences...</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="glass-card p-6 rounded-2xl">
+            <h3 className="text-lg font-semibold mb-4">Time & Date</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <Label className="text-sm font-medium">Timezone</Label>
+                <p className="text-sm text-muted-foreground mb-2">Used for displaying times throughout UniWork</p>
+                <Select
+                  value={preferences?.timezone || "America/New_York"}
+                  onValueChange={(v) => handlePreferenceChange("timezone", v)}
+                >
+                  <SelectTrigger className="bg-white/50" data-testid="select-timezone">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TIMEZONES.map((tz) => (
+                      <SelectItem key={tz.value} value={tz.value}>
+                        {tz.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium">Date Format</Label>
+                <p className="text-sm text-muted-foreground mb-2">How dates are displayed</p>
+                <Select
+                  value={preferences?.dateFormat || "MM/DD/YYYY"}
+                  onValueChange={(v) => handlePreferenceChange("dateFormat", v)}
+                >
+                  <SelectTrigger className="bg-white/50" data-testid="select-date-format">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="MM/DD/YYYY">MM/DD/YYYY (12/25/2024)</SelectItem>
+                    <SelectItem value="DD/MM/YYYY">DD/MM/YYYY (25/12/2024)</SelectItem>
+                    <SelectItem value="YYYY-MM-DD">YYYY-MM-DD (2024-12-25)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium">First Day of Week</Label>
+                <p className="text-sm text-muted-foreground mb-2">Used in calendar views</p>
+                <Select
+                  value={preferences?.firstDayOfWeek || "sunday"}
+                  onValueChange={(v) => handlePreferenceChange("firstDayOfWeek", v)}
+                >
+                  <SelectTrigger className="bg-white/50" data-testid="select-first-day">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sunday">Sunday</SelectItem>
+                    <SelectItem value="monday">Monday</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderHelpSection = () => (
+    <div className="max-w-2xl">
+      {renderBackButton()}
+      <div className="mb-8">
+        <h2 className="font-display font-bold text-2xl mb-2">Help & Support</h2>
+        <p className="text-muted-foreground">Get help with using UniWork.</p>
+      </div>
+
+      <div className="space-y-4">
+        <div className="glass-card p-6 rounded-2xl">
+          <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
+          <div className="space-y-3">
+            <Button 
+              variant="outline" 
+              className="w-full justify-start gap-2"
+              onClick={() => toast.info("Documentation coming soon!")}
+              data-testid="button-docs"
+            >
+              <HelpCircle className="w-4 h-4" />
+              Documentation
+            </Button>
+            <Button 
+              variant="outline" 
+              className="w-full justify-start gap-2"
+              onClick={() => toast.info("FAQ coming soon!")}
+              data-testid="button-faq"
+            >
+              <MessageCircle className="w-4 h-4" />
+              Frequently Asked Questions
+            </Button>
+          </div>
+        </div>
+
+        <div className="glass-card p-6 rounded-2xl">
+          <h3 className="text-lg font-semibold mb-4">Contact Support</h3>
+          <p className="text-muted-foreground mb-4">
+            Need help? Our support team is here to assist you.
+          </p>
+          <Button 
+            className="w-full"
+            onClick={() => window.location.href = "mailto:support@uniwork.app"}
+            data-testid="button-contact-support"
+          >
+            <Mail className="w-4 h-4 mr-2" />
+            Email Support
+          </Button>
+        </div>
+
+        <div className="glass-card p-6 rounded-2xl">
+          <h3 className="text-lg font-semibold mb-2">About UniWork</h3>
+          <p className="text-muted-foreground">
+            UniWork brings all your work tools together in one place.
+          </p>
+          <p className="text-sm text-muted-foreground mt-2">Version 1.0.0</p>
+        </div>
       </div>
     </div>
   );
 
   const renderContent = () => {
     switch (activeSection) {
+      case "account":
+        return renderAccountSection();
+      case "notifications":
+        return renderNotificationsSection();
+      case "privacy":
+        return renderPrivacySection();
       case "appearance":
         return renderAppearanceSection();
-      case "account":
-        return renderComingSoon("Account");
-      case "notifications":
-        return renderComingSoon("Notifications");
-      case "privacy":
-        return renderComingSoon("Privacy & Security");
+      case "language":
+        return renderLanguageSection();
       case "help":
-        return renderComingSoon("Help & Support");
+        return renderHelpSection();
       default:
         return renderMainMenu();
     }
