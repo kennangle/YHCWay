@@ -1087,21 +1087,54 @@ export async function registerRoutes(
       const userId = req.user.claims?.sub || req.user.id;
       const prefs = await storage.getUserPreferences(userId);
       
-      // Return defaults if no preferences set
+      const defaults = {
+        googleCalendarColor: "#3b82f6",
+        appleCalendarColor: "#22c55e",
+        zoomColor: "#a855f7",
+        theme: "light",
+        notifyGmail: true,
+        notifySlack: true,
+        notifyCalendar: true,
+        notifyZoom: true,
+        notifyAsana: true,
+        notifyChat: true,
+        notifyInApp: true,
+        notifyEmail: false,
+        notifySound: true,
+        quietHoursEnabled: false,
+        quietHoursStart: "22:00",
+        quietHoursEnd: "08:00",
+        showOnlineStatus: true,
+        timezone: "America/New_York",
+        dateFormat: "MM/DD/YYYY",
+        firstDayOfWeek: "sunday"
+      };
+      
       if (!prefs) {
-        return res.json({
-          googleCalendarColor: "#3b82f6",
-          appleCalendarColor: "#22c55e",
-          zoomColor: "#a855f7",
-          theme: "light"
-        });
+        return res.json(defaults);
       }
       
       res.json({
-        googleCalendarColor: prefs.googleCalendarColor,
-        appleCalendarColor: prefs.appleCalendarColor,
-        zoomColor: prefs.zoomColor,
-        theme: prefs.theme
+        googleCalendarColor: prefs.googleCalendarColor ?? defaults.googleCalendarColor,
+        appleCalendarColor: prefs.appleCalendarColor ?? defaults.appleCalendarColor,
+        zoomColor: prefs.zoomColor ?? defaults.zoomColor,
+        theme: prefs.theme ?? defaults.theme,
+        notifyGmail: prefs.notifyGmail ?? defaults.notifyGmail,
+        notifySlack: prefs.notifySlack ?? defaults.notifySlack,
+        notifyCalendar: prefs.notifyCalendar ?? defaults.notifyCalendar,
+        notifyZoom: prefs.notifyZoom ?? defaults.notifyZoom,
+        notifyAsana: prefs.notifyAsana ?? defaults.notifyAsana,
+        notifyChat: prefs.notifyChat ?? defaults.notifyChat,
+        notifyInApp: prefs.notifyInApp ?? defaults.notifyInApp,
+        notifyEmail: prefs.notifyEmail ?? defaults.notifyEmail,
+        notifySound: prefs.notifySound ?? defaults.notifySound,
+        quietHoursEnabled: prefs.quietHoursEnabled ?? defaults.quietHoursEnabled,
+        quietHoursStart: prefs.quietHoursStart ?? defaults.quietHoursStart,
+        quietHoursEnd: prefs.quietHoursEnd ?? defaults.quietHoursEnd,
+        showOnlineStatus: prefs.showOnlineStatus ?? defaults.showOnlineStatus,
+        timezone: prefs.timezone ?? defaults.timezone,
+        dateFormat: prefs.dateFormat ?? defaults.dateFormat,
+        firstDayOfWeek: prefs.firstDayOfWeek ?? defaults.firstDayOfWeek
       });
     } catch (error) {
       console.error("Error fetching preferences:", error);
@@ -1112,13 +1145,35 @@ export async function registerRoutes(
   app.patch("/api/preferences", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims?.sub || req.user.id;
-      const { googleCalendarColor, appleCalendarColor, zoomColor, theme } = req.body;
+      const {
+        googleCalendarColor, appleCalendarColor, zoomColor, theme,
+        notifyGmail, notifySlack, notifyCalendar, notifyZoom, notifyAsana, notifyChat,
+        notifyInApp, notifyEmail, notifySound,
+        quietHoursEnabled, quietHoursStart, quietHoursEnd,
+        showOnlineStatus, timezone, dateFormat, firstDayOfWeek
+      } = req.body;
       
-      const updates: Record<string, string> = {};
-      if (googleCalendarColor) updates.googleCalendarColor = googleCalendarColor;
-      if (appleCalendarColor) updates.appleCalendarColor = appleCalendarColor;
-      if (zoomColor) updates.zoomColor = zoomColor;
-      if (theme) updates.theme = theme;
+      const updates: Record<string, any> = {};
+      if (googleCalendarColor !== undefined) updates.googleCalendarColor = googleCalendarColor;
+      if (appleCalendarColor !== undefined) updates.appleCalendarColor = appleCalendarColor;
+      if (zoomColor !== undefined) updates.zoomColor = zoomColor;
+      if (theme !== undefined) updates.theme = theme;
+      if (notifyGmail !== undefined) updates.notifyGmail = notifyGmail;
+      if (notifySlack !== undefined) updates.notifySlack = notifySlack;
+      if (notifyCalendar !== undefined) updates.notifyCalendar = notifyCalendar;
+      if (notifyZoom !== undefined) updates.notifyZoom = notifyZoom;
+      if (notifyAsana !== undefined) updates.notifyAsana = notifyAsana;
+      if (notifyChat !== undefined) updates.notifyChat = notifyChat;
+      if (notifyInApp !== undefined) updates.notifyInApp = notifyInApp;
+      if (notifyEmail !== undefined) updates.notifyEmail = notifyEmail;
+      if (notifySound !== undefined) updates.notifySound = notifySound;
+      if (quietHoursEnabled !== undefined) updates.quietHoursEnabled = quietHoursEnabled;
+      if (quietHoursStart !== undefined) updates.quietHoursStart = quietHoursStart;
+      if (quietHoursEnd !== undefined) updates.quietHoursEnd = quietHoursEnd;
+      if (showOnlineStatus !== undefined) updates.showOnlineStatus = showOnlineStatus;
+      if (timezone !== undefined) updates.timezone = timezone;
+      if (dateFormat !== undefined) updates.dateFormat = dateFormat;
+      if (firstDayOfWeek !== undefined) updates.firstDayOfWeek = firstDayOfWeek;
       
       const prefs = await storage.updateUserPreferences(userId, updates);
       
@@ -1126,7 +1181,23 @@ export async function registerRoutes(
         googleCalendarColor: prefs.googleCalendarColor,
         appleCalendarColor: prefs.appleCalendarColor,
         zoomColor: prefs.zoomColor,
-        theme: prefs.theme
+        theme: prefs.theme,
+        notifyGmail: prefs.notifyGmail,
+        notifySlack: prefs.notifySlack,
+        notifyCalendar: prefs.notifyCalendar,
+        notifyZoom: prefs.notifyZoom,
+        notifyAsana: prefs.notifyAsana,
+        notifyChat: prefs.notifyChat,
+        notifyInApp: prefs.notifyInApp,
+        notifyEmail: prefs.notifyEmail,
+        notifySound: prefs.notifySound,
+        quietHoursEnabled: prefs.quietHoursEnabled,
+        quietHoursStart: prefs.quietHoursStart,
+        quietHoursEnd: prefs.quietHoursEnd,
+        showOnlineStatus: prefs.showOnlineStatus,
+        timezone: prefs.timezone,
+        dateFormat: prefs.dateFormat,
+        firstDayOfWeek: prefs.firstDayOfWeek
       });
     } catch (error) {
       console.error("Error updating preferences:", error);
