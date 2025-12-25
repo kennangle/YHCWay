@@ -60,7 +60,9 @@ export async function handleGmailCallback(code: string, userId: string): Promise
 }
 
 export async function getGmailClientForUser(userId: string) {
+  console.log("[Gmail OAuth] Getting client for user:", userId);
   const account = await storage.getOAuthAccount(userId, 'gmail');
+  console.log("[Gmail OAuth] Account found:", !!account, "Has access token:", !!account?.accessToken);
   
   if (!account || !account.accessToken) {
     throw new Error('Gmail not connected');
@@ -154,9 +156,13 @@ export async function getRecentEmailsForUser(userId: string, maxResults: number 
 
 export async function isGmailConnectedForUser(userId: string): Promise<boolean> {
   try {
+    console.log("[Gmail OAuth] Checking connection for user:", userId);
     const account = await storage.getOAuthAccount(userId, 'gmail');
-    return !!account?.accessToken;
-  } catch {
+    const isConnected = !!account?.accessToken;
+    console.log("[Gmail OAuth] Connection check result:", isConnected, "Account exists:", !!account);
+    return isConnected;
+  } catch (error) {
+    console.error("[Gmail OAuth] Error checking connection:", error);
     return false;
   }
 }

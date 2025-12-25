@@ -403,25 +403,66 @@ export async function registerRoutes(
     }
   });
 
+  // Debug endpoint to check Gmail connection details
+  app.get("/api/gmail/debug", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.json({ error: "No user ID" });
+      }
+      
+      const account = await storage.getOAuthAccount(userId, 'gmail');
+      
+      if (!account) {
+        return res.json({ 
+          connected: false, 
+          message: "No Gmail OAuth account found for this user",
+          userId 
+        });
+      }
+      
+      return res.json({
+        connected: true,
+        hasAccessToken: !!account.accessToken,
+        hasRefreshToken: !!account.refreshToken,
+        providerAccountId: account.providerAccountId,
+        expiresAt: account.expiresAt,
+        isExpired: account.expiresAt ? new Date(account.expiresAt).getTime() < Date.now() : 'unknown',
+        userId
+      });
+    } catch (error: any) {
+      res.json({ error: error.message, stack: error.stack?.split('\n').slice(0, 3) });
+    }
+  });
+
   app.get("/api/gmail/messages", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user?.id;
+      console.log("[Gmail Messages] Fetching for user:", userId);
+      
       if (!userId) {
         return res.status(401).json({ error: "Unauthorized" });
       }
       
       // Try custom OAuth first
       const customConnected = await isGmailConnectedForUser(userId);
+      console.log("[Gmail Messages] Custom OAuth connected:", customConnected);
+      
       if (customConnected) {
+        console.log("[Gmail Messages] Fetching emails via custom OAuth...");
         const emails = await getRecentEmailsForUser(userId, 20);
+        console.log("[Gmail Messages] Fetched", emails.length, "emails");
         return res.json(emails);
       }
       
       // Fall back to connector
+      console.log("[Gmail Messages] Falling back to connector...");
       const emails = await getRecentEmails(20);
+      console.log("[Gmail Messages] Fetched", emails.length, "emails via connector");
       res.json(emails);
     } catch (error: any) {
-      console.error("Error fetching emails:", error?.message || error);
+      console.error("[Gmail Messages] Error fetching emails:", error?.message || error);
+      console.error("[Gmail Messages] Full error:", error);
       res.status(500).json({ error: error?.message || "Failed to fetch emails" });
     }
   });

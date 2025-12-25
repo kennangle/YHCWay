@@ -47,11 +47,15 @@ type FilterType = 'all' | 'gmail' | 'slack' | 'dms';
 export default function Inbox() {
   const [filter, setFilter] = useState<FilterType>('all');
   
-  const { data: gmailMessages = [], isLoading: gmailLoading } = useQuery<GmailMessage[]>({
+  const { data: gmailMessages = [], isLoading: gmailLoading, isError: gmailError } = useQuery<GmailMessage[]>({
     queryKey: ["gmail-messages"],
     queryFn: async () => {
       const res = await fetch("/api/gmail/messages", { credentials: "include" });
-      if (!res.ok) return [];
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        console.error("Gmail fetch failed:", res.status, errorData);
+        throw new Error(errorData.error || "Failed to load emails");
+      }
       return res.json();
     },
     retry: false,
