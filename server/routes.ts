@@ -1101,6 +1101,7 @@ export async function registerRoutes(
         notifyInApp: true,
         notifyEmail: false,
         notifySound: true,
+        notificationSoundType: "chime",
         quietHoursEnabled: false,
         quietHoursStart: "22:00",
         quietHoursEnd: "08:00",
@@ -1128,6 +1129,7 @@ export async function registerRoutes(
         notifyInApp: prefs.notifyInApp ?? defaults.notifyInApp,
         notifyEmail: prefs.notifyEmail ?? defaults.notifyEmail,
         notifySound: prefs.notifySound ?? defaults.notifySound,
+        notificationSoundType: prefs.notificationSoundType ?? defaults.notificationSoundType,
         quietHoursEnabled: prefs.quietHoursEnabled ?? defaults.quietHoursEnabled,
         quietHoursStart: prefs.quietHoursStart ?? defaults.quietHoursStart,
         quietHoursEnd: prefs.quietHoursEnd ?? defaults.quietHoursEnd,
@@ -1148,7 +1150,7 @@ export async function registerRoutes(
       const {
         googleCalendarColor, appleCalendarColor, zoomColor, theme,
         notifyGmail, notifySlack, notifyCalendar, notifyZoom, notifyAsana, notifyChat,
-        notifyInApp, notifyEmail, notifySound,
+        notifyInApp, notifyEmail, notifySound, notificationSoundType,
         quietHoursEnabled, quietHoursStart, quietHoursEnd,
         showOnlineStatus, timezone, dateFormat, firstDayOfWeek
       } = req.body;
@@ -1167,6 +1169,7 @@ export async function registerRoutes(
       if (notifyInApp !== undefined) updates.notifyInApp = notifyInApp;
       if (notifyEmail !== undefined) updates.notifyEmail = notifyEmail;
       if (notifySound !== undefined) updates.notifySound = notifySound;
+      if (notificationSoundType !== undefined) updates.notificationSoundType = notificationSoundType;
       if (quietHoursEnabled !== undefined) updates.quietHoursEnabled = quietHoursEnabled;
       if (quietHoursStart !== undefined) updates.quietHoursStart = quietHoursStart;
       if (quietHoursEnd !== undefined) updates.quietHoursEnd = quietHoursEnd;
@@ -1191,6 +1194,7 @@ export async function registerRoutes(
         notifyInApp: prefs.notifyInApp,
         notifyEmail: prefs.notifyEmail,
         notifySound: prefs.notifySound,
+        notificationSoundType: prefs.notificationSoundType,
         quietHoursEnabled: prefs.quietHoursEnabled,
         quietHoursStart: prefs.quietHoursStart,
         quietHoursEnd: prefs.quietHoursEnd,

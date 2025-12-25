@@ -260,6 +260,7 @@ export const userPreferences = pgTable("user_preferences", {
   notifyInApp: boolean("notify_in_app").default(true),
   notifyEmail: boolean("notify_email").default(false),
   notifySound: boolean("notify_sound").default(true),
+  notificationSoundType: varchar("notification_sound_type").default("chime"),
   // Notifications - quiet hours
   quietHoursEnabled: boolean("quiet_hours_enabled").default(false),
   quietHoursStart: varchar("quiet_hours_start").default("22:00"),
@@ -292,6 +293,7 @@ export const userPreferencesSchema = z.object({
   notifyInApp: z.boolean().optional(),
   notifyEmail: z.boolean().optional(),
   notifySound: z.boolean().optional(),
+  notificationSoundType: z.enum(["chime", "bell", "ping", "pop", "none"]).optional(),
   quietHoursEnabled: z.boolean().optional(),
   quietHoursStart: z.string().optional(),
   quietHoursEnd: z.string().optional(),

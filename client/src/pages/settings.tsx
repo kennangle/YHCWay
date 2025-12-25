@@ -24,6 +24,7 @@ interface UserPreferences {
   notifyInApp: boolean;
   notifyEmail: boolean;
   notifySound: boolean;
+  notificationSoundType: string;
   quietHoursEnabled: boolean;
   quietHoursStart: string;
   quietHoursEnd: string;
@@ -74,6 +75,48 @@ const TIMEZONES = [
   { value: "Asia/Singapore", label: "Singapore (SGT)" },
   { value: "Australia/Sydney", label: "Sydney (AEST/AEDT)" },
 ];
+
+const playNotificationSound = (soundType: string) => {
+  const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+  const oscillator = audioContext.createOscillator();
+  const gainNode = audioContext.createGain();
+  
+  oscillator.connect(gainNode);
+  gainNode.connect(audioContext.destination);
+  
+  gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+  gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+  
+  switch (soundType) {
+    case "chime":
+      oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
+      oscillator.frequency.setValueAtTime(1100, audioContext.currentTime + 0.1);
+      oscillator.frequency.setValueAtTime(1320, audioContext.currentTime + 0.2);
+      oscillator.type = "sine";
+      break;
+    case "bell":
+      oscillator.frequency.setValueAtTime(600, audioContext.currentTime);
+      oscillator.type = "triangle";
+      break;
+    case "ping":
+      oscillator.frequency.setValueAtTime(1400, audioContext.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(700, audioContext.currentTime + 0.3);
+      oscillator.type = "sine";
+      break;
+    case "pop":
+      oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.1);
+      oscillator.type = "square";
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+      break;
+    default:
+      oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
+      oscillator.type = "sine";
+  }
+  
+  oscillator.start(audioContext.currentTime);
+  oscillator.stop(audioContext.currentTime + 0.5);
+};
 
 type SettingsSection = "main" | "account" | "notifications" | "privacy" | "appearance" | "language" | "help";
 
@@ -399,6 +442,38 @@ export default function Settings() {
               preferences?.notifySound ?? true, 
               (v) => handlePreferenceChange("notifySound", v),
               "toggle-notify-sound"
+            )}
+            
+            {preferences?.notifySound && (
+              <div className="ml-13 mt-3 pl-13">
+                <div className="flex items-center gap-4">
+                  <Label className="text-sm text-muted-foreground min-w-[100px]">Sound Type</Label>
+                  <Select
+                    value={preferences?.notificationSoundType || "chime"}
+                    onValueChange={(v) => handlePreferenceChange("notificationSoundType", v)}
+                    disabled={isSaving}
+                  >
+                    <SelectTrigger className="w-40 bg-white/50" data-testid="select-sound-type">
+                      <SelectValue placeholder="Select sound" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="chime">Chime</SelectItem>
+                      <SelectItem value="bell">Bell</SelectItem>
+                      <SelectItem value="ping">Ping</SelectItem>
+                      <SelectItem value="pop">Pop</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => playNotificationSound(preferences?.notificationSoundType || "chime")}
+                    disabled={isSaving}
+                    data-testid="button-preview-sound"
+                  >
+                    Preview
+                  </Button>
+                </div>
+              </div>
             )}
           </div>
 
