@@ -80,6 +80,7 @@ export default function Inbox() {
       preview: email.snippet,
       timestamp: new Date(email.date),
       isUnread: email.isUnread,
+      link: `https://mail.google.com/mail/u/0/#inbox/${email.threadId}`,
     })),
     ...slackMessages.map((msg): UnifiedMessage => ({
       id: `slack-${msg.id}`,
