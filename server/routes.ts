@@ -11,6 +11,7 @@ import { getUpcomingMeetings, isZoomConnected } from "./zoom";
 import { getRecentMessages as getSlackMessages, getAllMessages as getAllSlackMessages, getDirectMessages as getSlackDMs, getThreadReplies as getSlackThreadReplies, isSlackConnected, getChannels as getSlackChannels, getRecentMessagesFiltered } from "./slack";
 import { isAppleCalendarConnected, testAppleCalendarConnection, saveAppleCalendarCredentials, deleteAppleCalendarCredentials, getAppleCalendarEvents, getAppleCalendarEventsForMonth } from "./appleCalendar";
 import { isAsanaConnected, getMyTasks, getProjects, getUpcomingTasks } from "./asana";
+import { sendInvitationEmail } from "./email";
 import { appleCalendarConnectSchema, slackPreferencesUpdateSchema } from "@shared/schema";
 import { broadcastToUsers, generateWsAuthToken } from "./websocket";
 
@@ -248,8 +249,18 @@ export async function registerRoutes(
         emailVerified: true,
       });
       
+      // Send invitation email with login credentials
+      const host = req.get('host') || 'localhost:5000';
+      const loginUrl = `${req.protocol}://${host}/login`;
+      const emailSent = await sendInvitationEmail(
+        validatedData.email,
+        validatedData.firstName || 'there',
+        validatedData.password,
+        loginUrl
+      );
+      
       const { passwordHash: _, ...safeUser } = user;
-      res.status(201).json(safeUser);
+      res.status(201).json({ ...safeUser, invitationEmailSent: emailSent });
     } catch (error) {
       if (error instanceof z.ZodError) {
         res.status(400).json({ error: error.errors[0]?.message || "Validation failed" });
@@ -691,7 +702,7 @@ export async function registerRoutes(
       const { participantIds, name, isGroup } = createConversationSchema.parse(req.body);
       
       // Include current user in participants
-      const allParticipants = [...new Set([userId, ...participantIds])];
+      const allParticipants = Array.from(new Set([userId, ...participantIds]));
       
       // For 1:1 DMs, check if conversation already exists
       if (!isGroup && allParticipants.length === 2) {
