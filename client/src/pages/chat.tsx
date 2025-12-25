@@ -38,6 +38,8 @@ export default function Chat() {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [messageInput, setMessageInput] = useState("");
   const [newChatOpen, setNewChatOpen] = useState(false);
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [groupName, setGroupName] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
 
@@ -91,12 +93,12 @@ export default function Chat() {
   });
 
   const startConversationMutation = useMutation({
-    mutationFn: async (recipientId: string) => {
+    mutationFn: async ({ participantIds, name, isGroup }: { participantIds: string[]; name?: string; isGroup?: boolean }) => {
       const res = await fetch("/api/chat/conversations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ participantIds: [recipientId] }),
+        body: JSON.stringify({ participantIds, name, isGroup }),
       });
       if (!res.ok) throw new Error("Failed to start conversation");
       return res.json();
@@ -105,8 +107,28 @@ export default function Chat() {
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
       setSelectedConversation(conversation);
       setNewChatOpen(false);
+      setSelectedUserIds([]);
+      setGroupName("");
     },
   });
+
+  const handleStartConversation = () => {
+    if (selectedUserIds.length === 0) return;
+    const isGroup = selectedUserIds.length > 1;
+    startConversationMutation.mutate({
+      participantIds: selectedUserIds,
+      name: isGroup && groupName.trim() ? groupName.trim() : undefined,
+      isGroup,
+    });
+  };
+
+  const toggleUserSelection = (userId: string) => {
+    setSelectedUserIds(prev => 
+      prev.includes(userId) 
+        ? prev.filter(id => id !== userId)
+        : [...prev, userId]
+    );
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -209,7 +231,13 @@ export default function Chat() {
           <div className="p-4 border-b border-border/50">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-display font-bold text-xl">Messages</h2>
-              <Dialog open={newChatOpen} onOpenChange={setNewChatOpen}>
+              <Dialog open={newChatOpen} onOpenChange={(open) => {
+                setNewChatOpen(open);
+                if (!open) {
+                  setSelectedUserIds([]);
+                  setGroupName("");
+                }
+              }}>
                 <DialogTrigger asChild>
                   <Button size="icon" variant="ghost" data-testid="button-new-chat">
                     <Plus className="w-5 h-5" />
@@ -219,29 +247,73 @@ export default function Chat() {
                   <DialogHeader>
                     <DialogTitle>Start a Conversation</DialogTitle>
                   </DialogHeader>
-                  <div className="space-y-2 max-h-96 overflow-y-auto">
-                    {users.length === 0 ? (
-                      <p className="text-muted-foreground text-center py-4">No other users found</p>
-                    ) : (
-                      users.map((u) => (
-                        <button
-                          key={u.id}
-                          onClick={() => startConversationMutation.mutate(u.id)}
-                          className="w-full p-3 rounded-lg hover:bg-accent flex items-center gap-3 text-left"
-                          data-testid={`user-${u.id}`}
-                        >
-                          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                            <span className="text-sm font-medium">
-                              {u.firstName?.[0] || u.email?.[0]?.toUpperCase() || "?"}
-                            </span>
-                          </div>
-                          <div>
-                            <p className="font-medium">{u.firstName} {u.lastName}</p>
-                            <p className="text-sm text-muted-foreground">{u.email}</p>
-                          </div>
-                        </button>
-                      ))
+                  <div className="space-y-4">
+                    {selectedUserIds.length > 1 && (
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Group Name (optional)</label>
+                        <input
+                          type="text"
+                          value={groupName}
+                          onChange={(e) => setGroupName(e.target.value)}
+                          placeholder="Enter group name..."
+                          className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
+                          data-testid="input-group-name"
+                        />
+                      </div>
                     )}
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        Select {selectedUserIds.length > 0 ? `(${selectedUserIds.length} selected)` : 'people'}
+                      </label>
+                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                        {users.length === 0 ? (
+                          <p className="text-muted-foreground text-center py-4">No other users found</p>
+                        ) : (
+                          users.map((u) => (
+                            <button
+                              key={u.id}
+                              onClick={() => toggleUserSelection(u.id)}
+                              className={`w-full p-3 rounded-lg flex items-center gap-3 text-left transition-colors ${
+                                selectedUserIds.includes(u.id) 
+                                  ? 'bg-primary/10 border-2 border-primary' 
+                                  : 'hover:bg-accent border-2 border-transparent'
+                              }`}
+                              data-testid={`user-${u.id}`}
+                            >
+                              <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                                selectedUserIds.includes(u.id) 
+                                  ? 'bg-primary border-primary text-white' 
+                                  : 'border-gray-300'
+                              }`}>
+                                {selectedUserIds.includes(u.id) && (
+                                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                )}
+                              </div>
+                              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                                <span className="text-sm font-medium">
+                                  {u.firstName?.[0] || u.email?.[0]?.toUpperCase() || "?"}
+                                </span>
+                              </div>
+                              <div>
+                                <p className="font-medium">{u.firstName} {u.lastName}</p>
+                                <p className="text-sm text-muted-foreground">{u.email}</p>
+                              </div>
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                    <Button
+                      onClick={handleStartConversation}
+                      disabled={selectedUserIds.length === 0 || startConversationMutation.isPending}
+                      className="w-full"
+                      data-testid="button-start-conversation"
+                    >
+                      {startConversationMutation.isPending ? "Starting..." : 
+                        selectedUserIds.length > 1 ? "Start Group Chat" : "Start Chat"}
+                    </Button>
                   </div>
                 </DialogContent>
               </Dialog>
