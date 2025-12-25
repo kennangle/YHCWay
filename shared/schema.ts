@@ -244,10 +244,32 @@ export const emailTemplateSchema = z.object({
 export const userPreferences = pgTable("user_preferences", {
   id: serial("id").primaryKey(),
   userId: varchar("user_id").notNull().unique().references(() => users.id, { onDelete: "cascade" }),
+  // Appearance
   googleCalendarColor: varchar("google_calendar_color").default("#3b82f6"),
   appleCalendarColor: varchar("apple_calendar_color").default("#22c55e"),
   zoomColor: varchar("zoom_color").default("#a855f7"),
   theme: varchar("theme").default("light"),
+  // Notifications - per service
+  notifyGmail: boolean("notify_gmail").default(true),
+  notifySlack: boolean("notify_slack").default(true),
+  notifyCalendar: boolean("notify_calendar").default(true),
+  notifyZoom: boolean("notify_zoom").default(true),
+  notifyAsana: boolean("notify_asana").default(true),
+  notifyChat: boolean("notify_chat").default(true),
+  // Notifications - delivery
+  notifyInApp: boolean("notify_in_app").default(true),
+  notifyEmail: boolean("notify_email").default(false),
+  notifySound: boolean("notify_sound").default(true),
+  // Notifications - quiet hours
+  quietHoursEnabled: boolean("quiet_hours_enabled").default(false),
+  quietHoursStart: varchar("quiet_hours_start").default("22:00"),
+  quietHoursEnd: varchar("quiet_hours_end").default("08:00"),
+  // Privacy
+  showOnlineStatus: boolean("show_online_status").default(true),
+  // Language & Region
+  timezone: varchar("timezone").default("America/New_York"),
+  dateFormat: varchar("date_format").default("MM/DD/YYYY"),
+  firstDayOfWeek: varchar("first_day_of_week").default("sunday"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -260,4 +282,23 @@ export const userPreferencesSchema = z.object({
   appleCalendarColor: z.string().optional(),
   zoomColor: z.string().optional(),
   theme: z.enum(["light", "dark"]).optional(),
+  // Notifications
+  notifyGmail: z.boolean().optional(),
+  notifySlack: z.boolean().optional(),
+  notifyCalendar: z.boolean().optional(),
+  notifyZoom: z.boolean().optional(),
+  notifyAsana: z.boolean().optional(),
+  notifyChat: z.boolean().optional(),
+  notifyInApp: z.boolean().optional(),
+  notifyEmail: z.boolean().optional(),
+  notifySound: z.boolean().optional(),
+  quietHoursEnabled: z.boolean().optional(),
+  quietHoursStart: z.string().optional(),
+  quietHoursEnd: z.string().optional(),
+  // Privacy
+  showOnlineStatus: z.boolean().optional(),
+  // Language
+  timezone: z.string().optional(),
+  dateFormat: z.enum(["MM/DD/YYYY", "DD/MM/YYYY", "YYYY-MM-DD"]).optional(),
+  firstDayOfWeek: z.enum(["sunday", "monday"]).optional(),
 });
