@@ -9,6 +9,7 @@ import type { User, Service, FeedItem, InsertService, InsertFeedItem, AdminCreat
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
 import { useToast } from "@/hooks/use-toast";
 import { EmailEditor } from "@/components/email-editor";
+import { EmailBuilder } from "@/components/email-builder";
 
 type TabType = "users" | "services" | "feed" | "emails";
 
@@ -39,6 +40,7 @@ export default function Admin() {
   const [editingTemplate, setEditingTemplate] = useState<EmailTemplateType | null>(null);
   const [templateSubject, setTemplateSubject] = useState("");
   const [templateContent, setTemplateContent] = useState("");
+  const [editorMode, setEditorMode] = useState<"rich" | "builder">("rich");
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -454,12 +456,28 @@ export default function Admin() {
 
         {editingTemplate && (
           <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 overflow-y-auto py-4" data-testid="modal-email-template">
-            <div className="bg-white rounded-2xl p-6 w-full max-w-5xl my-auto mx-4 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 32px)' }}>
+            <div className="bg-white rounded-2xl p-6 w-full max-w-6xl my-auto mx-4 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 32px)' }}>
               <div className="flex items-center justify-between mb-4 sticky top-0 bg-white pb-2 -mt-2 pt-2 z-10">
                 <h3 className="font-semibold text-lg">Edit {editingTemplate.name} Template</h3>
-                <button onClick={() => setEditingTemplate(null)} className="p-1 hover:bg-gray-100 rounded-lg">
-                  <X className="w-5 h-5" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center bg-gray-100 rounded-lg p-1">
+                    <button
+                      onClick={() => setEditorMode("rich")}
+                      className={`px-3 py-1 text-sm rounded ${editorMode === "rich" ? "bg-white shadow" : "text-gray-600"}`}
+                    >
+                      Rich Text
+                    </button>
+                    <button
+                      onClick={() => setEditorMode("builder")}
+                      className={`px-3 py-1 text-sm rounded ${editorMode === "builder" ? "bg-white shadow" : "text-gray-600"}`}
+                    >
+                      Drag & Drop Builder
+                    </button>
+                  </div>
+                  <button onClick={() => setEditingTemplate(null)} className="p-1 hover:bg-gray-100 rounded-lg">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
               
               <div className="space-y-4">
@@ -476,11 +494,19 @@ export default function Admin() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Email Content</label>
-                  <EmailEditor
-                    value={templateContent}
-                    onChange={setTemplateContent}
-                    variables={editingTemplate.variables}
-                  />
+                  {editorMode === "rich" ? (
+                    <EmailEditor
+                      value={templateContent}
+                      onChange={setTemplateContent}
+                      variables={editingTemplate.variables}
+                    />
+                  ) : (
+                    <EmailBuilder
+                      initialHtml={templateContent}
+                      onSave={setTemplateContent}
+                      variables={editingTemplate.variables}
+                    />
+                  )}
                 </div>
                 <div className="flex gap-3 justify-end">
                   <button
