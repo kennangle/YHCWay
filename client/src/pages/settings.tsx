@@ -727,43 +727,160 @@ export default function Settings() {
     </div>
   );
 
+  const [helpExpanded, setHelpExpanded] = useState<string | null>(null);
+
+  const helpTopics = [
+    {
+      id: "getting-started",
+      title: "Getting Started",
+      content: `Welcome to UniWork! Here's how to get started:
+
+1. **Connect Your Services** - Go to "Connect App" in the sidebar to link your Gmail, Google Calendar, Slack, Zoom, and other tools.
+
+2. **View Your Dashboard** - The Overview page shows all your recent activity from connected services in one unified feed.
+
+3. **Check Your Calendar** - The Calendar page combines events from Google Calendar, Apple Calendar, and Zoom meetings.
+
+4. **Chat with Teammates** - Use the built-in Chat feature to message other UniWork users directly.
+
+5. **Customize Settings** - Visit Settings to personalize notifications, appearance, and more.`
+    },
+    {
+      id: "connecting-services",
+      title: "Connecting Services",
+      content: `UniWork integrates with the following services:
+
+**Gmail & Google Calendar**
+Click "Connect" next to Gmail or Google Calendar and sign in with your Google account. You'll be asked to grant UniWork permission to read your emails and calendar events.
+
+**Slack**
+Slack integration uses a shared workspace connection. Your admin configures the Slack bot token, and you can then view messages from channels you're part of.
+
+**Zoom**
+Zoom meetings are automatically synced when your admin configures the Zoom integration. Your upcoming meetings will appear on the Calendar page.
+
+**Apple Calendar**
+To connect Apple Calendar, you'll need to create an app-specific password in your Apple ID settings. Go to appleid.apple.com, sign in, and generate an app-specific password under Security.
+
+**Asana**
+Connect Asana by providing your personal access token from the Asana developer console. This lets UniWork show your tasks and project updates.`
+    },
+    {
+      id: "notifications",
+      title: "Managing Notifications",
+      content: `Control how UniWork alerts you about new activity:
+
+**Service Notifications**
+Toggle notifications on or off for each connected service (Gmail, Slack, Calendar, Zoom, Asana, Chat).
+
+**Delivery Methods**
+- In-App: See notifications within UniWork
+- Email Digest: Get a daily summary email
+- Sound: Play a sound when new notifications arrive
+
+**Quiet Hours**
+Set times when you don't want to be disturbed. During quiet hours, all notifications are silenced.`
+    },
+    {
+      id: "calendar",
+      title: "Using the Calendar",
+      content: `The Calendar page shows events from all your connected calendar services:
+
+**Viewing Events**
+- Switch between Month, Week, and Day views
+- Events are color-coded by source (customize colors in Appearance settings)
+- Click any event to see details
+
+**Event Sources**
+- Blue (default): Google Calendar events
+- Green (default): Apple Calendar events  
+- Purple (default): Zoom meetings
+
+**Tips**
+- Use the "Today" button to jump back to the current date
+- Navigate with the arrow buttons or click directly on dates`
+    },
+    {
+      id: "chat",
+      title: "UniWork Chat",
+      content: `Chat with other UniWork users in your organization:
+
+**Starting a Conversation**
+Click the "+" button to start a new chat with any UniWork user.
+
+**Messaging**
+Type your message and press Enter or click Send. Messages are delivered instantly.
+
+**Privacy**
+Your online status can be toggled in Privacy settings. When hidden, others won't see when you're active.`
+    },
+    {
+      id: "troubleshooting",
+      title: "Troubleshooting",
+      content: `Having issues? Try these common fixes:
+
+**Service Not Loading**
+- Check if the service is properly connected on the Connect page
+- Try disconnecting and reconnecting the service
+- Refresh the page
+
+**Emails Not Showing**
+- Ensure you've granted Gmail read permissions
+- Check if the Gmail toggle is enabled in Notifications settings
+
+**Calendar Events Missing**
+- Verify your calendar is connected
+- Check that the calendar contains events (some shared calendars may be empty)
+
+**Slack Messages Empty**
+- The Slack bot needs to be added to channels to see messages
+- Contact your admin to ensure proper Slack configuration`
+    }
+  ];
+
   const renderHelpSection = () => (
     <div className="max-w-2xl">
       {renderBackButton()}
       <div className="mb-8">
         <h2 className="font-display font-bold text-2xl mb-2">Help & Support</h2>
-        <p className="text-muted-foreground">Get help with using UniWork.</p>
+        <p className="text-muted-foreground">Learn how to use UniWork effectively.</p>
       </div>
 
       <div className="space-y-4">
         <div className="glass-card p-6 rounded-2xl">
-          <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
-          <div className="space-y-3">
-            <Button 
-              variant="outline" 
-              className="w-full justify-start gap-2"
-              onClick={() => toast.info("Documentation coming soon!")}
-              data-testid="button-docs"
-            >
-              <HelpCircle className="w-4 h-4" />
-              Documentation
-            </Button>
-            <Button 
-              variant="outline" 
-              className="w-full justify-start gap-2"
-              onClick={() => toast.info("FAQ coming soon!")}
-              data-testid="button-faq"
-            >
-              <MessageCircle className="w-4 h-4" />
-              Frequently Asked Questions
-            </Button>
+          <h3 className="text-lg font-semibold mb-4">Documentation</h3>
+          <div className="space-y-2">
+            {helpTopics.map((topic) => (
+              <div key={topic.id} className="border border-white/20 rounded-xl overflow-hidden">
+                <button
+                  onClick={() => setHelpExpanded(helpExpanded === topic.id ? null : topic.id)}
+                  className="w-full flex items-center justify-between p-4 hover:bg-white/30 transition-colors text-left"
+                  data-testid={`help-topic-${topic.id}`}
+                >
+                  <span className="font-medium">{topic.title}</span>
+                  <svg 
+                    className={`w-5 h-5 text-muted-foreground transition-transform ${helpExpanded === topic.id ? 'rotate-180' : ''}`} 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {helpExpanded === topic.id && (
+                  <div className="px-4 pb-4 text-sm text-muted-foreground whitespace-pre-line">
+                    {topic.content}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
 
         <div className="glass-card p-6 rounded-2xl">
           <h3 className="text-lg font-semibold mb-4">Contact Support</h3>
           <p className="text-muted-foreground mb-4">
-            Need help? Our support team is here to assist you.
+            Can't find what you're looking for? Our support team is here to help.
           </p>
           <Button 
             className="w-full"
@@ -778,9 +895,9 @@ export default function Settings() {
         <div className="glass-card p-6 rounded-2xl">
           <h3 className="text-lg font-semibold mb-2">About UniWork</h3>
           <p className="text-muted-foreground">
-            UniWork brings all your work tools together in one place.
+            UniWork brings all your work tools together in one unified dashboard. View emails, calendar events, chat messages, and tasks from Gmail, Google Calendar, Slack, Zoom, Apple Calendar, Asana, and more — all in one place.
           </p>
-          <p className="text-sm text-muted-foreground mt-2">Version 1.0.0</p>
+          <p className="text-sm text-muted-foreground mt-4">Version 1.0.0</p>
         </div>
       </div>
     </div>
