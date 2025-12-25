@@ -454,95 +454,6 @@ export default function Admin() {
           </div>
         )}
 
-        {editingTemplate && (
-          <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-[100] overflow-y-auto pt-16 pb-8 px-4" data-testid="modal-email-template">
-            <div className="bg-white rounded-2xl p-6 w-full max-w-6xl mx-auto overflow-y-auto" style={{ maxHeight: 'calc(100vh - 96px)' }}>
-              <div className="flex items-center justify-between mb-4 sticky top-0 bg-white pb-2 -mt-2 pt-2 z-10">
-                <h3 className="font-semibold text-lg">Edit {editingTemplate.name} Template</h3>
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center bg-gray-100 rounded-lg p-1">
-                    <button
-                      onClick={() => setEditorMode("rich")}
-                      className={`px-3 py-1 text-sm rounded ${editorMode === "rich" ? "bg-white shadow" : "text-gray-600"}`}
-                    >
-                      Rich Text
-                    </button>
-                    <button
-                      onClick={() => setEditorMode("builder")}
-                      className={`px-3 py-1 text-sm rounded ${editorMode === "builder" ? "bg-white shadow" : "text-gray-600"}`}
-                    >
-                      Drag & Drop Builder
-                    </button>
-                  </div>
-                  <button onClick={() => setEditingTemplate(null)} className="p-1 hover:bg-gray-100 rounded-lg">
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Subject Line</label>
-                  <input
-                    type="text"
-                    value={templateSubject}
-                    onChange={(e) => setTemplateSubject(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                    placeholder="Email subject"
-                    data-testid="input-template-subject"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Email Content</label>
-                  {editorMode === "rich" ? (
-                    <EmailEditor
-                      value={templateContent}
-                      onChange={setTemplateContent}
-                      variables={editingTemplate.variables}
-                    />
-                  ) : (
-                    <EmailBuilder
-                      initialHtml={templateContent}
-                      onSave={setTemplateContent}
-                      variables={editingTemplate.variables}
-                    />
-                  )}
-                </div>
-                <div className="flex gap-3 justify-end">
-                  <button
-                    type="button"
-                    onClick={() => loadDefaultTemplate(editingTemplate.type)}
-                    className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-                    data-testid="button-reset-template"
-                  >
-                    <RotateCcw className="w-4 h-4" />
-                    Reset to Default
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setEditingTemplate(null)}
-                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => saveTemplateMutation.mutate({
-                      type: editingTemplate.type,
-                      subject: templateSubject,
-                      htmlContent: templateContent
-                    })}
-                    disabled={saveTemplateMutation.isPending}
-                    className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium disabled:opacity-50"
-                    data-testid="button-save-template"
-                  >
-                    {saveTemplateMutation.isPending ? "Saving..." : "Save Template"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
         {showAddService && (
           <ServiceModal
             onClose={() => setShowAddService(false)}
@@ -590,6 +501,95 @@ export default function Admin() {
           />
         )}
       </main>
+
+      {editingTemplate && (
+        <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-[9999] overflow-y-auto pt-8 pb-8 px-4" data-testid="modal-email-template">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-6xl mx-auto overflow-y-auto" style={{ maxHeight: 'calc(100vh - 96px)' }}>
+            <div className="flex items-center justify-between mb-4 sticky top-0 bg-white pb-2 -mt-2 pt-2 z-10">
+              <h3 className="font-semibold text-lg">Edit {editingTemplate.name} Template</h3>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center bg-gray-100 rounded-lg p-1">
+                  <button
+                    onClick={() => setEditorMode("rich")}
+                    className={`px-3 py-1 text-sm rounded ${editorMode === "rich" ? "bg-white shadow" : "text-gray-600"}`}
+                  >
+                    Rich Text
+                  </button>
+                  <button
+                    onClick={() => setEditorMode("builder")}
+                    className={`px-3 py-1 text-sm rounded ${editorMode === "builder" ? "bg-white shadow" : "text-gray-600"}`}
+                  >
+                    Drag & Drop Builder
+                  </button>
+                </div>
+                <button onClick={() => setEditingTemplate(null)} className="p-1 hover:bg-gray-100 rounded-lg">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Subject Line</label>
+                <input
+                  type="text"
+                  value={templateSubject}
+                  onChange={(e) => setTemplateSubject(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  placeholder="Email subject"
+                  data-testid="input-template-subject"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Email Content</label>
+                {editorMode === "rich" ? (
+                  <EmailEditor
+                    value={templateContent}
+                    onChange={setTemplateContent}
+                    variables={editingTemplate.variables}
+                  />
+                ) : (
+                  <EmailBuilder
+                    initialHtml={templateContent}
+                    onSave={setTemplateContent}
+                    variables={editingTemplate.variables}
+                  />
+                )}
+              </div>
+              <div className="flex gap-3 justify-end">
+                <button
+                  type="button"
+                  onClick={() => loadDefaultTemplate(editingTemplate.type)}
+                  className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                  data-testid="button-reset-template"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  Reset to Default
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditingTemplate(null)}
+                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => saveTemplateMutation.mutate({
+                    type: editingTemplate.type,
+                    subject: templateSubject,
+                    htmlContent: templateContent
+                  })}
+                  disabled={saveTemplateMutation.isPending}
+                  className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium disabled:opacity-50"
+                  data-testid="button-save-template"
+                >
+                  {saveTemplateMutation.isPending ? "Saving..." : "Save Template"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
