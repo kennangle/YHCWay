@@ -221,3 +221,21 @@ export const createConversationSchema = z.object({
   name: z.string().optional(),
   isGroup: z.boolean().default(false),
 });
+
+// Email templates table
+export const emailTemplates = pgTable("email_templates", {
+  id: serial("id").primaryKey(),
+  templateType: varchar("template_type").notNull().unique(),
+  subject: varchar("subject").notNull(),
+  htmlContent: text("html_content").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type EmailTemplate = typeof emailTemplates.$inferSelect;
+export type InsertEmailTemplate = typeof emailTemplates.$inferInsert;
+
+export const emailTemplateSchema = z.object({
+  templateType: z.string(),
+  subject: z.string().min(1, "Subject is required"),
+  htmlContent: z.string().min(1, "Email content is required"),
+});

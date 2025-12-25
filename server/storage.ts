@@ -15,6 +15,7 @@ import {
   type Conversation,
   type ConversationParticipant,
   type Message,
+  type EmailTemplate,
   users,
   services,
   feedItems,
@@ -24,7 +25,8 @@ import {
   integrationApiKeys,
   conversations,
   conversationParticipants,
-  messages
+  messages,
+  emailTemplates
 } from "@shared/schema";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq, desc, and, lt, isNull, sql, inArray } from "drizzle-orm";
@@ -91,6 +93,11 @@ export interface IStorage {
   getConversationMessages(conversationId: number, limit?: number, before?: number): Promise<Message[]>;
   markConversationRead(userId: string, conversationId: number): Promise<void>;
   getUnreadCount(userId: string): Promise<number>;
+  
+  // Email templates
+  getEmailTemplate(templateType: string): Promise<EmailTemplate | undefined>;
+  getAllEmailTemplates(): Promise<EmailTemplate[]>;
+  upsertEmailTemplate(templateType: string, subject: string, htmlContent: string): Promise<EmailTemplate>;
 }
 
 export class DbStorage implements IStorage {
@@ -474,6 +481,28 @@ export class DbStorage implements IStorage {
     }
     
     return unreadCount;
+  }
+
+  // Email templates
+  async getEmailTemplate(templateType: string): Promise<EmailTemplate | undefined> {
+    const [template] = await db.select().from(emailTemplates).where(eq(emailTemplates.templateType, templateType));
+    return template;
+  }
+
+  async getAllEmailTemplates(): Promise<EmailTemplate[]> {
+    return await db.select().from(emailTemplates);
+  }
+
+  async upsertEmailTemplate(templateType: string, subject: string, htmlContent: string): Promise<EmailTemplate> {
+    const [template] = await db
+      .insert(emailTemplates)
+      .values({ templateType, subject, htmlContent })
+      .onConflictDoUpdate({
+        target: emailTemplates.templateType,
+        set: { subject, htmlContent, updatedAt: new Date() }
+      })
+      .returning();
+    return template;
   }
 }
 
