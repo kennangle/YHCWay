@@ -239,3 +239,25 @@ export const emailTemplateSchema = z.object({
   subject: z.string().min(1, "Subject is required"),
   htmlContent: z.string().min(1, "Email content is required"),
 });
+
+// User preferences table for settings
+export const userPreferences = pgTable("user_preferences", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().unique().references(() => users.id, { onDelete: "cascade" }),
+  googleCalendarColor: varchar("google_calendar_color").default("#3b82f6"),
+  appleCalendarColor: varchar("apple_calendar_color").default("#22c55e"),
+  zoomColor: varchar("zoom_color").default("#a855f7"),
+  theme: varchar("theme").default("light"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type UserPreference = typeof userPreferences.$inferSelect;
+export type InsertUserPreference = typeof userPreferences.$inferInsert;
+
+export const userPreferencesSchema = z.object({
+  googleCalendarColor: z.string().optional(),
+  appleCalendarColor: z.string().optional(),
+  zoomColor: z.string().optional(),
+  theme: z.enum(["light", "dark"]).optional(),
+});
