@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { FeedItem } from "@/components/feed-item";
 import { Search, Bell, Mail, Video, MessageCircle, Users, MessageSquare } from "lucide-react";
@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { FeedItem as FeedItemType } from "@shared/schema";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "wouter";
+import { useNotificationSound } from "@/hooks/useNotificationSound";
 
 type FilterType = "all" | "mentions" | "unread";
 
@@ -65,6 +66,9 @@ interface SlackMessage {
 export default function Dashboard() {
   const { user } = useAuth();
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
+  const { playNotification } = useNotificationSound();
+  const prevItemCountRef = useRef<number>(0);
+  const isInitialLoadRef = useRef<boolean>(true);
   const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
   
   const getGreeting = () => {
@@ -301,6 +305,22 @@ export default function Dashboard() {
     
     return items.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   }, [gmailMessages, slackMessages, zoomMeetings, feedItems, user]);
+
+  useEffect(() => {
+    const currentCount = unifiedFeed.length;
+    
+    if (isInitialLoadRef.current) {
+      prevItemCountRef.current = currentCount;
+      isInitialLoadRef.current = false;
+      return;
+    }
+    
+    if (currentCount > prevItemCountRef.current) {
+      playNotification();
+    }
+    
+    prevItemCountRef.current = currentCount;
+  }, [unifiedFeed.length, playNotification]);
 
   const filteredFeed = useMemo(() => {
     if (activeFilter === "all") return unifiedFeed;
