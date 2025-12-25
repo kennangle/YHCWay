@@ -149,7 +149,7 @@ export function EmailEditor({ value, onChange, variables = [] }: EmailEditorProp
   };
 
   const getPreviewWithSampleData = () => {
-    let html = getSanitizedPreview();
+    const html = getSanitizedPreview();
     const sampleData: Record<string, string> = {
       firstName: 'John',
       lastName: 'Doe',
@@ -158,10 +158,51 @@ export function EmailEditor({ value, onChange, variables = [] }: EmailEditorProp
       loginUrl: 'https://uniwork.example.com/login',
       resetUrl: 'https://uniwork.example.com/reset-password?token=abc123',
     };
-    Object.entries(sampleData).forEach(([key, val]) => {
-      html = html.replace(new RegExp(`{{${key}}}`, 'g'), `<span style="background:#fef3c7;padding:0 4px;border-radius:2px;">${val}</span>`);
-    });
-    return html;
+    
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    
+    const replaceInAttributes = (element: Element) => {
+      Array.from(element.attributes).forEach((attr) => {
+        let value = attr.value;
+        Object.entries(sampleData).forEach(([key, val]) => {
+          value = value.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), val);
+        });
+        if (value !== attr.value) {
+          element.setAttribute(attr.name, value);
+        }
+      });
+      Array.from(element.children).forEach(replaceInAttributes);
+    };
+    
+    const replaceInTextNodes = (node: Node) => {
+      if (node.nodeType === Node.TEXT_NODE && node.textContent) {
+        let text = node.textContent;
+        let hasMatch = false;
+        Object.entries(sampleData).forEach(([key]) => {
+          if (text.includes(`{{${key}}}`)) hasMatch = true;
+        });
+        if (hasMatch) {
+          const span = doc.createElement('span');
+          let html = text;
+          Object.entries(sampleData).forEach(([key, val]) => {
+            html = html.replace(
+              new RegExp(`\\{\\{${key}\\}\\}`, 'g'),
+              `<span style="background:#fef3c7;padding:0 4px;border-radius:2px;">${val}</span>`
+            );
+          });
+          span.innerHTML = html;
+          node.parentNode?.replaceChild(span, node);
+        }
+      } else {
+        Array.from(node.childNodes).forEach(replaceInTextNodes);
+      }
+    };
+    
+    replaceInAttributes(doc.body);
+    replaceInTextNodes(doc.body);
+    
+    return doc.body.innerHTML;
   };
 
   return (
