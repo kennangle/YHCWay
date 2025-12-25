@@ -1,9 +1,10 @@
 import { UnifiedSidebar } from "@/components/unified-sidebar";
-import { Search, Mail, MessageCircle, Users, MessageSquare } from "lucide-react";
+import { Search, Mail, MessageCircle, Users, MessageSquare, PenSquare } from "lucide-react";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
 import { useQuery } from "@tanstack/react-query";
 import { SlackChannelConfig } from "@/components/slack-channel-config";
 import { EmailDetailPanel } from "@/components/email-detail-panel";
+import { ComposeEmailModal } from "@/components/compose-email-modal";
 import { useState } from "react";
 
 interface GmailMessage {
@@ -48,6 +49,7 @@ type FilterType = 'all' | 'gmail' | 'slack' | 'dms';
 export default function Inbox() {
   const [filter, setFilter] = useState<FilterType>('all');
   const [selectedEmailId, setSelectedEmailId] = useState<string | null>(null);
+  const [isComposing, setIsComposing] = useState(false);
   
   const { data: gmailMessages = [], isLoading: gmailLoading, isError: gmailError } = useQuery<GmailMessage[]>({
     queryKey: ["gmail-messages"],
@@ -142,6 +144,14 @@ export default function Inbox() {
         <header className="flex justify-between items-center mb-8">
           <h1 className="font-display font-bold text-3xl">Unified Inbox</h1>
           <div className="flex gap-4">
+            <button
+              onClick={() => setIsComposing(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-full hover:bg-primary/90 transition-colors"
+              data-testid="button-compose"
+            >
+              <PenSquare className="w-4 h-4" />
+              Compose
+            </button>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <input 
@@ -270,6 +280,10 @@ export default function Inbox() {
           messageId={selectedEmailId} 
           onClose={() => setSelectedEmailId(null)} 
         />
+      )}
+
+      {isComposing && (
+        <ComposeEmailModal onClose={() => setIsComposing(false)} />
       )}
     </div>
   );
