@@ -6,7 +6,7 @@ import { setupAuth, isAuthenticated } from "./auth";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { getRecentEmails, isGmailConnected } from "./gmail";
-import { getGmailAuthUrl, handleGmailCallback, getRecentEmailsForUser, isGmailConnectedForUser, disconnectGmailForUser, getGmailClientForUser } from "./gmail-oauth";
+import { getGmailAuthUrl, handleGmailCallback, getRecentEmailsForUser, isGmailConnectedForUser, disconnectGmailForUser, getGmailClientForUser, getEmailById, sendEmail } from "./gmail-oauth";
 import { getUpcomingEvents, getEventsForMonth, isCalendarConnected } from "./calendar";
 import { getUpcomingMeetings, isZoomConnected } from "./zoom";
 import { getRecentMessages as getSlackMessages, getAllMessages as getAllSlackMessages, getDirectMessages as getSlackDMs, getThreadReplies as getSlackThreadReplies, isSlackConnected, getChannels as getSlackChannels, getRecentMessagesFiltered } from "./slack";
@@ -506,6 +506,47 @@ export async function registerRoutes(
       console.error("[Gmail Messages] Error fetching emails:", error?.message || error);
       console.error("[Gmail Messages] Full error:", error);
       res.status(500).json({ error: error?.message || "Failed to fetch emails" });
+    }
+  });
+
+  // Get single email with full content
+  app.get("/api/gmail/messages/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      const messageId = req.params.id;
+      
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const email = await getEmailById(userId, messageId);
+      res.json(email);
+    } catch (error: any) {
+      console.error("[Gmail] Error fetching email:", error?.message);
+      res.status(500).json({ error: error?.message || "Failed to fetch email" });
+    }
+  });
+
+  // Send/reply to email
+  app.post("/api/gmail/send", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const { to, subject, body, inReplyTo, threadId } = req.body;
+      
+      if (!to || !subject || !body) {
+        return res.status(400).json({ error: "Missing required fields: to, subject, body" });
+      }
+      
+      await sendEmail(userId, to, subject, body, inReplyTo, threadId);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("[Gmail] Error sending email:", error?.message);
+      res.status(500).json({ error: error?.message || "Failed to send email" });
     }
   });
 

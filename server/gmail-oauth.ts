@@ -164,6 +164,130 @@ export async function getRecentEmailsForUser(userId: string, maxResults: number 
   return emails;
 }
 
+export interface EmailDetail extends EmailMessage {
+  body: string;
+  to: string;
+  cc?: string;
+  replyTo?: string;
+}
+
+function decodeBase64Url(data: string): string {
+  // Replace URL-safe characters and decode
+  const base64 = data.replace(/-/g, '+').replace(/_/g, '/');
+  return Buffer.from(base64, 'base64').toString('utf-8');
+}
+
+function extractEmailBody(payload: any): string {
+  // Check for plain text or HTML body
+  if (payload.body?.data) {
+    return decodeBase64Url(payload.body.data);
+  }
+  
+  // Check parts for multipart messages
+  if (payload.parts) {
+    // Prefer HTML, fall back to plain text
+    const htmlPart = payload.parts.find((p: any) => p.mimeType === 'text/html');
+    if (htmlPart?.body?.data) {
+      return decodeBase64Url(htmlPart.body.data);
+    }
+    
+    const textPart = payload.parts.find((p: any) => p.mimeType === 'text/plain');
+    if (textPart?.body?.data) {
+      return decodeBase64Url(textPart.body.data);
+    }
+    
+    // Check nested parts (multipart/alternative inside multipart/mixed)
+    for (const part of payload.parts) {
+      if (part.parts) {
+        const nestedHtml = part.parts.find((p: any) => p.mimeType === 'text/html');
+        if (nestedHtml?.body?.data) {
+          return decodeBase64Url(nestedHtml.body.data);
+        }
+        const nestedText = part.parts.find((p: any) => p.mimeType === 'text/plain');
+        if (nestedText?.body?.data) {
+          return decodeBase64Url(nestedText.body.data);
+        }
+      }
+    }
+  }
+  
+  return '';
+}
+
+export async function getEmailById(userId: string, messageId: string): Promise<EmailDetail> {
+  const gmail = await getGmailClientForUser(userId);
+  
+  const response = await gmail.users.messages.get({
+    userId: 'me',
+    id: messageId,
+    format: 'full',
+  });
+  
+  const headers = response.data.payload?.headers || [];
+  const subject = headers.find(h => h.name === 'Subject')?.value || '(No Subject)';
+  const from = headers.find(h => h.name === 'From')?.value || 'Unknown';
+  const to = headers.find(h => h.name === 'To')?.value || '';
+  const cc = headers.find(h => h.name === 'Cc')?.value || undefined;
+  const date = headers.find(h => h.name === 'Date')?.value || '';
+  const replyTo = headers.find(h => h.name === 'Reply-To')?.value || undefined;
+  const isUnread = response.data.labelIds?.includes('UNREAD') || false;
+  
+  const body = extractEmailBody(response.data.payload);
+  
+  return {
+    id: messageId,
+    threadId: response.data.threadId!,
+    subject,
+    from,
+    to,
+    cc,
+    replyTo,
+    snippet: response.data.snippet || '',
+    date,
+    isUnread,
+    body,
+  };
+}
+
+export async function sendEmail(userId: string, to: string, subject: string, body: string, inReplyTo?: string, threadId?: string): Promise<void> {
+  const gmail = await getGmailClientForUser(userId);
+  
+  // Get user's email for the From header
+  const account = await storage.getOAuthAccount(userId, 'gmail');
+  const fromEmail = account?.providerAccountId || 'me';
+  
+  // Build email message
+  const messageParts = [
+    `From: ${fromEmail}`,
+    `To: ${to}`,
+    `Subject: ${subject}`,
+    'Content-Type: text/html; charset=utf-8',
+    'MIME-Version: 1.0',
+  ];
+  
+  if (inReplyTo) {
+    messageParts.push(`In-Reply-To: ${inReplyTo}`);
+    messageParts.push(`References: ${inReplyTo}`);
+  }
+  
+  messageParts.push('', body);
+  
+  const rawMessage = messageParts.join('\r\n');
+  const encodedMessage = Buffer.from(rawMessage)
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+  
+  await gmail.users.messages.send({
+    userId: 'me',
+    requestBody: {
+      raw: encodedMessage,
+      threadId: threadId,
+    },
+  });
+}
+
 export async function isGmailConnectedForUser(userId: string): Promise<boolean> {
   try {
     console.log("[Gmail OAuth] Checking connection for user:", userId);

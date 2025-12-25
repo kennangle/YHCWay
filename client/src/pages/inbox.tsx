@@ -3,6 +3,7 @@ import { Search, Mail, MessageCircle, Users, MessageSquare } from "lucide-react"
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
 import { useQuery } from "@tanstack/react-query";
 import { SlackChannelConfig } from "@/components/slack-channel-config";
+import { EmailDetailPanel } from "@/components/email-detail-panel";
 import { useState } from "react";
 
 interface GmailMessage {
@@ -46,6 +47,7 @@ type FilterType = 'all' | 'gmail' | 'slack' | 'dms';
 
 export default function Inbox() {
   const [filter, setFilter] = useState<FilterType>('all');
+  const [selectedEmailId, setSelectedEmailId] = useState<string | null>(null);
   
   const { data: gmailMessages = [], isLoading: gmailLoading, isError: gmailError } = useQuery<GmailMessage[]>({
     queryKey: ["gmail-messages"],
@@ -199,12 +201,21 @@ export default function Inbox() {
               const bgColor = message.type === 'gmail' ? 'bg-red-100' : message.type === 'slack-dm' ? 'bg-pink-100' : 'bg-purple-100';
               const iconColor = message.type === 'gmail' ? 'text-red-600' : message.type === 'slack-dm' ? 'text-pink-600' : 'text-purple-600';
               
+              const handleClick = (e: React.MouseEvent) => {
+                if (message.type === 'gmail') {
+                  e.preventDefault();
+                  const gmailId = message.id.replace('gmail-', '');
+                  setSelectedEmailId(gmailId);
+                }
+              };
+              
               return (
                 <a
                   key={message.id}
-                  href={message.link || '#'}
-                  target={message.link ? "_blank" : undefined}
+                  href={message.type === 'gmail' ? '#' : (message.link || '#')}
+                  target={message.type !== 'gmail' && message.link ? "_blank" : undefined}
                   rel="noopener noreferrer"
+                  onClick={handleClick}
                   className={`glass-panel p-4 rounded-xl hover:bg-white/80 transition-colors cursor-pointer block border-l-4 ${borderColor} ${message.isUnread ? 'bg-white/90' : ''}`}
                   data-testid={`message-${message.id}`}
                 >
@@ -253,6 +264,13 @@ export default function Inbox() {
           )}
         </div>
       </main>
+
+      {selectedEmailId && (
+        <EmailDetailPanel 
+          messageId={selectedEmailId} 
+          onClose={() => setSelectedEmailId(null)} 
+        />
+      )}
     </div>
   );
 }
