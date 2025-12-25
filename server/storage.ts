@@ -16,6 +16,7 @@ import {
   type ConversationParticipant,
   type Message,
   type EmailTemplate,
+  type UserPreference,
   users,
   services,
   feedItems,
@@ -26,7 +27,8 @@ import {
   conversations,
   conversationParticipants,
   messages,
-  emailTemplates
+  emailTemplates,
+  userPreferences
 } from "@shared/schema";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq, desc, and, lt, isNull, sql, inArray } from "drizzle-orm";
@@ -101,6 +103,10 @@ export interface IStorage {
   getEmailTemplate(templateType: string): Promise<EmailTemplate | undefined>;
   getAllEmailTemplates(): Promise<EmailTemplate[]>;
   upsertEmailTemplate(templateType: string, subject: string, htmlContent: string): Promise<EmailTemplate>;
+  
+  // User preferences
+  getUserPreferences(userId: string): Promise<UserPreference | undefined>;
+  updateUserPreferences(userId: string, prefs: Partial<Omit<UserPreference, 'id' | 'userId' | 'createdAt' | 'updatedAt'>>): Promise<UserPreference>;
 }
 
 export class DbStorage implements IStorage {
@@ -550,6 +556,34 @@ export class DbStorage implements IStorage {
       })
       .returning();
     return template;
+  }
+
+  // User preferences
+  async getUserPreferences(userId: string): Promise<UserPreference | undefined> {
+    const [prefs] = await db.select()
+      .from(userPreferences)
+      .where(eq(userPreferences.userId, userId));
+    return prefs;
+  }
+
+  async updateUserPreferences(
+    userId: string, 
+    prefs: Partial<Omit<UserPreference, 'id' | 'userId' | 'createdAt' | 'updatedAt'>>
+  ): Promise<UserPreference> {
+    const existing = await this.getUserPreferences(userId);
+    
+    if (existing) {
+      const [updated] = await db.update(userPreferences)
+        .set({ ...prefs, updatedAt: new Date() })
+        .where(eq(userPreferences.userId, userId))
+        .returning();
+      return updated;
+    }
+    
+    const [created] = await db.insert(userPreferences)
+      .values({ userId, ...prefs })
+      .returning();
+    return created;
   }
 }
 
