@@ -15,13 +15,50 @@ interface AppleCalendarEvent {
 }
 
 function parseICalDate(dateStr: string): { date: Date; allDay: boolean } {
-  if (dateStr.includes('T')) {
-    return { date: new Date(dateStr), allDay: false };
+  if (!dateStr || dateStr.length < 8) {
+    return { date: new Date(), allDay: false };
   }
-  const year = parseInt(dateStr.substring(0, 4));
-  const month = parseInt(dateStr.substring(4, 6)) - 1;
-  const day = parseInt(dateStr.substring(6, 8));
-  return { date: new Date(year, month, day), allDay: true };
+  
+  try {
+    if (dateStr.includes('T')) {
+      let cleanDate = dateStr.replace('Z', '');
+      const year = parseInt(cleanDate.substring(0, 4));
+      const month = parseInt(cleanDate.substring(4, 6)) - 1;
+      const day = parseInt(cleanDate.substring(6, 8));
+      const hour = parseInt(cleanDate.substring(9, 11)) || 0;
+      const minute = parseInt(cleanDate.substring(11, 13)) || 0;
+      const second = parseInt(cleanDate.substring(13, 15)) || 0;
+      
+      if (isNaN(year) || isNaN(month) || isNaN(day)) {
+        return { date: new Date(), allDay: false };
+      }
+      
+      const date = dateStr.endsWith('Z') 
+        ? new Date(Date.UTC(year, month, day, hour, minute, second))
+        : new Date(year, month, day, hour, minute, second);
+      
+      if (isNaN(date.getTime())) {
+        return { date: new Date(), allDay: false };
+      }
+      return { date, allDay: false };
+    }
+    
+    const year = parseInt(dateStr.substring(0, 4));
+    const month = parseInt(dateStr.substring(4, 6)) - 1;
+    const day = parseInt(dateStr.substring(6, 8));
+    
+    if (isNaN(year) || isNaN(month) || isNaN(day)) {
+      return { date: new Date(), allDay: true };
+    }
+    
+    const date = new Date(year, month, day);
+    if (isNaN(date.getTime())) {
+      return { date: new Date(), allDay: true };
+    }
+    return { date, allDay: true };
+  } catch {
+    return { date: new Date(), allDay: false };
+  }
 }
 
 function extractICalValue(icsData: string, property: string): string | null {
