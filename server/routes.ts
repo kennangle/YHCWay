@@ -11,8 +11,8 @@ import { getUpcomingMeetings, isZoomConnected } from "./zoom";
 import { getRecentMessages as getSlackMessages, getAllMessages as getAllSlackMessages, getDirectMessages as getSlackDMs, getThreadReplies as getSlackThreadReplies, isSlackConnected, getChannels as getSlackChannels, getRecentMessagesFiltered } from "./slack";
 import { isAppleCalendarConnected, testAppleCalendarConnection, saveAppleCalendarCredentials, deleteAppleCalendarCredentials, getAppleCalendarEvents, getAppleCalendarEventsForMonth } from "./appleCalendar";
 import { isAsanaConnected, getMyTasks, getProjects, getUpcomingTasks } from "./asana";
-import { sendInvitationEmail } from "./email";
-import { appleCalendarConnectSchema, slackPreferencesUpdateSchema } from "@shared/schema";
+import { sendInvitationEmail, getTemplateTypes, getDefaultTemplate } from "./email";
+import { appleCalendarConnectSchema, slackPreferencesUpdateSchema, emailTemplateSchema } from "@shared/schema";
 import { broadcastToUsers, generateWsAuthToken } from "./websocket";
 
 const isAdmin: RequestHandler = async (req: any, res, next) => {
@@ -227,6 +227,74 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error resetting password:", error);
       res.status(500).json({ error: "Failed to reset password" });
+    }
+  });
+
+  // Email templates admin routes
+  app.get("/api/admin/email-templates", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const templates = await storage.getAllEmailTemplates();
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching email templates:", error);
+      res.status(500).json({ error: "Failed to fetch email templates" });
+    }
+  });
+
+  app.get("/api/admin/email-templates/:type", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const template = await storage.getEmailTemplate(req.params.type);
+      if (!template) {
+        return res.status(404).json({ error: "Template not found" });
+      }
+      res.json(template);
+    } catch (error) {
+      console.error("Error fetching email template:", error);
+      res.status(500).json({ error: "Failed to fetch email template" });
+    }
+  });
+
+  app.put("/api/admin/email-templates/:type", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const validatedData = emailTemplateSchema.parse({
+        ...req.body,
+        templateType: req.params.type
+      });
+      const template = await storage.upsertEmailTemplate(
+        validatedData.templateType,
+        validatedData.subject,
+        validatedData.htmlContent
+      );
+      res.json(template);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: error.errors[0]?.message || "Validation failed" });
+      } else {
+        console.error("Error updating email template:", error);
+        res.status(500).json({ error: "Failed to update email template" });
+      }
+    }
+  });
+
+  app.get("/api/admin/email-template-types", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      res.json(getTemplateTypes());
+    } catch (error) {
+      console.error("Error fetching template types:", error);
+      res.status(500).json({ error: "Failed to fetch template types" });
+    }
+  });
+
+  app.get("/api/admin/email-templates/:type/default", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const defaultTemplate = getDefaultTemplate(req.params.type);
+      if (!defaultTemplate) {
+        return res.status(404).json({ error: "Template type not found" });
+      }
+      res.json(defaultTemplate);
+    } catch (error) {
+      console.error("Error fetching default template:", error);
+      res.status(500).json({ error: "Failed to fetch default template" });
     }
   });
 
