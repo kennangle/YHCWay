@@ -21,8 +21,10 @@ export function UnifiedSidebar() {
   const handleLogout = async () => {
     try {
       await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
-      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      queryClient.setQueryData(["/api/auth/user"], null);
+      queryClient.removeQueries({ queryKey: ["/api/auth/user"] });
       setLocation("/");
+      window.location.href = "/";
     } catch (error) {
       console.error("Logout failed:", error);
     }
