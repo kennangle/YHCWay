@@ -171,3 +171,53 @@ export const integrationApiKeySchema = z.object({
   integrationName: z.enum(["calendly", "typeform"]),
   apiKey: z.string().min(1, "API key is required"),
 });
+
+// Chat system - Conversations
+export const conversations = pgTable("conversations", {
+  id: serial("id").primaryKey(),
+  name: varchar("name"),
+  isGroup: boolean("is_group").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type Conversation = typeof conversations.$inferSelect;
+export type InsertConversation = typeof conversations.$inferInsert;
+
+// Chat system - Conversation participants
+export const conversationParticipants = pgTable("conversation_participants", {
+  id: serial("id").primaryKey(),
+  conversationId: integer("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  joinedAt: timestamp("joined_at").defaultNow(),
+  lastReadAt: timestamp("last_read_at"),
+});
+
+export type ConversationParticipant = typeof conversationParticipants.$inferSelect;
+export type InsertConversationParticipant = typeof conversationParticipants.$inferInsert;
+
+// Chat system - Messages
+export const messages = pgTable("messages", {
+  id: serial("id").primaryKey(),
+  conversationId: integer("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" }),
+  senderId: varchar("sender_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  editedAt: timestamp("edited_at"),
+  deletedAt: timestamp("deleted_at"),
+});
+
+export type Message = typeof messages.$inferSelect;
+export type InsertMessage = typeof messages.$inferInsert;
+
+export const sendMessageSchema = z.object({
+  conversationId: z.number().optional(),
+  recipientId: z.string().optional(),
+  content: z.string().min(1, "Message cannot be empty"),
+});
+
+export const createConversationSchema = z.object({
+  participantIds: z.array(z.string()).min(1, "At least one participant required"),
+  name: z.string().optional(),
+  isGroup: z.boolean().default(false),
+});

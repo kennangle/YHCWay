@@ -1,7 +1,7 @@
 import type { Express, RequestHandler } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertServiceSchema, insertFeedItemSchema, ADMIN_EMAIL, adminCreateUserSchema, integrationApiKeySchema } from "@shared/schema";
+import { insertServiceSchema, insertFeedItemSchema, ADMIN_EMAIL, adminCreateUserSchema, integrationApiKeySchema, sendMessageSchema, createConversationSchema } from "@shared/schema";
 import { setupAuth, isAuthenticated } from "./auth";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
@@ -12,6 +12,7 @@ import { getRecentMessages as getSlackMessages, getAllMessages as getAllSlackMes
 import { isAppleCalendarConnected, testAppleCalendarConnection, saveAppleCalendarCredentials, deleteAppleCalendarCredentials, getAppleCalendarEvents, getAppleCalendarEventsForMonth } from "./appleCalendar";
 import { isAsanaConnected, getMyTasks, getProjects, getUpcomingTasks } from "./asana";
 import { appleCalendarConnectSchema, slackPreferencesUpdateSchema } from "@shared/schema";
+import { broadcastToUsers, generateWsAuthToken } from "./websocket";
 
 const isAdmin: RequestHandler = async (req: any, res, next) => {
   try {
@@ -642,6 +643,171 @@ export async function registerRoutes(
     } catch (error: any) {
       console.error("Error fetching Asana projects:", error?.message || error);
       res.status(500).json({ error: error?.message || "Failed to fetch Asana projects" });
+    }
+  });
+
+  // ============== CHAT SYSTEM ROUTES ==============
+
+  // Get WebSocket auth token (secure token-based auth for WS connections)
+  app.get("/api/chat/ws-token", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const token = generateWsAuthToken(userId);
+      res.json({ token });
+    } catch (error) {
+      console.error("Error generating WS token:", error);
+      res.status(500).json({ error: "Failed to generate token" });
+    }
+  });
+
+  // Get all conversations for current user
+  app.get("/api/chat/conversations", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const conversations = await storage.getUserConversations(userId);
+      res.json(conversations);
+    } catch (error) {
+      console.error("Error fetching conversations:", error);
+      res.status(500).json({ error: "Failed to fetch conversations" });
+    }
+  });
+
+  // Get unread message count
+  app.get("/api/chat/unread", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const count = await storage.getUnreadCount(userId);
+      res.json({ count });
+    } catch (error) {
+      console.error("Error fetching unread count:", error);
+      res.status(500).json({ error: "Failed to fetch unread count" });
+    }
+  });
+
+  // Create a new conversation
+  app.post("/api/chat/conversations", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const { participantIds, name, isGroup } = createConversationSchema.parse(req.body);
+      
+      // Include current user in participants
+      const allParticipants = [...new Set([userId, ...participantIds])];
+      
+      // For 1:1 DMs, check if conversation already exists
+      if (!isGroup && allParticipants.length === 2) {
+        const existing = await storage.findExistingDM(userId, participantIds[0]);
+        if (existing) {
+          const conversations = await storage.getUserConversations(userId);
+          const fullConvo = conversations.find(c => c.id === existing.id);
+          return res.json(fullConvo || existing);
+        }
+      }
+      
+      const conversation = await storage.createConversation(allParticipants, name, isGroup);
+      const fullConvo = (await storage.getUserConversations(userId)).find(c => c.id === conversation.id);
+      res.status(201).json(fullConvo || conversation);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: error.errors[0]?.message || "Validation failed" });
+      } else {
+        console.error("Error creating conversation:", error);
+        res.status(500).json({ error: "Failed to create conversation" });
+      }
+    }
+  });
+
+  // Get messages for a conversation
+  app.get("/api/chat/conversations/:id/messages", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const conversationId = parseInt(req.params.id);
+      const before = req.query.before ? parseInt(req.query.before as string) : undefined;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+      
+      // Verify user is in conversation
+      const isParticipant = await storage.isUserInConversation(userId, conversationId);
+      if (!isParticipant) {
+        return res.status(403).json({ error: "Not a participant of this conversation" });
+      }
+      
+      const messages = await storage.getConversationMessages(conversationId, limit, before);
+      
+      // Mark as read
+      await storage.markConversationRead(userId, conversationId);
+      
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      res.status(500).json({ error: "Failed to fetch messages" });
+    }
+  });
+
+  // Send a message
+  app.post("/api/chat/messages", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const { conversationId, recipientId, content } = sendMessageSchema.parse(req.body);
+      
+      let targetConversationId = conversationId;
+      
+      // If recipientId is provided, find or create the DM conversation
+      if (!targetConversationId && recipientId) {
+        let conversation = await storage.findExistingDM(userId, recipientId);
+        if (!conversation) {
+          conversation = await storage.createConversation([userId, recipientId]);
+        }
+        targetConversationId = conversation.id;
+      }
+      
+      if (!targetConversationId) {
+        return res.status(400).json({ error: "Either conversationId or recipientId is required" });
+      }
+      
+      // Verify user is in conversation
+      const isParticipant = await storage.isUserInConversation(userId, targetConversationId);
+      if (!isParticipant) {
+        return res.status(403).json({ error: "Not a participant of this conversation" });
+      }
+      
+      const message = await storage.sendMessage(targetConversationId, userId, content);
+      
+      // Broadcast to all participants
+      const participants = await storage.getConversationParticipants(targetConversationId);
+      const sender = await storage.getUser(userId);
+      broadcastToUsers(
+        participants.map(p => p.id),
+        { 
+          type: "new_message", 
+          message,
+          conversationId: targetConversationId,
+          sender: sender ? { id: sender.id, firstName: sender.firstName, lastName: sender.lastName, email: sender.email } : null
+        }
+      );
+      
+      res.status(201).json(message);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: error.errors[0]?.message || "Validation failed" });
+      } else {
+        console.error("Error sending message:", error);
+        res.status(500).json({ error: "Failed to send message" });
+      }
+    }
+  });
+
+  // Get list of users for starting new conversations
+  app.get("/api/chat/users", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const allUsers = await storage.getAllUsers();
+      // Filter out current user and remove sensitive fields
+      const users = allUsers
+        .filter(u => u.id !== userId)
+        .map(({ passwordHash, ...user }) => user);
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ error: "Failed to fetch users" });
     }
   });
 

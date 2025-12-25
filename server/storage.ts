@@ -12,16 +12,22 @@ import {
   type PasswordResetToken,
   type InsertPasswordResetToken,
   type IntegrationApiKey,
+  type Conversation,
+  type ConversationParticipant,
+  type Message,
   users,
   services,
   feedItems,
   oauthAccounts,
   slackChannelPreferences,
   passwordResetTokens,
-  integrationApiKeys
+  integrationApiKeys,
+  conversations,
+  conversationParticipants,
+  messages
 } from "@shared/schema";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, lt, isNull, sql, inArray } from "drizzle-orm";
 import pg from "pg";
 
 const { Pool } = pg;
@@ -72,6 +78,19 @@ export interface IStorage {
   saveIntegrationApiKey(userId: string, integrationName: string, apiKey: string): Promise<IntegrationApiKey>;
   deleteIntegrationApiKey(userId: string, integrationName: string): Promise<void>;
   getUserIntegrations(userId: string): Promise<IntegrationApiKey[]>;
+  
+  // Chat system
+  createConversation(participantIds: string[], name?: string, isGroup?: boolean): Promise<Conversation>;
+  getConversation(id: number): Promise<Conversation | undefined>;
+  getUserConversations(userId: string): Promise<(Conversation & { participants: User[]; lastMessage?: Message })[]>;
+  findExistingDM(userId1: string, userId2: string): Promise<Conversation | undefined>;
+  getConversationParticipants(conversationId: number): Promise<User[]>;
+  isUserInConversation(userId: string, conversationId: number): Promise<boolean>;
+  
+  sendMessage(conversationId: number, senderId: string, content: string): Promise<Message>;
+  getConversationMessages(conversationId: number, limit?: number, before?: number): Promise<Message[]>;
+  markConversationRead(userId: string, conversationId: number): Promise<void>;
+  getUnreadCount(userId: string): Promise<number>;
 }
 
 export class DbStorage implements IStorage {
@@ -299,6 +318,162 @@ export class DbStorage implements IStorage {
     return await db.select()
       .from(integrationApiKeys)
       .where(eq(integrationApiKeys.userId, userId));
+  }
+
+  // Chat system methods
+  async createConversation(participantIds: string[], name?: string, isGroup?: boolean): Promise<Conversation> {
+    const [conversation] = await db.insert(conversations)
+      .values({ name, isGroup: isGroup || participantIds.length > 2 })
+      .returning();
+    
+    await db.insert(conversationParticipants)
+      .values(participantIds.map(userId => ({
+        conversationId: conversation.id,
+        userId,
+      })));
+    
+    return conversation;
+  }
+
+  async getConversation(id: number): Promise<Conversation | undefined> {
+    const [conversation] = await db.select()
+      .from(conversations)
+      .where(eq(conversations.id, id));
+    return conversation;
+  }
+
+  async getUserConversations(userId: string): Promise<(Conversation & { participants: User[]; lastMessage?: Message })[]> {
+    const userConvos = await db.select({ conversationId: conversationParticipants.conversationId })
+      .from(conversationParticipants)
+      .where(eq(conversationParticipants.userId, userId));
+    
+    if (userConvos.length === 0) return [];
+    
+    const convoIds = userConvos.map(c => c.conversationId);
+    const convos = await db.select()
+      .from(conversations)
+      .where(inArray(conversations.id, convoIds))
+      .orderBy(desc(conversations.updatedAt));
+    
+    const result: (Conversation & { participants: User[]; lastMessage?: Message })[] = [];
+    
+    for (const convo of convos) {
+      const participants = await this.getConversationParticipants(convo.id);
+      const [lastMessage] = await db.select()
+        .from(messages)
+        .where(and(eq(messages.conversationId, convo.id), isNull(messages.deletedAt)))
+        .orderBy(desc(messages.createdAt))
+        .limit(1);
+      
+      result.push({ ...convo, participants, lastMessage });
+    }
+    
+    return result;
+  }
+
+  async findExistingDM(userId1: string, userId2: string): Promise<Conversation | undefined> {
+    const user1Convos = await db.select({ conversationId: conversationParticipants.conversationId })
+      .from(conversationParticipants)
+      .where(eq(conversationParticipants.userId, userId1));
+    
+    for (const { conversationId } of user1Convos) {
+      const [convo] = await db.select()
+        .from(conversations)
+        .where(and(eq(conversations.id, conversationId), eq(conversations.isGroup, false)));
+      
+      if (convo) {
+        const participants = await db.select()
+          .from(conversationParticipants)
+          .where(eq(conversationParticipants.conversationId, conversationId));
+        
+        if (participants.length === 2 && participants.some(p => p.userId === userId2)) {
+          return convo;
+        }
+      }
+    }
+    return undefined;
+  }
+
+  async getConversationParticipants(conversationId: number): Promise<User[]> {
+    const participantRows = await db.select()
+      .from(conversationParticipants)
+      .where(eq(conversationParticipants.conversationId, conversationId));
+    
+    if (participantRows.length === 0) return [];
+    
+    const userIds = participantRows.map(p => p.userId);
+    return await db.select()
+      .from(users)
+      .where(inArray(users.id, userIds));
+  }
+
+  async isUserInConversation(userId: string, conversationId: number): Promise<boolean> {
+    const [participant] = await db.select()
+      .from(conversationParticipants)
+      .where(and(
+        eq(conversationParticipants.userId, userId),
+        eq(conversationParticipants.conversationId, conversationId)
+      ));
+    return !!participant;
+  }
+
+  async sendMessage(conversationId: number, senderId: string, content: string): Promise<Message> {
+    const [message] = await db.insert(messages)
+      .values({ conversationId, senderId, content })
+      .returning();
+    
+    await db.update(conversations)
+      .set({ updatedAt: new Date() })
+      .where(eq(conversations.id, conversationId));
+    
+    return message;
+  }
+
+  async getConversationMessages(conversationId: number, limit: number = 50, before?: number): Promise<Message[]> {
+    let query = db.select()
+      .from(messages)
+      .where(and(
+        eq(messages.conversationId, conversationId),
+        isNull(messages.deletedAt),
+        before ? lt(messages.id, before) : undefined
+      ))
+      .orderBy(desc(messages.createdAt))
+      .limit(limit);
+    
+    return await query;
+  }
+
+  async markConversationRead(userId: string, conversationId: number): Promise<void> {
+    await db.update(conversationParticipants)
+      .set({ lastReadAt: new Date() })
+      .where(and(
+        eq(conversationParticipants.userId, userId),
+        eq(conversationParticipants.conversationId, conversationId)
+      ));
+  }
+
+  async getUnreadCount(userId: string): Promise<number> {
+    const userConvos = await db.select({
+      conversationId: conversationParticipants.conversationId,
+      lastReadAt: conversationParticipants.lastReadAt
+    })
+      .from(conversationParticipants)
+      .where(eq(conversationParticipants.userId, userId));
+    
+    let unreadCount = 0;
+    for (const { conversationId, lastReadAt } of userConvos) {
+      const condition = lastReadAt 
+        ? and(eq(messages.conversationId, conversationId), isNull(messages.deletedAt), sql`${messages.createdAt} > ${lastReadAt}`)
+        : and(eq(messages.conversationId, conversationId), isNull(messages.deletedAt));
+      
+      const [result] = await db.select({ count: sql<number>`count(*)` })
+        .from(messages)
+        .where(condition);
+      
+      unreadCount += Number(result?.count || 0);
+    }
+    
+    return unreadCount;
   }
 }
 

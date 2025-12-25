@@ -3,6 +3,7 @@ import {
   LayoutDashboard, 
   Inbox, 
   Calendar as CalendarIcon, 
+  MessageCircle,
   Settings, 
   PlusCircle,
   Command,
@@ -31,6 +32,7 @@ export function UnifiedSidebar() {
     { icon: LayoutDashboard, label: "Overview", href: "/" },
     { icon: Inbox, label: "Unified Inbox", href: "/inbox" },
     { icon: CalendarIcon, label: "Calendar", href: "/calendar" },
+    { icon: MessageCircle, label: "Chat", href: "/chat" },
   ];
 
   const bottomItems = [
