@@ -6,6 +6,7 @@ import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient
 import { useQuery } from "@tanstack/react-query";
 import type { FeedItem as FeedItemType } from "@shared/schema";
 import { useAuth } from "@/hooks/useAuth";
+import { Link } from "wouter";
 
 type FilterType = "all" | "mentions" | "unread";
 
@@ -345,45 +346,49 @@ export default function Dashboard() {
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="glass-panel p-5 rounded-xl border-l-4 border-l-red-500">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-                    <Mail className="w-5 h-5 text-red-600" />
+              <Link href="/inbox" data-testid="link-gmail-card">
+                <div className="glass-panel p-5 rounded-xl border-l-4 border-l-red-500 cursor-pointer hover:bg-white/80 transition-colors">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                      <Mail className="w-5 h-5 text-red-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">Gmail</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {gmailLoading ? "Loading..." : gmailError ? "Not connected" : `${gmailMessages.filter(m => m.isUnread).length} unread, ${gmailMessages.length} total`}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-semibold">Gmail</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {gmailLoading ? "Loading..." : gmailError ? "Not connected" : `${gmailMessages.filter(m => m.isUnread).length} unread, ${gmailMessages.length} total`}
+                  {!gmailError && gmailMessages.length > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Latest: {extractSenderName(gmailMessages[0]?.from || '')} - {gmailMessages[0]?.subject?.substring(0, 40)}...
                     </p>
-                  </div>
+                  )}
                 </div>
-                {!gmailError && gmailMessages.length > 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    Latest: {extractSenderName(gmailMessages[0]?.from || '')} - {gmailMessages[0]?.subject?.substring(0, 40)}...
-                  </p>
-                )}
-              </div>
+              </Link>
 
-              <div className="glass-panel p-5 rounded-xl border-l-4 border-l-green-500">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                    <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
+              <Link href="/calendar" data-testid="link-calendar-card">
+                <div className="glass-panel p-5 rounded-xl border-l-4 border-l-green-500 cursor-pointer hover:bg-white/80 transition-colors">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                      <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">Google Calendar</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {calendarLoading ? "Loading..." : `${calendarEvents.length} upcoming events`}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-semibold">Google Calendar</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {calendarLoading ? "Loading..." : `${calendarEvents.length} upcoming events`}
+                  {calendarEvents.length > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Next: {calendarEvents[0]?.title}
                     </p>
-                  </div>
+                  )}
                 </div>
-                {calendarEvents.length > 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    Next: {calendarEvents[0]?.title}
-                  </p>
-                )}
-              </div>
+              </Link>
 
               <div className="glass-panel p-5 rounded-xl border-l-4 border-l-blue-500">
                 <div className="flex items-center gap-3 mb-3">
