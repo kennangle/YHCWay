@@ -1081,5 +1081,58 @@ export async function registerRoutes(
     }
   });
 
+  // User preferences endpoints
+  app.get("/api/preferences", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const prefs = await storage.getUserPreferences(userId);
+      
+      // Return defaults if no preferences set
+      if (!prefs) {
+        return res.json({
+          googleCalendarColor: "#3b82f6",
+          appleCalendarColor: "#22c55e",
+          zoomColor: "#a855f7",
+          theme: "light"
+        });
+      }
+      
+      res.json({
+        googleCalendarColor: prefs.googleCalendarColor,
+        appleCalendarColor: prefs.appleCalendarColor,
+        zoomColor: prefs.zoomColor,
+        theme: prefs.theme
+      });
+    } catch (error) {
+      console.error("Error fetching preferences:", error);
+      res.status(500).json({ error: "Failed to fetch preferences" });
+    }
+  });
+
+  app.patch("/api/preferences", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const { googleCalendarColor, appleCalendarColor, zoomColor, theme } = req.body;
+      
+      const updates: Record<string, string> = {};
+      if (googleCalendarColor) updates.googleCalendarColor = googleCalendarColor;
+      if (appleCalendarColor) updates.appleCalendarColor = appleCalendarColor;
+      if (zoomColor) updates.zoomColor = zoomColor;
+      if (theme) updates.theme = theme;
+      
+      const prefs = await storage.updateUserPreferences(userId, updates);
+      
+      res.json({
+        googleCalendarColor: prefs.googleCalendarColor,
+        appleCalendarColor: prefs.appleCalendarColor,
+        zoomColor: prefs.zoomColor,
+        theme: prefs.theme
+      });
+    } catch (error) {
+      console.error("Error updating preferences:", error);
+      res.status(500).json({ error: "Failed to update preferences" });
+    }
+  });
+
   return httpServer;
 }
