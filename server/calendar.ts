@@ -62,9 +62,11 @@ export async function getUpcomingEvents(maxResults: number = 10): Promise<Calend
   const calendar = await getCalendarClient();
   
   const now = new Date();
+  const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
   const response = await calendar.events.list({
     calendarId: 'primary',
     timeMin: now.toISOString(),
+    timeMax: thirtyDaysFromNow.toISOString(),
     maxResults,
     singleEvents: true,
     orderBy: 'startTime',
