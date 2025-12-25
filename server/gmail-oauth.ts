@@ -16,8 +16,18 @@ function getOAuth2Client() {
     throw new Error('Google OAuth credentials not configured');
   }
   
-  // Use the production URL for OAuth callback (must match Google Console configuration)
-  const redirectUri = 'https://sync-connect--ken196.replit.app/api/gmail/callback';
+  // Use environment-specific redirect URI
+  // In production: use the production domain
+  // In development: use REPLIT_DEV_DOMAIN if available
+  let redirectUri: string;
+  
+  if (process.env.NODE_ENV === 'production' || !process.env.REPLIT_DEV_DOMAIN) {
+    redirectUri = 'https://sync-connect--ken196.replit.app/api/gmail/callback';
+  } else {
+    redirectUri = `https://${process.env.REPLIT_DEV_DOMAIN}/api/gmail/callback`;
+  }
+  
+  console.log('[Gmail OAuth] Using redirect URI:', redirectUri);
   
   return new google.auth.OAuth2(clientId, clientSecret, redirectUri);
 }
