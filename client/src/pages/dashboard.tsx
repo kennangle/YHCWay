@@ -1,3 +1,4 @@
+import { useState, useMemo } from "react";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { FeedItem } from "@/components/feed-item";
 import { Search, Bell, Mail, Video, MessageCircle, Users, MessageSquare } from "lucide-react";
@@ -5,6 +6,17 @@ import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient
 import { useQuery } from "@tanstack/react-query";
 import type { FeedItem as FeedItemType } from "@shared/schema";
 import { useAuth } from "@/hooks/useAuth";
+
+type FilterType = "all" | "mentions" | "unread";
+
+interface UnifiedActivityItem {
+  id: string;
+  type: "gmail" | "slack" | "zoom" | "feed";
+  isUnread: boolean;
+  hasMention: boolean;
+  timestamp: Date;
+  data: any;
+}
 
 interface GmailMessage {
   id: string;
@@ -51,6 +63,7 @@ interface SlackMessage {
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
   
   const getGreeting = () => {
@@ -227,6 +240,74 @@ export default function Dashboard() {
     }
   };
 
+  const detectMention = (text: string, userEmail?: string | null): boolean => {
+    if (!text) return false;
+    const lowerText = text.toLowerCase();
+    if (lowerText.includes('@')) {
+      if (userEmail && lowerText.includes(userEmail.toLowerCase())) return true;
+      if (user?.firstName && lowerText.includes(`@${user.firstName.toLowerCase()}`)) return true;
+      if (lowerText.includes('mentioned you')) return true;
+    }
+    return false;
+  };
+
+  const unifiedFeed = useMemo((): UnifiedActivityItem[] => {
+    const items: UnifiedActivityItem[] = [];
+    
+    gmailMessages.forEach(email => {
+      items.push({
+        id: `gmail-${email.id}`,
+        type: "gmail",
+        isUnread: email.isUnread,
+        hasMention: detectMention(email.subject + ' ' + email.snippet, user?.email),
+        timestamp: new Date(email.date),
+        data: email,
+      });
+    });
+    
+    slackMessages.forEach(msg => {
+      items.push({
+        id: `slack-${msg.id}`,
+        type: "slack",
+        isUnread: false,
+        hasMention: detectMention(msg.text, user?.email) || msg.isDm === true,
+        timestamp: new Date(msg.timestamp),
+        data: msg,
+      });
+    });
+    
+    zoomMeetings.forEach(meeting => {
+      items.push({
+        id: `zoom-${meeting.id}`,
+        type: "zoom",
+        isUnread: false,
+        hasMention: false,
+        timestamp: new Date(meeting.startTime),
+        data: meeting,
+      });
+    });
+    
+    feedItems.forEach(item => {
+      items.push({
+        id: `feed-${item.id}`,
+        type: "feed",
+        isUnread: item.urgent || false,
+        hasMention: detectMention(item.title + ' ' + (item.subtitle || ''), user?.email),
+        timestamp: new Date(item.timestamp),
+        data: item,
+      });
+    });
+    
+    return items.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+  }, [gmailMessages, slackMessages, zoomMeetings, feedItems, user]);
+
+  const filteredFeed = useMemo(() => {
+    if (activeFilter === "all") return unifiedFeed;
+    if (activeFilter === "mentions") return unifiedFeed.filter(item => item.hasMention);
+    if (activeFilter === "unread") return unifiedFeed.filter(item => item.isUnread);
+    return unifiedFeed;
+  }, [unifiedFeed, activeFilter]);
+
   return (
     <div className="min-h-screen bg-background text-foreground flex font-sans">
       <div 
@@ -346,121 +427,165 @@ export default function Dashboard() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-display font-semibold text-xl">Recent Activity</h2>
               <div className="flex gap-2 text-sm">
-                <button className="px-3 py-1.5 rounded-full bg-white shadow-sm text-foreground font-medium" data-testid="button-filter-all">All</button>
-                <button className="px-3 py-1.5 rounded-full text-muted-foreground hover:bg-white/50 transition-colors" data-testid="button-filter-mentions">Mentions</button>
-                <button className="px-3 py-1.5 rounded-full text-muted-foreground hover:bg-white/50 transition-colors" data-testid="button-filter-unread">Unread</button>
+                <button 
+                  onClick={() => setActiveFilter("all")}
+                  className={`px-3 py-1.5 rounded-full transition-colors ${activeFilter === "all" ? "bg-white shadow-sm text-foreground font-medium" : "text-muted-foreground hover:bg-white/50"}`}
+                  data-testid="button-filter-all"
+                >
+                  All
+                </button>
+                <button 
+                  onClick={() => setActiveFilter("mentions")}
+                  className={`px-3 py-1.5 rounded-full transition-colors ${activeFilter === "mentions" ? "bg-white shadow-sm text-foreground font-medium" : "text-muted-foreground hover:bg-white/50"}`}
+                  data-testid="button-filter-mentions"
+                >
+                  Mentions {unifiedFeed.filter(i => i.hasMention).length > 0 && `(${unifiedFeed.filter(i => i.hasMention).length})`}
+                </button>
+                <button 
+                  onClick={() => setActiveFilter("unread")}
+                  className={`px-3 py-1.5 rounded-full transition-colors ${activeFilter === "unread" ? "bg-white shadow-sm text-foreground font-medium" : "text-muted-foreground hover:bg-white/50"}`}
+                  data-testid="button-filter-unread"
+                >
+                  Unread {unifiedFeed.filter(i => i.isUnread).length > 0 && `(${unifiedFeed.filter(i => i.isUnread).length})`}
+                </button>
               </div>
             </div>
 
             <div className="space-y-3">
               {(feedLoading || gmailLoading || zoomLoading || slackLoading) ? (
                 <div className="text-center text-muted-foreground py-8">Loading activity...</div>
-              ) : (feedItems.length === 0 && gmailMessages.length === 0 && zoomMeetings.length === 0 && slackMessages.length === 0) ? (
-                <div className="text-center text-muted-foreground py-8">No recent activity</div>
+              ) : filteredFeed.length === 0 ? (
+                <div className="text-center text-muted-foreground py-8">
+                  {activeFilter === "mentions" ? "No mentions found" : 
+                   activeFilter === "unread" ? "No unread items" : 
+                   "No recent activity"}
+                </div>
               ) : (
                 <>
-                  {zoomMeetings.map((meeting) => (
-                    <a 
-                      key={`zoom-${meeting.id}`}
-                      href={meeting.joinUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="glass-panel p-4 rounded-xl hover:bg-white/80 transition-colors cursor-pointer block border-l-4 border-l-blue-500"
-                      data-testid={`feed-zoom-${meeting.id}`}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                          <Video className="w-5 h-5 text-blue-600" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm font-semibold text-foreground">Zoom Meeting</span>
-                            <span className="text-xs text-muted-foreground">{formatZoomTime(meeting.startTime)}</span>
+                  {filteredFeed.map((item) => {
+                    if (item.type === "zoom") {
+                      const meeting = item.data as ZoomMeeting;
+                      return (
+                        <a 
+                          key={item.id}
+                          href={meeting.joinUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="glass-panel p-4 rounded-xl hover:bg-white/80 transition-colors cursor-pointer block border-l-4 border-l-blue-500"
+                          data-testid={`feed-zoom-${meeting.id}`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                              <Video className="w-5 h-5 text-blue-600" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-sm font-semibold text-foreground">Zoom Meeting</span>
+                                <span className="text-xs text-muted-foreground">{formatZoomTime(meeting.startTime)}</span>
+                              </div>
+                              <h4 className="text-sm font-medium text-foreground mb-1">{meeting.topic}</h4>
+                              <p className="text-xs text-muted-foreground">{meeting.duration} minutes</p>
+                            </div>
                           </div>
-                          <h4 className="text-sm font-medium text-foreground mb-1">{meeting.topic}</h4>
-                          <p className="text-xs text-muted-foreground">{meeting.duration} minutes</p>
-                        </div>
-                      </div>
-                    </a>
-                  ))}
-                  {gmailMessages.map((email) => (
-                    <div 
-                      key={`gmail-${email.id}`}
-                      className={`glass-panel p-4 rounded-xl hover:bg-white/80 transition-colors cursor-pointer ${email.isUnread ? 'border-l-4 border-l-red-500' : ''}`}
-                      data-testid={`feed-gmail-${email.id}`}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
-                          <Mail className="w-5 h-5 text-red-600" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className={`text-sm ${email.isUnread ? 'font-semibold text-foreground' : 'font-medium text-muted-foreground'}`}>
-                              {extractSenderName(email.from)}
-                            </span>
-                            <span className="text-xs text-muted-foreground">{formatGmailTime(email.date)}</span>
-                          </div>
-                          <h4 className={`text-sm mb-1 ${email.isUnread ? 'font-semibold text-foreground' : 'text-foreground'}`}>
-                            {email.subject}
-                          </h4>
-                          <p className="text-xs text-muted-foreground line-clamp-2">{email.snippet}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  {slackMessages.map((message) => (
-                    <a 
-                      key={`slack-${message.id}`}
-                      href={message.permalink || '#'}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`glass-panel p-4 rounded-xl hover:bg-white/80 transition-colors cursor-pointer block border-l-4 ${message.isDm ? 'border-l-pink-500' : 'border-l-purple-500'}`}
-                      data-testid={`feed-slack-${message.id}`}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${message.isDm ? 'bg-pink-100' : 'bg-purple-100'}`}>
-                          {message.isDm ? (
-                            <Users className="w-5 h-5 text-pink-600" />
-                          ) : (
-                            <MessageCircle className="w-5 h-5 text-purple-600" />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-semibold text-foreground">
-                                {message.isDm ? message.channelName : `#${message.channelName}`}
-                              </span>
-                              {message.isDm && (
-                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-pink-100 text-pink-700 font-medium">DM</span>
-                              )}
-                              {message.replyCount && message.replyCount > 0 && (
-                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 font-medium flex items-center gap-1">
-                                  <MessageSquare className="w-3 h-3" />
-                                  {message.replyCount}
+                        </a>
+                      );
+                    }
+                    
+                    if (item.type === "gmail") {
+                      const email = item.data as GmailMessage;
+                      return (
+                        <div 
+                          key={item.id}
+                          className={`glass-panel p-4 rounded-xl hover:bg-white/80 transition-colors cursor-pointer ${email.isUnread ? 'border-l-4 border-l-red-500' : ''}`}
+                          data-testid={`feed-gmail-${email.id}`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                              <Mail className="w-5 h-5 text-red-600" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className={`text-sm ${email.isUnread ? 'font-semibold text-foreground' : 'font-medium text-muted-foreground'}`}>
+                                  {extractSenderName(email.from)}
                                 </span>
+                                <span className="text-xs text-muted-foreground">{formatGmailTime(email.date)}</span>
+                              </div>
+                              <h4 className={`text-sm mb-1 ${email.isUnread ? 'font-semibold text-foreground' : 'text-foreground'}`}>
+                                {email.subject}
+                              </h4>
+                              <p className="text-xs text-muted-foreground line-clamp-2">{email.snippet}</p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+                    
+                    if (item.type === "slack") {
+                      const message = item.data as SlackMessage;
+                      return (
+                        <a 
+                          key={item.id}
+                          href={message.permalink || '#'}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`glass-panel p-4 rounded-xl hover:bg-white/80 transition-colors cursor-pointer block border-l-4 ${message.isDm ? 'border-l-pink-500' : 'border-l-purple-500'}`}
+                          data-testid={`feed-slack-${message.id}`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${message.isDm ? 'bg-pink-100' : 'bg-purple-100'}`}>
+                              {message.isDm ? (
+                                <Users className="w-5 h-5 text-pink-600" />
+                              ) : (
+                                <MessageCircle className="w-5 h-5 text-purple-600" />
                               )}
                             </div>
-                            <span className="text-xs text-muted-foreground">{formatSlackTime(message.timestamp)}</span>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-semibold text-foreground">
+                                    {message.isDm ? message.channelName : `#${message.channelName}`}
+                                  </span>
+                                  {message.isDm && (
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-pink-100 text-pink-700 font-medium">DM</span>
+                                  )}
+                                  {item.hasMention && !message.isDm && (
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-medium">@mention</span>
+                                  )}
+                                  {message.replyCount && message.replyCount > 0 && (
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 font-medium flex items-center gap-1">
+                                      <MessageSquare className="w-3 h-3" />
+                                      {message.replyCount}
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="text-xs text-muted-foreground">{formatSlackTime(message.timestamp)}</span>
+                              </div>
+                              <p className="text-xs text-muted-foreground mb-1">{message.userName}</p>
+                              <p className="text-sm text-foreground line-clamp-2">{message.text}</p>
+                            </div>
                           </div>
-                          <p className="text-xs text-muted-foreground mb-1">{message.userName}</p>
-                          <p className="text-sm text-foreground line-clamp-2">{message.text}</p>
-                        </div>
-                      </div>
-                    </a>
-                  ))}
-                  {feedItems.map((item) => (
-                    <FeedItem 
-                      key={item.id} 
-                      type={item.type as any}
-                      title={item.title}
-                      subtitle={item.subtitle || undefined}
-                      time={item.time}
-                      sender={item.sender || undefined}
-                      avatar={item.avatar || undefined}
-                      urgent={item.urgent}
-                    />
-                  ))}
+                        </a>
+                      );
+                    }
+                    
+                    if (item.type === "feed") {
+                      const feedItem = item.data as FeedItemType;
+                      return (
+                        <FeedItem 
+                          key={item.id}
+                          type={feedItem.type as any}
+                          title={feedItem.title}
+                          subtitle={feedItem.subtitle || undefined}
+                          time={feedItem.time}
+                          sender={feedItem.sender || undefined}
+                          avatar={feedItem.avatar || undefined}
+                          urgent={feedItem.urgent}
+                        />
+                      );
+                    }
+                    
+                    return null;
+                  })}
                 </>
               )}
             </div>
