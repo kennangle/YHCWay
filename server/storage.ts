@@ -11,12 +11,14 @@ import {
   type InsertSlackChannelPreference,
   type PasswordResetToken,
   type InsertPasswordResetToken,
+  type IntegrationApiKey,
   users,
   services,
   feedItems,
   oauthAccounts,
   slackChannelPreferences,
-  passwordResetTokens
+  passwordResetTokens,
+  integrationApiKeys
 } from "@shared/schema";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq, desc, and } from "drizzle-orm";
@@ -64,6 +66,12 @@ export interface IStorage {
   createPasswordResetToken(userId: string, token: string, expiresAt: Date): Promise<PasswordResetToken>;
   getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined>;
   markTokenAsUsed(token: string): Promise<void>;
+  
+  // Integration API keys
+  getIntegrationApiKey(userId: string, integrationName: string): Promise<IntegrationApiKey | undefined>;
+  saveIntegrationApiKey(userId: string, integrationName: string, apiKey: string): Promise<IntegrationApiKey>;
+  deleteIntegrationApiKey(userId: string, integrationName: string): Promise<void>;
+  getUserIntegrations(userId: string): Promise<IntegrationApiKey[]>;
 }
 
 export class DbStorage implements IStorage {
@@ -250,6 +258,47 @@ export class DbStorage implements IStorage {
     await db.update(passwordResetTokens)
       .set({ usedAt: new Date() })
       .where(eq(passwordResetTokens.token, token));
+  }
+
+  async getIntegrationApiKey(userId: string, integrationName: string): Promise<IntegrationApiKey | undefined> {
+    const [key] = await db.select()
+      .from(integrationApiKeys)
+      .where(and(
+        eq(integrationApiKeys.userId, userId),
+        eq(integrationApiKeys.integrationName, integrationName)
+      ));
+    return key;
+  }
+
+  async saveIntegrationApiKey(userId: string, integrationName: string, apiKey: string): Promise<IntegrationApiKey> {
+    const existing = await this.getIntegrationApiKey(userId, integrationName);
+    
+    if (existing) {
+      const [updated] = await db.update(integrationApiKeys)
+        .set({ apiKey, updatedAt: new Date() })
+        .where(eq(integrationApiKeys.id, existing.id))
+        .returning();
+      return updated;
+    }
+    
+    const [newKey] = await db.insert(integrationApiKeys)
+      .values({ userId, integrationName, apiKey })
+      .returning();
+    return newKey;
+  }
+
+  async deleteIntegrationApiKey(userId: string, integrationName: string): Promise<void> {
+    await db.delete(integrationApiKeys)
+      .where(and(
+        eq(integrationApiKeys.userId, userId),
+        eq(integrationApiKeys.integrationName, integrationName)
+      ));
+  }
+
+  async getUserIntegrations(userId: string): Promise<IntegrationApiKey[]> {
+    return await db.select()
+      .from(integrationApiKeys)
+      .where(eq(integrationApiKeys.userId, userId));
   }
 }
 

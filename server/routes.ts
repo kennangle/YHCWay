@@ -1,7 +1,7 @@
 import type { Express, RequestHandler } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertServiceSchema, insertFeedItemSchema, ADMIN_EMAIL, adminCreateUserSchema } from "@shared/schema";
+import { insertServiceSchema, insertFeedItemSchema, ADMIN_EMAIL, adminCreateUserSchema, integrationApiKeySchema } from "@shared/schema";
 import { setupAuth, isAuthenticated } from "./auth";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
@@ -10,6 +10,7 @@ import { getUpcomingEvents, getEventsForMonth, isCalendarConnected } from "./cal
 import { getUpcomingMeetings, isZoomConnected } from "./zoom";
 import { getRecentMessages as getSlackMessages, getAllMessages as getAllSlackMessages, getDirectMessages as getSlackDMs, getThreadReplies as getSlackThreadReplies, isSlackConnected, getChannels as getSlackChannels, getRecentMessagesFiltered } from "./slack";
 import { isAppleCalendarConnected, testAppleCalendarConnection, saveAppleCalendarCredentials, deleteAppleCalendarCredentials, getAppleCalendarEvents, getAppleCalendarEventsForMonth } from "./appleCalendar";
+import { isAsanaConnected, getMyTasks, getProjects, getUpcomingTasks } from "./asana";
 import { appleCalendarConnectSchema, slackPreferencesUpdateSchema } from "@shared/schema";
 
 const isAdmin: RequestHandler = async (req: any, res, next) => {
@@ -525,13 +526,26 @@ export async function registerRoutes(
     try {
       const userId = req.user.claims?.sub || req.user.id;
       
-      const [gmailConnected, calendarConnected, zoomConnected, slackConnected, appleCalendarConnected] = await Promise.all([
+      const [
+        gmailConnected, 
+        calendarConnected, 
+        zoomConnected, 
+        slackConnected, 
+        appleCalendarConnected,
+        asanaConnected,
+        userIntegrations
+      ] = await Promise.all([
         isGmailConnected().catch(() => false),
         isCalendarConnected().catch(() => false),
         isZoomConnected().catch(() => false),
         isSlackConnected().catch(() => false),
         isAppleCalendarConnected(userId).catch(() => false),
+        isAsanaConnected().catch(() => false),
+        storage.getUserIntegrations(userId).catch(() => []),
       ]);
+
+      const calendlyKey = userIntegrations.find(i => i.integrationName === 'calendly');
+      const typeformKey = userIntegrations.find(i => i.integrationName === 'typeform');
 
       res.json({
         gmail: gmailConnected,
@@ -539,9 +553,9 @@ export async function registerRoutes(
         zoom: zoomConnected,
         slack: slackConnected,
         "apple-calendar": appleCalendarConnected,
-        asana: false,
-        calendly: false,
-        typeform: false,
+        asana: asanaConnected,
+        calendly: !!calendlyKey,
+        typeform: !!typeformKey,
       });
     } catch (error) {
       console.error("Error checking integration status:", error);
@@ -558,26 +572,76 @@ export async function registerRoutes(
     }
   });
 
-  // Integration connect endpoint - initiates OAuth flow for apps
-  app.post("/api/integrations/:appId/connect", isAuthenticated, async (req: any, res) => {
+  // Save API key for integrations (Calendly, Typeform)
+  app.post("/api/integrations/api-key", isAuthenticated, async (req: any, res) => {
     try {
-      const { appId } = req.params;
+      const userId = req.user.claims?.sub || req.user.id;
+      const validatedData = integrationApiKeySchema.parse(req.body);
       
-      // For now, return a message that the app needs OAuth setup
-      // In a full implementation, this would redirect to the OAuth provider
-      const oauthApps = ["gmail", "google-calendar", "zoom", "slack", "asana", "calendly", "typeform"];
-      
-      if (oauthApps.includes(appId)) {
-        res.json({ 
-          message: `${appId} integration requires OAuth configuration`,
-          status: "pending"
-        });
+      await storage.saveIntegrationApiKey(userId, validatedData.integrationName, validatedData.apiKey);
+      res.json({ success: true, message: `${validatedData.integrationName} connected successfully` });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: error.errors[0]?.message || "Validation failed" });
       } else {
-        res.status(400).json({ error: "Unknown integration" });
+        console.error("Error saving integration API key:", error);
+        res.status(500).json({ error: "Failed to save API key" });
       }
+    }
+  });
+
+  // Delete API key for integrations
+  app.delete("/api/integrations/:integrationName/disconnect", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const { integrationName } = req.params;
+      
+      await storage.deleteIntegrationApiKey(userId, integrationName);
+      res.json({ success: true, message: `${integrationName} disconnected` });
     } catch (error) {
-      console.error("Error initiating connection:", error);
-      res.status(500).json({ error: "Failed to initiate connection" });
+      console.error("Error disconnecting integration:", error);
+      res.status(500).json({ error: "Failed to disconnect integration" });
+    }
+  });
+
+  // Asana integration endpoints
+  app.get("/api/asana/status", isAuthenticated, async (req, res) => {
+    try {
+      const connected = await isAsanaConnected();
+      res.json({ connected });
+    } catch (error) {
+      res.json({ connected: false });
+    }
+  });
+
+  app.get("/api/asana/tasks", isAuthenticated, async (req, res) => {
+    try {
+      const tasks = await getMyTasks(20);
+      res.json(tasks);
+    } catch (error: any) {
+      console.error("Error fetching Asana tasks:", error?.message || error);
+      res.status(500).json({ error: error?.message || "Failed to fetch Asana tasks" });
+    }
+  });
+
+  app.get("/api/asana/tasks/upcoming", isAuthenticated, async (req, res) => {
+    try {
+      const days = parseInt(req.query.days as string) || 7;
+      const tasks = await getUpcomingTasks(days, 20);
+      res.json(tasks);
+    } catch (error: any) {
+      console.error("Error fetching upcoming Asana tasks:", error?.message || error);
+      res.status(500).json({ error: error?.message || "Failed to fetch Asana tasks" });
+    }
+  });
+
+  app.get("/api/asana/projects", isAuthenticated, async (req, res) => {
+    try {
+      const projects = await getProjects(20);
+      res.json(projects);
+    } catch (error: any) {
+      console.error("Error fetching Asana projects:", error?.message || error);
+      res.status(500).json({ error: error?.message || "Failed to fetch Asana projects" });
     }
   });
 

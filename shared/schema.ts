@@ -153,3 +153,21 @@ export const resetPasswordSchema = z.object({
   token: z.string().min(1, "Token is required"),
   password: z.string().min(8, "Password must be at least 8 characters"),
 });
+
+// Integration API keys table - for Calendly, Typeform, etc.
+export const integrationApiKeys = pgTable("integration_api_keys", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  integrationName: varchar("integration_name").notNull(),
+  apiKey: text("api_key").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type IntegrationApiKey = typeof integrationApiKeys.$inferSelect;
+export type InsertIntegrationApiKey = typeof integrationApiKeys.$inferInsert;
+
+export const integrationApiKeySchema = z.object({
+  integrationName: z.enum(["calendly", "typeform"]),
+  apiKey: z.string().min(1, "API key is required"),
+});

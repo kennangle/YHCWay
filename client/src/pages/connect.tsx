@@ -1,9 +1,10 @@
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { AppleCalendarConnect } from "@/components/apple-calendar-connect";
-import { Search, MessageCircle, Mail, Calendar, Video, CheckSquare, FileText, Clock } from "lucide-react";
+import { Search, MessageCircle, Mail, Calendar, Video, CheckSquare, FileText, Clock, X } from "lucide-react";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 interface AppIntegration {
   id: string;
@@ -12,7 +13,9 @@ interface AppIntegration {
   icon: React.ReactNode;
   colorClass: string;
   category: "productivity" | "calendar" | "communication" | "forms";
-  connectType: "oauth" | "special" | "coming-soon";
+  connectType: "configured" | "api-key" | "special";
+  apiKeyLabel?: string;
+  apiKeyHelp?: string;
   connected?: boolean;
 }
 
@@ -24,7 +27,7 @@ const availableApps: AppIntegration[] = [
     icon: <MessageCircle className="w-6 h-6" />,
     colorClass: "bg-[#4A154B] text-white",
     category: "communication",
-    connectType: "oauth",
+    connectType: "configured",
   },
   {
     id: "gmail",
@@ -33,7 +36,7 @@ const availableApps: AppIntegration[] = [
     icon: <Mail className="w-6 h-6" />,
     colorClass: "bg-[#EA4335] text-white",
     category: "communication",
-    connectType: "oauth",
+    connectType: "configured",
   },
   {
     id: "google-calendar",
@@ -42,7 +45,7 @@ const availableApps: AppIntegration[] = [
     icon: <Calendar className="w-6 h-6" />,
     colorClass: "bg-[#4285F4] text-white",
     category: "calendar",
-    connectType: "oauth",
+    connectType: "configured",
   },
   {
     id: "zoom",
@@ -51,7 +54,7 @@ const availableApps: AppIntegration[] = [
     icon: <Video className="w-6 h-6" />,
     colorClass: "bg-[#2D8CFF] text-white",
     category: "communication",
-    connectType: "oauth",
+    connectType: "configured",
   },
   {
     id: "asana",
@@ -60,7 +63,7 @@ const availableApps: AppIntegration[] = [
     icon: <CheckSquare className="w-6 h-6" />,
     colorClass: "bg-[#F06A6A] text-white",
     category: "productivity",
-    connectType: "oauth",
+    connectType: "configured",
   },
   {
     id: "calendly",
@@ -69,7 +72,9 @@ const availableApps: AppIntegration[] = [
     icon: <Clock className="w-6 h-6" />,
     colorClass: "bg-[#006BFF] text-white",
     category: "calendar",
-    connectType: "oauth",
+    connectType: "api-key",
+    apiKeyLabel: "Personal Access Token",
+    apiKeyHelp: "Get your token from Calendly Settings > Integrations > API & Webhooks",
   },
   {
     id: "typeform",
@@ -78,9 +83,94 @@ const availableApps: AppIntegration[] = [
     icon: <FileText className="w-6 h-6" />,
     colorClass: "bg-[#262627] text-white",
     category: "forms",
-    connectType: "oauth",
+    connectType: "api-key",
+    apiKeyLabel: "Personal Access Token",
+    apiKeyHelp: "Get your token from Typeform Account Settings > Personal tokens",
   },
 ];
+
+function ApiKeyModal({ 
+  app, 
+  onClose, 
+  onSave,
+  isSaving
+}: { 
+  app: AppIntegration; 
+  onClose: () => void;
+  onSave: (apiKey: string) => void;
+  isSaving: boolean;
+}) {
+  const [apiKey, setApiKey] = useState("");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (apiKey.trim()) {
+      onSave(apiKey.trim());
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="glass-panel relative z-10 p-6 rounded-xl w-full max-w-md mx-4" data-testid="modal-api-key">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-xl ${app.colorClass} flex items-center justify-center`}>
+              {app.icon}
+            </div>
+            <h2 className="font-display font-semibold text-xl">Connect {app.name}</h2>
+          </div>
+          <button 
+            onClick={onClose}
+            className="text-muted-foreground hover:text-foreground transition-colors"
+            data-testid="button-close-modal"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        
+        <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-2">
+              {app.apiKeyLabel || "API Key"}
+            </label>
+            <input
+              type="password"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder="Enter your API key..."
+              className="w-full px-4 py-3 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
+              data-testid="input-api-key"
+              autoFocus
+            />
+            {app.apiKeyHelp && (
+              <p className="text-xs text-muted-foreground mt-2">{app.apiKeyHelp}</p>
+            )}
+          </div>
+          
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-2 rounded-lg border border-border text-muted-foreground hover:bg-muted/50 transition-colors"
+              data-testid="button-cancel"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={!apiKey.trim() || isSaving}
+              className="flex-1 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+              data-testid="button-save-api-key"
+            >
+              {isSaving ? "Connecting..." : "Connect"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
 
 function AppCard({ app, onConnect, isConnecting }: { 
   app: AppIntegration; 
@@ -104,11 +194,11 @@ function AppCard({ app, onConnect, isConnecting }: {
         ) : (
           <button
             onClick={() => onConnect(app.id)}
-            disabled={isConnecting || app.connectType === "coming-soon"}
+            disabled={isConnecting}
             className="flex items-center gap-1.5 text-sm text-primary hover:bg-primary/10 px-3 py-1.5 rounded-full border border-primary/30 transition-colors disabled:opacity-50"
             data-testid={`button-connect-${app.id}`}
           >
-            + Connect
+            {isConnecting ? "Connecting..." : "+ Connect"}
           </button>
         )}
       </div>
@@ -121,44 +211,73 @@ function AppCard({ app, onConnect, isConnecting }: {
 export default function Connect() {
   const [searchQuery, setSearchQuery] = useState("");
   const [connectingApp, setConnectingApp] = useState<string | null>(null);
+  const [apiKeyModalApp, setApiKeyModalApp] = useState<AppIntegration | null>(null);
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const { data: connectionStatus = {} } = useQuery<Record<string, boolean>>({
     queryKey: ["connection-status"],
     queryFn: async () => {
-      const res = await fetch("/api/integrations/status");
+      const res = await fetch("/api/integrations/status", { credentials: "include" });
       if (!res.ok) return {};
       return res.json();
     },
   });
 
-  const connectMutation = useMutation({
-    mutationFn: async (appId: string) => {
-      const res = await fetch(`/api/integrations/${appId}/connect`, {
+  const saveApiKeyMutation = useMutation({
+    mutationFn: async ({ integrationName, apiKey }: { integrationName: string; apiKey: string }) => {
+      const res = await fetch("/api/integrations/api-key", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         credentials: "include",
+        body: JSON.stringify({ integrationName, apiKey }),
       });
       if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.message || "Failed to connect");
+        throw new Error(error.error || "Failed to save API key");
       }
       return res.json();
     },
-    onSuccess: (data, appId) => {
-      if (data.authUrl) {
-        window.location.href = data.authUrl;
-      }
+    onSuccess: (data, variables) => {
+      toast({
+        title: "Connected!",
+        description: `${apiKeyModalApp?.name} has been connected successfully.`,
+      });
       queryClient.invalidateQueries({ queryKey: ["connection-status"] });
+      setApiKeyModalApp(null);
       setConnectingApp(null);
     },
-    onError: () => {
+    onError: (error: Error) => {
+      toast({
+        title: "Connection failed",
+        description: error.message,
+        variant: "destructive",
+      });
       setConnectingApp(null);
     },
   });
 
   const handleConnect = (appId: string) => {
-    setConnectingApp(appId);
-    connectMutation.mutate(appId);
+    const app = availableApps.find(a => a.id === appId);
+    if (!app) return;
+
+    if (app.connectType === "api-key") {
+      setApiKeyModalApp(app);
+    } else if (app.connectType === "configured") {
+      toast({
+        title: "System Integration",
+        description: `${app.name} is configured at the system level. Contact your administrator if you need access.`,
+      });
+    }
+  };
+
+  const handleSaveApiKey = (apiKey: string) => {
+    if (!apiKeyModalApp) return;
+    setConnectingApp(apiKeyModalApp.id);
+    saveApiKeyMutation.mutate({ 
+      integrationName: apiKeyModalApp.id, 
+      apiKey 
+    });
   };
 
   const appsWithStatus = availableApps.map(app => ({
@@ -246,6 +365,15 @@ export default function Connect() {
           </div>
         </section>
       </main>
+
+      {apiKeyModalApp && (
+        <ApiKeyModal
+          app={apiKeyModalApp}
+          onClose={() => setApiKeyModalApp(null)}
+          onSave={handleSaveApiKey}
+          isSaving={saveApiKeyMutation.isPending}
+        />
+      )}
     </div>
   );
 }
