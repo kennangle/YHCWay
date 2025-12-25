@@ -1,10 +1,9 @@
 import { UnifiedSidebar } from "@/components/unified-sidebar";
-import { ServiceCard } from "@/components/service-card";
 import { FeedItem } from "@/components/feed-item";
 import { Search, Bell, Mail, Video, MessageCircle, Users, MessageSquare } from "lucide-react";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
 import { useQuery } from "@tanstack/react-query";
-import type { Service, FeedItem as FeedItemType } from "@shared/schema";
+import type { FeedItem as FeedItemType } from "@shared/schema";
 import { useAuth } from "@/hooks/useAuth";
 
 interface GmailMessage {
@@ -62,15 +61,6 @@ export default function Dashboard() {
   };
   
   const userName = user?.firstName || user?.email?.split("@")[0] || "there";
-
-  const { data: services = [], isLoading: servicesLoading } = useQuery<Service[]>({
-    queryKey: ["services"],
-    queryFn: async () => {
-      const res = await fetch("/api/services");
-      if (!res.ok) throw new Error("Failed to fetch services");
-      return res.json();
-    },
-  });
 
   const { data: feedItems = [], isLoading: feedLoading } = useQuery<FeedItemType[]>({
     queryKey: ["feed"],
@@ -237,16 +227,6 @@ export default function Dashboard() {
     }
   };
 
-  const getIconName = (iconStr: string) => {
-    const iconMap: Record<string, string> = {
-      "MessageCircle": "MessageCircle",
-      "Mail": "Mail",
-      "Calendar": "Calendar",
-      "Video": "Video",
-    };
-    return iconMap[iconStr] || "Calendar";
-  };
-
   return (
     <div className="min-h-screen bg-background text-foreground flex font-sans">
       <div 
@@ -276,24 +256,6 @@ export default function Dashboard() {
             </button>
           </div>
         </header>
-
-        <section className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
-          {servicesLoading ? (
-            <div className="col-span-5 text-center text-muted-foreground">Loading services...</div>
-          ) : (
-            services.map((service) => (
-              <ServiceCard 
-                key={service.id}
-                id={service.id}
-                name={service.name}
-                description={service.description}
-                icon={getIconName(service.icon)}
-                colorClass={service.colorClass}
-                connected={service.connected}
-              />
-            ))
-          )}
-        </section>
 
         <div className="grid grid-cols-12 gap-8">
           <div className="col-span-8">
