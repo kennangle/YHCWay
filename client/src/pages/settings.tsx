@@ -33,6 +33,11 @@ export default function Settings() {
 
   const { data: preferences, isLoading } = useQuery<UserPreferences>({
     queryKey: ["/api/preferences"],
+    queryFn: async () => {
+      const res = await fetch("/api/preferences", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch preferences");
+      return res.json();
+    },
   });
 
   const updatePreferencesMutation = useMutation({

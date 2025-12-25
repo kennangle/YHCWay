@@ -2,7 +2,14 @@ import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { Search, Bell, ChevronLeft, ChevronRight, Clock, MapPin, Video, Apple } from "lucide-react";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+
+interface UserPreferences {
+  googleCalendarColor: string;
+  appleCalendarColor: string;
+  zoomColor: string;
+  theme: string;
+}
 
 interface CalendarEvent {
   id: string;
@@ -24,9 +31,49 @@ interface ZoomMeeting {
   type: number;
 }
 
+function hexToRgb(hex: string) {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  } : { r: 59, g: 130, b: 246 };
+}
+
+function getContrastColor(hex: string) {
+  const { r, g, b } = hexToRgb(hex);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.5 ? `rgba(${r}, ${g}, ${b}, 0.9)` : `rgba(${r}, ${g}, ${b}, 0.8)`;
+}
+
+function getLightBg(hex: string) {
+  const { r, g, b } = hexToRgb(hex);
+  return `rgba(${r}, ${g}, ${b}, 0.1)`;
+}
+
+function getMediumBg(hex: string) {
+  const { r, g, b } = hexToRgb(hex);
+  return `rgba(${r}, ${g}, ${b}, 0.15)`;
+}
+
 export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   
+  const { data: preferences } = useQuery<UserPreferences>({
+    queryKey: ["/api/preferences"],
+    queryFn: async () => {
+      const res = await fetch("/api/preferences", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch preferences");
+      return res.json();
+    },
+  });
+
+  const colors = useMemo(() => ({
+    google: preferences?.googleCalendarColor || "#3b82f6",
+    apple: preferences?.appleCalendarColor || "#22c55e",
+    zoom: preferences?.zoomColor || "#a855f7",
+  }), [preferences]);
+
   const { data: googleEvents = [], isLoading: googleLoading } = useQuery<CalendarEvent[]>({
     queryKey: ["calendar-month", currentDate.getFullYear(), currentDate.getMonth()],
     queryFn: async () => {
@@ -230,11 +277,11 @@ export default function Calendar() {
                           {dayEvents.slice(0, 2).map(event => (
                             <div 
                               key={event.id}
-                              className={`text-[10px] px-1 py-0.5 rounded truncate ${
-                                event.source === 'apple' 
-                                  ? 'bg-green-100 text-green-700' 
-                                  : 'bg-blue-100 text-blue-700'
-                              }`}
+                              className="text-[10px] px-1 py-0.5 rounded truncate"
+                              style={{
+                                backgroundColor: getMediumBg(event.source === 'apple' ? colors.apple : colors.google),
+                                color: event.source === 'apple' ? colors.apple : colors.google,
+                              }}
                             >
                               {event.title}
                             </div>
@@ -242,7 +289,11 @@ export default function Calendar() {
                           {dayMeetings.slice(0, 2 - dayEvents.length).map(meeting => (
                             <div 
                               key={meeting.id}
-                              className="text-[10px] px-1 py-0.5 rounded bg-purple-100 text-purple-700 truncate"
+                              className="text-[10px] px-1 py-0.5 rounded truncate"
+                              style={{
+                                backgroundColor: getMediumBg(colors.zoom),
+                                color: colors.zoom,
+                              }}
                             >
                               {meeting.topic}
                             </div>
@@ -271,25 +322,30 @@ export default function Calendar() {
                 <div className="text-center text-muted-foreground py-4">No upcoming events</div>
               ) : (
                 <div className="space-y-4">
-                  {upcomingEvents.map((event) => (
+                  {upcomingEvents.map((event) => {
+                    const eventColor = event.type === 'zoom' 
+                      ? colors.zoom 
+                      : event.type === 'apple' 
+                        ? colors.apple 
+                        : colors.google;
+                    
+                    return (
                     <div 
                       key={event.id}
-                      className={`p-3 rounded-xl border-l-4 ${
-                        event.type === 'zoom' 
-                          ? 'border-l-purple-500 bg-purple-50/50' 
-                          : event.type === 'apple'
-                            ? 'border-l-green-500 bg-green-50/50'
-                            : 'border-l-blue-500 bg-blue-50/50'
-                      }`}
+                      className="p-3 rounded-xl border-l-4"
+                      style={{
+                        borderLeftColor: eventColor,
+                        backgroundColor: getLightBg(eventColor),
+                      }}
                       data-testid={`upcoming-event-${event.id}`}
                     >
                       <div className="flex items-start gap-2">
                         {event.type === 'zoom' ? (
-                          <Video className="w-4 h-4 text-purple-600 mt-0.5" />
+                          <Video className="w-4 h-4 mt-0.5" style={{ color: eventColor }} />
                         ) : event.type === 'apple' ? (
-                          <Apple className="w-4 h-4 text-green-600 mt-0.5" />
+                          <Apple className="w-4 h-4 mt-0.5" style={{ color: eventColor }} />
                         ) : (
-                          <Clock className="w-4 h-4 text-blue-600 mt-0.5" />
+                          <Clock className="w-4 h-4 mt-0.5" style={{ color: eventColor }} />
                         )}
                         <div className="flex-1 min-w-0">
                           <h4 className="text-sm font-medium text-foreground truncate">{event.title}</h4>
@@ -310,7 +366,8 @@ export default function Calendar() {
                               href={event.joinUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-xs text-purple-600 hover:underline mt-1 inline-block"
+                              className="text-xs hover:underline mt-1 inline-block"
+                              style={{ color: eventColor }}
                             >
                               Join Meeting
                             </a>
@@ -318,7 +375,8 @@ export default function Calendar() {
                         </div>
                       </div>
                     </div>
-                  ))}
+                  );
+                  })}
                 </div>
               )}
             </div>
