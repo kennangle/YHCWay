@@ -403,6 +403,39 @@ export async function registerRoutes(
     }
   });
 
+  // Test endpoint to check Gmail API access
+  app.get("/api/gmail/test", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.json({ error: "No user ID" });
+      }
+      
+      // Try to get the Gmail client and make a simple API call
+      const gmail = await getGmailClientForUser(userId);
+      
+      // Try to list just 1 message
+      const response = await gmail.users.messages.list({
+        userId: 'me',
+        maxResults: 1,
+      });
+      
+      return res.json({
+        success: true,
+        messageCount: response.data.messages?.length || 0,
+        resultSizeEstimate: response.data.resultSizeEstimate,
+      });
+    } catch (error: any) {
+      return res.json({ 
+        error: error?.message,
+        code: error?.code,
+        errors: error?.errors,
+        response: error?.response?.data,
+        stack: error?.stack?.split('\n').slice(0, 5)
+      });
+    }
+  });
+
   // Debug endpoint to check Gmail connection details
   app.get("/api/gmail/debug", isAuthenticated, async (req: any, res) => {
     try {
@@ -450,9 +483,18 @@ export async function registerRoutes(
       
       if (customConnected) {
         console.log("[Gmail Messages] Fetching emails via custom OAuth...");
-        const emails = await getRecentEmailsForUser(userId, 20);
-        console.log("[Gmail Messages] Fetched", emails.length, "emails");
-        return res.json(emails);
+        try {
+          const emails = await getRecentEmailsForUser(userId, 20);
+          console.log("[Gmail Messages] Fetched", emails.length, "emails");
+          return res.json(emails);
+        } catch (emailError: any) {
+          console.error("[Gmail Messages] Error fetching via custom OAuth:", emailError?.message);
+          console.error("[Gmail Messages] Error details:", emailError?.response?.data || emailError);
+          return res.status(500).json({ 
+            error: emailError?.message || "Failed to fetch emails",
+            details: emailError?.response?.data?.error || null
+          });
+        }
       }
       
       // Fall back to connector
