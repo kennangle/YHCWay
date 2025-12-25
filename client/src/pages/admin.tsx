@@ -8,6 +8,7 @@ import { apiRequest } from "@/lib/queryClient";
 import type { User, Service, FeedItem, InsertService, InsertFeedItem, AdminCreateUser } from "@shared/schema";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
 import { useToast } from "@/hooks/use-toast";
+import { EmailEditor } from "@/components/email-editor";
 
 type TabType = "users" | "services" | "feed" | "emails";
 
@@ -453,18 +454,12 @@ export default function Admin() {
 
         {editingTemplate && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" data-testid="modal-email-template">
-            <div className="bg-white rounded-2xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded-2xl p-6 w-full max-w-5xl max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-lg">Edit {editingTemplate.name} Template</h3>
                 <button onClick={() => setEditingTemplate(null)} className="p-1 hover:bg-gray-100 rounded-lg">
                   <X className="w-5 h-5" />
                 </button>
-              </div>
-              
-              <div className="mb-4 p-3 bg-blue-50 rounded-lg">
-                <p className="text-sm text-blue-800">
-                  <strong>Available variables:</strong> {editingTemplate.variables.map(v => `{{${v}}}`).join(", ")}
-                </p>
               </div>
               
               <div className="space-y-4">
@@ -480,14 +475,11 @@ export default function Admin() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">HTML Content</label>
-                  <textarea
+                  <label className="block text-sm font-medium mb-1">Email Content</label>
+                  <EmailEditor
                     value={templateContent}
-                    onChange={(e) => setTemplateContent(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary font-mono text-sm"
-                    rows={15}
-                    placeholder="HTML email content..."
-                    data-testid="input-template-content"
+                    onChange={setTemplateContent}
+                    variables={editingTemplate.variables}
                   />
                 </div>
                 <div className="flex gap-3 justify-end">
