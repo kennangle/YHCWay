@@ -3,6 +3,7 @@ import { Search, Mail, MessageCircle, Users, MessageSquare } from "lucide-react"
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
 import { useQuery } from "@tanstack/react-query";
 import { SlackChannelConfig } from "@/components/slack-channel-config";
+import { useState } from "react";
 
 interface GmailMessage {
   id: string;
@@ -41,7 +42,11 @@ type UnifiedMessage = {
   replyCount?: number;
 };
 
+type FilterType = 'all' | 'gmail' | 'slack' | 'dms';
+
 export default function Inbox() {
+  const [filter, setFilter] = useState<FilterType>('all');
+  
   const { data: gmailMessages = [], isLoading: gmailLoading } = useQuery<GmailMessage[]>({
     queryKey: ["gmail-messages"],
     queryFn: async () => {
@@ -84,6 +89,14 @@ export default function Inbox() {
       replyCount: msg.replyCount,
     })),
   ].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+  const filteredMessages = unifiedMessages.filter(msg => {
+    if (filter === 'all') return true;
+    if (filter === 'gmail') return msg.type === 'gmail';
+    if (filter === 'slack') return msg.type === 'slack';
+    if (filter === 'dms') return msg.type === 'slack-dm';
+    return true;
+  });
 
   function extractSenderName(from: string) {
     const match = from.match(/^([^<]+)/);
@@ -135,15 +148,33 @@ export default function Inbox() {
         </header>
 
         <div className="flex gap-2 mb-6 items-center">
-          <button className="px-4 py-2 rounded-full bg-white shadow-sm font-medium" data-testid="button-filter-all">All</button>
-          <button className="px-4 py-2 rounded-full text-muted-foreground hover:bg-white/50" data-testid="button-filter-gmail">
+          <button 
+            className={`px-4 py-2 rounded-full font-medium transition-colors ${filter === 'all' ? 'bg-white shadow-sm' : 'text-muted-foreground hover:bg-white/50'}`} 
+            onClick={() => setFilter('all')}
+            data-testid="button-filter-all"
+          >
+            All
+          </button>
+          <button 
+            className={`px-4 py-2 rounded-full font-medium transition-colors ${filter === 'gmail' ? 'bg-red-100 text-red-700 shadow-sm' : 'text-muted-foreground hover:bg-white/50'}`}
+            onClick={() => setFilter('gmail')}
+            data-testid="button-filter-gmail"
+          >
             <Mail className="w-4 h-4 inline mr-2" />Gmail
           </button>
-          <button className="px-4 py-2 rounded-full text-muted-foreground hover:bg-white/50" data-testid="button-filter-slack">
-            <MessageCircle className="w-4 h-4 inline mr-2" />Slack Channels
+          <button 
+            className={`px-4 py-2 rounded-full font-medium transition-colors ${filter === 'slack' ? 'bg-purple-100 text-purple-700 shadow-sm' : 'text-muted-foreground hover:bg-white/50'}`}
+            onClick={() => setFilter('slack')}
+            data-testid="button-filter-slack"
+          >
+            <MessageCircle className="w-4 h-4 inline mr-2" />Channels
           </button>
-          <button className="px-4 py-2 rounded-full text-muted-foreground hover:bg-white/50" data-testid="button-filter-dms">
-            <Users className="w-4 h-4 inline mr-2" />Direct Messages
+          <button 
+            className={`px-4 py-2 rounded-full font-medium transition-colors ${filter === 'dms' ? 'bg-pink-100 text-pink-700 shadow-sm' : 'text-muted-foreground hover:bg-white/50'}`}
+            onClick={() => setFilter('dms')}
+            data-testid="button-filter-dms"
+          >
+            <Users className="w-4 h-4 inline mr-2" />DMs
           </button>
           <div className="ml-auto">
             <SlackChannelConfig />
@@ -153,10 +184,12 @@ export default function Inbox() {
         <div className="space-y-2">
           {isLoading ? (
             <div className="text-center text-muted-foreground py-12">Loading messages...</div>
-          ) : unifiedMessages.length === 0 ? (
-            <div className="text-center text-muted-foreground py-12">No messages yet</div>
+          ) : filteredMessages.length === 0 ? (
+            <div className="text-center text-muted-foreground py-12">
+              {filter === 'all' ? 'No messages yet' : `No ${filter === 'gmail' ? 'emails' : filter === 'slack' ? 'channel messages' : 'direct messages'} found`}
+            </div>
           ) : (
-            unifiedMessages.map((message) => {
+            filteredMessages.map((message) => {
               const borderColor = message.type === 'gmail' ? 'border-l-red-500' : message.type === 'slack-dm' ? 'border-l-pink-500' : 'border-l-purple-500';
               const bgColor = message.type === 'gmail' ? 'bg-red-100' : message.type === 'slack-dm' ? 'bg-pink-100' : 'bg-purple-100';
               const iconColor = message.type === 'gmail' ? 'text-red-600' : message.type === 'slack-dm' ? 'text-pink-600' : 'text-purple-600';

@@ -293,8 +293,8 @@ export async function getRecentMessages(maxResults: number = 20): Promise<SlackM
 
 export async function getAllMessages(maxResults: number = 30): Promise<SlackMessage[]> {
   const [channelMessages, dmMessages] = await Promise.all([
-    getRecentMessages(Math.floor(maxResults * 0.7)),
-    getDirectMessages(Math.floor(maxResults * 0.3))
+    getRecentMessages(Math.floor(maxResults * 0.5)),
+    getDirectMessages(Math.floor(maxResults * 0.5))
   ]);
 
   const allMessages = [...channelMessages, ...dmMessages];
