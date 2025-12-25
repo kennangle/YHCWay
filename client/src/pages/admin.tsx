@@ -3,13 +3,28 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Redirect } from "wouter";
-import { Users, Server, Rss, Trash2, Edit2, Shield, ShieldOff, Plus, X, Key } from "lucide-react";
+import { Users, Server, Rss, Trash2, Edit2, Shield, ShieldOff, Plus, X, Key, Mail, RotateCcw } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import type { User, Service, FeedItem, InsertService, InsertFeedItem, AdminCreateUser } from "@shared/schema";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
 import { useToast } from "@/hooks/use-toast";
 
-type TabType = "users" | "services" | "feed";
+type TabType = "users" | "services" | "feed" | "emails";
+
+interface EmailTemplateType {
+  type: string;
+  name: string;
+  description: string;
+  variables: string[];
+}
+
+interface EmailTemplate {
+  id: number;
+  templateType: string;
+  subject: string;
+  htmlContent: string;
+  updatedAt: string;
+}
 
 export default function Admin() {
   const { user, isLoading: authLoading } = useAuth();
@@ -20,6 +35,9 @@ export default function Admin() {
   const [showAddFeed, setShowAddFeed] = useState(false);
   const [showAddUser, setShowAddUser] = useState(false);
   const [resetPasswordUser, setResetPasswordUser] = useState<User | null>(null);
+  const [editingTemplate, setEditingTemplate] = useState<EmailTemplateType | null>(null);
+  const [templateSubject, setTemplateSubject] = useState("");
+  const [templateContent, setTemplateContent] = useState("");
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -35,6 +53,16 @@ export default function Admin() {
 
   const { data: feedItems = [] } = useQuery<FeedItem[]>({
     queryKey: ["/api/feed"],
+    enabled: !!user?.isAdmin,
+  });
+
+  const { data: emailTemplateTypes = [] } = useQuery<EmailTemplateType[]>({
+    queryKey: ["/api/admin/email-template-types"],
+    enabled: !!user?.isAdmin,
+  });
+
+  const { data: savedTemplates = [] } = useQuery<EmailTemplate[]>({
+    queryKey: ["/api/admin/email-templates"],
     enabled: !!user?.isAdmin,
   });
 
@@ -126,6 +154,48 @@ export default function Admin() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/feed"] }),
   });
 
+  const saveTemplateMutation = useMutation({
+    mutationFn: async ({ type, subject, htmlContent }: { type: string; subject: string; htmlContent: string }) => {
+      return apiRequest("PUT", `/api/admin/email-templates/${type}`, { subject, htmlContent });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/email-templates"] });
+      toast({ title: "Template saved", description: "Email template has been updated successfully." });
+      setEditingTemplate(null);
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to save template.", variant: "destructive" });
+    },
+  });
+
+  const loadDefaultTemplate = async (type: string) => {
+    try {
+      const res = await fetch(`/api/admin/email-templates/${type}/default`, { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json();
+        setTemplateSubject(data.subject);
+        setTemplateContent(data.htmlContent);
+      }
+    } catch (error) {
+      console.error("Failed to load default template:", error);
+    }
+  };
+
+  const loadSavedTemplate = async (type: string) => {
+    const saved = savedTemplates.find(t => t.templateType === type);
+    if (saved) {
+      setTemplateSubject(saved.subject);
+      setTemplateContent(saved.htmlContent);
+    } else {
+      await loadDefaultTemplate(type);
+    }
+  };
+
+  const handleEditTemplate = async (templateType: EmailTemplateType) => {
+    setEditingTemplate(templateType);
+    await loadSavedTemplate(templateType.type);
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -142,6 +212,7 @@ export default function Admin() {
     { id: "users" as TabType, label: "Users", icon: Users, count: users.length },
     { id: "services" as TabType, label: "Services", icon: Server, count: services.length },
     { id: "feed" as TabType, label: "Feed Items", icon: Rss, count: feedItems.length },
+    { id: "emails" as TabType, label: "Email Templates", icon: Mail, count: emailTemplateTypes.length },
   ];
 
   return (
@@ -332,6 +403,124 @@ export default function Admin() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === "emails" && (
+          <div className="glass-card rounded-2xl p-6" data-testid="section-emails">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-semibold text-lg">Email Template Management</h2>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Customize the emails sent to users. Use variables like {"{{firstName}}"}, {"{{email}}"}, etc. in your templates.
+            </p>
+            <div className="space-y-3">
+              {emailTemplateTypes.map((t) => {
+                const saved = savedTemplates.find(s => s.templateType === t.type);
+                return (
+                  <div key={t.type} className="flex items-center justify-between p-4 bg-white/50 rounded-xl" data-testid={`row-template-${t.type}`}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-indigo-500 flex items-center justify-center text-white">
+                        <Mail className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="font-medium">{t.name}</div>
+                        <div className="text-sm text-muted-foreground">{t.description}</div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Variables: {t.variables.map(v => `{{${v}}}`).join(", ")}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {saved && (
+                        <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full font-medium">Customized</span>
+                      )}
+                      <button
+                        onClick={() => handleEditTemplate(t)}
+                        className="p-2 hover:bg-blue-50 text-blue-500 rounded-lg transition-all"
+                        data-testid={`button-edit-template-${t.type}`}
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {editingTemplate && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" data-testid="modal-email-template">
+            <div className="bg-white rounded-2xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-lg">Edit {editingTemplate.name} Template</h3>
+                <button onClick={() => setEditingTemplate(null)} className="p-1 hover:bg-gray-100 rounded-lg">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  <strong>Available variables:</strong> {editingTemplate.variables.map(v => `{{${v}}}`).join(", ")}
+                </p>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Subject Line</label>
+                  <input
+                    type="text"
+                    value={templateSubject}
+                    onChange={(e) => setTemplateSubject(e.target.value)}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    placeholder="Email subject"
+                    data-testid="input-template-subject"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">HTML Content</label>
+                  <textarea
+                    value={templateContent}
+                    onChange={(e) => setTemplateContent(e.target.value)}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary font-mono text-sm"
+                    rows={15}
+                    placeholder="HTML email content..."
+                    data-testid="input-template-content"
+                  />
+                </div>
+                <div className="flex gap-3 justify-end">
+                  <button
+                    type="button"
+                    onClick={() => loadDefaultTemplate(editingTemplate.type)}
+                    className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                    data-testid="button-reset-template"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    Reset to Default
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditingTemplate(null)}
+                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => saveTemplateMutation.mutate({
+                      type: editingTemplate.type,
+                      subject: templateSubject,
+                      htmlContent: templateContent
+                    })}
+                    disabled={saveTemplateMutation.isPending}
+                    className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium disabled:opacity-50"
+                    data-testid="button-save-template"
+                  >
+                    {saveTemplateMutation.isPending ? "Saving..." : "Save Template"}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
