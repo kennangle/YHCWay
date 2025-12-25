@@ -6,6 +6,7 @@ import { setupAuth, isAuthenticated } from "./auth";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { getRecentEmails, isGmailConnected } from "./gmail";
+import { getGmailAuthUrl, handleGmailCallback, getRecentEmailsForUser, isGmailConnectedForUser, disconnectGmailForUser } from "./gmail-oauth";
 import { getUpcomingEvents, getEventsForMonth, isCalendarConnected } from "./calendar";
 import { getUpcomingMeetings, isZoomConnected } from "./zoom";
 import { getRecentMessages as getSlackMessages, getAllMessages as getAllSlackMessages, getDirectMessages as getSlackDMs, getThreadReplies as getSlackThreadReplies, isSlackConnected, getChannels as getSlackChannels, getRecentMessagesFiltered } from "./slack";
@@ -339,18 +340,84 @@ export async function registerRoutes(
     }
   });
 
-  // Gmail integration endpoints
-  app.get("/api/gmail/status", isAuthenticated, async (req, res) => {
+  // Gmail integration endpoints - Custom OAuth flow
+  app.get("/api/gmail-oauth/connect", isAuthenticated, async (req: any, res) => {
     try {
-      const connected = await isGmailConnected();
-      res.json({ connected });
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const authUrl = getGmailAuthUrl(userId);
+      res.json({ authUrl });
+    } catch (error: any) {
+      console.error("Error generating Gmail auth URL:", error);
+      res.status(500).json({ error: error?.message || "Failed to initiate Gmail connection" });
+    }
+  });
+
+  app.get("/api/gmail-oauth/callback", async (req, res) => {
+    try {
+      const { code, state: userId } = req.query;
+      
+      if (!code || !userId || typeof code !== 'string' || typeof userId !== 'string') {
+        return res.redirect('/connect?error=invalid_callback');
+      }
+      
+      await handleGmailCallback(code, userId);
+      res.redirect('/connect?success=gmail');
+    } catch (error: any) {
+      console.error("Error in Gmail OAuth callback:", error);
+      res.redirect('/connect?error=gmail_connection_failed');
+    }
+  });
+
+  app.post("/api/gmail-oauth/disconnect", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      await disconnectGmailForUser(userId);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error disconnecting Gmail:", error);
+      res.status(500).json({ error: error?.message || "Failed to disconnect Gmail" });
+    }
+  });
+
+  app.get("/api/gmail/status", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.json({ connected: false });
+      }
+      // Check custom OAuth first, then fall back to connector
+      const customConnected = await isGmailConnectedForUser(userId);
+      if (customConnected) {
+        return res.json({ connected: true, type: 'custom' });
+      }
+      const connectorConnected = await isGmailConnected();
+      res.json({ connected: connectorConnected, type: 'connector' });
     } catch (error) {
       res.json({ connected: false });
     }
   });
 
-  app.get("/api/gmail/messages", isAuthenticated, async (req, res) => {
+  app.get("/api/gmail/messages", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      // Try custom OAuth first
+      const customConnected = await isGmailConnectedForUser(userId);
+      if (customConnected) {
+        const emails = await getRecentEmailsForUser(userId, 20);
+        return res.json(emails);
+      }
+      
+      // Fall back to connector
       const emails = await getRecentEmails(20);
       res.json(emails);
     } catch (error: any) {
@@ -607,7 +674,8 @@ export async function registerRoutes(
       const userId = req.user.claims?.sub || req.user.id;
       
       const [
-        gmailConnected, 
+        gmailCustomConnected,
+        gmailConnectorConnected, 
         calendarConnected, 
         zoomConnected, 
         slackConnected, 
@@ -615,6 +683,7 @@ export async function registerRoutes(
         asanaConnected,
         userIntegrations
       ] = await Promise.all([
+        isGmailConnectedForUser(userId).catch(() => false),
         isGmailConnected().catch(() => false),
         isCalendarConnected().catch(() => false),
         isZoomConnected().catch(() => false),
@@ -623,6 +692,8 @@ export async function registerRoutes(
         isAsanaConnected().catch(() => false),
         storage.getUserIntegrations(userId).catch(() => []),
       ]);
+      
+      const gmailConnected = gmailCustomConnected || gmailConnectorConnected;
 
       const calendlyKey = userIntegrations.find(i => i.integrationName === 'calendly');
       const typeformKey = userIntegrations.find(i => i.integrationName === 'typeform');

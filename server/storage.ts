@@ -49,9 +49,12 @@ export interface IStorage {
   updateUserAdmin(id: string, isAdmin: boolean): Promise<User | undefined>;
   updateUserPassword(id: string, passwordHash: string): Promise<User | undefined>;
   
-  getOAuthAccount(provider: string, providerAccountId: string): Promise<OAuthAccount | undefined>;
+  getOAuthAccount(userId: string, provider: string): Promise<OAuthAccount | undefined>;
+  getOAuthAccountByProvider(provider: string, providerAccountId: string): Promise<OAuthAccount | undefined>;
   createOAuthAccount(account: InsertOAuthAccount): Promise<OAuthAccount>;
   linkOAuthAccount(userId: string, account: Omit<InsertOAuthAccount, 'userId'>): Promise<OAuthAccount>;
+  upsertOAuthAccount(account: InsertOAuthAccount): Promise<OAuthAccount>;
+  deleteOAuthAccount(userId: string, provider: string): Promise<void>;
   
   getAllServices(): Promise<Service[]>;
   getService(id: number): Promise<Service | undefined>;
@@ -153,7 +156,20 @@ export class DbStorage implements IStorage {
     return user;
   }
 
-  async getOAuthAccount(provider: string, providerAccountId: string): Promise<OAuthAccount | undefined> {
+  async getOAuthAccount(userId: string, provider: string): Promise<OAuthAccount | undefined> {
+    const [account] = await db
+      .select()
+      .from(oauthAccounts)
+      .where(
+        and(
+          eq(oauthAccounts.userId, userId),
+          eq(oauthAccounts.provider, provider)
+        )
+      );
+    return account;
+  }
+
+  async getOAuthAccountByProvider(provider: string, providerAccountId: string): Promise<OAuthAccount | undefined> {
     const [account] = await db
       .select()
       .from(oauthAccounts)
@@ -177,6 +193,37 @@ export class DbStorage implements IStorage {
       .values({ ...account, userId })
       .returning();
     return newAccount;
+  }
+
+  async upsertOAuthAccount(account: InsertOAuthAccount): Promise<OAuthAccount> {
+    const existing = await this.getOAuthAccount(account.userId, account.provider);
+    
+    if (existing) {
+      const [updated] = await db
+        .update(oauthAccounts)
+        .set({
+          providerAccountId: account.providerAccountId,
+          accessToken: account.accessToken,
+          refreshToken: account.refreshToken,
+          expiresAt: account.expiresAt,
+        })
+        .where(eq(oauthAccounts.id, existing.id))
+        .returning();
+      return updated;
+    }
+    
+    return this.createOAuthAccount(account);
+  }
+
+  async deleteOAuthAccount(userId: string, provider: string): Promise<void> {
+    await db
+      .delete(oauthAccounts)
+      .where(
+        and(
+          eq(oauthAccounts.userId, userId),
+          eq(oauthAccounts.provider, provider)
+        )
+      );
   }
 
   async getAllServices(): Promise<Service[]> {

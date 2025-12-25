@@ -3,8 +3,9 @@ import { AppleCalendarConnect } from "@/components/apple-calendar-connect";
 import { Search, MessageCircle, Mail, Calendar, Video, CheckSquare, FileText, Clock, X } from "lucide-react";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
 interface AppIntegration {
   id: string;
@@ -13,7 +14,7 @@ interface AppIntegration {
   icon: React.ReactNode;
   colorClass: string;
   category: "productivity" | "calendar" | "communication" | "forms";
-  connectType: "configured" | "api-key" | "special";
+  connectType: "configured" | "api-key" | "special" | "oauth";
   apiKeyLabel?: string;
   apiKeyHelp?: string;
   connected?: boolean;
@@ -36,7 +37,7 @@ const availableApps: AppIntegration[] = [
     icon: <Mail className="w-6 h-6" />,
     colorClass: "bg-[#EA4335] text-white",
     category: "communication",
-    connectType: "configured",
+    connectType: "oauth",
   },
   {
     id: "google-calendar",
@@ -172,9 +173,10 @@ function ApiKeyModal({
   );
 }
 
-function AppCard({ app, onConnect, isConnecting }: { 
+function AppCard({ app, onConnect, onDisconnect, isConnecting }: { 
   app: AppIntegration; 
   onConnect: (appId: string) => void;
+  onDisconnect?: (appId: string) => void;
   isConnecting: boolean;
 }) {
   return (
@@ -187,10 +189,21 @@ function AppCard({ app, onConnect, isConnecting }: {
           {app.icon}
         </div>
         {app.connected ? (
-          <span className="flex items-center gap-1.5 text-sm text-green-600 bg-green-50 px-2 py-1 rounded-full">
-            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-            Connected
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="flex items-center gap-1.5 text-sm text-green-600 bg-green-50 px-2 py-1 rounded-full">
+              <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+              Connected
+            </span>
+            {app.connectType === "oauth" && onDisconnect && (
+              <button
+                onClick={() => onDisconnect(app.id)}
+                className="text-xs text-red-500 hover:text-red-600 hover:underline"
+                data-testid={`button-disconnect-${app.id}`}
+              >
+                Disconnect
+              </button>
+            )}
+          </div>
         ) : (
           <button
             onClick={() => onConnect(app.id)}
@@ -257,12 +270,69 @@ export default function Connect() {
     },
   });
 
+  const gmailConnectMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/gmail-oauth/connect", { credentials: "include" });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to initiate Gmail connection");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      if (data.authUrl) {
+        window.location.href = data.authUrl;
+      }
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Connection failed",
+        description: error.message,
+        variant: "destructive",
+      });
+      setConnectingApp(null);
+    },
+  });
+
+  const gmailDisconnectMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/gmail-oauth/disconnect", {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to disconnect Gmail");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Disconnected",
+        description: "Gmail has been disconnected.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["connection-status"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleConnect = (appId: string) => {
     const app = availableApps.find(a => a.id === appId);
     if (!app) return;
 
     if (app.connectType === "api-key") {
       setApiKeyModalApp(app);
+    } else if (app.connectType === "oauth") {
+      setConnectingApp(appId);
+      if (appId === "gmail") {
+        gmailConnectMutation.mutate();
+      }
     } else if (app.connectType === "configured") {
       toast({
         title: "System Integration",
@@ -279,6 +349,37 @@ export default function Connect() {
       apiKey 
     });
   };
+
+  const handleDisconnect = (appId: string) => {
+    if (appId === "gmail") {
+      gmailDisconnectMutation.mutate();
+    }
+  };
+
+  // Handle OAuth callback URL params
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const success = urlParams.get('success');
+    const error = urlParams.get('error');
+    
+    if (success === 'gmail') {
+      toast({
+        title: "Gmail Connected!",
+        description: "Your Gmail account has been connected successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["connection-status"] });
+      window.history.replaceState({}, '', '/connect');
+    } else if (error) {
+      toast({
+        title: "Connection Failed",
+        description: error === 'gmail_connection_failed' 
+          ? "Failed to connect Gmail. Please try again." 
+          : "An error occurred during connection.",
+        variant: "destructive",
+      });
+      window.history.replaceState({}, '', '/connect');
+    }
+  }, [toast, queryClient]);
 
   const appsWithStatus = availableApps.map(app => ({
     ...app,
@@ -336,6 +437,7 @@ export default function Connect() {
                   key={app.id}
                   app={app}
                   onConnect={handleConnect}
+                  onDisconnect={handleDisconnect}
                   isConnecting={connectingApp === app.id}
                 />
               ))}
