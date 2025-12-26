@@ -102,10 +102,12 @@ export async function getDirectMessages(maxResults: number = 10): Promise<SlackM
   const messages: SlackMessage[] = [];
   const userNameCache: Record<string, string> = {};
 
+  const twentyFourMonthsAgo = Math.floor((Date.now() - (24 * 30 * 24 * 60 * 60 * 1000)) / 1000);
+
   for (const dm of (data.channels || []).slice(0, 5)) {
     try {
       const historyResponse = await fetch(
-        `https://slack.com/api/conversations.history?channel=${dm.id}&limit=3`,
+        `https://slack.com/api/conversations.history?channel=${dm.id}&limit=3&oldest=${twentyFourMonthsAgo}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -445,10 +447,12 @@ export async function getUserDirectMessages(userId: string, maxResults: number =
   const messages: SlackMessage[] = [];
   const userNameCache: Record<string, string> = {};
 
+  const twentyFourMonthsAgo = Math.floor((Date.now() - (24 * 30 * 24 * 60 * 60 * 1000)) / 1000);
+
   for (const dm of (data.channels || []).slice(0, 10)) {
     try {
       const historyResponse = await fetch(
-        `https://slack.com/api/conversations.history?channel=${dm.id}&limit=5`,
+        `https://slack.com/api/conversations.history?channel=${dm.id}&limit=5&oldest=${twentyFourMonthsAgo}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
