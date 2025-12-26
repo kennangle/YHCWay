@@ -60,11 +60,11 @@ const availableApps: AppIntegration[] = [
   {
     id: "asana",
     name: "Asana",
-    description: "Track your projects and tasks",
+    description: "Connect your Asana account to track projects and tasks",
     icon: <CheckSquare className="w-6 h-6" />,
     colorClass: "bg-[#F06A6A] text-white",
     category: "productivity",
-    connectType: "configured",
+    connectType: "oauth",
   },
   {
     id: "calendly",

@@ -11,7 +11,7 @@ import { getUpcomingEvents, getEventsForMonth, isCalendarConnected } from "./cal
 import { getUpcomingMeetings, isZoomConnected } from "./zoom";
 import { getRecentMessages as getSlackMessages, getAllMessages as getAllSlackMessages, getDirectMessages as getSlackDMs, getThreadReplies as getSlackThreadReplies, isSlackConnected, getChannels as getSlackChannels, getRecentMessagesFiltered, isUserSlackConnected, getUserAllMessages, getUserDirectMessages, getUserChannels } from "./slack";
 import { isAppleCalendarConnected, testAppleCalendarConnection, saveAppleCalendarCredentials, deleteAppleCalendarCredentials, getAppleCalendarEvents, getAppleCalendarEventsForMonth } from "./appleCalendar";
-import { isAsanaConnected, getMyTasks, getProjects, getUpcomingTasks } from "./asana";
+import { isAsanaConnected, getMyTasks, getProjects, getUpcomingTasks, isUserAsanaConnected, getUserMyTasks, getUserProjects, getUserUpcomingTasks } from "./asana";
 import { sendInvitationEmail, getTemplateTypes, getDefaultTemplate } from "./email";
 import { appleCalendarConnectSchema, slackPreferencesUpdateSchema, emailTemplateSchema } from "@shared/schema";
 import { broadcastToUsers, generateWsAuthToken } from "./websocket";
@@ -887,6 +887,124 @@ export async function registerRoutes(
     }
   });
 
+  // Asana OAuth - per-user authentication
+  app.get("/api/asana/connect", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const clientId = process.env.ASANA_CLIENT_ID;
+      if (!clientId) {
+        return res.status(500).json({ error: "Asana OAuth not configured" });
+      }
+      
+      const host = req.get('host') || 'localhost:5000';
+      const redirectUri = `${req.protocol}://${host}/api/asana/callback`;
+      
+      const authUrl = `https://app.asana.com/-/oauth_authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&state=${userId}`;
+      
+      res.json({ authUrl });
+    } catch (error: any) {
+      console.error("Error generating Asana auth URL:", error);
+      res.status(500).json({ error: error?.message || "Failed to initiate Asana connection" });
+    }
+  });
+
+  app.get("/api/asana/callback", async (req, res) => {
+    try {
+      const { code, state: userId } = req.query;
+      
+      if (!code || !userId || typeof code !== 'string' || typeof userId !== 'string') {
+        return res.redirect('/connect?error=invalid_callback');
+      }
+      
+      const clientId = process.env.ASANA_CLIENT_ID;
+      const clientSecret = process.env.ASANA_CLIENT_SECRET;
+      
+      if (!clientId || !clientSecret) {
+        return res.redirect('/connect?error=asana_not_configured');
+      }
+      
+      const host = req.get('host') || 'localhost:5000';
+      const redirectUri = `${req.protocol}://${host}/api/asana/callback`;
+      
+      // Exchange code for tokens
+      const tokenResponse = await fetch('https://app.asana.com/-/oauth_token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          grant_type: 'authorization_code',
+          client_id: clientId,
+          client_secret: clientSecret,
+          code,
+          redirect_uri: redirectUri,
+        }),
+      });
+      
+      const tokenData = await tokenResponse.json() as any;
+      
+      if (tokenData.error) {
+        console.error('Asana OAuth error:', tokenData.error);
+        return res.redirect('/connect?error=asana_auth_failed');
+      }
+      
+      const accessToken = tokenData.access_token;
+      const refreshToken = tokenData.refresh_token;
+      const expiresIn = tokenData.expires_in;
+      const asanaUserId = tokenData.data?.gid || tokenData.data?.id;
+      
+      if (!accessToken) {
+        console.error('Missing access token in Asana response:', tokenData);
+        return res.redirect('/connect?error=asana_missing_token');
+      }
+      
+      // Calculate expiry date
+      const expiresAt = expiresIn ? new Date(Date.now() + expiresIn * 1000) : undefined;
+      
+      // Save user credentials and enable the integration
+      await storage.saveAsanaUserCredentials(userId, asanaUserId || '', accessToken, refreshToken, expiresAt);
+      await storage.enableIntegration(userId, 'asana');
+      
+      res.redirect('/connect?success=asana');
+    } catch (error: any) {
+      console.error("Error in Asana OAuth callback:", error);
+      res.redirect('/connect?error=asana_connection_failed');
+    }
+  });
+
+  app.post("/api/asana/disconnect", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      // Delete user OAuth credentials and add to disabled list
+      await storage.deleteAsanaUserCredentials(userId);
+      await storage.disableIntegration(userId, 'asana');
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error disconnecting Asana:", error);
+      res.status(500).json({ error: error?.message || "Failed to disconnect Asana" });
+    }
+  });
+
+  app.get("/api/asana/user-status", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.json({ connected: false });
+      }
+      const creds = await storage.getAsanaUserCredentials(userId);
+      res.json({ connected: !!creds });
+    } catch (error) {
+      res.json({ connected: false });
+    }
+  });
+
   // Apple Calendar integration endpoints
   app.get("/api/apple-calendar/status", isAuthenticated, async (req: any, res) => {
     try {
@@ -976,7 +1094,8 @@ export async function registerRoutes(
         slackBotConnected,
         slackUserConnected,
         appleCalendarConnected,
-        asanaConnected,
+        asanaSystemConnected,
+        asanaUserConnected,
         userIntegrations,
         disabledIntegrations
       ] = await Promise.all([
@@ -987,6 +1106,7 @@ export async function registerRoutes(
         isUserSlackConnected(userId).catch(() => false),
         isAppleCalendarConnected(userId).catch(() => false),
         isAsanaConnected().catch(() => false),
+        isUserAsanaConnected(userId).catch(() => false),
         storage.getUserIntegrations(userId).catch(() => []),
         storage.getUserDisabledIntegrations(userId).catch((): string[] => []),
       ]);
@@ -1004,7 +1124,7 @@ export async function registerRoutes(
         zoom: isEnabled('zoom', zoomConnected),
         slack: isEnabled('slack', slackUserConnected || slackBotConnected),
         "apple-calendar": isEnabled('apple-calendar', appleCalendarConnected),
-        asana: isEnabled('asana', asanaConnected),
+        asana: isEnabled('asana', asanaUserConnected || asanaSystemConnected),
         calendly: isEnabled('calendly', !!calendlyKey),
         typeform: isEnabled('typeform', !!typeformKey),
       });
@@ -1083,17 +1203,37 @@ export async function registerRoutes(
   app.post("/api/integrations/:integrationName/disconnect", isAuthenticated, handleIntegrationDisconnect);
 
   // Asana integration endpoints
-  app.get("/api/asana/status", isAuthenticated, async (req, res) => {
+  app.get("/api/asana/status", isAuthenticated, async (req: any, res) => {
     try {
-      const connected = await isAsanaConnected();
-      res.json({ connected });
+      const userId = req.user?.id;
+      // Check user OAuth first, then fall back to system connector
+      if (userId) {
+        const userConnected = await isUserAsanaConnected(userId);
+        if (userConnected) {
+          return res.json({ connected: true, type: 'user' });
+        }
+      }
+      const systemConnected = await isAsanaConnected();
+      res.json({ connected: systemConnected, type: 'system' });
     } catch (error) {
       res.json({ connected: false });
     }
   });
 
-  app.get("/api/asana/tasks", isAuthenticated, async (req, res) => {
+  app.get("/api/asana/tasks", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user?.id;
+      
+      // Use user token if available
+      if (userId) {
+        const userConnected = await isUserAsanaConnected(userId);
+        if (userConnected) {
+          const tasks = await getUserMyTasks(userId, 20);
+          return res.json(tasks);
+        }
+      }
+      
+      // Fall back to system connector
       const tasks = await getMyTasks(20);
       res.json(tasks);
     } catch (error: any) {
@@ -1102,9 +1242,21 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/asana/tasks/upcoming", isAuthenticated, async (req, res) => {
+  app.get("/api/asana/tasks/upcoming", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user?.id;
       const days = parseInt(req.query.days as string) || 7;
+      
+      // Use user token if available
+      if (userId) {
+        const userConnected = await isUserAsanaConnected(userId);
+        if (userConnected) {
+          const tasks = await getUserUpcomingTasks(userId, days, 20);
+          return res.json(tasks);
+        }
+      }
+      
+      // Fall back to system connector
       const tasks = await getUpcomingTasks(days, 20);
       res.json(tasks);
     } catch (error: any) {
@@ -1113,8 +1265,20 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/asana/projects", isAuthenticated, async (req, res) => {
+  app.get("/api/asana/projects", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user?.id;
+      
+      // Use user token if available
+      if (userId) {
+        const userConnected = await isUserAsanaConnected(userId);
+        if (userConnected) {
+          const projects = await getUserProjects(userId, 20);
+          return res.json(projects);
+        }
+      }
+      
+      // Fall back to system connector
       const projects = await getProjects(20);
       res.json(projects);
     } catch (error: any) {
