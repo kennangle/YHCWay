@@ -17,6 +17,8 @@ import {
   type Message,
   type EmailTemplate,
   type UserPreference,
+  type SlackUserCredential,
+  type InsertSlackUserCredential,
   users,
   services,
   feedItems,
@@ -28,7 +30,8 @@ import {
   conversationParticipants,
   messages,
   emailTemplates,
-  userPreferences
+  userPreferences,
+  slackUserCredentials
 } from "@shared/schema";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq, desc, and, lt, isNull, sql, inArray } from "drizzle-orm";
@@ -107,6 +110,11 @@ export interface IStorage {
   // User preferences
   getUserPreferences(userId: string): Promise<UserPreference | undefined>;
   updateUserPreferences(userId: string, prefs: Partial<Omit<UserPreference, 'id' | 'userId' | 'createdAt' | 'updatedAt'>>): Promise<UserPreference>;
+  
+  // Slack user credentials
+  getSlackUserCredentials(userId: string): Promise<SlackUserCredential | undefined>;
+  saveSlackUserCredentials(userId: string, slackUserId: string, slackTeamId: string, accessToken: string, scope?: string): Promise<SlackUserCredential>;
+  deleteSlackUserCredentials(userId: string): Promise<void>;
 }
 
 export class DbStorage implements IStorage {
@@ -584,6 +592,42 @@ export class DbStorage implements IStorage {
       .values({ userId, ...prefs })
       .returning();
     return created;
+  }
+
+  // Slack user credentials
+  async getSlackUserCredentials(userId: string): Promise<SlackUserCredential | undefined> {
+    const [creds] = await db.select()
+      .from(slackUserCredentials)
+      .where(eq(slackUserCredentials.userId, userId));
+    return creds;
+  }
+
+  async saveSlackUserCredentials(
+    userId: string, 
+    slackUserId: string, 
+    slackTeamId: string, 
+    accessToken: string, 
+    scope?: string
+  ): Promise<SlackUserCredential> {
+    const existing = await this.getSlackUserCredentials(userId);
+    
+    if (existing) {
+      const [updated] = await db.update(slackUserCredentials)
+        .set({ slackUserId, slackTeamId, accessToken, scope, updatedAt: new Date() })
+        .where(eq(slackUserCredentials.userId, userId))
+        .returning();
+      return updated;
+    }
+    
+    const [created] = await db.insert(slackUserCredentials)
+      .values({ userId, slackUserId, slackTeamId, accessToken, scope })
+      .returning();
+    return created;
+  }
+
+  async deleteSlackUserCredentials(userId: string): Promise<void> {
+    await db.delete(slackUserCredentials)
+      .where(eq(slackUserCredentials.userId, userId));
   }
 }
 
