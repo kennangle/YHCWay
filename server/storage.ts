@@ -31,7 +31,8 @@ import {
   messages,
   emailTemplates,
   userPreferences,
-  slackUserCredentials
+  slackUserCredentials,
+  userDisabledIntegrations
 } from "@shared/schema";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq, desc, and, lt, isNull, sql, inArray } from "drizzle-orm";
@@ -115,6 +116,11 @@ export interface IStorage {
   getSlackUserCredentials(userId: string): Promise<SlackUserCredential | undefined>;
   saveSlackUserCredentials(userId: string, slackUserId: string, slackTeamId: string, accessToken: string, scope?: string): Promise<SlackUserCredential>;
   deleteSlackUserCredentials(userId: string): Promise<void>;
+  
+  // User disabled integrations
+  getUserDisabledIntegrations(userId: string): Promise<string[]>;
+  disableIntegration(userId: string, integrationName: string): Promise<void>;
+  enableIntegration(userId: string, integrationName: string): Promise<void>;
 }
 
 export class DbStorage implements IStorage {
@@ -628,6 +634,28 @@ export class DbStorage implements IStorage {
   async deleteSlackUserCredentials(userId: string): Promise<void> {
     await db.delete(slackUserCredentials)
       .where(eq(slackUserCredentials.userId, userId));
+  }
+
+  // User disabled integrations
+  async getUserDisabledIntegrations(userId: string): Promise<string[]> {
+    const disabled = await db.select()
+      .from(userDisabledIntegrations)
+      .where(eq(userDisabledIntegrations.userId, userId));
+    return disabled.map(d => d.integrationName);
+  }
+
+  async disableIntegration(userId: string, integrationName: string): Promise<void> {
+    await db.insert(userDisabledIntegrations)
+      .values({ userId, integrationName })
+      .onConflictDoNothing();
+  }
+
+  async enableIntegration(userId: string, integrationName: string): Promise<void> {
+    await db.delete(userDisabledIntegrations)
+      .where(and(
+        eq(userDisabledIntegrations.userId, userId),
+        eq(userDisabledIntegrations.integrationName, integrationName)
+      ));
   }
 }
 

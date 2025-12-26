@@ -194,7 +194,7 @@ function AppCard({ app, onConnect, onDisconnect, isConnecting }: {
               <span className="w-2 h-2 bg-green-500 rounded-full"></span>
               Connected
             </span>
-            {(app.connectType === "oauth" || app.connectType === "api-key") && onDisconnect && (
+            {onDisconnect && (
               <button
                 onClick={() => onDisconnect(app.id)}
                 className="text-xs text-red-500 hover:text-red-600 hover:underline"
@@ -441,7 +441,8 @@ export default function Connect() {
       gmailDisconnectMutation.mutate();
     } else if (appId === "slack") {
       slackDisconnectMutation.mutate();
-    } else if (app.connectType === "api-key") {
+    } else {
+      // Use generic disconnect for api-key and configured (system-level) integrations
       apiKeyDisconnectMutation.mutate(appId);
     }
   };

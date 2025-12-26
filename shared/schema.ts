@@ -187,6 +187,17 @@ export const slackUserCredentials = pgTable("slack_user_credentials", {
 export type SlackUserCredential = typeof slackUserCredentials.$inferSelect;
 export type InsertSlackUserCredential = typeof slackUserCredentials.$inferInsert;
 
+// User disabled integrations - allows users to hide system-level integrations
+export const userDisabledIntegrations = pgTable("user_disabled_integrations", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  integrationName: varchar("integration_name").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type UserDisabledIntegration = typeof userDisabledIntegrations.$inferSelect;
+export type InsertUserDisabledIntegration = typeof userDisabledIntegrations.$inferInsert;
+
 // Chat system - Conversations
 export const conversations = pgTable("conversations", {
   id: serial("id").primaryKey(),

@@ -847,8 +847,9 @@ export async function registerRoutes(
         return res.redirect('/connect?error=slack_missing_token');
       }
       
-      // Save user credentials
+      // Save user credentials and enable the integration
       await storage.saveSlackUserCredentials(userId, slackUserId, teamId, userToken, scope);
+      await storage.enableIntegration(userId, 'slack');
       
       res.redirect('/connect?success=slack');
     } catch (error: any) {
@@ -859,11 +860,13 @@ export async function registerRoutes(
 
   app.post("/api/slack/disconnect", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user?.id;
+      const userId = req.user.claims?.sub || req.user.id;
       if (!userId) {
         return res.status(401).json({ error: "Unauthorized" });
       }
+      // Delete user OAuth credentials and add to disabled list
       await storage.deleteSlackUserCredentials(userId);
+      await storage.disableIntegration(userId, 'slack');
       res.json({ success: true });
     } catch (error: any) {
       console.error("Error disconnecting Slack:", error);
@@ -974,7 +977,8 @@ export async function registerRoutes(
         slackUserConnected,
         appleCalendarConnected,
         asanaConnected,
-        userIntegrations
+        userIntegrations,
+        disabledIntegrations
       ] = await Promise.all([
         isGmailConnectedForUser(userId).catch(() => false),
         isCalendarConnected().catch(() => false),
@@ -984,20 +988,25 @@ export async function registerRoutes(
         isAppleCalendarConnected(userId).catch(() => false),
         isAsanaConnected().catch(() => false),
         storage.getUserIntegrations(userId).catch(() => []),
+        storage.getUserDisabledIntegrations(userId).catch((): string[] => []),
       ]);
 
       const calendlyKey = userIntegrations.find(i => i.integrationName === 'calendly');
       const typeformKey = userIntegrations.find(i => i.integrationName === 'typeform');
 
+      // Check if integration is disabled by user
+      const isEnabled = (name: string, connected: boolean) => 
+        connected && !disabledIntegrations.includes(name);
+
       res.json({
-        gmail: gmailConnected,
-        "google-calendar": calendarConnected,
-        zoom: zoomConnected,
-        slack: slackUserConnected || slackBotConnected,
-        "apple-calendar": appleCalendarConnected,
-        asana: asanaConnected,
-        calendly: !!calendlyKey,
-        typeform: !!typeformKey,
+        gmail: isEnabled('gmail', gmailConnected),
+        "google-calendar": isEnabled('google-calendar', calendarConnected),
+        zoom: isEnabled('zoom', zoomConnected),
+        slack: isEnabled('slack', slackUserConnected || slackBotConnected),
+        "apple-calendar": isEnabled('apple-calendar', appleCalendarConnected),
+        asana: isEnabled('asana', asanaConnected),
+        calendly: isEnabled('calendly', !!calendlyKey),
+        typeform: isEnabled('typeform', !!typeformKey),
       });
     } catch (error) {
       console.error("Error checking integration status:", error);
@@ -1032,20 +1041,43 @@ export async function registerRoutes(
     }
   });
 
-  // Delete API key for integrations
+  // Delete API key for integrations or disable system-level integrations
   // Support both DELETE and POST for disconnect
+  const systemLevelIntegrations = ['google-calendar', 'zoom', 'asana'];
+  
   const handleIntegrationDisconnect = async (req: any, res: any) => {
     try {
       const userId = req.user.claims?.sub || req.user.id;
       const { integrationName } = req.params;
       
-      await storage.deleteIntegrationApiKey(userId, integrationName);
+      // For system-level integrations, add to disabled list
+      if (systemLevelIntegrations.includes(integrationName)) {
+        await storage.disableIntegration(userId, integrationName);
+      } else {
+        // For API-key integrations, delete the key
+        await storage.deleteIntegrationApiKey(userId, integrationName);
+      }
+      
       res.json({ success: true, message: `${integrationName} disconnected` });
     } catch (error) {
       console.error("Error disconnecting integration:", error);
       res.status(500).json({ error: "Failed to disconnect integration" });
     }
   };
+  
+  // Re-enable a disabled integration
+  app.post("/api/integrations/:integrationName/enable", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const { integrationName } = req.params;
+      
+      await storage.enableIntegration(userId, integrationName);
+      res.json({ success: true, message: `${integrationName} enabled` });
+    } catch (error) {
+      console.error("Error enabling integration:", error);
+      res.status(500).json({ error: "Failed to enable integration" });
+    }
+  });
   
   app.delete("/api/integrations/:integrationName/disconnect", isAuthenticated, handleIntegrationDisconnect);
   app.post("/api/integrations/:integrationName/disconnect", isAuthenticated, handleIntegrationDisconnect);
