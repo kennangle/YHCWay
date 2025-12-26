@@ -261,22 +261,30 @@ export async function isUserAsanaConnected(userId: string): Promise<boolean> {
 
 export async function getUserMyTasks(userId: string, limit: number = 20): Promise<AsanaTask[]> {
   try {
+    console.log('[Asana] Fetching tasks for user:', userId);
     const accessToken = await getUserAccessToken(userId);
     if (!accessToken) {
+      console.log('[Asana] No access token found for user');
       return [];
     }
     
-    const { tasksApi, usersApi, workspacesApi } = getUserAsanaApiInstances(accessToken);
+    const { tasksApi, usersApi, workspacesApi, projectsApi } = getUserAsanaApiInstances(accessToken);
     
     const me = await usersApi.getUser('me', {});
+    console.log('[Asana] User GID:', me.data?.gid, 'Name:', me.data?.name);
+    
     const workspaces = await workspacesApi.getWorkspaces({});
+    console.log('[Asana] Found', workspaces.data?.length || 0, 'workspaces');
     
     if (!workspaces.data || workspaces.data.length === 0) {
+      console.log('[Asana] No workspaces found');
       return [];
     }
 
     const workspaceGid = workspaces.data[0].gid;
+    console.log('[Asana] Using workspace:', workspaces.data[0].name);
     
+    // Get tasks assigned to me
     const tasksResponse = await tasksApi.getTasks({
       assignee: me.data?.gid,
       workspace: workspaceGid,
@@ -284,6 +292,8 @@ export async function getUserMyTasks(userId: string, limit: number = 20): Promis
       opt_fields: 'name,completed,due_on,due_at,assignee.name,assignee.email,projects.name,notes,permalink_url,created_at,modified_at',
       limit: limit
     });
+    
+    console.log('[Asana] Found', tasksResponse.data?.length || 0, 'tasks assigned to user');
 
     const tasks: AsanaTask[] = (tasksResponse.data || []).map((task: any) => ({
       id: task.gid,
