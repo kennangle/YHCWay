@@ -187,6 +187,22 @@ export const slackUserCredentials = pgTable("slack_user_credentials", {
 export type SlackUserCredential = typeof slackUserCredentials.$inferSelect;
 export type InsertSlackUserCredential = typeof slackUserCredentials.$inferInsert;
 
+// Asana user credentials for per-user OAuth
+export const asanaUserCredentials = pgTable("asana_user_credentials", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().unique().references(() => users.id, { onDelete: "cascade" }),
+  asanaUserId: varchar("asana_user_id").notNull(),
+  accessToken: text("access_token").notNull(),
+  refreshToken: text("refresh_token"),
+  expiresAt: timestamp("expires_at"),
+  scope: text("scope"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type AsanaUserCredential = typeof asanaUserCredentials.$inferSelect;
+export type InsertAsanaUserCredential = typeof asanaUserCredentials.$inferInsert;
+
 // User disabled integrations - allows users to hide system-level integrations
 export const userDisabledIntegrations = pgTable("user_disabled_integrations", {
   id: serial("id").primaryKey(),
