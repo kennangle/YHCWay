@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { X, Reply, Send, ArrowLeft, Loader2 } from "lucide-react";
+import { X, Reply, Send, ArrowLeft, Loader2, Trash2 } from "lucide-react";
 import DOMPurify from "dompurify";
 
 interface EmailDetail {
@@ -54,6 +54,24 @@ export function EmailDetailPanel({ messageId, onClose }: EmailDetailPanelProps) 
       setIsReplying(false);
       setReplyBody("");
       queryClient.invalidateQueries({ queryKey: ["gmail-messages"] });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/gmail/messages/${messageId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to delete email");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["gmail-messages"] });
+      onClose();
     },
   });
 
@@ -125,6 +143,19 @@ export function EmailDetailPanel({ messageId, onClose }: EmailDetailPanelProps) 
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="flex gap-2">
+            <button
+              onClick={() => deleteMutation.mutate()}
+              disabled={deleteMutation.isPending}
+              className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+              data-testid="button-delete-email"
+            >
+              {deleteMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4" />
+              )}
+              Delete
+            </button>
             <button
               onClick={() => setIsReplying(!isReplying)}
               className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"

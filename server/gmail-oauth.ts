@@ -304,3 +304,14 @@ export async function isGmailConnectedForUser(userId: string): Promise<boolean> 
 export async function disconnectGmailForUser(userId: string): Promise<void> {
   await storage.deleteOAuthAccount(userId, 'gmail');
 }
+
+export async function deleteEmailById(userId: string, messageId: string): Promise<boolean> {
+  const gmail = await getGmailClientForUser(userId);
+  
+  await gmail.users.messages.trash({
+    userId: 'me',
+    id: messageId,
+  });
+  
+  return true;
+}

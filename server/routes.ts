@@ -6,7 +6,7 @@ import { setupAuth, isAuthenticated } from "./auth";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { getRecentEmails, isGmailConnected } from "./gmail";
-import { getGmailAuthUrl, handleGmailCallback, getRecentEmailsForUser, isGmailConnectedForUser, disconnectGmailForUser, getGmailClientForUser, getEmailById, sendEmail } from "./gmail-oauth";
+import { getGmailAuthUrl, handleGmailCallback, getRecentEmailsForUser, isGmailConnectedForUser, disconnectGmailForUser, getGmailClientForUser, getEmailById, sendEmail, deleteEmailById } from "./gmail-oauth";
 import { getUpcomingEvents, getEventsForMonth, isCalendarConnected } from "./calendar";
 import { getUpcomingMeetings, isZoomConnected } from "./zoom";
 import { getRecentMessages as getSlackMessages, getAllMessages as getAllSlackMessages, getDirectMessages as getSlackDMs, getThreadReplies as getSlackThreadReplies, isSlackConnected, getChannels as getSlackChannels, getRecentMessagesFiltered, isUserSlackConnected, getUserAllMessages, getUserDirectMessages, getUserChannels } from "./slack";
@@ -547,6 +547,24 @@ export async function registerRoutes(
     } catch (error: any) {
       console.error("[Gmail] Error sending email:", error?.message);
       res.status(500).json({ error: error?.message || "Failed to send email" });
+    }
+  });
+
+  // Delete email (move to trash)
+  app.delete("/api/gmail/messages/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      const messageId = req.params.id;
+      
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      await deleteEmailById(userId, messageId);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("[Gmail] Error deleting email:", error?.message);
+      res.status(500).json({ error: error?.message || "Failed to delete email" });
     }
   });
 

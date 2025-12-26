@@ -111,3 +111,14 @@ export async function isGmailConnected(): Promise<boolean> {
     return false;
   }
 }
+
+export async function deleteEmail(messageId: string): Promise<boolean> {
+  const gmail = await getGmailClient();
+  
+  await gmail.users.messages.trash({
+    userId: 'me',
+    id: messageId,
+  });
+  
+  return true;
+}
