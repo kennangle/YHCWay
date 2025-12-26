@@ -102,12 +102,12 @@ export async function getDirectMessages(maxResults: number = 10): Promise<SlackM
   const messages: SlackMessage[] = [];
   const userNameCache: Record<string, string> = {};
 
-  const twentyFourMonthsAgo = Math.floor((Date.now() - (24 * 30 * 24 * 60 * 60 * 1000)) / 1000);
+  const twentyFourMonthsAgo = Date.now() - (24 * 30 * 24 * 60 * 60 * 1000);
 
   for (const dm of (data.channels || []).slice(0, 5)) {
     try {
       const historyResponse = await fetch(
-        `https://slack.com/api/conversations.history?channel=${dm.id}&limit=3&oldest=${twentyFourMonthsAgo}`,
+        `https://slack.com/api/conversations.history?channel=${dm.id}&limit=10`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -120,12 +120,15 @@ export async function getDirectMessages(maxResults: number = 10): Promise<SlackM
 
       if (historyData.ok && historyData.messages) {
         for (const msg of historyData.messages) {
-          // Include regular messages and assistant app thread messages
+          const messageTimestamp = parseFloat(msg.ts) * 1000;
+          if (messageTimestamp < twentyFourMonthsAgo) {
+            continue;
+          }
+          
           const isRegularMessage = msg.type === 'message' && !msg.subtype;
           const isAssistantThread = msg.type === 'message' && msg.subtype === 'assistant_app_thread';
           
           if (isRegularMessage || isAssistantThread) {
-            // For assistant threads, use the title as the message text
             const messageText = isAssistantThread && msg.assistant_app_thread?.title 
               ? msg.assistant_app_thread.title 
               : (msg.text || '');
@@ -153,7 +156,7 @@ export async function getDirectMessages(maxResults: number = 10): Promise<SlackM
               text: messageText,
               userId: msg.user || '',
               userName: userName || 'Unknown',
-              timestamp: new Date(parseFloat(msg.ts) * 1000).toISOString(),
+              timestamp: new Date(messageTimestamp).toISOString(),
               isDm: true,
               threadTs: msg.thread_ts,
               replyCount: msg.reply_count || 0
@@ -447,12 +450,12 @@ export async function getUserDirectMessages(userId: string, maxResults: number =
   const messages: SlackMessage[] = [];
   const userNameCache: Record<string, string> = {};
 
-  const twentyFourMonthsAgo = Math.floor((Date.now() - (24 * 30 * 24 * 60 * 60 * 1000)) / 1000);
+  const twentyFourMonthsAgo = Date.now() - (24 * 30 * 24 * 60 * 60 * 1000);
 
   for (const dm of (data.channels || []).slice(0, 10)) {
     try {
       const historyResponse = await fetch(
-        `https://slack.com/api/conversations.history?channel=${dm.id}&limit=5&oldest=${twentyFourMonthsAgo}`,
+        `https://slack.com/api/conversations.history?channel=${dm.id}&limit=10`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -465,6 +468,11 @@ export async function getUserDirectMessages(userId: string, maxResults: number =
 
       if (historyData.ok && historyData.messages) {
         for (const msg of historyData.messages) {
+          const messageTimestamp = parseFloat(msg.ts) * 1000;
+          if (messageTimestamp < twentyFourMonthsAgo) {
+            continue;
+          }
+          
           const isRegularMessage = msg.type === 'message' && !msg.subtype;
           const isAssistantThread = msg.type === 'message' && msg.subtype === 'assistant_app_thread';
           
@@ -496,7 +504,7 @@ export async function getUserDirectMessages(userId: string, maxResults: number =
               text: messageText,
               userId: msg.user || '',
               userName: userName || 'Unknown',
-              timestamp: new Date(parseFloat(msg.ts) * 1000).toISOString(),
+              timestamp: new Date(messageTimestamp).toISOString(),
               isDm: true,
               threadTs: msg.thread_ts,
               replyCount: msg.reply_count || 0
