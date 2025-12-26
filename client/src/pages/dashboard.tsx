@@ -13,7 +13,7 @@ type FilterType = "all" | "mentions" | "unread";
 
 interface UnifiedActivityItem {
   id: string;
-  type: "gmail" | "slack" | "zoom" | "feed" | "asana";
+  type: "gmail" | "slack" | "zoom" | "feed";
   isUnread: boolean;
   hasMention: boolean;
   timestamp: Date;
@@ -329,20 +329,9 @@ export default function Dashboard() {
         data: item,
       });
     });
-
-    asanaTasks.forEach(task => {
-      items.push({
-        id: `asana-${task.id}`,
-        type: "asana",
-        isUnread: !task.completed && task.dueOn !== null,
-        hasMention: task.assignee?.email === user?.email,
-        timestamp: new Date(task.modifiedAt || task.createdAt),
-        data: task,
-      });
-    });
     
     return items.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-  }, [gmailMessages, slackMessages, zoomMeetings, feedItems, asanaTasks, user]);
+  }, [gmailMessages, slackMessages, zoomMeetings, feedItems, user]);
 
   useEffect(() => {
     const currentCount = unifiedFeed.length;
@@ -630,46 +619,6 @@ export default function Dashboard() {
                         </a>
                       );
                     }
-                    
-                    if (item.type === "asana") {
-                      const task = item.data as AsanaTask;
-                      const isDueSoon = task.dueOn && new Date(task.dueOn) <= new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
-                      return (
-                        <a 
-                          key={item.id}
-                          href={task.permalink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={`glass-panel p-4 rounded-xl hover:bg-white/80 transition-colors cursor-pointer block border-l-4 ${isDueSoon ? 'border-l-orange-500' : 'border-l-[#F06A6A]'}`}
-                          data-testid={`feed-asana-${task.id}`}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="w-10 h-10 rounded-full bg-[#F06A6A]/10 flex items-center justify-center flex-shrink-0">
-                              <CheckSquare className="w-5 h-5 text-[#F06A6A]" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between mb-1">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm font-semibold text-foreground">{task.name}</span>
-                                  {isDueSoon && (
-                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 font-medium">Due Soon</span>
-                                  )}
-                                </div>
-                                {task.dueOn && (
-                                  <span className="text-xs text-muted-foreground">Due {new Date(task.dueOn).toLocaleDateString()}</span>
-                                )}
-                              </div>
-                              {task.projectName && (
-                                <p className="text-xs text-muted-foreground mb-1">{task.projectName}</p>
-                              )}
-                              {task.notes && (
-                                <p className="text-sm text-foreground line-clamp-2">{task.notes}</p>
-                              )}
-                            </div>
-                          </div>
-                        </a>
-                      );
-                    }
 
                     if (item.type === "feed") {
                       const feedItem = item.data as FeedItemType;
@@ -724,6 +673,65 @@ export default function Dashboard() {
                       </div>
                     );
                   })}
+                </div>
+              )}
+            </div>
+
+            <div className="glass-panel p-6 rounded-2xl">
+              <div className="flex items-center gap-2 mb-4">
+                <CheckSquare className="w-5 h-5 text-[#F06A6A]" />
+                <h3 className="font-display font-semibold text-lg">Tasks List</h3>
+              </div>
+              
+              {asanaLoading ? (
+                <div className="text-center text-muted-foreground py-4">Loading tasks...</div>
+              ) : asanaTasks.length === 0 ? (
+                <div className="text-center text-muted-foreground py-4">No tasks assigned</div>
+              ) : (
+                <div className="space-y-3">
+                  {asanaTasks.slice(0, 5).map((task) => {
+                    const isDueSoon = task.dueOn && new Date(task.dueOn) <= new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
+                    const isOverdue = task.dueOn && new Date(task.dueOn) < new Date();
+                    return (
+                      <a
+                        key={task.id}
+                        href={task.permalink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block p-3 rounded-lg hover:bg-white/50 transition-colors border-l-3 border-l-[#F06A6A]"
+                        data-testid={`task-${task.id}`}
+                      >
+                        <div className="flex items-start gap-2">
+                          <div className={`w-4 h-4 rounded border-2 flex-shrink-0 mt-0.5 ${task.completed ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}>
+                            {task.completed && (
+                              <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-sm font-medium ${task.completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+                              {task.name}
+                            </p>
+                            {task.projectName && (
+                              <p className="text-xs text-muted-foreground">{task.projectName}</p>
+                            )}
+                            {task.dueOn && (
+                              <p className={`text-xs mt-1 ${isOverdue ? 'text-red-500 font-medium' : isDueSoon ? 'text-orange-500' : 'text-muted-foreground'}`}>
+                                {isOverdue ? 'Overdue: ' : isDueSoon ? 'Due soon: ' : 'Due: '}
+                                {new Date(task.dueOn).toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </a>
+                    );
+                  })}
+                  {asanaTasks.length > 5 && (
+                    <p className="text-xs text-center text-muted-foreground pt-2">
+                      +{asanaTasks.length - 5} more tasks
+                    </p>
+                  )}
                 </div>
               )}
             </div>
