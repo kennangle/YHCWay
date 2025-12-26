@@ -92,21 +92,17 @@ export async function getDirectMessages(maxResults: number = 10): Promise<SlackM
   });
 
   const data = await response.json();
-  console.log('[Slack DMs] conversations.list response:', JSON.stringify(data, null, 2));
 
   if (!data.ok) {
     console.error('Slack DM list error:', data.error);
     return [];
   }
-  
-  console.log('[Slack DMs] Found', (data.channels || []).length, 'DM conversations');
 
   const messages: SlackMessage[] = [];
   const userNameCache: Record<string, string> = {};
 
   for (const dm of (data.channels || []).slice(0, 5)) {
     try {
-      console.log('[Slack DMs] Fetching history for DM:', dm.id);
       const historyResponse = await fetch(
         `https://slack.com/api/conversations.history?channel=${dm.id}&limit=3`,
         {
@@ -118,7 +114,6 @@ export async function getDirectMessages(maxResults: number = 10): Promise<SlackM
       );
 
       const historyData = await historyResponse.json();
-      console.log('[Slack DMs] History response for', dm.id, ':', JSON.stringify(historyData, null, 2));
 
       if (historyData.ok && historyData.messages) {
         for (const msg of historyData.messages) {
