@@ -24,11 +24,11 @@ const availableApps: AppIntegration[] = [
   {
     id: "slack",
     name: "Slack",
-    description: "Connect your workspace messages and channels",
+    description: "Connect your Slack account to view messages and DMs",
     icon: <MessageCircle className="w-6 h-6" />,
     colorClass: "bg-[#4A154B] text-white",
     category: "communication",
-    connectType: "configured",
+    connectType: "oauth",
   },
   {
     id: "gmail",
@@ -322,6 +322,58 @@ export default function Connect() {
     },
   });
 
+  const slackConnectMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/slack/connect", { credentials: "include" });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to initiate Slack connection");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      if (data.authUrl) {
+        window.location.href = data.authUrl;
+      }
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Connection failed",
+        description: error.message,
+        variant: "destructive",
+      });
+      setConnectingApp(null);
+    },
+  });
+
+  const slackDisconnectMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/slack/disconnect", {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to disconnect Slack");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Disconnected",
+        description: "Slack has been disconnected.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["connection-status"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleConnect = (appId: string) => {
     const app = availableApps.find(a => a.id === appId);
     if (!app) return;
@@ -332,6 +384,8 @@ export default function Connect() {
       setConnectingApp(appId);
       if (appId === "gmail") {
         gmailConnectMutation.mutate();
+      } else if (appId === "slack") {
+        slackConnectMutation.mutate();
       }
     } else if (app.connectType === "configured") {
       toast({
@@ -353,6 +407,8 @@ export default function Connect() {
   const handleDisconnect = (appId: string) => {
     if (appId === "gmail") {
       gmailDisconnectMutation.mutate();
+    } else if (appId === "slack") {
+      slackDisconnectMutation.mutate();
     }
   };
 
@@ -369,12 +425,25 @@ export default function Connect() {
       });
       queryClient.invalidateQueries({ queryKey: ["connection-status"] });
       window.history.replaceState({}, '', '/connect');
+    } else if (success === 'slack') {
+      toast({
+        title: "Slack Connected!",
+        description: "Your Slack account has been connected successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["connection-status"] });
+      window.history.replaceState({}, '', '/connect');
     } else if (error) {
+      let errorMessage = "An error occurred during connection.";
+      if (error === 'gmail_connection_failed') {
+        errorMessage = "Failed to connect Gmail. Please try again.";
+      } else if (error === 'slack_connection_failed' || error === 'slack_auth_failed') {
+        errorMessage = "Failed to connect Slack. Please try again.";
+      } else if (error === 'slack_not_configured') {
+        errorMessage = "Slack OAuth is not configured. Please contact your administrator.";
+      }
       toast({
         title: "Connection Failed",
-        description: error === 'gmail_connection_failed' 
-          ? "Failed to connect Gmail. Please try again." 
-          : "An error occurred during connection.",
+        description: errorMessage,
         variant: "destructive",
       });
       window.history.replaceState({}, '', '/connect');
