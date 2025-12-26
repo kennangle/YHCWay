@@ -172,6 +172,21 @@ export const integrationApiKeySchema = z.object({
   apiKey: z.string().min(1, "API key is required"),
 });
 
+// Slack user credentials for per-user OAuth
+export const slackUserCredentials = pgTable("slack_user_credentials", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().unique().references(() => users.id, { onDelete: "cascade" }),
+  slackUserId: varchar("slack_user_id").notNull(),
+  slackTeamId: varchar("slack_team_id").notNull(),
+  accessToken: text("access_token").notNull(),
+  scope: text("scope"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type SlackUserCredential = typeof slackUserCredentials.$inferSelect;
+export type InsertSlackUserCredential = typeof slackUserCredentials.$inferInsert;
+
 // Chat system - Conversations
 export const conversations = pgTable("conversations", {
   id: serial("id").primaryKey(),
