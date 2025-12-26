@@ -9,7 +9,7 @@ import { getRecentEmails, isGmailConnected } from "./gmail";
 import { getGmailAuthUrl, handleGmailCallback, getRecentEmailsForUser, isGmailConnectedForUser, disconnectGmailForUser, getGmailClientForUser, getEmailById, sendEmail } from "./gmail-oauth";
 import { getUpcomingEvents, getEventsForMonth, isCalendarConnected } from "./calendar";
 import { getUpcomingMeetings, isZoomConnected } from "./zoom";
-import { getRecentMessages as getSlackMessages, getAllMessages as getAllSlackMessages, getDirectMessages as getSlackDMs, getThreadReplies as getSlackThreadReplies, isSlackConnected, getChannels as getSlackChannels, getRecentMessagesFiltered } from "./slack";
+import { getRecentMessages as getSlackMessages, getAllMessages as getAllSlackMessages, getDirectMessages as getSlackDMs, getThreadReplies as getSlackThreadReplies, isSlackConnected, getChannels as getSlackChannels, getRecentMessagesFiltered, isUserSlackConnected, getUserAllMessages, getUserDirectMessages, getUserChannels } from "./slack";
 import { isAppleCalendarConnected, testAppleCalendarConnection, saveAppleCalendarCredentials, deleteAppleCalendarCredentials, getAppleCalendarEvents, getAppleCalendarEventsForMonth } from "./appleCalendar";
 import { isAsanaConnected, getMyTasks, getProjects, getUpcomingTasks } from "./asana";
 import { sendInvitationEmail, getTemplateTypes, getDefaultTemplate } from "./email";
@@ -603,18 +603,38 @@ export async function registerRoutes(
   });
 
   // Slack integration endpoints
-  app.get("/api/slack/status", isAuthenticated, async (req, res) => {
+  app.get("/api/slack/status", isAuthenticated, async (req: any, res) => {
     try {
-      const connected = await isSlackConnected();
-      res.json({ connected });
+      const userId = req.user?.id;
+      // Check user OAuth first, then fall back to bot token
+      if (userId) {
+        const userConnected = await isUserSlackConnected(userId);
+        if (userConnected) {
+          return res.json({ connected: true, type: 'user' });
+        }
+      }
+      const botConnected = await isSlackConnected();
+      res.json({ connected: botConnected, type: 'bot' });
     } catch (error) {
       res.json({ connected: false });
     }
   });
 
-  app.get("/api/slack/messages", isAuthenticated, async (req, res) => {
+  app.get("/api/slack/messages", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user?.id;
       const includeDms = req.query.includeDms === 'true';
+      
+      // Use user token if available
+      if (userId) {
+        const userConnected = await isUserSlackConnected(userId);
+        if (userConnected) {
+          const messages = await getUserAllMessages(userId, 30);
+          return res.json(messages);
+        }
+      }
+      
+      // Fall back to bot token
       const messages = includeDms 
         ? await getAllSlackMessages(30)
         : await getSlackMessages(20);
@@ -625,8 +645,20 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/slack/dms", isAuthenticated, async (req, res) => {
+  app.get("/api/slack/dms", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user?.id;
+      
+      // Use user token if available
+      if (userId) {
+        const userConnected = await isUserSlackConnected(userId);
+        if (userConnected) {
+          const messages = await getUserDirectMessages(userId, 15);
+          return res.json(messages);
+        }
+      }
+      
+      // Fall back to bot token
       const messages = await getSlackDMs(15);
       res.json(messages);
     } catch (error: any) {
@@ -646,8 +678,20 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/slack/channels", isAuthenticated, async (req, res) => {
+  app.get("/api/slack/channels", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user?.id;
+      
+      // Use user token if available
+      if (userId) {
+        const userConnected = await isUserSlackConnected(userId);
+        if (userConnected) {
+          const channels = await getUserChannels(userId);
+          return res.json(channels);
+        }
+      }
+      
+      // Fall back to bot token
       const channels = await getSlackChannels();
       res.json(channels);
     } catch (error: any) {
