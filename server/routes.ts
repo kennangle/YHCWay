@@ -715,6 +715,131 @@ export async function registerRoutes(
     }
   });
 
+  // Slack OAuth - per-user authentication
+  app.get("/api/slack/connect", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const clientId = process.env.SLACK_CLIENT_ID;
+      if (!clientId) {
+        return res.status(500).json({ error: "Slack OAuth not configured" });
+      }
+      
+      const host = req.get('host') || 'localhost:5000';
+      const redirectUri = `${req.protocol}://${host}/api/slack/callback`;
+      
+      // User scopes for accessing their own messages
+      const userScopes = [
+        'channels:read',
+        'channels:history',
+        'groups:read',
+        'groups:history',
+        'im:read',
+        'im:history',
+        'mpim:read',
+        'mpim:history',
+        'users:read'
+      ].join(',');
+      
+      const authUrl = `https://slack.com/oauth/v2/authorize?client_id=${clientId}&user_scope=${userScopes}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${userId}`;
+      
+      res.json({ authUrl });
+    } catch (error: any) {
+      console.error("Error generating Slack auth URL:", error);
+      res.status(500).json({ error: error?.message || "Failed to initiate Slack connection" });
+    }
+  });
+
+  app.get("/api/slack/callback", async (req, res) => {
+    try {
+      const { code, state: userId } = req.query;
+      
+      if (!code || !userId || typeof code !== 'string' || typeof userId !== 'string') {
+        return res.redirect('/connect?error=invalid_callback');
+      }
+      
+      const clientId = process.env.SLACK_CLIENT_ID;
+      const clientSecret = process.env.SLACK_CLIENT_SECRET;
+      
+      if (!clientId || !clientSecret) {
+        return res.redirect('/connect?error=slack_not_configured');
+      }
+      
+      const host = req.get('host') || 'localhost:5000';
+      const redirectUri = `${req.protocol}://${host}/api/slack/callback`;
+      
+      // Exchange code for tokens
+      const tokenResponse = await fetch('https://slack.com/api/oauth.v2.access', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          client_id: clientId,
+          client_secret: clientSecret,
+          code,
+          redirect_uri: redirectUri,
+        }),
+      });
+      
+      const tokenData = await tokenResponse.json() as any;
+      
+      if (!tokenData.ok) {
+        console.error('Slack OAuth error:', tokenData.error);
+        return res.redirect('/connect?error=slack_auth_failed');
+      }
+      
+      // Extract user token (not bot token)
+      const userToken = tokenData.authed_user?.access_token;
+      const slackUserId = tokenData.authed_user?.id;
+      const teamId = tokenData.team?.id;
+      const scope = tokenData.authed_user?.scope;
+      
+      if (!userToken || !slackUserId || !teamId) {
+        console.error('Missing user token in Slack response:', tokenData);
+        return res.redirect('/connect?error=slack_missing_token');
+      }
+      
+      // Save user credentials
+      await storage.saveSlackUserCredentials(userId, slackUserId, teamId, userToken, scope);
+      
+      res.redirect('/connect?success=slack');
+    } catch (error: any) {
+      console.error("Error in Slack OAuth callback:", error);
+      res.redirect('/connect?error=slack_connection_failed');
+    }
+  });
+
+  app.post("/api/slack/disconnect", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      await storage.deleteSlackUserCredentials(userId);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error disconnecting Slack:", error);
+      res.status(500).json({ error: error?.message || "Failed to disconnect Slack" });
+    }
+  });
+
+  app.get("/api/slack/user-status", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.json({ connected: false });
+      }
+      const creds = await storage.getSlackUserCredentials(userId);
+      res.json({ connected: !!creds });
+    } catch (error) {
+      res.json({ connected: false });
+    }
+  });
+
   // Apple Calendar integration endpoints
   app.get("/api/apple-calendar/status", isAuthenticated, async (req: any, res) => {
     try {
