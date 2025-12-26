@@ -374,6 +374,58 @@ export default function Connect() {
     },
   });
 
+  const asanaConnectMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/asana/connect", { credentials: "include" });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to initiate Asana connection");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      if (data.authUrl) {
+        window.location.href = data.authUrl;
+      }
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Connection failed",
+        description: error.message,
+        variant: "destructive",
+      });
+      setConnectingApp(null);
+    },
+  });
+
+  const asanaDisconnectMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/asana/disconnect", {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to disconnect Asana");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Disconnected",
+        description: "Asana has been disconnected.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["connection-status"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const apiKeyDisconnectMutation = useMutation({
     mutationFn: async (integrationName: string) => {
       const res = await fetch(`/api/integrations/${integrationName}/disconnect`, {
@@ -415,6 +467,8 @@ export default function Connect() {
         gmailConnectMutation.mutate();
       } else if (appId === "slack") {
         slackConnectMutation.mutate();
+      } else if (appId === "asana") {
+        asanaConnectMutation.mutate();
       }
     } else if (app.connectType === "configured") {
       toast({
@@ -441,6 +495,8 @@ export default function Connect() {
       gmailDisconnectMutation.mutate();
     } else if (appId === "slack") {
       slackDisconnectMutation.mutate();
+    } else if (appId === "asana") {
+      asanaDisconnectMutation.mutate();
     } else {
       // Use generic disconnect for api-key and configured (system-level) integrations
       apiKeyDisconnectMutation.mutate(appId);
@@ -467,6 +523,13 @@ export default function Connect() {
       });
       queryClient.invalidateQueries({ queryKey: ["connection-status"] });
       window.history.replaceState({}, '', '/connect');
+    } else if (success === 'asana') {
+      toast({
+        title: "Asana Connected!",
+        description: "Your Asana account has been connected successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["connection-status"] });
+      window.history.replaceState({}, '', '/connect');
     } else if (error) {
       let errorMessage = "An error occurred during connection.";
       if (error === 'gmail_connection_failed') {
@@ -475,6 +538,10 @@ export default function Connect() {
         errorMessage = "Failed to connect Slack. Please try again.";
       } else if (error === 'slack_not_configured') {
         errorMessage = "Slack OAuth is not configured. Please contact your administrator.";
+      } else if (error === 'asana_connection_failed' || error === 'asana_auth_failed') {
+        errorMessage = "Failed to connect Asana. Please try again.";
+      } else if (error === 'asana_not_configured') {
+        errorMessage = "Asana OAuth is not configured. Please contact your administrator.";
       }
       toast({
         title: "Connection Failed",
