@@ -194,7 +194,7 @@ function AppCard({ app, onConnect, onDisconnect, isConnecting }: {
               <span className="w-2 h-2 bg-green-500 rounded-full"></span>
               Connected
             </span>
-            {app.connectType === "oauth" && onDisconnect && (
+            {(app.connectType === "oauth" || app.connectType === "api-key") && onDisconnect && (
               <button
                 onClick={() => onDisconnect(app.id)}
                 className="text-xs text-red-500 hover:text-red-600 hover:underline"
@@ -374,6 +374,35 @@ export default function Connect() {
     },
   });
 
+  const apiKeyDisconnectMutation = useMutation({
+    mutationFn: async (integrationName: string) => {
+      const res = await fetch(`/api/integrations/${integrationName}/disconnect`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to disconnect");
+      }
+      return res.json();
+    },
+    onSuccess: (_, integrationName) => {
+      const app = availableApps.find(a => a.id === integrationName);
+      toast({
+        title: "Disconnected",
+        description: `${app?.name || integrationName} has been disconnected.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["connection-status"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleConnect = (appId: string) => {
     const app = availableApps.find(a => a.id === appId);
     if (!app) return;
@@ -405,10 +434,15 @@ export default function Connect() {
   };
 
   const handleDisconnect = (appId: string) => {
+    const app = availableApps.find(a => a.id === appId);
+    if (!app) return;
+
     if (appId === "gmail") {
       gmailDisconnectMutation.mutate();
     } else if (appId === "slack") {
       slackDisconnectMutation.mutate();
+    } else if (app.connectType === "api-key") {
+      apiKeyDisconnectMutation.mutate(appId);
     }
   };
 

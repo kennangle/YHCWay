@@ -1033,7 +1033,8 @@ export async function registerRoutes(
   });
 
   // Delete API key for integrations
-  app.delete("/api/integrations/:integrationName/disconnect", isAuthenticated, async (req: any, res) => {
+  // Support both DELETE and POST for disconnect
+  const handleIntegrationDisconnect = async (req: any, res: any) => {
     try {
       const userId = req.user.claims?.sub || req.user.id;
       const { integrationName } = req.params;
@@ -1044,7 +1045,10 @@ export async function registerRoutes(
       console.error("Error disconnecting integration:", error);
       res.status(500).json({ error: "Failed to disconnect integration" });
     }
-  });
+  };
+  
+  app.delete("/api/integrations/:integrationName/disconnect", isAuthenticated, handleIntegrationDisconnect);
+  app.post("/api/integrations/:integrationName/disconnect", isAuthenticated, handleIntegrationDisconnect);
 
   // Asana integration endpoints
   app.get("/api/asana/status", isAuthenticated, async (req, res) => {
