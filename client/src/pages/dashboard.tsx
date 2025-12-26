@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { FeedItem } from "@/components/feed-item";
-import { Search, Bell, Mail, Video, MessageCircle, Users, MessageSquare } from "lucide-react";
+import { Search, Bell, Mail, Video, MessageCircle, Users, MessageSquare, CheckSquare } from "lucide-react";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
 import { useQuery } from "@tanstack/react-query";
 import type { FeedItem as FeedItemType } from "@shared/schema";
@@ -13,11 +13,25 @@ type FilterType = "all" | "mentions" | "unread";
 
 interface UnifiedActivityItem {
   id: string;
-  type: "gmail" | "slack" | "zoom" | "feed";
+  type: "gmail" | "slack" | "zoom" | "feed" | "asana";
   isUnread: boolean;
   hasMention: boolean;
   timestamp: Date;
   data: any;
+}
+
+interface AsanaTask {
+  id: string;
+  name: string;
+  completed: boolean;
+  dueOn: string | null;
+  dueAt: string | null;
+  assignee: { name: string; email?: string } | null;
+  projectName: string | null;
+  notes: string;
+  permalink: string;
+  createdAt: string;
+  modifiedAt: string;
 }
 
 interface GmailMessage {
@@ -140,6 +154,19 @@ export default function Dashboard() {
       const res = await fetch("/api/slack/messages?includeDms=true", { credentials: "include" });
       if (!res.ok) {
         console.warn("Slack integration not available");
+        return [];
+      }
+      return res.json();
+    },
+    retry: false,
+  });
+
+  const { data: asanaTasks = [], isLoading: asanaLoading } = useQuery<AsanaTask[]>({
+    queryKey: ["asana-tasks"],
+    queryFn: async () => {
+      const res = await fetch("/api/asana/tasks", { credentials: "include" });
+      if (!res.ok) {
+        console.warn("Asana integration not available");
         return [];
       }
       return res.json();
@@ -302,9 +329,20 @@ export default function Dashboard() {
         data: item,
       });
     });
+
+    asanaTasks.forEach(task => {
+      items.push({
+        id: `asana-${task.id}`,
+        type: "asana",
+        isUnread: !task.completed && task.dueOn !== null,
+        hasMention: task.assignee?.email === user?.email,
+        timestamp: new Date(task.modifiedAt || task.createdAt),
+        data: task,
+      });
+    });
     
     return items.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-  }, [gmailMessages, slackMessages, zoomMeetings, feedItems, user]);
+  }, [gmailMessages, slackMessages, zoomMeetings, feedItems, asanaTasks, user]);
 
   useEffect(() => {
     const currentCount = unifiedFeed.length;
@@ -593,6 +631,46 @@ export default function Dashboard() {
                       );
                     }
                     
+                    if (item.type === "asana") {
+                      const task = item.data as AsanaTask;
+                      const isDueSoon = task.dueOn && new Date(task.dueOn) <= new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
+                      return (
+                        <a 
+                          key={item.id}
+                          href={task.permalink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`glass-panel p-4 rounded-xl hover:bg-white/80 transition-colors cursor-pointer block border-l-4 ${isDueSoon ? 'border-l-orange-500' : 'border-l-[#F06A6A]'}`}
+                          data-testid={`feed-asana-${task.id}`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="w-10 h-10 rounded-full bg-[#F06A6A]/10 flex items-center justify-center flex-shrink-0">
+                              <CheckSquare className="w-5 h-5 text-[#F06A6A]" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-semibold text-foreground">{task.name}</span>
+                                  {isDueSoon && (
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 font-medium">Due Soon</span>
+                                  )}
+                                </div>
+                                {task.dueOn && (
+                                  <span className="text-xs text-muted-foreground">Due {new Date(task.dueOn).toLocaleDateString()}</span>
+                                )}
+                              </div>
+                              {task.projectName && (
+                                <p className="text-xs text-muted-foreground mb-1">{task.projectName}</p>
+                              )}
+                              {task.notes && (
+                                <p className="text-sm text-foreground line-clamp-2">{task.notes}</p>
+                              )}
+                            </div>
+                          </div>
+                        </a>
+                      );
+                    }
+
                     if (item.type === "feed") {
                       const feedItem = item.data as FeedItemType;
                       return (
