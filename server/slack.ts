@@ -29,9 +29,12 @@ export interface SlackThread {
 }
 
 async function getSlackToken(): Promise<string> {
-  const token = process.env.SLACK_BOT_TOKEN;
+  const token = process.env.SLACK_BOT_TOKEN?.trim();
   if (!token) {
     throw new Error('Slack bot token not configured');
+  }
+  if (!token.startsWith('xoxb-')) {
+    console.error('Slack token does not start with xoxb- (got prefix:', token.substring(0, 10) + '...)');
   }
   return token;
 }
