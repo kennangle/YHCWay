@@ -931,22 +931,29 @@ export async function registerRoutes(
   });
 
   app.get("/api/asana/callback", async (req, res) => {
+    console.log('[Asana Callback] Starting callback handler');
+    console.log('[Asana Callback] Query params:', req.query);
     try {
       const { code, state: userId } = req.query;
       
       if (!code || !userId || typeof code !== 'string' || typeof userId !== 'string') {
+        console.log('[Asana Callback] Invalid params - code:', !!code, 'userId:', userId);
         return res.redirect('/connect?error=invalid_callback');
       }
+      
+      console.log('[Asana Callback] Valid params - userId:', userId);
       
       const clientId = process.env.ASANA_CLIENT_ID;
       const clientSecret = process.env.ASANA_CLIENT_SECRET;
       
       if (!clientId || !clientSecret) {
+        console.log('[Asana Callback] Missing credentials');
         return res.redirect('/connect?error=asana_not_configured');
       }
       
       const host = req.get('host') || 'localhost:5000';
       const redirectUri = `${req.protocol}://${host}/api/asana/callback`;
+      console.log('[Asana Callback] Using redirect URI:', redirectUri);
       
       // Exchange code for tokens
       const tokenResponse = await fetch('https://app.asana.com/-/oauth_token', {
@@ -963,10 +970,12 @@ export async function registerRoutes(
         }),
       });
       
+      console.log('[Asana Callback] Token response status:', tokenResponse.status);
       const tokenData = await tokenResponse.json() as any;
+      console.log('[Asana Callback] Token response keys:', Object.keys(tokenData));
       
       if (tokenData.error) {
-        console.error('Asana OAuth error:', tokenData.error);
+        console.error('[Asana Callback] Token error:', tokenData.error, tokenData.error_description);
         return res.redirect('/connect?error=asana_auth_failed');
       }
       
@@ -975,8 +984,10 @@ export async function registerRoutes(
       const expiresIn = tokenData.expires_in;
       const asanaUserId = tokenData.data?.gid || tokenData.data?.id;
       
+      console.log('[Asana Callback] Got tokens - hasAccess:', !!accessToken, 'hasRefresh:', !!refreshToken, 'asanaUserId:', asanaUserId);
+      
       if (!accessToken) {
-        console.error('Missing access token in Asana response:', tokenData);
+        console.error('[Asana Callback] Missing access token in response');
         return res.redirect('/connect?error=asana_missing_token');
       }
       
@@ -984,12 +995,16 @@ export async function registerRoutes(
       const expiresAt = expiresIn ? new Date(Date.now() + expiresIn * 1000) : undefined;
       
       // Save user credentials and enable the integration
-      await storage.saveAsanaUserCredentials(userId, asanaUserId || '', accessToken, refreshToken, expiresAt);
+      console.log('[Asana Callback] Saving credentials for user:', userId);
+      const savedCreds = await storage.saveAsanaUserCredentials(userId, asanaUserId || '', accessToken, refreshToken, expiresAt);
+      console.log('[Asana Callback] Saved credentials:', savedCreds?.id);
+      
       await storage.enableIntegration(userId, 'asana');
+      console.log('[Asana Callback] Enabled integration, redirecting to success');
       
       res.redirect('/connect?success=asana');
     } catch (error: any) {
-      console.error("Error in Asana OAuth callback:", error);
+      console.error("[Asana Callback] Error:", error);
       res.redirect('/connect?error=asana_connection_failed');
     }
   });
