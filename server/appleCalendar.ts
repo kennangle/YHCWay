@@ -14,7 +14,41 @@ interface AppleCalendarEvent {
   source: 'apple';
 }
 
-function parseICalDate(dateStr: string): { date: Date; allDay: boolean } {
+function getTimezoneOffset(tzid: string, date: Date): number {
+  const tzOffsets: Record<string, number> = {
+    'America/Los_Angeles': -8,
+    'America/New_York': -5,
+    'America/Chicago': -6,
+    'America/Denver': -7,
+    'America/Phoenix': -7,
+    'America/Anchorage': -9,
+    'Pacific/Honolulu': -10,
+    'US/Pacific': -8,
+    'US/Eastern': -5,
+    'US/Central': -6,
+    'US/Mountain': -7,
+    'Europe/London': 0,
+    'Europe/Paris': 1,
+    'Europe/Berlin': 1,
+    'Asia/Tokyo': 9,
+    'Asia/Shanghai': 8,
+    'Australia/Sydney': 11,
+  };
+  
+  const month = date.getMonth();
+  const isDST = month >= 2 && month <= 10;
+  
+  let offset = tzOffsets[tzid];
+  if (offset === undefined) return 0;
+  
+  if (isDST && !['America/Phoenix', 'Pacific/Honolulu', 'Asia/Tokyo', 'Asia/Shanghai'].includes(tzid)) {
+    offset += 1;
+  }
+  
+  return offset;
+}
+
+function parseICalDate(dateStr: string, tzid?: string): { date: Date; allDay: boolean } {
   if (!dateStr || dateStr.length < 8) {
     return { date: new Date(), allDay: false };
   }
@@ -33,9 +67,16 @@ function parseICalDate(dateStr: string): { date: Date; allDay: boolean } {
         return { date: new Date(), allDay: false };
       }
       
-      const date = dateStr.endsWith('Z') 
-        ? new Date(Date.UTC(year, month, day, hour, minute, second))
-        : new Date(year, month, day, hour, minute, second);
+      let date: Date;
+      if (dateStr.endsWith('Z')) {
+        date = new Date(Date.UTC(year, month, day, hour, minute, second));
+      } else if (tzid) {
+        const tempDate = new Date(year, month, day, hour, minute, second);
+        const offsetHours = getTimezoneOffset(tzid, tempDate);
+        date = new Date(Date.UTC(year, month, day, hour - offsetHours, minute, second));
+      } else {
+        date = new Date(Date.UTC(year, month, day, hour, minute, second));
+      }
       
       if (isNaN(date.getTime())) {
         return { date: new Date(), allDay: false };
@@ -51,7 +92,7 @@ function parseICalDate(dateStr: string): { date: Date; allDay: boolean } {
       return { date: new Date(), allDay: true };
     }
     
-    const date = new Date(year, month, day);
+    const date = new Date(Date.UTC(year, month, day, 12, 0, 0));
     if (isNaN(date.getTime())) {
       return { date: new Date(), allDay: true };
     }
@@ -67,6 +108,12 @@ function extractICalValue(icsData: string, property: string): string | null {
   return match ? match[1].trim() : null;
 }
 
+function extractICalTzid(icsData: string, property: string): string | null {
+  const regex = new RegExp(`${property};TZID=([^:;]+)`, 'i');
+  const match = icsData.match(regex);
+  return match ? match[1].trim() : null;
+}
+
 function parseICSEvent(icsData: string, url: string): AppleCalendarEvent | null {
   try {
     const uid = extractICalValue(icsData, 'UID') || url;
@@ -75,11 +122,13 @@ function parseICSEvent(icsData: string, url: string): AppleCalendarEvent | null 
     const dtend = extractICalValue(icsData, 'DTEND');
     const description = extractICalValue(icsData, 'DESCRIPTION');
     const location = extractICalValue(icsData, 'LOCATION');
+    const startTzid = extractICalTzid(icsData, 'DTSTART');
+    const endTzid = extractICalTzid(icsData, 'DTEND');
 
     if (!summary || !dtstart) return null;
 
-    const startParsed = parseICalDate(dtstart);
-    const endParsed = dtend ? parseICalDate(dtend) : startParsed;
+    const startParsed = parseICalDate(dtstart, startTzid || undefined);
+    const endParsed = dtend ? parseICalDate(dtend, endTzid || startTzid || undefined) : startParsed;
 
     return {
       id: uid,
