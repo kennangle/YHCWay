@@ -4,6 +4,7 @@ import {
   Inbox, 
   Calendar as CalendarIcon, 
   MessageCircle,
+  CheckSquare,
   Settings, 
   PlusCircle,
   Command,
@@ -34,6 +35,7 @@ export function UnifiedSidebar() {
     { icon: LayoutDashboard, label: "Overview", href: "/" },
     { icon: Inbox, label: "Unified Inbox", href: "/inbox" },
     { icon: CalendarIcon, label: "Calendar", href: "/calendar" },
+    { icon: CheckSquare, label: "Tasks", href: "/tasks" },
     { icon: MessageCircle, label: "Chat", href: "/chat" },
   ];
 

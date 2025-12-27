@@ -15,6 +15,7 @@ import Register from "@/pages/register";
 import Inbox from "@/pages/inbox";
 import Calendar from "@/pages/calendar";
 import Chat from "@/pages/chat";
+import Tasks from "@/pages/tasks";
 import ForgotPassword from "@/pages/forgot-password";
 import ResetPassword from "@/pages/reset-password";
 
@@ -46,6 +47,7 @@ function Router() {
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/inbox" component={Inbox} />
           <Route path="/calendar" component={Calendar} />
+          <Route path="/tasks" component={Tasks} />
           <Route path="/chat" component={Chat} />
           <Route path="/connect" component={Connect} />
           <Route path="/settings" component={Settings} />
