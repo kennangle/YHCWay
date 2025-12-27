@@ -2,8 +2,7 @@ import { useEffect } from "react";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { CheckSquare, RefreshCw, ExternalLink } from "lucide-react";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
 
 interface AsanaTask {
   id: string;
@@ -20,9 +19,6 @@ interface AsanaTask {
 }
 
 export default function Tasks() {
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
-
   const { data: asanaTasks = [], isLoading, isFetching, refetch } = useQuery<AsanaTask[]>({
     queryKey: ["asana-tasks"],
     queryFn: async () => {

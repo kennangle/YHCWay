@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { FeedItem } from "@/components/feed-item";
-import { Search, Bell, Mail, Video, MessageCircle, Users, MessageSquare, CheckSquare } from "lucide-react";
+import { Search, Bell, Mail, Video, MessageCircle, Users, MessageSquare } from "lucide-react";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
 import { useQuery } from "@tanstack/react-query";
 import type { FeedItem as FeedItemType } from "@shared/schema";
@@ -18,20 +18,6 @@ interface UnifiedActivityItem {
   hasMention: boolean;
   timestamp: Date;
   data: any;
-}
-
-interface AsanaTask {
-  id: string;
-  name: string;
-  completed: boolean;
-  dueOn: string | null;
-  dueAt: string | null;
-  assignee: { name: string; email?: string } | null;
-  projectName: string | null;
-  notes: string;
-  permalink: string;
-  createdAt: string;
-  modifiedAt: string;
 }
 
 interface GmailMessage {
@@ -154,19 +140,6 @@ export default function Dashboard() {
       const res = await fetch("/api/slack/messages?includeDms=true", { credentials: "include" });
       if (!res.ok) {
         console.warn("Slack integration not available");
-        return [];
-      }
-      return res.json();
-    },
-    retry: false,
-  });
-
-  const { data: asanaTasks = [], isLoading: asanaLoading } = useQuery<AsanaTask[]>({
-    queryKey: ["asana-tasks"],
-    queryFn: async () => {
-      const res = await fetch("/api/asana/tasks", { credentials: "include" });
-      if (!res.ok) {
-        console.warn("Asana integration not available");
         return [];
       }
       return res.json();
