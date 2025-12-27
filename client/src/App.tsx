@@ -16,6 +16,7 @@ import Inbox from "@/pages/inbox";
 import Calendar from "@/pages/calendar";
 import Chat from "@/pages/chat";
 import Tasks from "@/pages/tasks";
+import Typeform from "@/pages/typeform";
 import ForgotPassword from "@/pages/forgot-password";
 import ResetPassword from "@/pages/reset-password";
 
@@ -48,6 +49,7 @@ function Router() {
           <Route path="/inbox" component={Inbox} />
           <Route path="/calendar" component={Calendar} />
           <Route path="/tasks" component={Tasks} />
+          <Route path="/typeform" component={Typeform} />
           <Route path="/chat" component={Chat} />
           <Route path="/connect" component={Connect} />
           <Route path="/settings" component={Settings} />

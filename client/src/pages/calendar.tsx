@@ -371,22 +371,54 @@ export default function Calendar() {
                         ? colors.apple 
                         : colors.google;
                     
-                    return (
-                    <div 
-                      key={event.id}
-                      className="p-2 rounded-lg border-l-2"
-                      style={{
-                        borderLeftColor: eventColor,
-                        backgroundColor: getLightBg(eventColor),
-                      }}
-                      data-testid={`upcoming-event-${event.id}`}
-                    >
-                      <h4 className="text-xs font-medium text-foreground truncate">{event.title}</h4>
-                      <p className="text-[10px] text-muted-foreground">
-                        {new Date(event.start).toLocaleDateString("en-US", { month: 'short', day: 'numeric' })} · {formatEventTime(event.start, event.end, event.isAllDay)}
-                      </p>
-                    </div>
-                  );
+                    const getEventUrl = () => {
+                      if (event.type === 'zoom' && 'joinUrl' in event) {
+                        return event.joinUrl;
+                      }
+                      if (event.type === 'google') {
+                        return `https://calendar.google.com/calendar/event?eid=${btoa(event.id + ' primary').replace(/=/g, '')}`;
+                      }
+                      return null;
+                    };
+                    const eventUrl = getEventUrl();
+                    
+                    const content = (
+                      <>
+                        <h4 className="text-xs font-medium text-foreground truncate">{event.title}</h4>
+                        <p className="text-[10px] text-muted-foreground">
+                          {new Date(event.start).toLocaleDateString("en-US", { month: 'short', day: 'numeric' })} · {formatEventTime(event.start, event.end, event.isAllDay)}
+                        </p>
+                      </>
+                    );
+                    
+                    return eventUrl ? (
+                      <a
+                        key={event.id}
+                        href={eventUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block p-2 rounded-lg border-l-2 hover:opacity-80 transition-opacity cursor-pointer"
+                        style={{
+                          borderLeftColor: eventColor,
+                          backgroundColor: getLightBg(eventColor),
+                        }}
+                        data-testid={`upcoming-event-${event.id}`}
+                      >
+                        {content}
+                      </a>
+                    ) : (
+                      <div 
+                        key={event.id}
+                        className="p-2 rounded-lg border-l-2"
+                        style={{
+                          borderLeftColor: eventColor,
+                          backgroundColor: getLightBg(eventColor),
+                        }}
+                        data-testid={`upcoming-event-${event.id}`}
+                      >
+                        {content}
+                      </div>
+                    );
                   })}
                 </div>
               )}
