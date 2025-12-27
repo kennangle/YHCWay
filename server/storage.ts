@@ -101,8 +101,9 @@ export interface IStorage {
   getConversationParticipants(conversationId: number): Promise<User[]>;
   isUserInConversation(userId: string, conversationId: number): Promise<boolean>;
   
-  sendMessage(conversationId: number, senderId: string, content: string): Promise<Message>;
-  getConversationMessages(conversationId: number, limit?: number, before?: number): Promise<Message[]>;
+  sendMessage(conversationId: number, senderId: string, content: string, parentId?: number): Promise<Message>;
+  getConversationMessages(conversationId: number, limit?: number, before?: number): Promise<(Message & { replyCount?: number })[]>;
+  getThreadReplies(parentId: number): Promise<Message[]>;
   markConversationRead(userId: string, conversationId: number): Promise<void>;
   getUnreadCount(userId: string): Promise<number>;
   
@@ -499,9 +500,9 @@ export class DbStorage implements IStorage {
     return !!participant;
   }
 
-  async sendMessage(conversationId: number, senderId: string, content: string): Promise<Message> {
+  async sendMessage(conversationId: number, senderId: string, content: string, parentId?: number): Promise<Message> {
     const [message] = await db.insert(messages)
-      .values({ conversationId, senderId, content })
+      .values({ conversationId, senderId, content, parentId })
       .returning();
     
     await db.update(conversations)
@@ -511,18 +512,34 @@ export class DbStorage implements IStorage {
     return message;
   }
 
-  async getConversationMessages(conversationId: number, limit: number = 50, before?: number): Promise<Message[]> {
-    let query = db.select()
+  async getConversationMessages(conversationId: number, limit: number = 50, before?: number): Promise<(Message & { replyCount?: number })[]> {
+    const allMessages = await db.select()
       .from(messages)
       .where(and(
         eq(messages.conversationId, conversationId),
         isNull(messages.deletedAt),
+        isNull(messages.parentId),
         before ? lt(messages.id, before) : undefined
       ))
       .orderBy(desc(messages.createdAt))
       .limit(limit);
     
-    return await query;
+    const result: (Message & { replyCount?: number })[] = [];
+    for (const msg of allMessages) {
+      const [countResult] = await db.select({ count: sql<number>`count(*)` })
+        .from(messages)
+        .where(and(eq(messages.parentId, msg.id), isNull(messages.deletedAt)));
+      result.push({ ...msg, replyCount: Number(countResult?.count || 0) });
+    }
+    
+    return result;
+  }
+
+  async getThreadReplies(parentId: number): Promise<Message[]> {
+    return await db.select()
+      .from(messages)
+      .where(and(eq(messages.parentId, parentId), isNull(messages.deletedAt)))
+      .orderBy(messages.createdAt);
   }
 
   async markConversationRead(userId: string, conversationId: number): Promise<void> {

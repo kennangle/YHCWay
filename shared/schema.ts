@@ -243,6 +243,7 @@ export const messages = pgTable("messages", {
   id: serial("id").primaryKey(),
   conversationId: integer("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" }),
   senderId: varchar("sender_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  parentId: integer("parent_id"),
   content: text("content").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   editedAt: timestamp("edited_at"),
@@ -255,6 +256,7 @@ export type InsertMessage = typeof messages.$inferInsert;
 export const sendMessageSchema = z.object({
   conversationId: z.number().optional(),
   recipientId: z.string().optional(),
+  parentId: z.number().optional(),
   content: z.string().min(1, "Message cannot be empty"),
 });
 
