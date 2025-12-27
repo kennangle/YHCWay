@@ -1420,7 +1420,7 @@ export async function registerRoutes(
   app.post("/api/chat/messages", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims?.sub || req.user.id;
-      const { conversationId, recipientId, content } = sendMessageSchema.parse(req.body);
+      const { conversationId, recipientId, parentId, content } = sendMessageSchema.parse(req.body);
       
       let targetConversationId = conversationId;
       
@@ -1443,7 +1443,7 @@ export async function registerRoutes(
         return res.status(403).json({ error: "Not a participant of this conversation" });
       }
       
-      const message = await storage.sendMessage(targetConversationId, userId, content);
+      const message = await storage.sendMessage(targetConversationId, userId, content, parentId);
       
       // Broadcast to all participants
       const participants = await storage.getConversationParticipants(targetConversationId);
@@ -1454,6 +1454,7 @@ export async function registerRoutes(
           type: "new_message", 
           message,
           conversationId: targetConversationId,
+          parentId,
           sender: sender ? { id: sender.id, firstName: sender.firstName, lastName: sender.lastName, email: sender.email } : null
         }
       );
@@ -1466,6 +1467,18 @@ export async function registerRoutes(
         console.error("Error sending message:", error);
         res.status(500).json({ error: "Failed to send message" });
       }
+    }
+  });
+
+  // Get thread replies
+  app.get("/api/chat/messages/:id/replies", isAuthenticated, async (req: any, res) => {
+    try {
+      const parentId = parseInt(req.params.id);
+      const replies = await storage.getThreadReplies(parentId);
+      res.json(replies);
+    } catch (error) {
+      console.error("Error fetching thread replies:", error);
+      res.status(500).json({ error: "Failed to fetch thread replies" });
     }
   });
 
