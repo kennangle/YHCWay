@@ -146,3 +146,45 @@ export async function isCalendarConnected(): Promise<boolean> {
     return false;
   }
 }
+
+export interface CreateEventInput {
+  title: string;
+  start: string;
+  end: string;
+  description?: string;
+  location?: string;
+  isAllDay?: boolean;
+}
+
+export async function createCalendarEvent(input: CreateEventInput): Promise<CalendarEvent> {
+  const calendar = await getCalendarClient();
+  
+  const event: any = {
+    summary: input.title,
+    description: input.description || undefined,
+    location: input.location || undefined,
+  };
+
+  if (input.isAllDay) {
+    event.start = { date: input.start.split('T')[0] };
+    event.end = { date: input.end.split('T')[0] };
+  } else {
+    event.start = { dateTime: input.start, timeZone: 'America/Los_Angeles' };
+    event.end = { dateTime: input.end, timeZone: 'America/Los_Angeles' };
+  }
+
+  const response = await calendar.events.insert({
+    calendarId: 'primary',
+    requestBody: event,
+  });
+
+  return {
+    id: response.data.id || '',
+    title: response.data.summary || input.title,
+    start: response.data.start?.dateTime || response.data.start?.date || input.start,
+    end: response.data.end?.dateTime || response.data.end?.date || input.end,
+    location: response.data.location || undefined,
+    description: response.data.description || undefined,
+    isAllDay: input.isAllDay || false,
+  };
+}

@@ -7,7 +7,7 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { getRecentEmails, isGmailConnected } from "./gmail";
 import { getGmailAuthUrl, handleGmailCallback, getRecentEmailsForUser, isGmailConnectedForUser, disconnectGmailForUser, getGmailClientForUser, getEmailById, sendEmail, deleteEmailById } from "./gmail-oauth";
-import { getUpcomingEvents, getEventsForMonth, isCalendarConnected } from "./calendar";
+import { getUpcomingEvents, getEventsForMonth, isCalendarConnected, createCalendarEvent } from "./calendar";
 import { getUpcomingMeetings, isZoomConnected } from "./zoom";
 import { getRecentMessages as getSlackMessages, getAllMessages as getAllSlackMessages, getDirectMessages as getSlackDMs, getThreadReplies as getSlackThreadReplies, isSlackConnected, getChannels as getSlackChannels, getRecentMessagesFiltered, isUserSlackConnected, getUserAllMessages, getUserDirectMessages, getUserChannels } from "./slack";
 import { isAppleCalendarConnected, testAppleCalendarConnection, saveAppleCalendarCredentials, deleteAppleCalendarCredentials, getAppleCalendarEvents, getAppleCalendarEventsForMonth } from "./appleCalendar";
@@ -597,6 +597,20 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error fetching month events:", error);
       res.status(500).json({ error: "Failed to fetch calendar events" });
+    }
+  });
+
+  app.post("/api/calendar/events", isAuthenticated, async (req, res) => {
+    try {
+      const { title, start, end, description, location, isAllDay } = req.body;
+      if (!title || !start || !end) {
+        return res.status(400).json({ error: "Title, start, and end are required" });
+      }
+      const event = await createCalendarEvent({ title, start, end, description, location, isAllDay });
+      res.json(event);
+    } catch (error: any) {
+      console.error("Error creating calendar event:", error);
+      res.status(500).json({ error: error?.message || "Failed to create calendar event" });
     }
   });
 

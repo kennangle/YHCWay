@@ -1,8 +1,13 @@
 import { UnifiedSidebar } from "@/components/unified-sidebar";
-import { Search, Bell, ChevronLeft, ChevronRight, Clock, MapPin, Video, Apple } from "lucide-react";
+import { Search, Bell, ChevronLeft, ChevronRight, Clock, MapPin, Video, Apple, X } from "lucide-react";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface UserPreferences {
   googleCalendarColor: string;
@@ -58,7 +63,44 @@ function getMediumBg(hex: string) {
 
 export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  
+  const [showNewEventDialog, setShowNewEventDialog] = useState(false);
+  const [newEvent, setNewEvent] = useState({
+    title: "",
+    start: "",
+    end: "",
+    description: "",
+    location: "",
+    isAllDay: false,
+  });
+  const queryClient = useQueryClient();
+
+  const createEventMutation = useMutation({
+    mutationFn: async (eventData: typeof newEvent) => {
+      const res = await fetch("/api/calendar/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(eventData),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to create event");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["calendar-month"] });
+      setShowNewEventDialog(false);
+      setNewEvent({ title: "", start: "", end: "", description: "", location: "", isAllDay: false });
+    },
+  });
+
+  const handleCreateEvent = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEvent.title || !newEvent.start || !newEvent.end) return;
+    createEventMutation.mutate(newEvent);
+  };
+
   const { data: preferences } = useQuery<UserPreferences>({
     queryKey: ["/api/preferences"],
     queryFn: async () => {
@@ -351,12 +393,107 @@ export default function Calendar() {
             </div>
 
             <div className="glass-panel p-4 rounded-2xl bg-gradient-to-br from-primary/10 to-transparent border-primary/10">
-              <button className="w-full py-2 rounded-lg bg-primary text-white text-sm font-medium shadow-lg shadow-primary/30 hover:bg-primary/90 transition-colors" data-testid="button-new-event">
+              <button 
+                onClick={() => setShowNewEventDialog(true)}
+                className="w-full py-2 rounded-lg bg-primary text-white text-sm font-medium shadow-lg shadow-primary/30 hover:bg-primary/90 transition-colors" 
+                data-testid="button-new-event"
+              >
                 + New Event
               </button>
             </div>
           </div>
         </div>
+
+        <Dialog open={showNewEventDialog} onOpenChange={setShowNewEventDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Create New Event</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleCreateEvent} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="title">Event Title</Label>
+                <Input
+                  id="title"
+                  value={newEvent.title}
+                  onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
+                  placeholder="Enter event title"
+                  required
+                  data-testid="input-event-title"
+                />
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="allDay"
+                  checked={newEvent.isAllDay}
+                  onCheckedChange={(checked) => setNewEvent({ ...newEvent, isAllDay: checked as boolean })}
+                  data-testid="checkbox-all-day"
+                />
+                <Label htmlFor="allDay">All day event</Label>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="start">Start</Label>
+                  <Input
+                    id="start"
+                    type={newEvent.isAllDay ? "date" : "datetime-local"}
+                    value={newEvent.start}
+                    onChange={(e) => setNewEvent({ ...newEvent, start: e.target.value })}
+                    required
+                    data-testid="input-event-start"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="end">End</Label>
+                  <Input
+                    id="end"
+                    type={newEvent.isAllDay ? "date" : "datetime-local"}
+                    value={newEvent.end}
+                    onChange={(e) => setNewEvent({ ...newEvent, end: e.target.value })}
+                    required
+                    data-testid="input-event-end"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="location">Location (optional)</Label>
+                <Input
+                  id="location"
+                  value={newEvent.location}
+                  onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })}
+                  placeholder="Enter location"
+                  data-testid="input-event-location"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="description">Description (optional)</Label>
+                <Input
+                  id="description"
+                  value={newEvent.description}
+                  onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
+                  placeholder="Enter description"
+                  data-testid="input-event-description"
+                />
+              </div>
+
+              {createEventMutation.error && (
+                <p className="text-sm text-red-500">{(createEventMutation.error as Error).message}</p>
+              )}
+
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => setShowNewEventDialog(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={createEventMutation.isPending} data-testid="button-create-event">
+                  {createEventMutation.isPending ? "Creating..." : "Create Event"}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
