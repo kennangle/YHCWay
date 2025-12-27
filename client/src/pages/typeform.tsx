@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
-import { FileText, RefreshCw, ExternalLink, BarChart3, Trash2, Plus } from "lucide-react";
+import { FileText, RefreshCw, ExternalLink, BarChart3, Trash2, Plus, Lock } from "lucide-react";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useAuth } from "@/hooks/useAuth";
 
 interface TypeformForm {
   id: string;
@@ -38,11 +39,35 @@ interface TypeformResponse {
 }
 
 export default function Typeform() {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [showNewFormDialog, setShowNewFormDialog] = useState(false);
   const [showResponsesDialog, setShowResponsesDialog] = useState(false);
   const [selectedForm, setSelectedForm] = useState<TypeformForm | null>(null);
   const [newFormTitle, setNewFormTitle] = useState("");
+
+  if (!user?.isAdmin) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex font-sans">
+        <div 
+          className="fixed inset-0 z-0 pointer-events-none opacity-40"
+          style={{ 
+            backgroundImage: `url(${generatedBg})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center'
+          }}
+        />
+        <UnifiedSidebar />
+        <main className="flex-1 ml-64 p-8 relative z-10 flex items-center justify-center">
+          <div className="text-center">
+            <Lock className="w-16 h-16 mx-auto mb-4 text-muted-foreground/50" />
+            <h1 className="font-display font-bold text-2xl mb-2">Admin Access Required</h1>
+            <p className="text-muted-foreground">This feature is only available to administrators.</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
   
   const { data: forms = [], isLoading, isFetching, refetch } = useQuery<TypeformForm[]>({
     queryKey: ["typeform-forms"],

@@ -375,7 +375,7 @@ export default function Calendar() {
                       if (event.type === 'zoom' && 'joinUrl' in event) {
                         return event.joinUrl;
                       }
-                      if (event.type === 'google') {
+                      if (event.type === 'calendar') {
                         return `https://calendar.google.com/calendar/event?eid=${btoa(event.id + ' primary').replace(/=/g, '')}`;
                       }
                       return null;

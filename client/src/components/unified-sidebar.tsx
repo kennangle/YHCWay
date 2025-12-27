@@ -37,7 +37,7 @@ export function UnifiedSidebar() {
     { icon: Inbox, label: "Unified Inbox", href: "/inbox" },
     { icon: CalendarIcon, label: "Calendar", href: "/calendar" },
     { icon: CheckSquare, label: "Asana Tasks", href: "/tasks" },
-    { icon: FileText, label: "Typeform", href: "/typeform" },
+    ...(user?.isAdmin ? [{ icon: FileText, label: "Typeform", href: "/typeform" }] : []),
     { icon: MessageCircle, label: "Chat", href: "/chat" },
   ];
 

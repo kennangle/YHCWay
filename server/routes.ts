@@ -1576,7 +1576,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/typeform/forms", isAuthenticated, async (req: any, res) => {
+  app.get("/api/typeform/forms", isAuthenticated, isAdmin, async (req: any, res) => {
     try {
       const accessToken = process.env.TYPEFORM_ACCESS_TOKEN;
       if (!accessToken) {
@@ -1591,7 +1591,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/typeform/forms/:formId", isAuthenticated, async (req: any, res) => {
+  app.get("/api/typeform/forms/:formId", isAuthenticated, isAdmin, async (req: any, res) => {
     try {
       const accessToken = process.env.TYPEFORM_ACCESS_TOKEN;
       if (!accessToken) {
@@ -1606,7 +1606,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/typeform/forms", isAuthenticated, async (req: any, res) => {
+  app.post("/api/typeform/forms", isAuthenticated, isAdmin, async (req: any, res) => {
     try {
       const accessToken = process.env.TYPEFORM_ACCESS_TOKEN;
       if (!accessToken) {
@@ -1626,7 +1626,7 @@ export async function registerRoutes(
     }
   });
 
-  app.put("/api/typeform/forms/:formId", isAuthenticated, async (req: any, res) => {
+  app.put("/api/typeform/forms/:formId", isAuthenticated, isAdmin, async (req: any, res) => {
     try {
       const accessToken = process.env.TYPEFORM_ACCESS_TOKEN;
       if (!accessToken) {
@@ -1641,7 +1641,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/typeform/forms/:formId", isAuthenticated, async (req: any, res) => {
+  app.delete("/api/typeform/forms/:formId", isAuthenticated, isAdmin, async (req: any, res) => {
     try {
       const accessToken = process.env.TYPEFORM_ACCESS_TOKEN;
       if (!accessToken) {
@@ -1656,7 +1656,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/typeform/forms/:formId/responses", isAuthenticated, async (req: any, res) => {
+  app.get("/api/typeform/forms/:formId/responses", isAuthenticated, isAdmin, async (req: any, res) => {
     try {
       const accessToken = process.env.TYPEFORM_ACCESS_TOKEN;
       if (!accessToken) {
