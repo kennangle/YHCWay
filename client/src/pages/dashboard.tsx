@@ -677,65 +677,6 @@ export default function Dashboard() {
               )}
             </div>
 
-            <div className="glass-panel p-6 rounded-2xl">
-              <div className="flex items-center gap-2 mb-4">
-                <CheckSquare className="w-5 h-5 text-[#F06A6A]" />
-                <h3 className="font-display font-semibold text-lg">Tasks List</h3>
-              </div>
-              
-              {asanaLoading ? (
-                <div className="text-center text-muted-foreground py-4">Loading tasks...</div>
-              ) : asanaTasks.length === 0 ? (
-                <div className="text-center text-muted-foreground py-4">No tasks assigned</div>
-              ) : (
-                <div className="space-y-3">
-                  {asanaTasks.slice(0, 5).map((task) => {
-                    const isDueSoon = task.dueOn && new Date(task.dueOn) <= new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
-                    const isOverdue = task.dueOn && new Date(task.dueOn) < new Date();
-                    return (
-                      <a
-                        key={task.id}
-                        href={task.permalink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block p-3 rounded-lg hover:bg-white/50 transition-colors border-l-3 border-l-[#F06A6A]"
-                        data-testid={`task-${task.id}`}
-                      >
-                        <div className="flex items-start gap-2">
-                          <div className={`w-4 h-4 rounded border-2 flex-shrink-0 mt-0.5 ${task.completed ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}>
-                            {task.completed && (
-                              <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                              </svg>
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className={`text-sm font-medium ${task.completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
-                              {task.name}
-                            </p>
-                            {task.projectName && (
-                              <p className="text-xs text-muted-foreground">{task.projectName}</p>
-                            )}
-                            {task.dueOn && (
-                              <p className={`text-xs mt-1 ${isOverdue ? 'text-red-500 font-medium' : isDueSoon ? 'text-orange-500' : 'text-muted-foreground'}`}>
-                                {isOverdue ? 'Overdue: ' : isDueSoon ? 'Due soon: ' : 'Due: '}
-                                {new Date(task.dueOn).toLocaleDateString()}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </a>
-                    );
-                  })}
-                  {asanaTasks.length > 5 && (
-                    <p className="text-xs text-center text-muted-foreground pt-2">
-                      +{asanaTasks.length - 5} more tasks
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-
             <div className="glass-panel p-6 rounded-2xl bg-gradient-to-br from-primary/10 to-transparent border-primary/10">
               <h3 className="font-display font-semibold text-lg mb-2">Quick Compose</h3>
               <p className="text-sm text-muted-foreground mb-4">Send a message to any connected service.</p>
