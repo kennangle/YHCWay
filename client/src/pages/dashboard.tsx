@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { FeedItem } from "@/components/feed-item";
-import { Search, Bell, Mail, Video, MessageCircle, Users, MessageSquare } from "lucide-react";
+import { Search, Bell, Mail, Video, MessageCircle, Users, MessageSquare, CheckSquare } from "lucide-react";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
 import { useQuery } from "@tanstack/react-query";
 import type { FeedItem as FeedItemType } from "@shared/schema";
@@ -18,6 +18,20 @@ interface UnifiedActivityItem {
   hasMention: boolean;
   timestamp: Date;
   data: any;
+}
+
+interface AsanaTask {
+  id: string;
+  name: string;
+  completed: boolean;
+  dueOn: string | null;
+  dueAt: string | null;
+  assignee: { name: string; email?: string } | null;
+  projectName: string | null;
+  notes: string;
+  permalink: string;
+  createdAt: string;
+  modifiedAt: string;
 }
 
 interface GmailMessage {
@@ -140,6 +154,19 @@ export default function Dashboard() {
       const res = await fetch("/api/slack/messages?includeDms=true", { credentials: "include" });
       if (!res.ok) {
         console.warn("Slack integration not available");
+        return [];
+      }
+      return res.json();
+    },
+    retry: false,
+  });
+
+  const { data: asanaTasks = [], isLoading: asanaLoading } = useQuery<AsanaTask[]>({
+    queryKey: ["asana-tasks"],
+    queryFn: async () => {
+      const res = await fetch("/api/asana/tasks", { credentials: "include" });
+      if (!res.ok) {
+        console.warn("Asana integration not available");
         return [];
       }
       return res.json();
@@ -447,6 +474,27 @@ export default function Dashboard() {
                   </p>
                 )}
               </div>
+
+              <Link href="/tasks" data-testid="link-asana-card">
+                <div className="glass-panel p-5 rounded-xl border-l-4 border-l-[#F06A6A] cursor-pointer hover:bg-white/80 transition-colors">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-full bg-[#F06A6A]/10 flex items-center justify-center">
+                      <CheckSquare className="w-5 h-5 text-[#F06A6A]" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">Asana</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {asanaLoading ? "Loading..." : `${asanaTasks.length} tasks assigned`}
+                      </p>
+                    </div>
+                  </div>
+                  {asanaTasks.length > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Latest: {asanaTasks[0]?.name?.substring(0, 40)}...
+                    </p>
+                  )}
+                </div>
+              </Link>
             </div>
 
             <div className="flex items-center justify-between mb-4">
