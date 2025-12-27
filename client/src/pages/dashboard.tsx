@@ -386,13 +386,42 @@ export default function Dashboard() {
           </div>
         </header>
 
+        <div className="glass-panel p-6 rounded-2xl mb-8">
+          <h3 className="font-display font-semibold text-lg mb-4">Upcoming Events</h3>
+          
+          {calendarLoading ? (
+            <div className="text-center text-muted-foreground py-4">Loading events...</div>
+          ) : calendarEvents.length === 0 ? (
+            <div className="text-center text-muted-foreground py-4">No upcoming events</div>
+          ) : (
+            <div className="flex gap-4 overflow-x-auto pb-2">
+              {calendarEvents.slice(0, 5).map((event) => {
+                const isNow = isEventNow(event.start, event.end, event.isAllDay);
+                return (
+                  <div key={event.id} className="flex-shrink-0 w-48 p-4 rounded-xl bg-white/50 border border-white/20" data-testid={`upcoming-event-${event.id}`}>
+                    {isNow ? (
+                      <p className="text-xs text-primary font-bold mb-1">NOW</p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground font-semibold mb-1">{formatEventStartTime(event.start, event.isAllDay)}</p>
+                    )}
+                    <h4 className="font-medium text-foreground text-sm line-clamp-2">{event.title}</h4>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {formatEventTime(event.start, event.end, event.isAllDay)}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
         <div className="grid grid-cols-12 gap-8">
-          <div className="col-span-8">
+          <div className="col-span-12">
             <div className="flex items-center justify-between mb-6">
               <h2 className="font-display font-semibold text-xl">Service Summary</h2>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="grid grid-cols-3 gap-4 mb-6">
               <Link href="/inbox" data-testid="link-gmail-card">
                 <div className="glass-panel p-5 rounded-xl border-l-4 border-l-red-500 cursor-pointer hover:bg-white/80 transition-colors">
                   <div className="flex items-center gap-3 mb-3">
@@ -660,41 +689,6 @@ export default function Dashboard() {
                     return null;
                   })}
                 </>
-              )}
-            </div>
-          </div>
-
-          <div className="col-span-4 space-y-6">
-            <div className="glass-panel p-6 rounded-2xl">
-              <h3 className="font-display font-semibold text-lg mb-4">Upcoming</h3>
-              
-              {calendarLoading ? (
-                <div className="text-center text-muted-foreground py-4">Loading events...</div>
-              ) : calendarEvents.length === 0 ? (
-                <div className="text-center text-muted-foreground py-4">No upcoming events</div>
-              ) : (
-                <div className="relative pl-4 border-l-2 border-primary/20 space-y-6">
-                  {calendarEvents.slice(0, 5).map((event, index) => {
-                    const isNow = isEventNow(event.start, event.end, event.isAllDay);
-                    return (
-                      <div key={event.id} className="relative" data-testid={`calendar-event-${event.id}`}>
-                        <div className={`absolute -left-[21px] top-1 w-3 h-3 rounded-full ring-4 ring-white ${isNow ? 'bg-primary' : 'bg-muted-foreground/30'}`}></div>
-                        {isNow ? (
-                          <p className="text-xs text-primary font-bold mb-1">NOW</p>
-                        ) : (
-                          <p className="text-xs text-muted-foreground font-semibold mb-1">{formatEventStartTime(event.start, event.isAllDay)}</p>
-                        )}
-                        <h4 className="font-medium text-foreground">{event.title}</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {formatEventTime(event.start, event.end, event.isAllDay)}
-                        </p>
-                        {event.location && (
-                          <p className="text-xs text-muted-foreground">{event.location}</p>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
               )}
             </div>
           </div>
