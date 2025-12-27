@@ -649,14 +649,6 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
-
-            <div className="glass-panel p-6 rounded-2xl bg-gradient-to-br from-primary/10 to-transparent border-primary/10">
-              <h3 className="font-display font-semibold text-lg mb-2">Quick Compose</h3>
-              <p className="text-sm text-muted-foreground mb-4">Send a message to any connected service.</p>
-              <button className="w-full py-2.5 rounded-lg bg-primary text-white font-medium shadow-lg shadow-primary/30 hover:bg-primary/90 transition-colors" data-testid="button-new-message">
-                New Message
-              </button>
-            </div>
           </div>
         </div>
       </main>
