@@ -394,26 +394,19 @@ export default function Dashboard() {
           ) : calendarEvents.length === 0 ? (
             <div className="text-center text-muted-foreground py-4">No upcoming events</div>
           ) : (
-            <div className="grid grid-flow-col auto-cols-max gap-4 overflow-x-auto pb-2">
+            <div className="flex gap-3 overflow-x-auto pb-2">
               {calendarEvents.slice(0, 10).map((event) => {
                 const isNow = isEventNow(event.start, event.end, event.isAllDay);
                 return (
-                  <div key={event.id} className="w-56 p-4 rounded-xl bg-white/60 border border-white/30 hover:bg-white/80 transition-colors" data-testid={`upcoming-event-${event.id}`}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className={`w-2 h-2 rounded-full ${isNow ? 'bg-primary animate-pulse' : 'bg-green-500'}`}></div>
-                      {isNow ? (
-                        <p className="text-xs text-primary font-bold">HAPPENING NOW</p>
-                      ) : (
-                        <p className="text-xs text-muted-foreground font-semibold">{formatEventStartTime(event.start, event.isAllDay)}</p>
-                      )}
-                    </div>
-                    <h4 className="font-medium text-foreground text-sm line-clamp-2 mb-1">{event.title}</h4>
-                    <p className="text-xs text-muted-foreground">
+                  <div key={event.id} className="flex-shrink-0 flex items-center gap-3 px-4 py-2 rounded-lg bg-white/60 border border-white/30 hover:bg-white/80 transition-colors" data-testid={`upcoming-event-${event.id}`}>
+                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isNow ? 'bg-primary animate-pulse' : 'bg-green-500'}`}></div>
+                    <span className={`text-xs font-semibold flex-shrink-0 ${isNow ? 'text-primary' : 'text-muted-foreground'}`}>
+                      {isNow ? 'NOW' : formatEventStartTime(event.start, event.isAllDay)}
+                    </span>
+                    <span className="font-medium text-foreground text-sm truncate max-w-48">{event.title}</span>
+                    <span className="text-xs text-muted-foreground flex-shrink-0">
                       {formatEventTime(event.start, event.end, event.isAllDay)}
-                    </p>
-                    {event.location && (
-                      <p className="text-xs text-muted-foreground mt-1 truncate">{event.location}</p>
-                    )}
+                    </span>
                   </div>
                 );
               })}
