@@ -222,8 +222,8 @@ export default function Calendar() {
           </div>
         </header>
 
-        <div className="grid grid-cols-12 gap-8">
-          <div className="col-span-8">
+        <div className="grid grid-cols-12 gap-6">
+          <div className="col-span-10">
             <div className="glass-panel p-6 rounded-2xl">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-display font-semibold text-xl">{monthName}</h2>
@@ -312,17 +312,17 @@ export default function Calendar() {
             </div>
           </div>
 
-          <div className="col-span-4 space-y-6">
-            <div className="glass-panel p-6 rounded-2xl">
-              <h3 className="font-display font-semibold text-lg mb-4">Upcoming Events</h3>
+          <div className="col-span-2 space-y-4">
+            <div className="glass-panel p-4 rounded-2xl">
+              <h3 className="font-display font-semibold text-sm mb-3">Upcoming</h3>
               
               {(calendarLoading || zoomLoading) ? (
                 <div className="text-center text-muted-foreground py-4">Loading...</div>
               ) : upcomingEvents.length === 0 ? (
                 <div className="text-center text-muted-foreground py-4">No upcoming events</div>
               ) : (
-                <div className="space-y-4">
-                  {upcomingEvents.map((event) => {
+                <div className="space-y-2">
+                  {upcomingEvents.slice(0, 5).map((event) => {
                     const eventColor = event.type === 'zoom' 
                       ? colors.zoom 
                       : event.type === 'apple' 
@@ -332,48 +332,17 @@ export default function Calendar() {
                     return (
                     <div 
                       key={event.id}
-                      className="p-3 rounded-xl border-l-4"
+                      className="p-2 rounded-lg border-l-2"
                       style={{
                         borderLeftColor: eventColor,
                         backgroundColor: getLightBg(eventColor),
                       }}
                       data-testid={`upcoming-event-${event.id}`}
                     >
-                      <div className="flex items-start gap-2">
-                        {event.type === 'zoom' ? (
-                          <Video className="w-4 h-4 mt-0.5" style={{ color: eventColor }} />
-                        ) : event.type === 'apple' ? (
-                          <Apple className="w-4 h-4 mt-0.5" style={{ color: eventColor }} />
-                        ) : (
-                          <Clock className="w-4 h-4 mt-0.5" style={{ color: eventColor }} />
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <h4 className="text-sm font-medium text-foreground truncate">{event.title}</h4>
-                          <p className="text-xs text-muted-foreground">
-                            {new Date(event.start).toLocaleDateString("en-US", { weekday: 'short', month: 'short', day: 'numeric' })}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {formatEventTime(event.start, event.end, event.isAllDay)}
-                          </p>
-                          {'location' in event && event.location && (
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                              <MapPin className="w-3 h-3" />
-                              <span className="truncate">{event.location}</span>
-                            </div>
-                          )}
-                          {'joinUrl' in event && event.joinUrl && (
-                            <a 
-                              href={event.joinUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs hover:underline mt-1 inline-block"
-                              style={{ color: eventColor }}
-                            >
-                              Join Meeting
-                            </a>
-                          )}
-                        </div>
-                      </div>
+                      <h4 className="text-xs font-medium text-foreground truncate">{event.title}</h4>
+                      <p className="text-[10px] text-muted-foreground">
+                        {new Date(event.start).toLocaleDateString("en-US", { month: 'short', day: 'numeric' })} · {formatEventTime(event.start, event.end, event.isAllDay)}
+                      </p>
                     </div>
                   );
                   })}
@@ -381,11 +350,9 @@ export default function Calendar() {
               )}
             </div>
 
-            <div className="glass-panel p-6 rounded-2xl bg-gradient-to-br from-primary/10 to-transparent border-primary/10">
-              <h3 className="font-display font-semibold text-lg mb-2">Quick Actions</h3>
-              <p className="text-sm text-muted-foreground mb-4">Manage your calendar and meetings.</p>
-              <button className="w-full py-2.5 rounded-lg bg-primary text-white font-medium shadow-lg shadow-primary/30 hover:bg-primary/90 transition-colors" data-testid="button-new-event">
-                New Event
+            <div className="glass-panel p-4 rounded-2xl bg-gradient-to-br from-primary/10 to-transparent border-primary/10">
+              <button className="w-full py-2 rounded-lg bg-primary text-white text-sm font-medium shadow-lg shadow-primary/30 hover:bg-primary/90 transition-colors" data-testid="button-new-event">
+                + New Event
               </button>
             </div>
           </div>
