@@ -1,13 +1,12 @@
 import { useState } from "react";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
-import { FileText, RefreshCw, ExternalLink, Eye, BarChart3, Trash2, Plus } from "lucide-react";
+import { FileText, RefreshCw, ExternalLink, BarChart3, Trash2, Plus } from "lucide-react";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 
 interface TypeformForm {
   id: string;

@@ -12,6 +12,7 @@ import { getUpcomingMeetings, isZoomConnected } from "./zoom";
 import { getRecentMessages as getSlackMessages, getAllMessages as getAllSlackMessages, getDirectMessages as getSlackDMs, getThreadReplies as getSlackThreadReplies, isSlackConnected, getChannels as getSlackChannels, getRecentMessagesFiltered, isUserSlackConnected, getUserAllMessages, getUserDirectMessages, getUserChannels } from "./slack";
 import { isAppleCalendarConnected, testAppleCalendarConnection, saveAppleCalendarCredentials, deleteAppleCalendarCredentials, getAppleCalendarEvents, getAppleCalendarEventsForMonth } from "./appleCalendar";
 import { isAsanaConnected, getMyTasks, getProjects, getUpcomingTasks, isUserAsanaConnected, getUserMyTasks, getUserProjects, getUserUpcomingTasks } from "./asana";
+import { getTypeformForms, getTypeformForm, createTypeformForm, updateTypeformForm, deleteTypeformForm, getTypeformResponses, isTypeformConfigured } from "./typeform";
 import { sendInvitationEmail, getTemplateTypes, getDefaultTemplate } from "./email";
 import { appleCalendarConnectSchema, slackPreferencesUpdateSchema, emailTemplateSchema } from "@shared/schema";
 import { broadcastToUsers, generateWsAuthToken } from "./websocket";
@@ -1572,6 +1573,103 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error fetching preferences:", error);
       res.status(500).json({ error: "Failed to fetch preferences" });
+    }
+  });
+
+  app.get("/api/typeform/forms", isAuthenticated, async (req: any, res) => {
+    try {
+      const accessToken = process.env.TYPEFORM_ACCESS_TOKEN;
+      if (!accessToken) {
+        return res.status(401).json({ error: "Typeform not configured" });
+      }
+      
+      const forms = await getTypeformForms(accessToken);
+      res.json(forms);
+    } catch (error: any) {
+      console.error("[Typeform] Error fetching forms:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch forms" });
+    }
+  });
+
+  app.get("/api/typeform/forms/:formId", isAuthenticated, async (req: any, res) => {
+    try {
+      const accessToken = process.env.TYPEFORM_ACCESS_TOKEN;
+      if (!accessToken) {
+        return res.status(401).json({ error: "Typeform not configured" });
+      }
+      
+      const form = await getTypeformForm(accessToken, req.params.formId);
+      res.json(form);
+    } catch (error: any) {
+      console.error("[Typeform] Error fetching form:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch form" });
+    }
+  });
+
+  app.post("/api/typeform/forms", isAuthenticated, async (req: any, res) => {
+    try {
+      const accessToken = process.env.TYPEFORM_ACCESS_TOKEN;
+      if (!accessToken) {
+        return res.status(401).json({ error: "Typeform not configured" });
+      }
+      
+      const { title } = req.body;
+      if (!title) {
+        return res.status(400).json({ error: "Title is required" });
+      }
+      
+      const form = await createTypeformForm(accessToken, title);
+      res.status(201).json(form);
+    } catch (error: any) {
+      console.error("[Typeform] Error creating form:", error);
+      res.status(500).json({ error: error.message || "Failed to create form" });
+    }
+  });
+
+  app.put("/api/typeform/forms/:formId", isAuthenticated, async (req: any, res) => {
+    try {
+      const accessToken = process.env.TYPEFORM_ACCESS_TOKEN;
+      if (!accessToken) {
+        return res.status(401).json({ error: "Typeform not configured" });
+      }
+      
+      const form = await updateTypeformForm(accessToken, req.params.formId, req.body);
+      res.json(form);
+    } catch (error: any) {
+      console.error("[Typeform] Error updating form:", error);
+      res.status(500).json({ error: error.message || "Failed to update form" });
+    }
+  });
+
+  app.delete("/api/typeform/forms/:formId", isAuthenticated, async (req: any, res) => {
+    try {
+      const accessToken = process.env.TYPEFORM_ACCESS_TOKEN;
+      if (!accessToken) {
+        return res.status(401).json({ error: "Typeform not configured" });
+      }
+      
+      await deleteTypeformForm(accessToken, req.params.formId);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("[Typeform] Error deleting form:", error);
+      res.status(500).json({ error: error.message || "Failed to delete form" });
+    }
+  });
+
+  app.get("/api/typeform/forms/:formId/responses", isAuthenticated, async (req: any, res) => {
+    try {
+      const accessToken = process.env.TYPEFORM_ACCESS_TOKEN;
+      if (!accessToken) {
+        return res.status(401).json({ error: "Typeform not configured" });
+      }
+      
+      const responses = await getTypeformResponses(accessToken, req.params.formId, {
+        pageSize: 100,
+      });
+      res.json(responses);
+    } catch (error: any) {
+      console.error("[Typeform] Error fetching responses:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch responses" });
     }
   });
 
