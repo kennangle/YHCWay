@@ -1,8 +1,11 @@
 import * as brevo from '@getbrevo/brevo';
 import { storage } from './storage';
 
+const brevoApiKey = process.env.BREVO_API_KEY || '';
+console.log(`[Email] Brevo API key configured: ${brevoApiKey ? 'Yes (' + brevoApiKey.substring(0, 10) + '...)' : 'No'}`);
+
 const apiInstance = new brevo.TransactionalEmailsApi();
-apiInstance.setApiKey(brevo.TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY || '');
+apiInstance.setApiKey(brevo.TransactionalEmailsApiApiKeys.apiKey, brevoApiKey);
 
 // Get sender email from environment variable or use default
 const SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'noreply@uniwork.app';
@@ -136,6 +139,13 @@ export async function sendPasswordResetEmail(to: string, resetLink: string): Pro
     if (error?.response?.body) {
       console.error("[Email] Brevo API error details:", JSON.stringify(error.response.body));
     }
+    if (error?.response?.data) {
+      console.error("[Email] Brevo API response data:", JSON.stringify(error.response.data));
+    }
+    if (error?.response?.status) {
+      console.error("[Email] Brevo API status:", error.response.status);
+    }
+    console.error("[Email] Full error object:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
     return false;
   }
 }
