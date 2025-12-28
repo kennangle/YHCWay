@@ -4,6 +4,10 @@ import { storage } from './storage';
 const apiInstance = new brevo.TransactionalEmailsApi();
 apiInstance.setApiKey(brevo.TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY || '');
 
+// Get sender email from environment variable or use default
+const SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'noreply@uniwork.app';
+const SENDER_NAME = process.env.BREVO_SENDER_NAME || 'UniWork';
+
 // Default invitation email template
 const DEFAULT_INVITATION_SUBJECT = "Welcome to UniWork!";
 const DEFAULT_INVITATION_HTML = `
@@ -65,7 +69,7 @@ export async function sendInvitationEmail(to: string, firstName: string, tempPas
     const sendSmtpEmail = new brevo.SendSmtpEmail();
     sendSmtpEmail.subject = replaceTemplateVariables(subject, variables);
     sendSmtpEmail.htmlContent = htmlContent;
-    sendSmtpEmail.sender = { name: "UniWork", email: "noreply@uniwork.app" };
+    sendSmtpEmail.sender = { name: SENDER_NAME, email: SENDER_EMAIL };
     sendSmtpEmail.to = [{ email: to }];
 
     await apiInstance.sendTransacEmail(sendSmtpEmail);
@@ -117,7 +121,7 @@ export async function sendPasswordResetEmail(to: string, resetLink: string): Pro
     const sendSmtpEmail = new brevo.SendSmtpEmail();
     sendSmtpEmail.subject = replaceTemplateVariables(subject, variables);
     sendSmtpEmail.htmlContent = htmlContent;
-    sendSmtpEmail.sender = { name: "UniWork", email: "noreply@uniwork.app" };
+    sendSmtpEmail.sender = { name: SENDER_NAME, email: SENDER_EMAIL };
     sendSmtpEmail.to = [{ email: to }];
 
     await apiInstance.sendTransacEmail(sendSmtpEmail);
