@@ -10,7 +10,8 @@ import {
   PlusCircle,
   Command,
   LogOut,
-  Shield
+  Shield,
+  Mail
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
@@ -43,6 +44,7 @@ export function UnifiedSidebar() {
 
   const bottomItems = [
     { icon: PlusCircle, label: "Connect App", href: "/connect" },
+    { icon: Mail, label: "Email Builder", href: "/email-builder" },
     { icon: Settings, label: "Settings", href: "/settings" },
     ...(user?.isAdmin ? [{ icon: Shield, label: "Admin", href: "/admin" }] : []),
   ];
