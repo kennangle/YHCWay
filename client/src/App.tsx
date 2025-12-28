@@ -19,6 +19,7 @@ import Tasks from "@/pages/tasks";
 import Typeform from "@/pages/typeform";
 import ForgotPassword from "@/pages/forgot-password";
 import ResetPassword from "@/pages/reset-password";
+import EmailBuilderPage from "@/pages/email-builder";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -54,6 +55,7 @@ function Router() {
           <Route path="/connect" component={Connect} />
           <Route path="/settings" component={Settings} />
           <Route path="/admin" component={Admin} />
+          <Route path="/email-builder" component={EmailBuilderPage} />
           <Route path="/login">{() => <Redirect to="/dashboard" />}</Route>
           <Route path="/register">{() => <Redirect to="/dashboard" />}</Route>
         </>
