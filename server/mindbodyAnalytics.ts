@@ -45,17 +45,22 @@ async function makeRequest<T>(endpoint: string, options: RequestInit = {}): Prom
 
   const url = `${MINDBODY_ANALYTICS_BASE_URL}${endpoint}`;
   
+  console.log(`[Mindbody Analytics] Requesting: ${url}`);
+  console.log(`[Mindbody Analytics] API Key prefix: ${API_KEY.substring(0, 10)}...`);
+  
   const response = await fetch(url, {
     ...options,
     headers: {
       "Authorization": `Bearer ${API_KEY}`,
       "Content-Type": "application/json",
+      "X-API-Key": API_KEY,
       ...options.headers,
     },
   });
 
   if (!response.ok) {
     const errorText = await response.text();
+    console.error(`[Mindbody Analytics] Error response: ${response.status} - ${errorText}`);
     throw new Error(`Mindbody Analytics API error: ${response.status} - ${errorText}`);
   }
 
