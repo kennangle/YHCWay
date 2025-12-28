@@ -109,11 +109,12 @@ export async function getDirectMessages(maxResults: number = 10, includeThreadRe
   for (const dm of (data.channels || []).slice(0, 5)) {
     try {
       const historyResponse = await fetch(
-        `https://slack.com/api/conversations.history?channel=${dm.id}&limit=10`,
+        `https://slack.com/api/conversations.history?channel=${dm.id}&limit=10&_t=${Date.now()}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache'
           }
         }
       );
