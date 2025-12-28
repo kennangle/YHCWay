@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { useLocation } from "wouter";
 
 type Theme = "light" | "dark";
 
@@ -70,9 +71,21 @@ import ResetPassword from "@/pages/reset-password";
 import EmailBuilderPage from "@/pages/email-builder";
 import IntroOffers from "@/pages/intro-offers";
 import SetupGuide from "@/pages/setup-guide";
+import PendingApproval from "@/pages/pending-approval";
+
+function ApprovalGuard({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
+  const [location] = useLocation();
+
+  if (user && user.approvalStatus !== "approved" && location !== "/pending-approval") {
+    return <Redirect to="/pending-approval" />;
+  }
+
+  return <>{children}</>;
+}
 
 function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -82,38 +95,42 @@ function Router() {
     );
   }
 
+  if (!isAuthenticated) {
+    return (
+      <Switch>
+        <Route path="/" component={Landing} />
+        <Route path="/login" component={Login} />
+        <Route path="/register" component={Register} />
+        <Route path="/forgot-password" component={ForgotPassword} />
+        <Route path="/reset-password" component={ResetPassword} />
+        <Route path="/dashboard">{() => <Redirect to="/login" />}</Route>
+        <Route component={NotFound} />
+      </Switch>
+    );
+  }
+
   return (
-    <Switch>
-      {!isAuthenticated ? (
-        <>
-          <Route path="/" component={Landing} />
-          <Route path="/login" component={Login} />
-          <Route path="/register" component={Register} />
-          <Route path="/forgot-password" component={ForgotPassword} />
-          <Route path="/reset-password" component={ResetPassword} />
-          <Route path="/dashboard">{() => <Redirect to="/login" />}</Route>
-        </>
-      ) : (
-        <>
-          <Route path="/" component={Dashboard} />
-          <Route path="/dashboard" component={Dashboard} />
-          <Route path="/inbox" component={Inbox} />
-          <Route path="/calendar" component={Calendar} />
-          <Route path="/tasks" component={Tasks} />
-          <Route path="/typeform" component={Typeform} />
-          <Route path="/chat" component={Chat} />
-          <Route path="/connect" component={Connect} />
-          <Route path="/settings" component={Settings} />
-          <Route path="/admin" component={Admin} />
-          <Route path="/email-builder" component={EmailBuilderPage} />
-          <Route path="/intro-offers" component={IntroOffers} />
-          <Route path="/setup-guide" component={SetupGuide} />
-          <Route path="/login">{() => <Redirect to="/dashboard" />}</Route>
-          <Route path="/register">{() => <Redirect to="/dashboard" />}</Route>
-        </>
-      )}
-      <Route component={NotFound} />
-    </Switch>
+    <ApprovalGuard>
+      <Switch>
+        <Route path="/pending-approval" component={PendingApproval} />
+        <Route path="/" component={Dashboard} />
+        <Route path="/dashboard" component={Dashboard} />
+        <Route path="/inbox" component={Inbox} />
+        <Route path="/calendar" component={Calendar} />
+        <Route path="/tasks" component={Tasks} />
+        <Route path="/typeform" component={Typeform} />
+        <Route path="/chat" component={Chat} />
+        <Route path="/connect" component={Connect} />
+        <Route path="/settings" component={Settings} />
+        <Route path="/admin" component={Admin} />
+        <Route path="/email-builder" component={EmailBuilderPage} />
+        <Route path="/intro-offers" component={IntroOffers} />
+        <Route path="/setup-guide" component={SetupGuide} />
+        <Route path="/login">{() => <Redirect to="/dashboard" />}</Route>
+        <Route path="/register">{() => <Redirect to="/dashboard" />}</Route>
+        <Route component={NotFound} />
+      </Switch>
+    </ApprovalGuard>
   );
 }
 
