@@ -356,6 +356,27 @@ export async function registerRoutes(
   });
 
   // =============================================================================
+  // USERS ENDPOINT (for autocomplete)
+  // =============================================================================
+
+  app.get('/api/users', isAuthenticated, async (req: any, res) => {
+    try {
+      const allUsers = await storage.getAllUsers();
+      const safeUsers = allUsers.map(user => ({
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        profileImageUrl: user.profileImageUrl,
+      }));
+      res.json(safeUsers);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
+  // =============================================================================
   // AUTH ROUTES
   // =============================================================================
 
