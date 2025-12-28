@@ -63,6 +63,10 @@ The server handles both API routes and serves the static frontend in production.
 - **Slack**: Bot token for channel/DM access
 - **Zoom**: Server-to-server OAuth
 - **Apple Calendar**: CalDAV via tsdav library (requires user app-specific password)
+- **Mindbody Analytics**: External API integration via Bearer token for intro offer tracking
+  - Dedicated `/intro-offers` page for viewing and managing intro offers
+  - Intro offers also appear in the dashboard unified feed
+  - Requires `MINDBODY_API_KEY` environment variable
 
 ### Authentication & Authorization
 - **Method**: Replit Auth (OpenID Connect)

@@ -18,6 +18,7 @@ import { getTypeformForms, getTypeformForm, createTypeformForm, updateTypeformFo
 import { sendInvitationEmail, getTemplateTypes, getDefaultTemplate } from "./email";
 import { appleCalendarConnectSchema, slackPreferencesUpdateSchema, emailTemplateSchema } from "@shared/schema";
 import { broadcastToUsers, generateWsAuthToken } from "./websocket";
+import { getIntroOffers, getIntroOfferSummary, updateIntroOffer, getStudents, isMindbodyAnalyticsConfigured } from "./mindbodyAnalytics";
 
 const isAdmin: RequestHandler = async (req: any, res, next) => {
   try {
@@ -373,6 +374,93 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error fetching users:", error);
       res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
+  // =============================================================================
+  // MINDBODY ANALYTICS ROUTES
+  // =============================================================================
+
+  app.get('/api/mindbody-analytics/status', isAuthenticated, async (req: any, res) => {
+    try {
+      res.json({ configured: isMindbodyAnalyticsConfigured() });
+    } catch (error) {
+      console.error("Error checking Mindbody Analytics status:", error);
+      res.status(500).json({ error: "Failed to check status" });
+    }
+  });
+
+  app.get('/api/mindbody-analytics/intro-offers', isAuthenticated, async (req: any, res) => {
+    try {
+      if (!isMindbodyAnalyticsConfigured()) {
+        return res.status(400).json({ error: "Mindbody Analytics is not configured" });
+      }
+      const { status, since, limit, offset } = req.query;
+      const offers = await getIntroOffers({
+        status: status as string,
+        since: since as string,
+        limit: limit ? parseInt(limit as string) : undefined,
+        offset: offset ? parseInt(offset as string) : undefined,
+      });
+      res.json(offers);
+    } catch (error) {
+      console.error("Error fetching intro offers:", error);
+      res.status(500).json({ error: "Failed to fetch intro offers" });
+    }
+  });
+
+  app.get('/api/mindbody-analytics/intro-offers/summary', isAuthenticated, async (req: any, res) => {
+    try {
+      if (!isMindbodyAnalyticsConfigured()) {
+        return res.status(400).json({ error: "Mindbody Analytics is not configured" });
+      }
+      const summary = await getIntroOfferSummary();
+      res.json(summary);
+    } catch (error) {
+      console.error("Error fetching intro offers summary:", error);
+      res.status(500).json({ error: "Failed to fetch summary" });
+    }
+  });
+
+  const introOfferUpdateSchema = z.object({
+    status: z.enum(["active", "converted", "expired"]).optional(),
+    notes: z.string().max(500).optional(),
+  });
+
+  app.patch('/api/mindbody-analytics/intro-offers/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      if (!isMindbodyAnalyticsConfigured()) {
+        return res.status(400).json({ error: "Mindbody Analytics is not configured" });
+      }
+      const { id } = req.params;
+      const parseResult = introOfferUpdateSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ error: "Invalid request body", details: parseResult.error.errors });
+      }
+      const { status, notes } = parseResult.data;
+      const updated = await updateIntroOffer(id, { status, notes });
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating intro offer:", error);
+      res.status(500).json({ error: "Failed to update intro offer" });
+    }
+  });
+
+  app.get('/api/mindbody-analytics/students', isAuthenticated, async (req: any, res) => {
+    try {
+      if (!isMindbodyAnalyticsConfigured()) {
+        return res.status(400).json({ error: "Mindbody Analytics is not configured" });
+      }
+      const { limit, offset, search } = req.query;
+      const students = await getStudents({
+        limit: limit ? parseInt(limit as string) : undefined,
+        offset: offset ? parseInt(offset as string) : undefined,
+        search: search as string,
+      });
+      res.json(students);
+    } catch (error) {
+      console.error("Error fetching students:", error);
+      res.status(500).json({ error: "Failed to fetch students" });
     }
   });
 

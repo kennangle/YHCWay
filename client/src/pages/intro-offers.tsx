@@ -1,0 +1,404 @@
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { UnifiedSidebar } from "@/components/unified-sidebar";
+import { TopBar } from "@/components/top-bar";
+import { Gift, RefreshCw, Users, TrendingUp, Clock, CheckCircle, XCircle, AlertCircle, Search, Edit2, Save, X } from "lucide-react";
+import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "@/hooks/use-toast";
+
+interface IntroOffer {
+  id: string;
+  studentName: string;
+  studentEmail?: string;
+  offerName: string;
+  purchaseDate: string;
+  expirationDate?: string;
+  status: string;
+  attendanceCount?: number;
+  notes?: string;
+}
+
+interface IntroOfferSummary {
+  totalOffers: number;
+  activeOffers: number;
+  convertedOffers: number;
+  expiredOffers: number;
+  conversionRate: number;
+}
+
+interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+type StatusFilter = "all" | "active" | "converted" | "expired";
+
+export default function IntroOffers() {
+  const queryClient = useQueryClient();
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editNotes, setEditNotes] = useState("");
+  const [editStatus, setEditStatus] = useState("");
+
+  const { data: statusData } = useQuery<{ configured: boolean }>({
+    queryKey: ["/api/mindbody-analytics/status"],
+    queryFn: async () => {
+      const res = await fetch("/api/mindbody-analytics/status", { credentials: "include" });
+      if (!res.ok) return { configured: false };
+      return res.json();
+    },
+  });
+
+  const { data: summary, isLoading: summaryLoading } = useQuery<IntroOfferSummary>({
+    queryKey: ["/api/mindbody-analytics/intro-offers/summary"],
+    queryFn: async () => {
+      const res = await fetch("/api/mindbody-analytics/intro-offers/summary", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch summary");
+      return res.json();
+    },
+    enabled: statusData?.configured,
+  });
+
+  const { data: offersData, isLoading: offersLoading, isFetching, refetch } = useQuery<PaginatedResponse<IntroOffer>>({
+    queryKey: ["/api/mindbody-analytics/intro-offers", statusFilter],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (statusFilter !== "all") params.append("status", statusFilter);
+      params.append("limit", "50");
+      const res = await fetch(`/api/mindbody-analytics/intro-offers?${params}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch intro offers");
+      return res.json();
+    },
+    enabled: statusData?.configured,
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, status, notes }: { id: string; status?: string; notes?: string }) => {
+      const res = await fetch(`/api/mindbody-analytics/intro-offers/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ status, notes }),
+      });
+      if (!res.ok) throw new Error("Failed to update offer");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/mindbody-analytics/intro-offers"], exact: false });
+      queryClient.invalidateQueries({ queryKey: ["/api/mindbody-analytics/intro-offers/summary"] });
+      queryClient.invalidateQueries({ queryKey: ["intro-offers-feed"] });
+      setEditingId(null);
+      toast({ title: "Updated", description: "Intro offer updated successfully" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to update offer", variant: "destructive" });
+    },
+  });
+
+  const offers = offersData?.data || [];
+  const filteredOffers = offers.filter(offer => 
+    !searchTerm || 
+    offer.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    offer.offerName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleEdit = (offer: IntroOffer) => {
+    setEditingId(offer.id);
+    setEditNotes(offer.notes || "");
+    setEditStatus(offer.status);
+  };
+
+  const handleSave = (id: string) => {
+    updateMutation.mutate({ id, status: editStatus, notes: editNotes });
+  };
+
+  const handleCancel = () => {
+    setEditingId(null);
+    setEditNotes("");
+    setEditStatus("");
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "active": return <Clock className="w-4 h-4 text-blue-500" />;
+      case "converted": return <CheckCircle className="w-4 h-4 text-green-500" />;
+      case "expired": return <XCircle className="w-4 h-4 text-red-500" />;
+      default: return <AlertCircle className="w-4 h-4 text-gray-500" />;
+    }
+  };
+
+  const getStatusBadgeClass = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "active": return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
+      case "converted": return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
+      case "expired": return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
+      default: return "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400";
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  if (!statusData?.configured) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex font-sans">
+        <div 
+          className="fixed inset-0 z-0 pointer-events-none opacity-40"
+          style={{ backgroundImage: `url(${generatedBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+        />
+        <UnifiedSidebar />
+        <main className="flex-1 ml-64 relative z-10 flex flex-col">
+          <TopBar />
+          <div className="flex-1 p-8 flex items-center justify-center">
+            <div className="text-center">
+              <Gift className="w-16 h-16 mx-auto mb-4 text-muted-foreground/50" />
+              <h1 className="font-display font-bold text-2xl mb-2">Mindbody Analytics Not Connected</h1>
+              <p className="text-muted-foreground">Please configure your Mindbody Analytics API key to view intro offers.</p>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background text-foreground flex font-sans">
+      <div 
+        className="fixed inset-0 z-0 pointer-events-none opacity-40"
+        style={{ backgroundImage: `url(${generatedBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+      />
+      
+      <UnifiedSidebar />
+
+      <main className="flex-1 ml-64 relative z-10 flex flex-col">
+        <TopBar />
+        <div className="flex-1 p-8">
+        <header className="flex justify-between items-center mb-8">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center">
+              <Gift className="w-6 h-6 text-purple-500" />
+            </div>
+            <div>
+              <h1 className="font-display font-bold text-3xl" data-testid="text-intro-offers-title">Intro Offers</h1>
+              <p className="text-muted-foreground">Track and manage intro offer conversions</p>
+            </div>
+          </div>
+          <Button
+            onClick={() => refetch()}
+            disabled={isFetching}
+            variant="outline"
+            data-testid="button-refresh-offers"
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </header>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <div className="glass-panel rounded-xl p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                <Users className="w-5 h-5 text-blue-500" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Total Offers</p>
+                <p className="text-2xl font-bold" data-testid="stat-total-offers">
+                  {summaryLoading ? "..." : summary?.totalOffers || 0}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="glass-panel rounded-xl p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-yellow-500/10 flex items-center justify-center">
+                <Clock className="w-5 h-5 text-yellow-500" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Active</p>
+                <p className="text-2xl font-bold" data-testid="stat-active-offers">
+                  {summaryLoading ? "..." : summary?.activeOffers || 0}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="glass-panel rounded-xl p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
+                <CheckCircle className="w-5 h-5 text-green-500" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Converted</p>
+                <p className="text-2xl font-bold" data-testid="stat-converted-offers">
+                  {summaryLoading ? "..." : summary?.convertedOffers || 0}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="glass-panel rounded-xl p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-purple-500" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Conversion Rate</p>
+                <p className="text-2xl font-bold" data-testid="stat-conversion-rate">
+                  {summaryLoading ? "..." : `${(summary?.conversionRate || 0).toFixed(1)}%`}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="glass-panel rounded-2xl p-6">
+          <div className="flex items-center justify-between gap-4 mb-6">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by name or offer..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+                data-testid="input-search-offers"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
+              <SelectTrigger className="w-40" data-testid="select-status-filter">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="converted">Converted</SelectItem>
+                <SelectItem value="expired">Expired</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {offersLoading ? (
+            <div className="text-center py-12">
+              <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-purple-500" />
+              <p className="text-muted-foreground">Loading intro offers...</p>
+            </div>
+          ) : filteredOffers.length === 0 ? (
+            <div className="text-center py-12">
+              <Gift className="w-12 h-12 mx-auto mb-4 text-muted-foreground/30" />
+              <p className="text-muted-foreground">No intro offers found</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Student</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Offer</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Purchase Date</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Expiration</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Status</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Visits</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Notes</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredOffers.map((offer) => (
+                    <tr key={offer.id} className="border-b border-border/50 hover:bg-muted/30" data-testid={`row-offer-${offer.id}`}>
+                      <td className="py-3 px-4">
+                        <div>
+                          <p className="font-medium">{offer.studentName}</p>
+                          {offer.studentEmail && (
+                            <p className="text-sm text-muted-foreground">{offer.studentEmail}</p>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-sm">{offer.offerName}</td>
+                      <td className="py-3 px-4 text-sm">{formatDate(offer.purchaseDate)}</td>
+                      <td className="py-3 px-4 text-sm">
+                        {offer.expirationDate ? formatDate(offer.expirationDate) : "-"}
+                      </td>
+                      <td className="py-3 px-4">
+                        {editingId === offer.id ? (
+                          <Select value={editStatus} onValueChange={setEditStatus}>
+                            <SelectTrigger className="w-28 h-8">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="active">Active</SelectItem>
+                              <SelectItem value="converted">Converted</SelectItem>
+                              <SelectItem value="expired">Expired</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(offer.status)}`}>
+                            {getStatusIcon(offer.status)}
+                            {offer.status}
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-sm">{offer.attendanceCount || 0}</td>
+                      <td className="py-3 px-4 text-sm max-w-[200px]">
+                        {editingId === offer.id ? (
+                          <Input
+                            value={editNotes}
+                            onChange={(e) => setEditNotes(e.target.value)}
+                            placeholder="Add notes..."
+                            className="h-8"
+                          />
+                        ) : (
+                          <span className="truncate block">{offer.notes || "-"}</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4">
+                        {editingId === offer.id ? (
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleSave(offer.id)}
+                              disabled={updateMutation.isPending}
+                              data-testid={`button-save-${offer.id}`}
+                            >
+                              <Save className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={handleCancel}
+                              data-testid={`button-cancel-${offer.id}`}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleEdit(offer)}
+                            data-testid={`button-edit-${offer.id}`}
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+        </div>
+      </main>
+    </div>
+  );
+}

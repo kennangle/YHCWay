@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { TopBar } from "@/components/top-bar";
 import { FeedItem } from "@/components/feed-item";
-import { Search, Bell, Mail, Video, MessageCircle, Users, MessageSquare, CheckSquare, RefreshCw, X } from "lucide-react";
+import { Search, Bell, Mail, Video, MessageCircle, Users, MessageSquare, CheckSquare, RefreshCw, X, Gift } from "lucide-react";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { FeedItem as FeedItemType } from "@shared/schema";
@@ -15,11 +15,23 @@ type FilterType = "all" | "mentions" | "unread";
 
 interface UnifiedActivityItem {
   id: string;
-  type: "gmail" | "slack" | "zoom" | "feed";
+  type: "gmail" | "slack" | "zoom" | "feed" | "intro-offer";
   isUnread: boolean;
   hasMention: boolean;
   timestamp: Date;
   data: any;
+}
+
+interface IntroOffer {
+  id: string;
+  studentName: string;
+  studentEmail?: string;
+  offerName: string;
+  purchaseDate: string;
+  expirationDate?: string;
+  status: string;
+  attendanceCount?: number;
+  notes?: string;
 }
 
 interface AsanaTask {
@@ -143,6 +155,7 @@ export default function Dashboard() {
       queryClient.invalidateQueries({ queryKey: ["zoom-meetings"] }),
       queryClient.invalidateQueries({ queryKey: ["slack-messages"] }),
       queryClient.invalidateQueries({ queryKey: ["asana-tasks"] }),
+      queryClient.invalidateQueries({ queryKey: ["intro-offers-feed"] }),
     ]);
     setTimeout(() => setIsRefreshing(false), 500);
   }, [queryClient]);
@@ -235,6 +248,20 @@ export default function Dashboard() {
     },
     retry: false,
   });
+
+  const { data: introOffersData } = useQuery<{ data: IntroOffer[] }>({
+    queryKey: ["intro-offers-feed"],
+    queryFn: async () => {
+      const res = await fetch("/api/mindbody-analytics/intro-offers?limit=10&status=active", { credentials: "include" });
+      if (!res.ok) {
+        console.warn("Mindbody Analytics not available");
+        return { data: [] };
+      }
+      return res.json();
+    },
+    retry: false,
+  });
+  const introOffers = introOffersData?.data || [];
 
   const formatSlackTime = (timestamp: string) => {
     try {
@@ -409,9 +436,20 @@ export default function Dashboard() {
         data: item,
       });
     });
+
+    introOffers.forEach(offer => {
+      items.push({
+        id: `intro-offer-${offer.id}`,
+        type: "intro-offer",
+        isUnread: offer.status === "active",
+        hasMention: false,
+        timestamp: new Date(offer.purchaseDate),
+        data: offer,
+      });
+    });
     
     return items.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-  }, [gmailMessages, slackMessages, zoomMeetings, feedItems, user]);
+  }, [gmailMessages, slackMessages, zoomMeetings, feedItems, introOffers, user]);
 
   useEffect(() => {
     const currentCount = unifiedFeed.length;
@@ -445,6 +483,10 @@ export default function Dashboard() {
     if (item.type === "feed") {
       const feed = item.data as FeedItemType;
       return `${feed.title} ${feed.subtitle || ""}`.toLowerCase();
+    }
+    if (item.type === "intro-offer") {
+      const offer = item.data as IntroOffer;
+      return `${offer.studentName} ${offer.offerName} ${offer.notes || ""}`.toLowerCase();
     }
     return "";
   }, []);
@@ -550,11 +592,13 @@ export default function Dashboard() {
                           <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                             item.type === 'gmail' ? 'bg-red-100' : 
                             item.type === 'slack' ? 'bg-purple-100' : 
-                            item.type === 'zoom' ? 'bg-blue-100' : 'bg-gray-100'
+                            item.type === 'zoom' ? 'bg-blue-100' : 
+                            item.type === 'intro-offer' ? 'bg-purple-100' : 'bg-gray-100'
                           }`}>
                             {item.type === 'gmail' && <Mail className="w-4 h-4 text-red-600" />}
                             {item.type === 'slack' && <MessageCircle className="w-4 h-4 text-purple-600" />}
                             {item.type === 'zoom' && <Video className="w-4 h-4 text-blue-600" />}
+                            {item.type === 'intro-offer' && <Gift className="w-4 h-4 text-purple-600" />}
                             {item.type === 'feed' && <Bell className="w-4 h-4 text-gray-600" />}
                           </div>
                           <div className="flex-1 min-w-0">
@@ -562,6 +606,7 @@ export default function Dashboard() {
                               {item.type === 'gmail' && (item.data as GmailMessage).subject}
                               {item.type === 'slack' && (item.data as SlackMessage).text?.substring(0, 50)}
                               {item.type === 'zoom' && (item.data as ZoomMeeting).topic}
+                              {item.type === 'intro-offer' && `${(item.data as IntroOffer).studentName} - ${(item.data as IntroOffer).offerName}`}
                               {item.type === 'feed' && (item.data as FeedItemType).title}
                             </p>
                             <p className="text-xs text-muted-foreground">
@@ -881,6 +926,35 @@ export default function Dashboard() {
                           avatar={feedItem.avatar || undefined}
                           urgent={feedItem.urgent}
                         />
+                      );
+                    }
+
+                    if (item.type === "intro-offer") {
+                      const offer = item.data as IntroOffer;
+                      return (
+                        <Link
+                          key={item.id}
+                          href="/intro-offers"
+                          className="glass-panel p-4 rounded-xl hover:bg-white/80 transition-colors cursor-pointer block border-l-4 border-l-purple-500"
+                          data-testid={`feed-intro-offer-${offer.id}`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
+                              <Gift className="w-5 h-5 text-purple-600" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-sm font-semibold text-foreground">Intro Offer</span>
+                                <span className="text-xs text-muted-foreground">{formatGmailTime(offer.purchaseDate)}</span>
+                              </div>
+                              <h4 className="text-sm font-medium text-foreground mb-1">{offer.studentName}</h4>
+                              <p className="text-xs text-muted-foreground">
+                                {offer.offerName} - {offer.status}
+                                {offer.attendanceCount !== undefined && ` (${offer.attendanceCount} visits)`}
+                              </p>
+                            </div>
+                          </div>
+                        </Link>
                       );
                     }
                     
