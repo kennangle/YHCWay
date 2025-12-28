@@ -1,13 +1,14 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { FeedItem } from "@/components/feed-item";
-import { Search, Bell, Mail, Video, MessageCircle, Users, MessageSquare, CheckSquare, RefreshCw } from "lucide-react";
+import { Search, Bell, Mail, Video, MessageCircle, Users, MessageSquare, CheckSquare, RefreshCw, X } from "lucide-react";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { FeedItem as FeedItemType } from "@shared/schema";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "wouter";
 import { useNotificationSound } from "@/hooks/useNotificationSound";
+import { Input } from "@/components/ui/input";
 
 type FilterType = "all" | "mentions" | "unread";
 
@@ -81,11 +82,48 @@ export default function Dashboard() {
   const { user } = useAuth();
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const { playNotification } = useNotificationSound();
   const prevItemCountRef = useRef<number>(0);
   const isInitialLoadRef = useRef<boolean>(true);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+  const notificationsRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+  
+  useEffect(() => {
+    if (searchOpen && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [searchOpen]);
+  
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setSearchOpen(false);
+        setSearchQuery("");
+      }
+    };
+    if (searchOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [searchOpen]);
+  
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
+        setNotificationsOpen(false);
+      }
+    };
+    if (notificationsOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [notificationsOpen]);
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
@@ -241,6 +279,24 @@ export default function Dashboard() {
     }
   };
 
+  const formatRelativeTime = (date: Date) => {
+    try {
+      const now = new Date();
+      const diffMs = now.getTime() - date.getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+      
+      if (diffMins < 1) return "Just now";
+      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffHours < 24) return `${diffHours}h ago`;
+      if (diffDays < 7) return `${diffDays}d ago`;
+      return date.toLocaleDateString();
+    } catch {
+      return "";
+    }
+  };
+
   const extractSenderName = (from: string) => {
     const match = from.match(/^([^<]+)/);
     return match ? match[1].trim().replace(/"/g, '') : from;
@@ -365,12 +421,39 @@ export default function Dashboard() {
     prevItemCountRef.current = currentCount;
   }, [unifiedFeed.length, playNotification]);
 
+  const getItemSearchText = useCallback((item: UnifiedActivityItem): string => {
+    if (item.type === "gmail") {
+      const email = item.data as GmailMessage;
+      return `${email.subject} ${email.from} ${email.snippet}`.toLowerCase();
+    }
+    if (item.type === "slack") {
+      const msg = item.data as SlackMessage;
+      return `${msg.text} ${msg.userName} ${msg.channelName}`.toLowerCase();
+    }
+    if (item.type === "zoom") {
+      const meeting = item.data as ZoomMeeting;
+      return meeting.topic.toLowerCase();
+    }
+    if (item.type === "feed") {
+      const feed = item.data as FeedItemType;
+      return `${feed.title} ${feed.subtitle || ""}`.toLowerCase();
+    }
+    return "";
+  }, []);
+
   const filteredFeed = useMemo(() => {
-    if (activeFilter === "all") return unifiedFeed;
-    if (activeFilter === "mentions") return unifiedFeed.filter(item => item.hasMention);
-    if (activeFilter === "unread") return unifiedFeed.filter(item => item.isUnread);
-    return unifiedFeed;
-  }, [unifiedFeed, activeFilter]);
+    let items = unifiedFeed;
+    
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      items = items.filter(item => getItemSearchText(item).includes(query));
+    }
+    
+    if (activeFilter === "mentions") items = items.filter(item => item.hasMention);
+    if (activeFilter === "unread") items = items.filter(item => item.isUnread);
+    
+    return items;
+  }, [unifiedFeed, activeFilter, searchQuery, getItemSearchText]);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex font-sans">
@@ -401,13 +484,92 @@ export default function Dashboard() {
             >
               <RefreshCw className={`w-5 h-5 text-muted-foreground ${isRefreshing ? 'animate-spin' : ''}`} />
             </button>
-            <button className="w-10 h-10 rounded-full glass-panel flex items-center justify-center hover:bg-white/80 transition-colors" data-testid="button-search">
-              <Search className="w-5 h-5 text-muted-foreground" />
-            </button>
-            <button className="w-10 h-10 rounded-full glass-panel flex items-center justify-center hover:bg-white/80 transition-colors relative" data-testid="button-notifications">
-              <Bell className="w-5 h-5 text-muted-foreground" />
-              <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full"></span>
-            </button>
+            {searchOpen ? (
+              <div ref={searchContainerRef} className="flex items-center gap-2 glass-panel rounded-full px-3 py-1">
+                <Search className="w-4 h-4 text-muted-foreground" />
+                <Input
+                  ref={searchInputRef}
+                  type="text"
+                  placeholder="Search activity..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="border-0 bg-transparent h-8 w-48 focus-visible:ring-0 px-0"
+                  data-testid="input-search"
+                />
+                <button 
+                  onClick={() => { setSearchOpen(false); setSearchQuery(""); }}
+                  className="p-1 hover:bg-white/50 rounded-full"
+                  data-testid="button-search-close"
+                >
+                  <X className="w-4 h-4 text-muted-foreground" />
+                </button>
+              </div>
+            ) : (
+              <button 
+                onClick={() => setSearchOpen(true)}
+                className="w-10 h-10 rounded-full glass-panel flex items-center justify-center hover:bg-white/80 transition-colors" 
+                data-testid="button-search"
+              >
+                <Search className="w-5 h-5 text-muted-foreground" />
+              </button>
+            )}
+            <div className="relative" ref={notificationsRef}>
+              <button 
+                onClick={() => setNotificationsOpen(!notificationsOpen)}
+                className="w-10 h-10 rounded-full glass-panel flex items-center justify-center hover:bg-white/80 transition-colors relative" 
+                data-testid="button-notifications"
+              >
+                <Bell className="w-5 h-5 text-muted-foreground" />
+                {unifiedFeed.filter(i => i.isUnread).length > 0 && (
+                  <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full"></span>
+                )}
+              </button>
+              {notificationsOpen && (
+                <div className="absolute right-0 top-12 w-80 glass-panel rounded-xl shadow-lg border border-white/20 overflow-hidden z-50">
+                  <div className="p-3 border-b border-white/10">
+                    <h3 className="font-semibold text-sm">Notifications</h3>
+                  </div>
+                  <div className="max-h-80 overflow-y-auto">
+                    {unifiedFeed.slice(0, 5).map((item) => (
+                      <div 
+                        key={item.id} 
+                        className={`p-3 border-b border-white/10 hover:bg-white/50 cursor-pointer ${item.isUnread ? 'bg-blue-50/50' : ''}`}
+                        onClick={() => setNotificationsOpen(false)}
+                      >
+                        <div className="flex items-start gap-2">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                            item.type === 'gmail' ? 'bg-red-100' : 
+                            item.type === 'slack' ? 'bg-purple-100' : 
+                            item.type === 'zoom' ? 'bg-blue-100' : 'bg-gray-100'
+                          }`}>
+                            {item.type === 'gmail' && <Mail className="w-4 h-4 text-red-600" />}
+                            {item.type === 'slack' && <MessageCircle className="w-4 h-4 text-purple-600" />}
+                            {item.type === 'zoom' && <Video className="w-4 h-4 text-blue-600" />}
+                            {item.type === 'feed' && <Bell className="w-4 h-4 text-gray-600" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">
+                              {item.type === 'gmail' && (item.data as GmailMessage).subject}
+                              {item.type === 'slack' && (item.data as SlackMessage).text?.substring(0, 50)}
+                              {item.type === 'zoom' && (item.data as ZoomMeeting).topic}
+                              {item.type === 'feed' && (item.data as FeedItemType).title}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {formatRelativeTime(item.timestamp)}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {unifiedFeed.length === 0 && (
+                      <div className="p-4 text-center text-muted-foreground text-sm">
+                        No notifications
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
