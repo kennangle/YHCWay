@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Redirect } from "wouter";
-import { Users, Server, Rss, Trash2, Edit2, Shield, ShieldOff, Plus, X, Key, Mail, RotateCcw } from "lucide-react";
+import { Users, Server, Rss, Trash2, Edit2, Shield, ShieldOff, Plus, X, Key, Mail, RotateCcw, Check, XCircle, UserCheck, Clock } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import type { User, Service, FeedItem, InsertService, InsertFeedItem, AdminCreateUser } from "@shared/schema";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
@@ -50,6 +50,11 @@ export default function Admin() {
     enabled: !!user?.isAdmin,
   });
 
+  const { data: pendingUsers = [] } = useQuery<User[]>({
+    queryKey: ["/api/admin/users/pending"],
+    enabled: !!user?.isAdmin,
+  });
+
   const { data: services = [] } = useQuery<Service[]>({
     queryKey: ["/api/services"],
     enabled: !!user?.isAdmin,
@@ -75,6 +80,34 @@ export default function Admin() {
       return apiRequest("PATCH", `/api/admin/users/${id}`, { isAdmin });
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] }),
+  });
+
+  const approveUserMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return apiRequest("POST", `/api/admin/users/${id}/approve`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users/pending"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      toast({ title: "User approved", description: "User can now access the app." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to approve user.", variant: "destructive" });
+    },
+  });
+
+  const rejectUserMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return apiRequest("POST", `/api/admin/users/${id}/reject`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users/pending"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      toast({ title: "User rejected", description: "User access has been denied." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to reject user.", variant: "destructive" });
+    },
   });
 
   const resetPasswordMutation = useMutation({
@@ -260,20 +293,75 @@ export default function Admin() {
         </div>
 
         {activeTab === "users" && (
-          <div className="glass-card rounded-2xl p-6" data-testid="section-users">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-lg">User Management</h2>
-              <button
-                onClick={() => setShowAddUser(true)}
-                className="flex items-center gap-2 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium"
-                data-testid="button-add-user"
-              >
-                <Plus className="w-4 h-4" />
-                Add User
-              </button>
-            </div>
-            <div className="space-y-3">
-              {users.map((u) => (
+          <div className="space-y-6">
+            {pendingUsers.length > 0 && (
+              <div className="glass-card rounded-2xl p-6 border-2 border-amber-300/50" data-testid="section-pending-users">
+                <div className="flex items-center gap-2 mb-4">
+                  <Clock className="w-5 h-5 text-amber-500" />
+                  <h2 className="font-semibold text-lg">Pending Approval ({pendingUsers.length})</h2>
+                </div>
+                <p className="text-sm text-muted-foreground mb-4">
+                  These users have registered but need admin approval before they can access the app.
+                </p>
+                <div className="space-y-3">
+                  {pendingUsers.map((u) => (
+                    <div key={u.id} className="flex items-center justify-between p-4 bg-amber-50/50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800" data-testid={`row-pending-user-${u.id}`}>
+                      <div className="flex items-center gap-3">
+                        {u.profileImageUrl ? (
+                          <img src={u.profileImageUrl} alt="" className="w-10 h-10 rounded-full" />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-400 to-orange-500 flex items-center justify-center text-white font-semibold">
+                            {(u.firstName?.[0] || u.email?.[0] || "U").toUpperCase()}
+                          </div>
+                        )}
+                        <div>
+                          <div className="font-medium">{u.firstName} {u.lastName}</div>
+                          <div className="text-sm text-muted-foreground">{u.email}</div>
+                          <div className="text-xs text-muted-foreground">
+                            Registered: {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "Unknown"}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => approveUserMutation.mutate(u.id)}
+                          disabled={approveUserMutation.isPending}
+                          className="flex items-center gap-1.5 px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition-all disabled:opacity-50"
+                          data-testid={`button-approve-user-${u.id}`}
+                        >
+                          <Check className="w-4 h-4" />
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => rejectUserMutation.mutate(u.id)}
+                          disabled={rejectUserMutation.isPending}
+                          className="flex items-center gap-1.5 px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-all disabled:opacity-50"
+                          data-testid={`button-reject-user-${u.id}`}
+                        >
+                          <XCircle className="w-4 h-4" />
+                          Reject
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="glass-card rounded-2xl p-6" data-testid="section-users">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-semibold text-lg">User Management</h2>
+                <button
+                  onClick={() => setShowAddUser(true)}
+                  className="flex items-center gap-2 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium"
+                  data-testid="button-add-user"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add User
+                </button>
+              </div>
+              <div className="space-y-3">
+                {users.filter(u => u.approvalStatus === 'approved').map((u) => (
                 <div key={u.id} className="flex items-center justify-between p-4 bg-white/50 rounded-xl" data-testid={`row-user-${u.id}`}>
                   <div className="flex items-center gap-3">
                     {u.profileImageUrl ? (
@@ -313,6 +401,7 @@ export default function Admin() {
                   </div>
                 </div>
               ))}
+              </div>
             </div>
           </div>
         )}

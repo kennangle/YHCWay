@@ -1,7 +1,7 @@
 import type { Express, RequestHandler } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertServiceSchema, insertFeedItemSchema, ADMIN_EMAIL, adminCreateUserSchema, integrationApiKeySchema, sendMessageSchema, createConversationSchema, createTenantSchema, inviteUserSchema } from "@shared/schema";
+import { insertServiceSchema, insertFeedItemSchema, ADMIN_EMAIL, adminCreateUserSchema, integrationApiKeySchema, sendMessageSchema, createConversationSchema, createTenantSchema, inviteUserSchema, type User } from "@shared/schema";
 import { setupAuth, isAuthenticated } from "./auth";
 import { tenantMiddleware, requireTenant, requireTenantRole } from "./tenantMiddleware";
 import { z } from "zod";
