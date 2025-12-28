@@ -168,10 +168,6 @@ export async function getDirectMessages(maxResults: number = 10, includeThreadRe
             continue;
           }
           
-          if (botUserId && msg.user === botUserId) {
-            continue;
-          }
-          
           const isRegularMessage = msg.type === 'message' && !msg.subtype;
           const isAssistantThread = msg.type === 'message' && msg.subtype === 'assistant_app_thread';
           
@@ -227,10 +223,6 @@ export async function getDirectMessages(maxResults: number = 10, includeThreadRe
 
         if (repliesData.ok && repliesData.messages) {
           for (const reply of repliesData.messages.slice(1)) {
-            if (botUserId && reply.user === botUserId) {
-              continue;
-            }
-            
             if (reply.type === 'message') {
               let userName = userNameCache[reply.user];
               if (!userName && reply.user) {
