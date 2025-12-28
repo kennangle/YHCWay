@@ -1,9 +1,11 @@
 import type { Express, RequestHandler } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertServiceSchema, insertFeedItemSchema, ADMIN_EMAIL, adminCreateUserSchema, integrationApiKeySchema, sendMessageSchema, createConversationSchema } from "@shared/schema";
+import { insertServiceSchema, insertFeedItemSchema, ADMIN_EMAIL, adminCreateUserSchema, integrationApiKeySchema, sendMessageSchema, createConversationSchema, createTenantSchema, inviteUserSchema } from "@shared/schema";
 import { setupAuth, isAuthenticated } from "./auth";
+import { tenantMiddleware, requireTenant, requireTenantRole } from "./tenantMiddleware";
 import { z } from "zod";
+import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { getRecentEmails, isGmailConnected } from "./gmail";
 import { getGmailAuthUrl, handleGmailCallback, getRecentEmailsForUser, isGmailConnectedForUser, disconnectGmailForUser, getGmailClientForUser, getEmailById, sendEmail, deleteEmailById } from "./gmail-oauth";
@@ -40,6 +42,322 @@ export async function registerRoutes(
 ): Promise<Server> {
   
   await setupAuth(app);
+  
+  app.use(tenantMiddleware);
+
+  // =============================================================================
+  // TENANT MANAGEMENT ROUTES
+  // =============================================================================
+  
+  app.get('/api/tenants', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id || req.user?.claims?.sub;
+      const tenants = await storage.getUserTenants(userId);
+      res.json(tenants);
+    } catch (error) {
+      console.error("Error fetching tenants:", error);
+      res.status(500).json({ error: "Failed to fetch organizations" });
+    }
+  });
+
+  app.post('/api/tenants', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id || req.user?.claims?.sub;
+      const validatedData = createTenantSchema.parse(req.body);
+      
+      const existingTenant = await storage.getTenantBySlug(validatedData.slug);
+      if (existingTenant) {
+        return res.status(400).json({ error: "Organization slug already exists" });
+      }
+      
+      const tenant = await storage.createTenant(validatedData.name, validatedData.slug, userId);
+      
+      await storage.createAuditLog({
+        tenantId: tenant.id,
+        userId,
+        action: "tenant.created",
+        resourceType: "tenant",
+        resourceId: tenant.id,
+        metadata: { name: tenant.name, slug: tenant.slug },
+        ipAddress: req.ip,
+        userAgent: req.headers["user-agent"],
+      });
+      
+      res.status(201).json(tenant);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: error.errors });
+      } else {
+        console.error("Error creating tenant:", error);
+        res.status(500).json({ error: "Failed to create organization" });
+      }
+    }
+  });
+
+  app.get('/api/tenants/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id || req.user?.claims?.sub;
+      const tenantId = req.params.id;
+      
+      const role = await storage.getUserTenantRole(tenantId, userId);
+      if (!role) {
+        return res.status(403).json({ error: "You don't have access to this organization" });
+      }
+      
+      const tenant = await storage.getTenant(tenantId);
+      if (!tenant) {
+        return res.status(404).json({ error: "Organization not found" });
+      }
+      
+      res.json({ ...tenant, role });
+    } catch (error) {
+      console.error("Error fetching tenant:", error);
+      res.status(500).json({ error: "Failed to fetch organization" });
+    }
+  });
+
+  app.patch('/api/tenants/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id || req.user?.claims?.sub;
+      const tenantId = req.params.id;
+      
+      const role = await storage.getUserTenantRole(tenantId, userId);
+      if (!role || !["owner", "admin"].includes(role)) {
+        return res.status(403).json({ error: "Only owners and admins can update the organization" });
+      }
+      
+      const { name, logoUrl, settings } = req.body;
+      const updated = await storage.updateTenant(tenantId, { name, logoUrl, settings });
+      
+      await storage.createAuditLog({
+        tenantId,
+        userId,
+        action: "tenant.updated",
+        resourceType: "tenant",
+        resourceId: tenantId,
+        metadata: { changes: req.body },
+        ipAddress: req.ip,
+        userAgent: req.headers["user-agent"],
+      });
+      
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating tenant:", error);
+      res.status(500).json({ error: "Failed to update organization" });
+    }
+  });
+
+  app.get('/api/tenants/:id/users', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id || req.user?.claims?.sub;
+      const tenantId = req.params.id;
+      
+      const role = await storage.getUserTenantRole(tenantId, userId);
+      if (!role) {
+        return res.status(403).json({ error: "You don't have access to this organization" });
+      }
+      
+      const users = await storage.getTenantUsers(tenantId);
+      res.json(users.map(u => ({
+        id: u.user.id,
+        email: u.user.email,
+        firstName: u.user.firstName,
+        lastName: u.user.lastName,
+        profileImageUrl: u.user.profileImageUrl,
+        role: u.role,
+        joinedAt: u.joinedAt,
+      })));
+    } catch (error) {
+      console.error("Error fetching tenant users:", error);
+      res.status(500).json({ error: "Failed to fetch organization members" });
+    }
+  });
+
+  app.post('/api/tenants/:id/invite', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id || req.user?.claims?.sub;
+      const tenantId = req.params.id;
+      
+      const role = await storage.getUserTenantRole(tenantId, userId);
+      if (!role || !["owner", "admin"].includes(role)) {
+        return res.status(403).json({ error: "Only owners and admins can invite members" });
+      }
+      
+      const validatedData = inviteUserSchema.parse(req.body);
+      const token = crypto.randomBytes(32).toString("hex");
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      
+      const invitation = await storage.createTenantInvitation(
+        tenantId,
+        validatedData.email,
+        validatedData.role,
+        userId,
+        token,
+        expiresAt
+      );
+      
+      await storage.createAuditLog({
+        tenantId,
+        userId,
+        action: "tenant.user_invited",
+        resourceType: "invitation",
+        resourceId: String(invitation.id),
+        metadata: { email: validatedData.email, role: validatedData.role },
+        ipAddress: req.ip,
+        userAgent: req.headers["user-agent"],
+      });
+      
+      res.status(201).json({ message: "Invitation sent", invitationId: invitation.id });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: error.errors });
+      } else {
+        console.error("Error inviting user:", error);
+        res.status(500).json({ error: "Failed to send invitation" });
+      }
+    }
+  });
+
+  app.post('/api/tenants/join/:token', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id || req.user?.claims?.sub;
+      const { token } = req.params;
+      
+      const invitation = await storage.getTenantInvitation(token);
+      if (!invitation) {
+        return res.status(404).json({ error: "Invalid invitation" });
+      }
+      
+      if (invitation.acceptedAt) {
+        return res.status(400).json({ error: "Invitation already accepted" });
+      }
+      
+      if (new Date() > invitation.expiresAt) {
+        return res.status(400).json({ error: "Invitation has expired" });
+      }
+      
+      const user = await storage.getUser(userId);
+      if (user?.email !== invitation.email) {
+        return res.status(403).json({ error: "This invitation was sent to a different email address" });
+      }
+      
+      await storage.addUserToTenant(invitation.tenantId, userId, invitation.role, invitation.invitedBy);
+      await storage.acceptTenantInvitation(token);
+      
+      await storage.createAuditLog({
+        tenantId: invitation.tenantId,
+        userId,
+        action: "tenant.user_joined",
+        resourceType: "tenant_user",
+        resourceId: userId,
+        metadata: { role: invitation.role },
+        ipAddress: req.ip,
+        userAgent: req.headers["user-agent"],
+      });
+      
+      const tenant = await storage.getTenant(invitation.tenantId);
+      res.json({ message: "Successfully joined organization", tenant });
+    } catch (error) {
+      console.error("Error joining tenant:", error);
+      res.status(500).json({ error: "Failed to join organization" });
+    }
+  });
+
+  app.patch('/api/tenants/:id/users/:userId/role', isAuthenticated, async (req: any, res) => {
+    try {
+      const currentUserId = req.user?.id || req.user?.claims?.sub;
+      const { id: tenantId, userId: targetUserId } = req.params;
+      const { role: newRole } = req.body;
+      
+      const currentUserRole = await storage.getUserTenantRole(tenantId, currentUserId);
+      if (currentUserRole !== "owner") {
+        return res.status(403).json({ error: "Only owners can change member roles" });
+      }
+      
+      if (!["admin", "member", "guest"].includes(newRole)) {
+        return res.status(400).json({ error: "Invalid role" });
+      }
+      
+      const updated = await storage.updateTenantUserRole(tenantId, targetUserId, newRole);
+      if (!updated) {
+        return res.status(404).json({ error: "User not found in organization" });
+      }
+      
+      await storage.createAuditLog({
+        tenantId,
+        userId: currentUserId,
+        action: "tenant.user_role_changed",
+        resourceType: "tenant_user",
+        resourceId: targetUserId,
+        metadata: { newRole },
+        ipAddress: req.ip,
+        userAgent: req.headers["user-agent"],
+      });
+      
+      res.json({ message: "Role updated", role: newRole });
+    } catch (error) {
+      console.error("Error updating user role:", error);
+      res.status(500).json({ error: "Failed to update role" });
+    }
+  });
+
+  app.delete('/api/tenants/:id/users/:userId', isAuthenticated, async (req: any, res) => {
+    try {
+      const currentUserId = req.user?.id || req.user?.claims?.sub;
+      const { id: tenantId, userId: targetUserId } = req.params;
+      
+      const currentUserRole = await storage.getUserTenantRole(tenantId, currentUserId);
+      if (!currentUserRole || !["owner", "admin"].includes(currentUserRole)) {
+        return res.status(403).json({ error: "Only owners and admins can remove members" });
+      }
+      
+      const targetUserRole = await storage.getUserTenantRole(tenantId, targetUserId);
+      if (targetUserRole === "owner") {
+        return res.status(403).json({ error: "Cannot remove the owner" });
+      }
+      
+      await storage.removeUserFromTenant(tenantId, targetUserId);
+      
+      await storage.createAuditLog({
+        tenantId,
+        userId: currentUserId,
+        action: "tenant.user_removed",
+        resourceType: "tenant_user",
+        resourceId: targetUserId,
+        ipAddress: req.ip,
+        userAgent: req.headers["user-agent"],
+      });
+      
+      res.json({ message: "Member removed from organization" });
+    } catch (error) {
+      console.error("Error removing user:", error);
+      res.status(500).json({ error: "Failed to remove member" });
+    }
+  });
+
+  app.get('/api/tenants/:id/audit-logs', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id || req.user?.claims?.sub;
+      const tenantId = req.params.id;
+      const limit = parseInt(req.query.limit as string) || 100;
+      const offset = parseInt(req.query.offset as string) || 0;
+      
+      const role = await storage.getUserTenantRole(tenantId, userId);
+      if (!role || !["owner", "admin"].includes(role)) {
+        return res.status(403).json({ error: "Only owners and admins can view audit logs" });
+      }
+      
+      const logs = await storage.getAuditLogs(tenantId, limit, offset);
+      res.json(logs);
+    } catch (error) {
+      console.error("Error fetching audit logs:", error);
+      res.status(500).json({ error: "Failed to fetch audit logs" });
+    }
+  });
+
+  // =============================================================================
+  // AUTH ROUTES
+  // =============================================================================
 
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {

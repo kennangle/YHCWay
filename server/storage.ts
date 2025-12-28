@@ -21,6 +21,13 @@ import {
   type InsertSlackUserCredential,
   type AsanaUserCredential,
   type InsertAsanaUserCredential,
+  type Tenant,
+  type InsertTenant,
+  type TenantUser,
+  type InsertTenantUser,
+  type TenantInvitation,
+  type AuditLog,
+  type InsertAuditLog,
   users,
   services,
   feedItems,
@@ -35,7 +42,11 @@ import {
   userPreferences,
   slackUserCredentials,
   asanaUserCredentials,
-  userDisabledIntegrations
+  userDisabledIntegrations,
+  tenants,
+  tenantUsers,
+  tenantInvitations,
+  auditLogs
 } from "@shared/schema";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq, desc, and, lt, isNull, sql, inArray } from "drizzle-orm";
@@ -130,6 +141,31 @@ export interface IStorage {
   getUserDisabledIntegrations(userId: string): Promise<string[]>;
   disableIntegration(userId: string, integrationName: string): Promise<void>;
   enableIntegration(userId: string, integrationName: string): Promise<void>;
+  
+  // Tenant management
+  createTenant(name: string, slug: string, ownerId: string): Promise<Tenant>;
+  getTenant(id: string): Promise<Tenant | undefined>;
+  getTenantBySlug(slug: string): Promise<Tenant | undefined>;
+  updateTenant(id: string, data: Partial<InsertTenant>): Promise<Tenant | undefined>;
+  deleteTenant(id: string): Promise<void>;
+  getUserTenants(userId: string): Promise<(Tenant & { role: string })[]>;
+  
+  // Tenant users
+  addUserToTenant(tenantId: string, userId: string, role: string, invitedBy?: string): Promise<TenantUser>;
+  removeUserFromTenant(tenantId: string, userId: string): Promise<void>;
+  getTenantUsers(tenantId: string): Promise<(TenantUser & { user: User })[]>;
+  getUserTenantRole(tenantId: string, userId: string): Promise<string | undefined>;
+  updateTenantUserRole(tenantId: string, userId: string, role: string): Promise<TenantUser | undefined>;
+  
+  // Tenant invitations
+  createTenantInvitation(tenantId: string, email: string, role: string, invitedBy: string, token: string, expiresAt: Date): Promise<TenantInvitation>;
+  getTenantInvitation(token: string): Promise<TenantInvitation | undefined>;
+  acceptTenantInvitation(token: string): Promise<TenantInvitation | undefined>;
+  getPendingInvitations(tenantId: string): Promise<TenantInvitation[]>;
+  
+  // Audit logging
+  createAuditLog(log: InsertAuditLog): Promise<AuditLog>;
+  getAuditLogs(tenantId: string, limit?: number, offset?: number): Promise<AuditLog[]>;
 }
 
 export class DbStorage implements IStorage {
@@ -718,6 +754,166 @@ export class DbStorage implements IStorage {
         eq(userDisabledIntegrations.userId, userId),
         eq(userDisabledIntegrations.integrationName, integrationName)
       ));
+  }
+
+  // Tenant management
+  async createTenant(name: string, slug: string, ownerId: string): Promise<Tenant> {
+    const [tenant] = await db.insert(tenants)
+      .values({ name, slug })
+      .returning();
+    
+    // Add the creator as owner
+    await db.insert(tenantUsers)
+      .values({ tenantId: tenant.id, userId: ownerId, role: 'owner' });
+    
+    return tenant;
+  }
+
+  async getTenant(id: string): Promise<Tenant | undefined> {
+    const [tenant] = await db.select().from(tenants).where(eq(tenants.id, id));
+    return tenant;
+  }
+
+  async getTenantBySlug(slug: string): Promise<Tenant | undefined> {
+    const [tenant] = await db.select().from(tenants).where(eq(tenants.slug, slug));
+    return tenant;
+  }
+
+  async updateTenant(id: string, data: Partial<InsertTenant>): Promise<Tenant | undefined> {
+    const [updated] = await db.update(tenants)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(tenants.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteTenant(id: string): Promise<void> {
+    await db.delete(tenants).where(eq(tenants.id, id));
+  }
+
+  async getUserTenants(userId: string): Promise<(Tenant & { role: string })[]> {
+    const userTenantLinks = await db.select()
+      .from(tenantUsers)
+      .where(eq(tenantUsers.userId, userId));
+    
+    if (userTenantLinks.length === 0) return [];
+    
+    const result: (Tenant & { role: string })[] = [];
+    for (const link of userTenantLinks) {
+      const tenant = await this.getTenant(link.tenantId);
+      if (tenant) {
+        result.push({ ...tenant, role: link.role });
+      }
+    }
+    return result;
+  }
+
+  // Tenant users
+  async addUserToTenant(tenantId: string, userId: string, role: string, invitedBy?: string): Promise<TenantUser> {
+    const [tenantUser] = await db.insert(tenantUsers)
+      .values({ tenantId, userId, role, invitedBy, invitedAt: invitedBy ? new Date() : undefined })
+      .returning();
+    return tenantUser;
+  }
+
+  async removeUserFromTenant(tenantId: string, userId: string): Promise<void> {
+    await db.delete(tenantUsers)
+      .where(and(
+        eq(tenantUsers.tenantId, tenantId),
+        eq(tenantUsers.userId, userId)
+      ));
+  }
+
+  async getTenantUsers(tenantId: string): Promise<(TenantUser & { user: User })[]> {
+    const tenantUserLinks = await db.select()
+      .from(tenantUsers)
+      .where(eq(tenantUsers.tenantId, tenantId));
+    
+    const result: (TenantUser & { user: User })[] = [];
+    for (const link of tenantUserLinks) {
+      const user = await this.getUser(link.userId);
+      if (user) {
+        result.push({ ...link, user });
+      }
+    }
+    return result;
+  }
+
+  async getUserTenantRole(tenantId: string, userId: string): Promise<string | undefined> {
+    const [link] = await db.select()
+      .from(tenantUsers)
+      .where(and(
+        eq(tenantUsers.tenantId, tenantId),
+        eq(tenantUsers.userId, userId)
+      ));
+    return link?.role;
+  }
+
+  async updateTenantUserRole(tenantId: string, userId: string, role: string): Promise<TenantUser | undefined> {
+    const [updated] = await db.update(tenantUsers)
+      .set({ role })
+      .where(and(
+        eq(tenantUsers.tenantId, tenantId),
+        eq(tenantUsers.userId, userId)
+      ))
+      .returning();
+    return updated;
+  }
+
+  // Tenant invitations
+  async createTenantInvitation(
+    tenantId: string, 
+    email: string, 
+    role: string, 
+    invitedBy: string, 
+    token: string, 
+    expiresAt: Date
+  ): Promise<TenantInvitation> {
+    const [invitation] = await db.insert(tenantInvitations)
+      .values({ tenantId, email, role, invitedBy, token, expiresAt })
+      .returning();
+    return invitation;
+  }
+
+  async getTenantInvitation(token: string): Promise<TenantInvitation | undefined> {
+    const [invitation] = await db.select()
+      .from(tenantInvitations)
+      .where(eq(tenantInvitations.token, token));
+    return invitation;
+  }
+
+  async acceptTenantInvitation(token: string): Promise<TenantInvitation | undefined> {
+    const [updated] = await db.update(tenantInvitations)
+      .set({ acceptedAt: new Date() })
+      .where(eq(tenantInvitations.token, token))
+      .returning();
+    return updated;
+  }
+
+  async getPendingInvitations(tenantId: string): Promise<TenantInvitation[]> {
+    return await db.select()
+      .from(tenantInvitations)
+      .where(and(
+        eq(tenantInvitations.tenantId, tenantId),
+        isNull(tenantInvitations.acceptedAt)
+      ));
+  }
+
+  // Audit logging
+  async createAuditLog(log: InsertAuditLog): Promise<AuditLog> {
+    const [auditLog] = await db.insert(auditLogs)
+      .values(log)
+      .returning();
+    return auditLog;
+  }
+
+  async getAuditLogs(tenantId: string, limit: number = 100, offset: number = 0): Promise<AuditLog[]> {
+    return await db.select()
+      .from(auditLogs)
+      .where(eq(auditLogs.tenantId, tenantId))
+      .orderBy(desc(auditLogs.createdAt))
+      .limit(limit)
+      .offset(offset);
   }
 }
 

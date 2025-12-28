@@ -3,6 +3,49 @@ import { pgTable, text, varchar, serial, boolean, timestamp, integer, index, jso
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// =============================================================================
+// MULTI-TENANCY - Role constants
+// =============================================================================
+
+export const TenantRole = {
+  OWNER: "owner",
+  ADMIN: "admin", 
+  MEMBER: "member",
+  GUEST: "guest",
+} as const;
+export type TenantRoleType = typeof TenantRole[keyof typeof TenantRole];
+
+// =============================================================================
+// TENANTS TABLE (no dependencies)
+// =============================================================================
+
+export const tenants = pgTable("tenants", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull(),
+  slug: varchar("slug").notNull().unique(),
+  logoUrl: varchar("logo_url"),
+  ssoEnabled: boolean("sso_enabled").default(false),
+  ssoProvider: varchar("sso_provider"),
+  ssoConfig: jsonb("sso_config"),
+  plan: varchar("plan").default("free"),
+  maxUsers: integer("max_users").default(5),
+  settings: jsonb("settings"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type Tenant = typeof tenants.$inferSelect;
+export type InsertTenant = typeof tenants.$inferInsert;
+
+export const createTenantSchema = z.object({
+  name: z.string().min(2, "Organization name must be at least 2 characters"),
+  slug: z.string().min(2).regex(/^[a-z0-9-]+$/, "Slug can only contain lowercase letters, numbers, and hyphens"),
+});
+
+// =============================================================================
+// CORE TABLES
+// =============================================================================
+
 // Session storage table - required for Replit Auth
 export const sessions = pgTable(
   "sessions",
@@ -31,6 +74,75 @@ export const users = pgTable("users", {
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 
+// =============================================================================
+// MULTI-TENANCY TABLES (depend on users and tenants)
+// =============================================================================
+
+// Tenant users - maps users to tenants with roles
+export const tenantUsers = pgTable("tenant_users", {
+  id: serial("id").primaryKey(),
+  tenantId: varchar("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  role: varchar("role").notNull().default("member"),
+  invitedBy: varchar("invited_by"),
+  invitedAt: timestamp("invited_at"),
+  joinedAt: timestamp("joined_at").defaultNow(),
+  lastActiveAt: timestamp("last_active_at"),
+}, (table) => [
+  index("idx_tenant_user_tenant").on(table.tenantId),
+  index("idx_tenant_user_user").on(table.userId),
+]);
+
+export type TenantUser = typeof tenantUsers.$inferSelect;
+export type InsertTenantUser = typeof tenantUsers.$inferInsert;
+
+export const inviteUserSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  role: z.enum(["admin", "member", "guest"]).default("member"),
+});
+
+// Tenant invitations for pending invites
+export const tenantInvitations = pgTable("tenant_invitations", {
+  id: serial("id").primaryKey(),
+  tenantId: varchar("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  email: varchar("email").notNull(),
+  role: varchar("role").notNull().default("member"),
+  token: varchar("token").notNull().unique(),
+  invitedBy: varchar("invited_by").notNull().references(() => users.id),
+  expiresAt: timestamp("expires_at").notNull(),
+  acceptedAt: timestamp("accepted_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type TenantInvitation = typeof tenantInvitations.$inferSelect;
+export type InsertTenantInvitation = typeof tenantInvitations.$inferInsert;
+
+// Audit log for enterprise compliance
+export const auditLogs = pgTable("audit_logs", {
+  id: serial("id").primaryKey(),
+  tenantId: varchar("tenant_id").references(() => tenants.id, { onDelete: "set null" }),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "set null" }),
+  action: varchar("action").notNull(),
+  resourceType: varchar("resource_type"),
+  resourceId: varchar("resource_id"),
+  metadata: jsonb("metadata"),
+  ipAddress: varchar("ip_address"),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_audit_tenant").on(table.tenantId),
+  index("idx_audit_user").on(table.userId),
+  index("idx_audit_action").on(table.action),
+  index("idx_audit_created").on(table.createdAt),
+]);
+
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type InsertAuditLog = typeof auditLogs.$inferInsert;
+
+// =============================================================================
+// OTHER USER-RELATED TABLES
+// =============================================================================
+
 // OAuth accounts table for external providers
 export const oauthAccounts = pgTable("oauth_accounts", {
   id: serial("id").primaryKey(),
@@ -51,6 +163,7 @@ export const ADMIN_EMAIL = "ken@kennangle.com";
 
 export const services = pgTable("services", {
   id: serial("id").primaryKey(),
+  tenantId: varchar("tenant_id").references(() => tenants.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   description: text("description").notNull(),
   icon: text("icon").notNull(),
@@ -64,6 +177,7 @@ export type Service = typeof services.$inferSelect;
 
 export const feedItems = pgTable("feed_items", {
   id: serial("id").primaryKey(),
+  tenantId: varchar("tenant_id").references(() => tenants.id, { onDelete: "cascade" }),
   type: text("type").notNull(),
   title: text("title").notNull(),
   subtitle: text("subtitle"),
@@ -157,6 +271,7 @@ export const resetPasswordSchema = z.object({
 // Integration API keys table - for Calendly, Typeform, etc.
 export const integrationApiKeys = pgTable("integration_api_keys", {
   id: serial("id").primaryKey(),
+  tenantId: varchar("tenant_id").references(() => tenants.id, { onDelete: "cascade" }),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   integrationName: varchar("integration_name").notNull(),
   apiKey: text("api_key").notNull(),
@@ -217,6 +332,7 @@ export type InsertUserDisabledIntegration = typeof userDisabledIntegrations.$inf
 // Chat system - Conversations
 export const conversations = pgTable("conversations", {
   id: serial("id").primaryKey(),
+  tenantId: varchar("tenant_id").references(() => tenants.id, { onDelete: "cascade" }),
   name: varchar("name"),
   isGroup: boolean("is_group").default(false),
   createdAt: timestamp("created_at").defaultNow(),
@@ -287,6 +403,7 @@ export const emailTemplateSchema = z.object({
 // User preferences table for settings
 export const userPreferences = pgTable("user_preferences", {
   id: serial("id").primaryKey(),
+  tenantId: varchar("tenant_id").references(() => tenants.id, { onDelete: "cascade" }),
   userId: varchar("user_id").notNull().unique().references(() => users.id, { onDelete: "cascade" }),
   // Appearance
   googleCalendarColor: varchar("google_calendar_color").default("#3b82f6"),

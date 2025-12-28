@@ -39,12 +39,24 @@ The server handles both API routes and serves the static frontend in production.
 - **Database**: PostgreSQL via Drizzle ORM
 - **Schema Location**: `shared/schema.ts`
 - **Key Tables**:
+  - `tenants` - Organizations/workspaces for multi-tenancy
+  - `tenant_users` - Maps users to tenants with roles (owner, admin, member, guest)
+  - `tenant_invitations` - Pending invitations to join organizations
+  - `audit_logs` - Enterprise compliance audit trail
   - `users` - User accounts with admin flag
   - `sessions` - Session storage for authentication
   - `services` - Integrated service definitions (Slack, Gmail, etc.)
   - `feedItems` - Unified feed items from various services
   - `apple_calendar_credentials` - Apple CalDAV credentials for users
   - `slack_channel_preferences` - Per-user Slack channel filtering preferences
+
+### Multi-Tenancy Architecture
+- **Tenant Isolation**: All tenant-scoped tables include `tenantId` column
+- **Role-Based Access Control (RBAC)**: Owner > Admin > Member > Guest
+- **Tenant Resolution**: Via `X-Tenant-Id` or `X-Tenant-Slug` headers, or defaults to user's first tenant
+- **Middleware**: `tenantMiddleware.ts` populates `req.tenantId` and `req.tenantRole`
+- **Audit Logging**: All tenant actions are logged for enterprise compliance
+- **SSO Ready**: Schema supports tenant-specific SSO configuration (SAML/OIDC)
 
 ### Service Integrations
 - **Gmail & Google Calendar**: OAuth via Google APIs
