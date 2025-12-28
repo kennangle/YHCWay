@@ -33,6 +33,8 @@ const defaultTemplateTypes = [
 export default function EmailBuilderPage() {
   const [selectedTemplateType, setSelectedTemplateType] = useState<string>("");
   const [subject, setSubject] = useState("");
+  const [currentHtml, setCurrentHtml] = useState<string>("");
+  const [builderKey, setBuilderKey] = useState(0);
   const [showNewTemplateDialog, setShowNewTemplateDialog] = useState(false);
   const [newTemplateType, setNewTemplateType] = useState("");
   const [newTemplateSubject, setNewTemplateSubject] = useState("");
@@ -78,6 +80,8 @@ export default function EmailBuilderPage() {
     },
     onSuccess: (data) => {
       setSubject(data.subject || "");
+      setCurrentHtml(data.htmlContent || "");
+      setBuilderKey(prev => prev + 1);
       queryClient.invalidateQueries({ queryKey: ["/api/admin/email-templates"] });
       toast({ title: "Template reset", description: "Template has been reset to default." });
     },
@@ -96,10 +100,13 @@ export default function EmailBuilderPage() {
     const template = templates.find(t => t.templateType === type);
     if (template) {
       setSubject(template.subject);
+      setCurrentHtml(template.htmlContent);
     } else {
       const defaultType = defaultTemplateTypes.find(t => t.value === type);
       setSubject(defaultType?.label || "");
+      setCurrentHtml("");
     }
+    setBuilderKey(prev => prev + 1);
   };
 
   const handleCreateTemplate = () => {
@@ -270,8 +277,8 @@ export default function EmailBuilderPage() {
                       />
                     </div>
                     <EmailBuilder
-                      key={selectedTemplateType}
-                      initialHtml={selectedTemplate?.htmlContent}
+                      key={`${selectedTemplateType}-${builderKey}`}
+                      initialHtml={currentHtml}
                       onSave={handleSaveTemplate}
                       variables={templateVariables}
                     />
