@@ -659,6 +659,44 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/admin/users/pending", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const pendingUsers = await storage.getPendingUsers();
+      res.json(pendingUsers);
+    } catch (error) {
+      console.error("Error fetching pending users:", error);
+      res.status(500).json({ error: "Failed to fetch pending users" });
+    }
+  });
+
+  app.post("/api/admin/users/:id/approve", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const user = req.user as User;
+      const updatedUser = await storage.updateUserApprovalStatus(req.params.id, "approved", user.id);
+      if (!updatedUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error approving user:", error);
+      res.status(500).json({ error: "Failed to approve user" });
+    }
+  });
+
+  app.post("/api/admin/users/:id/reject", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const user = req.user as User;
+      const updatedUser = await storage.updateUserApprovalStatus(req.params.id, "rejected", user.id);
+      if (!updatedUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error rejecting user:", error);
+      res.status(500).json({ error: "Failed to reject user" });
+    }
+  });
+
   // Email templates admin routes
   app.get("/api/admin/email-templates", isAuthenticated, isAdmin, async (req, res) => {
     try {
