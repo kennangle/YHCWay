@@ -12,7 +12,8 @@ import {
   LogOut,
   Shield,
   Mail,
-  Gift
+  Gift,
+  BookOpen
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
@@ -45,6 +46,7 @@ export function UnifiedSidebar() {
   ];
 
   const bottomItems = [
+    { icon: BookOpen, label: "Setup Guide", href: "/setup-guide" },
     { icon: PlusCircle, label: "Connect App", href: "/connect" },
     { icon: Mail, label: "Email Builder", href: "/email-builder" },
     { icon: Settings, label: "Settings", href: "/settings" },
