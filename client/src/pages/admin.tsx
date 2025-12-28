@@ -1,4 +1,5 @@
 import { UnifiedSidebar } from "@/components/unified-sidebar";
+import { TopBar } from "@/components/top-bar";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -231,7 +232,9 @@ export default function Admin() {
       
       <UnifiedSidebar />
 
-      <main className="flex-1 ml-64 p-8 relative z-10">
+      <main className="flex-1 ml-64 relative z-10 flex flex-col">
+        <TopBar />
+        <div className="flex-1 p-8">
         <header className="mb-8">
           <h1 className="font-display font-bold text-3xl mb-2" data-testid="text-admin-title">Admin Panel</h1>
           <p className="text-muted-foreground">Manage users, services, and feed items.</p>
@@ -500,6 +503,7 @@ export default function Admin() {
             isLoading={createUserMutation.isPending}
           />
         )}
+        </div>
       </main>
 
       {editingTemplate && (

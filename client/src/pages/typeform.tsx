@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
+import { TopBar } from "@/components/top-bar";
 import { FileText, RefreshCw, ExternalLink, BarChart3, Trash2, Plus, Lock } from "lucide-react";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -58,11 +59,14 @@ export default function Typeform() {
           }}
         />
         <UnifiedSidebar />
-        <main className="flex-1 ml-64 p-8 relative z-10 flex items-center justify-center">
-          <div className="text-center">
-            <Lock className="w-16 h-16 mx-auto mb-4 text-muted-foreground/50" />
-            <h1 className="font-display font-bold text-2xl mb-2">Admin Access Required</h1>
-            <p className="text-muted-foreground">This feature is only available to administrators.</p>
+        <main className="flex-1 ml-64 relative z-10 flex flex-col">
+          <TopBar />
+          <div className="flex-1 p-8 flex items-center justify-center">
+            <div className="text-center">
+              <Lock className="w-16 h-16 mx-auto mb-4 text-muted-foreground/50" />
+              <h1 className="font-display font-bold text-2xl mb-2">Admin Access Required</h1>
+              <p className="text-muted-foreground">This feature is only available to administrators.</p>
+            </div>
           </div>
         </main>
       </div>
@@ -179,7 +183,9 @@ export default function Typeform() {
       
       <UnifiedSidebar />
 
-      <main className="flex-1 ml-64 p-8 relative z-10">
+      <main className="flex-1 ml-64 relative z-10 flex flex-col">
+        <TopBar />
+        <div className="flex-1 p-8">
         <header className="flex justify-between items-center mb-8">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl bg-[#262627]/10 flex items-center justify-center">
@@ -286,6 +292,7 @@ export default function Typeform() {
               ))}
             </div>
           )}
+        </div>
         </div>
       </main>
 

@@ -1,4 +1,5 @@
 import { UnifiedSidebar } from "@/components/unified-sidebar";
+import { TopBar } from "@/components/top-bar";
 import { Search, Bell, ChevronLeft, ChevronRight, Clock, MapPin, Video, Apple, X } from "lucide-react";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -248,7 +249,9 @@ export default function Calendar() {
       
       <UnifiedSidebar />
 
-      <main className="flex-1 ml-64 p-8 relative z-10">
+      <main className="flex-1 ml-64 relative z-10 flex flex-col">
+        <TopBar />
+        <div className="flex-1 p-8">
         <header className="flex justify-between items-end mb-8">
           <div>
             <p className="text-muted-foreground font-medium mb-1">Your Schedule</p>
@@ -526,6 +529,7 @@ export default function Calendar() {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </main>
     </div>
   );

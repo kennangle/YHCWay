@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
+import { TopBar } from "@/components/top-bar";
 import { CheckSquare, RefreshCw, ExternalLink } from "lucide-react";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
 import { useQuery } from "@tanstack/react-query";
@@ -67,7 +68,9 @@ export default function Tasks() {
       
       <UnifiedSidebar />
 
-      <main className="flex-1 ml-64 p-8 relative z-10">
+      <main className="flex-1 ml-64 relative z-10 flex flex-col">
+        <TopBar />
+        <div className="flex-1 p-8">
         <header className="flex justify-between items-center mb-8">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl bg-[#F06A6A]/10 flex items-center justify-center">
@@ -160,6 +163,7 @@ export default function Tasks() {
               })}
             </div>
           )}
+        </div>
         </div>
       </main>
     </div>

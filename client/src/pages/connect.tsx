@@ -1,4 +1,5 @@
 import { UnifiedSidebar } from "@/components/unified-sidebar";
+import { TopBar } from "@/components/top-bar";
 import { AppleCalendarConnect } from "@/components/apple-calendar-connect";
 import { Search, MessageCircle, Mail, Calendar, Video, CheckSquare, FileText, Clock, X } from "lucide-react";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
@@ -578,7 +579,9 @@ export default function Connect() {
       
       <UnifiedSidebar />
 
-      <main className="flex-1 ml-64 p-8 relative z-10">
+      <main className="flex-1 ml-64 relative z-10 flex flex-col">
+        <TopBar />
+        <div className="flex-1 p-8">
         <header className="mb-8">
           <h1 className="font-display font-bold text-3xl mb-2">Connect Apps</h1>
           <p className="text-muted-foreground">Manage your connected services and add new integrations.</p>
@@ -637,6 +640,7 @@ export default function Connect() {
             <AppleCalendarConnect variant="card" />
           </div>
         </section>
+        </div>
       </main>
 
       {apiKeyModalApp && (

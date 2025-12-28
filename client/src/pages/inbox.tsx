@@ -1,4 +1,5 @@
 import { UnifiedSidebar } from "@/components/unified-sidebar";
+import { TopBar } from "@/components/top-bar";
 import { Search, Mail, MessageCircle, Users, MessageSquare, PenSquare } from "lucide-react";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
 import { useQuery } from "@tanstack/react-query";
@@ -140,7 +141,9 @@ export default function Inbox() {
       
       <UnifiedSidebar />
 
-      <main className="flex-1 ml-64 p-8 relative z-10">
+      <main className="flex-1 ml-64 relative z-10 flex flex-col">
+        <TopBar />
+        <div className="flex-1 p-8">
         <header className="flex justify-between items-center mb-8">
           <h1 className="font-display font-bold text-3xl">Unified Inbox</h1>
           <div className="flex gap-4">
@@ -272,6 +275,7 @@ export default function Inbox() {
               );
             })
           )}
+        </div>
         </div>
       </main>
 

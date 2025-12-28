@@ -1,4 +1,5 @@
 import { UnifiedSidebar } from "@/components/unified-sidebar";
+import { TopBar } from "@/components/top-bar";
 import { Search, Send, Plus, Users, MessageCircle, X, Reply, ChevronRight } from "lucide-react";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -274,7 +275,9 @@ export default function Chat() {
       
       <UnifiedSidebar />
 
-      <main className="flex-1 ml-64 relative z-10 flex">
+      <main className="flex-1 ml-64 relative z-10 flex flex-col">
+        <TopBar />
+        <div className="flex-1 flex">
         <div className="w-80 border-r border-border/50 glass-panel flex flex-col">
           <div className="p-4 border-b border-border/50">
             <div className="flex items-center justify-between mb-4">
@@ -633,6 +636,7 @@ export default function Chat() {
             </form>
           </div>
         )}
+        </div>
       </main>
     </div>
   );

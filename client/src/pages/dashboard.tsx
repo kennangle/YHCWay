@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
+import { TopBar } from "@/components/top-bar";
 import { FeedItem } from "@/components/feed-item";
 import { Search, Bell, Mail, Video, MessageCircle, Users, MessageSquare, CheckSquare, RefreshCw, X } from "lucide-react";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
@@ -475,7 +476,9 @@ export default function Dashboard() {
       
       <UnifiedSidebar />
 
-      <main className="flex-1 ml-64 p-8 relative z-10">
+      <main className="flex-1 ml-64 relative z-10 flex flex-col">
+        <TopBar />
+        <div className="flex-1 p-8">
         <header className="flex justify-between items-end mb-8">
           <div>
             <p className="text-muted-foreground font-medium mb-1">{today} · {timeStr}</p>
@@ -887,6 +890,7 @@ export default function Dashboard() {
               )}
             </div>
           </div>
+        </div>
         </div>
       </main>
     </div>
