@@ -59,19 +59,25 @@ export async function setupAuth(app: Express) {
       { usernameField: "email" },
       async (email, password, done) => {
         try {
+          console.log("[Login] Attempting login for email:", email);
           const user = await storage.getUserByEmail(email);
           if (!user) {
+            console.log("[Login] No user found with email:", email);
             return done(null, false, { message: "Invalid email or password" });
           }
+          console.log("[Login] User found, id:", user.id, "has password:", !!user.passwordHash);
           if (!user.passwordHash) {
+            console.log("[Login] User has no password hash");
             return done(null, false, { message: "Please sign in with Google" });
           }
           const isValid = await bcrypt.compare(password, user.passwordHash);
+          console.log("[Login] Password comparison result:", isValid);
           if (!isValid) {
             return done(null, false, { message: "Invalid email or password" });
           }
           return done(null, { id: user.id, email: user.email });
         } catch (error) {
+          console.error("[Login] Error during login:", error);
           return done(error);
         }
       }
