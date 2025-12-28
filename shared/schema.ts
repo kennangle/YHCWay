@@ -57,6 +57,14 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
+// User approval status constants
+export const ApprovalStatus = {
+  PENDING: "pending",
+  APPROVED: "approved",
+  REJECTED: "rejected",
+} as const;
+export type ApprovalStatusType = typeof ApprovalStatus[keyof typeof ApprovalStatus];
+
 // User storage table
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -67,6 +75,9 @@ export const users = pgTable("users", {
   passwordHash: varchar("password_hash"),
   emailVerified: boolean("email_verified").default(false),
   isAdmin: boolean("is_admin").default(false),
+  approvalStatus: varchar("approval_status").default("pending"),
+  approvalDate: timestamp("approval_date"),
+  approvedBy: varchar("approved_by"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

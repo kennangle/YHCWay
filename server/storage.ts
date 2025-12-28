@@ -66,8 +66,10 @@ export interface IStorage {
   upsertUser(user: UpsertUser): Promise<User>;
   createUser(user: UpsertUser): Promise<User>;
   getAllUsers(): Promise<User[]>;
+  getPendingUsers(): Promise<User[]>;
   updateUserAdmin(id: string, isAdmin: boolean): Promise<User | undefined>;
   updateUserPassword(id: string, passwordHash: string): Promise<User | undefined>;
+  updateUserApprovalStatus(id: string, status: string, approvedBy?: string): Promise<User | undefined>;
   
   getOAuthAccount(userId: string, provider: string): Promise<OAuthAccount | undefined>;
   getOAuthAccountByProvider(provider: string, providerAccountId: string): Promise<OAuthAccount | undefined>;
@@ -216,6 +218,29 @@ export class DbStorage implements IStorage {
     const [user] = await db
       .update(users)
       .set({ passwordHash, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  async getPendingUsers(): Promise<User[]> {
+    return await db.select().from(users).where(eq(users.approvalStatus, "pending"));
+  }
+
+  async updateUserApprovalStatus(id: string, status: string, approvedBy?: string): Promise<User | undefined> {
+    const updateData: Record<string, unknown> = { 
+      approvalStatus: status, 
+      updatedAt: new Date() 
+    };
+    if (status === "approved" || status === "rejected") {
+      updateData.approvalDate = new Date();
+      if (approvedBy) {
+        updateData.approvedBy = approvedBy;
+      }
+    }
+    const [user] = await db
+      .update(users)
+      .set(updateData)
       .where(eq(users.id, id))
       .returning();
     return user;
