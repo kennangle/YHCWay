@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTheme } from "next-themes";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
-import { User, Bell, Shield, Palette, HelpCircle, ChevronLeft, Check, Globe, Mail, MessageSquare, Calendar, Video, CheckSquare, MessageCircle, Volume2, Moon, ExternalLink, Trash2, Download, Eye, EyeOff } from "lucide-react";
+import { User, Bell, Shield, Palette, HelpCircle, ChevronLeft, Check, Globe, Mail, MessageSquare, Calendar, Video, CheckSquare, MessageCircle, Volume2, Moon, Sun, ExternalLink, Trash2, Download, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -122,7 +123,13 @@ type SettingsSection = "main" | "account" | "notifications" | "privacy" | "appea
 
 export default function Settings() {
   const [activeSection, setActiveSection] = useState<SettingsSection>("main");
+  const [mounted, setMounted] = useState(false);
+  const { theme, setTheme } = useTheme();
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const { data: user } = useQuery<UserData>({
     queryKey: ["/api/auth/user"],
@@ -695,29 +702,56 @@ export default function Settings() {
           <p className="text-muted-foreground">Loading preferences...</p>
         </div>
       ) : (
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-foreground mb-3">Calendar Colors</h3>
-          
-          {renderColorPicker(
-            "Google Calendar",
-            "Color for events from Google Calendar",
-            preferences?.googleCalendarColor || "#3b82f6",
-            (color) => handlePreferenceChange("googleCalendarColor", color)
-          )}
+        <div className="space-y-6">
+          <div className="glass-card p-6 rounded-2xl">
+            <h3 className="text-lg font-semibold text-foreground mb-4">Theme</h3>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {mounted && theme === "dark" ? (
+                  <Moon className="w-5 h-5 text-muted-foreground" />
+                ) : (
+                  <Sun className="w-5 h-5 text-muted-foreground" />
+                )}
+                <div>
+                  <Label className="text-sm font-medium">Dark Mode</Label>
+                  <p className="text-sm text-muted-foreground">Switch between light and dark themes</p>
+                </div>
+              </div>
+              {mounted && (
+                <Switch
+                  checked={theme === "dark"}
+                  onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
+                  data-testid="switch-dark-mode"
+                />
+              )}
+            </div>
+          </div>
 
-          {renderColorPicker(
-            "Apple Calendar",
-            "Color for events from Apple iCloud Calendar",
-            preferences?.appleCalendarColor || "#22c55e",
-            (color) => handlePreferenceChange("appleCalendarColor", color)
-          )}
+          <div className="glass-card p-6 rounded-2xl">
+            <h3 className="text-lg font-semibold text-foreground mb-4">Calendar Colors</h3>
+            <div className="space-y-4">
+              {renderColorPicker(
+                "Google Calendar",
+                "Color for events from Google Calendar",
+                preferences?.googleCalendarColor || "#3b82f6",
+                (color) => handlePreferenceChange("googleCalendarColor", color)
+              )}
 
-          {renderColorPicker(
-            "Zoom Meetings",
-            "Color for Zoom meetings on the calendar",
-            preferences?.zoomColor || "#a855f7",
-            (color) => handlePreferenceChange("zoomColor", color)
-          )}
+              {renderColorPicker(
+                "Apple Calendar",
+                "Color for events from Apple iCloud Calendar",
+                preferences?.appleCalendarColor || "#22c55e",
+                (color) => handlePreferenceChange("appleCalendarColor", color)
+              )}
+
+              {renderColorPicker(
+                "Zoom Meetings",
+                "Color for Zoom meetings on the calendar",
+                preferences?.zoomColor || "#a855f7",
+                (color) => handlePreferenceChange("zoomColor", color)
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>
