@@ -3,13 +3,23 @@ const API_KEY = process.env.MINDBODY_API_KEY;
 
 interface IntroOffer {
   id: string;
-  studentName: string;
-  studentEmail?: string;
+  studentId: string;
+  firstName: string;
+  lastName: string;
+  email?: string;
+  phone?: string;
   offerName: string;
+  offerCategory: string;
+  purchaseAmount: string;
   purchaseDate: string;
-  expirationDate?: string;
-  status: string;
-  attendanceCount?: number;
+  classesAttendedSincePurchase: number;
+  lastAttendanceDate?: string;
+  daysSinceLastAttendance?: number;
+  daysSincePurchase: number;
+  hasConverted: boolean;
+  conversionDate?: string;
+  conversionType?: string;
+  memberStatus: string;
   notes?: string;
 }
 
@@ -33,9 +43,11 @@ interface Student {
 
 interface PaginatedResponse<T> {
   data: T[];
-  total: number;
-  limit: number;
-  offset: number;
+  meta: {
+    count: number;
+    limit: number;
+    offset: number;
+  };
 }
 
 async function makeRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -45,22 +57,17 @@ async function makeRequest<T>(endpoint: string, options: RequestInit = {}): Prom
 
   const url = `${MINDBODY_ANALYTICS_BASE_URL}${endpoint}`;
   
-  console.log(`[Mindbody Analytics] Requesting: ${url}`);
-  console.log(`[Mindbody Analytics] API Key prefix: ${API_KEY.substring(0, 10)}...`);
-  
   const response = await fetch(url, {
     ...options,
     headers: {
       "Authorization": `Bearer ${API_KEY}`,
       "Content-Type": "application/json",
-      "X-API-Key": API_KEY,
       ...options.headers,
     },
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error(`[Mindbody Analytics] Error response: ${response.status} - ${errorText}`);
     throw new Error(`Mindbody Analytics API error: ${response.status} - ${errorText}`);
   }
 

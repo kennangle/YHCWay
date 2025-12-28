@@ -11,13 +11,23 @@ import { toast } from "@/hooks/use-toast";
 
 interface IntroOffer {
   id: string;
-  studentName: string;
-  studentEmail?: string;
+  studentId: string;
+  firstName: string;
+  lastName: string;
+  email?: string;
+  phone?: string;
   offerName: string;
+  offerCategory: string;
+  purchaseAmount: string;
   purchaseDate: string;
-  expirationDate?: string;
-  status: string;
-  attendanceCount?: number;
+  classesAttendedSincePurchase: number;
+  lastAttendanceDate?: string;
+  daysSinceLastAttendance?: number;
+  daysSincePurchase: number;
+  hasConverted: boolean;
+  conversionDate?: string;
+  conversionType?: string;
+  memberStatus: string;
   notes?: string;
 }
 
@@ -31,12 +41,14 @@ interface IntroOfferSummary {
 
 interface PaginatedResponse<T> {
   data: T[];
-  total: number;
-  limit: number;
-  offset: number;
+  meta: {
+    count: number;
+    limit: number;
+    offset: number;
+  };
 }
 
-type StatusFilter = "all" | "active" | "converted" | "expired";
+type StatusFilter = "all" | "new" | "engaged" | "at_risk" | "converted";
 
 export default function IntroOffers() {
   const queryClient = useQueryClient();
@@ -102,16 +114,18 @@ export default function IntroOffers() {
   });
 
   const offers = offersData?.data || [];
-  const filteredOffers = offers.filter(offer => 
-    !searchTerm || 
-    offer.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    offer.offerName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredOffers = offers.filter(offer => {
+    const fullName = `${offer.firstName} ${offer.lastName}`.toLowerCase();
+    return !searchTerm || 
+      fullName.includes(searchTerm.toLowerCase()) ||
+      offer.offerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (offer.email && offer.email.toLowerCase().includes(searchTerm.toLowerCase()));
+  });
 
   const handleEdit = (offer: IntroOffer) => {
     setEditingId(offer.id);
     setEditNotes(offer.notes || "");
-    setEditStatus(offer.status);
+    setEditStatus(offer.memberStatus);
   };
 
   const handleSave = (id: string) => {
@@ -124,20 +138,22 @@ export default function IntroOffers() {
     setEditStatus("");
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "active": return <Clock className="w-4 h-4 text-blue-500" />;
-      case "converted": return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case "expired": return <XCircle className="w-4 h-4 text-red-500" />;
+  const getStatusIcon = (status: string | undefined) => {
+    switch ((status || "").toLowerCase()) {
+      case "new": return <AlertCircle className="w-4 h-4 text-blue-500" />;
+      case "engaged": return <Clock className="w-4 h-4 text-green-500" />;
+      case "at_risk": return <XCircle className="w-4 h-4 text-orange-500" />;
+      case "converted": return <CheckCircle className="w-4 h-4 text-purple-500" />;
       default: return <AlertCircle className="w-4 h-4 text-gray-500" />;
     }
   };
 
-  const getStatusBadgeClass = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "active": return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
-      case "converted": return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
-      case "expired": return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
+  const getStatusBadgeClass = (status: string | undefined) => {
+    switch ((status || "").toLowerCase()) {
+      case "new": return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
+      case "engaged": return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
+      case "at_risk": return "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400";
+      case "converted": return "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400";
       default: return "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400";
     }
   };
@@ -278,9 +294,10 @@ export default function IntroOffers() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="new">New</SelectItem>
+                <SelectItem value="engaged">Engaged</SelectItem>
+                <SelectItem value="at_risk">At Risk</SelectItem>
                 <SelectItem value="converted">Converted</SelectItem>
-                <SelectItem value="expired">Expired</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -302,10 +319,10 @@ export default function IntroOffers() {
                   <tr className="border-b border-border">
                     <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Student</th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Offer</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Purchase Date</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Expiration</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Purchase</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Days</th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Status</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Visits</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Classes</th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Notes</th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Actions</th>
                   </tr>
@@ -315,16 +332,16 @@ export default function IntroOffers() {
                     <tr key={offer.id} className="border-b border-border/50 hover:bg-muted/30" data-testid={`row-offer-${offer.id}`}>
                       <td className="py-3 px-4">
                         <div>
-                          <p className="font-medium">{offer.studentName}</p>
-                          {offer.studentEmail && (
-                            <p className="text-sm text-muted-foreground">{offer.studentEmail}</p>
+                          <p className="font-medium">{offer.firstName} {offer.lastName}</p>
+                          {offer.email && (
+                            <p className="text-sm text-muted-foreground">{offer.email}</p>
                           )}
                         </div>
                       </td>
                       <td className="py-3 px-4 text-sm">{offer.offerName}</td>
                       <td className="py-3 px-4 text-sm">{formatDate(offer.purchaseDate)}</td>
                       <td className="py-3 px-4 text-sm">
-                        {offer.expirationDate ? formatDate(offer.expirationDate) : "-"}
+                        {offer.daysSincePurchase}d ago
                       </td>
                       <td className="py-3 px-4">
                         {editingId === offer.id ? (
@@ -333,19 +350,20 @@ export default function IntroOffers() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="active">Active</SelectItem>
+                              <SelectItem value="new">New</SelectItem>
+                              <SelectItem value="engaged">Engaged</SelectItem>
+                              <SelectItem value="at_risk">At Risk</SelectItem>
                               <SelectItem value="converted">Converted</SelectItem>
-                              <SelectItem value="expired">Expired</SelectItem>
                             </SelectContent>
                           </Select>
                         ) : (
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(offer.status)}`}>
-                            {getStatusIcon(offer.status)}
-                            {offer.status}
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(offer.memberStatus)}`}>
+                            {getStatusIcon(offer.memberStatus)}
+                            {offer.memberStatus}
                           </span>
                         )}
                       </td>
-                      <td className="py-3 px-4 text-sm">{offer.attendanceCount || 0}</td>
+                      <td className="py-3 px-4 text-sm">{offer.classesAttendedSincePurchase}</td>
                       <td className="py-3 px-4 text-sm max-w-[200px]">
                         {editingId === offer.id ? (
                           <Input

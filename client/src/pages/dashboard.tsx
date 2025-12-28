@@ -24,14 +24,14 @@ interface UnifiedActivityItem {
 
 interface IntroOffer {
   id: string;
-  studentName: string;
-  studentEmail?: string;
+  firstName: string;
+  lastName: string;
+  email?: string;
   offerName: string;
   purchaseDate: string;
-  expirationDate?: string;
-  status: string;
-  attendanceCount?: number;
-  notes?: string;
+  memberStatus: string;
+  classesAttendedSincePurchase: number;
+  daysSincePurchase: number;
 }
 
 interface AsanaTask {
@@ -252,7 +252,7 @@ export default function Dashboard() {
   const { data: introOffersData } = useQuery<{ data: IntroOffer[] }>({
     queryKey: ["intro-offers-feed"],
     queryFn: async () => {
-      const res = await fetch("/api/mindbody-analytics/intro-offers?limit=10&status=active", { credentials: "include" });
+      const res = await fetch("/api/mindbody-analytics/intro-offers?limit=10", { credentials: "include" });
       if (!res.ok) {
         console.warn("Mindbody Analytics not available");
         return { data: [] };
@@ -441,7 +441,7 @@ export default function Dashboard() {
       items.push({
         id: `intro-offer-${offer.id}`,
         type: "intro-offer",
-        isUnread: offer.status === "active",
+        isUnread: offer.memberStatus === "new" || offer.memberStatus === "at_risk",
         hasMention: false,
         timestamp: new Date(offer.purchaseDate),
         data: offer,
@@ -486,7 +486,7 @@ export default function Dashboard() {
     }
     if (item.type === "intro-offer") {
       const offer = item.data as IntroOffer;
-      return `${offer.studentName} ${offer.offerName} ${offer.notes || ""}`.toLowerCase();
+      return `${offer.firstName} ${offer.lastName} ${offer.offerName}`.toLowerCase();
     }
     return "";
   }, []);
@@ -606,7 +606,7 @@ export default function Dashboard() {
                               {item.type === 'gmail' && (item.data as GmailMessage).subject}
                               {item.type === 'slack' && (item.data as SlackMessage).text?.substring(0, 50)}
                               {item.type === 'zoom' && (item.data as ZoomMeeting).topic}
-                              {item.type === 'intro-offer' && `${(item.data as IntroOffer).studentName} - ${(item.data as IntroOffer).offerName}`}
+                              {item.type === 'intro-offer' && `${(item.data as IntroOffer).firstName} ${(item.data as IntroOffer).lastName} - ${(item.data as IntroOffer).offerName}`}
                               {item.type === 'feed' && (item.data as FeedItemType).title}
                             </p>
                             <p className="text-xs text-muted-foreground">
@@ -947,10 +947,9 @@ export default function Dashboard() {
                                 <span className="text-sm font-semibold text-foreground">Intro Offer</span>
                                 <span className="text-xs text-muted-foreground">{formatGmailTime(offer.purchaseDate)}</span>
                               </div>
-                              <h4 className="text-sm font-medium text-foreground mb-1">{offer.studentName}</h4>
+                              <h4 className="text-sm font-medium text-foreground mb-1">{offer.firstName} {offer.lastName}</h4>
                               <p className="text-xs text-muted-foreground">
-                                {offer.offerName} - {offer.status}
-                                {offer.attendanceCount !== undefined && ` (${offer.attendanceCount} visits)`}
+                                {offer.offerName} - {offer.memberStatus} ({offer.classesAttendedSincePurchase} classes)
                               </p>
                             </div>
                           </div>
