@@ -191,7 +191,7 @@ export default function EmailBuilderPage() {
                 </CardTitle>
                 <CardDescription>Select a template to edit</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-2">
+              <CardContent className="space-y-2 overflow-hidden">
                 {defaultTemplateTypes.map((type) => {
                   const savedTemplate = templates.find(t => t.templateType === type.value);
                   return (
@@ -205,8 +205,8 @@ export default function EmailBuilderPage() {
                       }`}
                       data-testid={`button-template-${type.value}`}
                     >
-                      <div className="font-medium text-sm">{type.label}</div>
-                      <div className="text-xs text-gray-500">{type.description}</div>
+                      <div className="font-medium text-sm truncate">{type.label}</div>
+                      <div className="text-xs text-gray-500 line-clamp-2">{type.description}</div>
                       {savedTemplate && (
                         <div className="text-xs text-green-600 mt-1">Customized</div>
                       )}
@@ -227,8 +227,8 @@ export default function EmailBuilderPage() {
                       }`}
                       data-testid={`button-template-${template.templateType}`}
                     >
-                      <div className="font-medium text-sm">{template.templateType.replace(/_/g, " ")}</div>
-                      <div className="text-xs text-gray-500">Custom template</div>
+                      <div className="font-medium text-sm truncate">{template.templateType.replace(/_/g, " ")}</div>
+                      <div className="text-xs text-gray-500 truncate">Custom template</div>
                     </button>
                   ))}
               </CardContent>
