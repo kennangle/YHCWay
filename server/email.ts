@@ -108,6 +108,9 @@ const DEFAULT_RESET_HTML = `
 
 export async function sendPasswordResetEmail(to: string, resetLink: string): Promise<boolean> {
   try {
+    console.log(`[Email] Attempting to send password reset email to ${to}`);
+    console.log(`[Email] Using sender: ${SENDER_NAME} <${SENDER_EMAIL}>`);
+    
     // Try to get custom template from database
     const customTemplate = await storage.getEmailTemplate('password_reset');
     
@@ -124,11 +127,15 @@ export async function sendPasswordResetEmail(to: string, resetLink: string): Pro
     sendSmtpEmail.sender = { name: SENDER_NAME, email: SENDER_EMAIL };
     sendSmtpEmail.to = [{ email: to }];
 
+    console.log(`[Email] Calling Brevo API...`);
     await apiInstance.sendTransacEmail(sendSmtpEmail);
-    console.log(`Password reset email sent to ${to}`);
+    console.log(`[Email] Password reset email sent successfully to ${to}`);
     return true;
-  } catch (error) {
-    console.error("Error sending password reset email:", error);
+  } catch (error: any) {
+    console.error("[Email] Error sending password reset email:", error?.message || error);
+    if (error?.response?.body) {
+      console.error("[Email] Brevo API error details:", JSON.stringify(error.response.body));
+    }
     return false;
   }
 }

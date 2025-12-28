@@ -238,13 +238,16 @@ export async function setupAuth(app: Express) {
 
   app.post("/api/auth/forgot-password", async (req, res) => {
     try {
+      console.log("[Password Reset] Request received for email:", req.body.email);
       const validatedData = forgotPasswordSchema.parse(req.body);
       const user = await storage.getUserByEmail(validatedData.email);
       
       if (!user) {
+        console.log("[Password Reset] No user found with email:", validatedData.email);
         return res.json({ message: "If an account exists with that email, you will receive a password reset link." });
       }
 
+      console.log("[Password Reset] User found, creating reset token");
       const token = crypto.randomBytes(32).toString("hex");
       const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
       
@@ -260,7 +263,9 @@ export async function setupAuth(app: Express) {
       }
       
       const resetLink = `${baseUrl}/reset-password?token=${token}`;
-      await sendPasswordResetEmail(validatedData.email, resetLink);
+      console.log("[Password Reset] Sending email to:", validatedData.email);
+      const emailSent = await sendPasswordResetEmail(validatedData.email, resetLink);
+      console.log("[Password Reset] Email send result:", emailSent);
       
       res.json({ message: "If an account exists with that email, you will receive a password reset link." });
     } catch (error) {
