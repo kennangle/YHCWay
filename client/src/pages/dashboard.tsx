@@ -92,7 +92,14 @@ export default function Dashboard() {
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
-  const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const today = currentTime.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+  const timeStr = currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+    return () => clearInterval(timer);
+  }, []);
   
   useEffect(() => {
     if (searchOpen && searchInputRef.current) {
@@ -471,7 +478,7 @@ export default function Dashboard() {
       <main className="flex-1 ml-64 p-8 relative z-10">
         <header className="flex justify-between items-end mb-8">
           <div>
-            <p className="text-muted-foreground font-medium mb-1">{today}</p>
+            <p className="text-muted-foreground font-medium mb-1">{today} · {timeStr}</p>
             <h1 className="font-display font-bold text-3xl">{getGreeting()}, {userName}</h1>
           </div>
           <div className="flex gap-4">
