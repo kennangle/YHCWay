@@ -129,8 +129,8 @@ export default function EmailBuilderPage() {
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       <UnifiedSidebar />
-      <main className="flex-1 overflow-auto">
-        <div className="container mx-auto p-6 max-w-7xl">
+      <main className="flex-1 overflow-auto ml-64">
+        <div className="p-6 max-w-7xl">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-primary/10 rounded-lg">
