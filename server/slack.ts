@@ -82,8 +82,9 @@ export async function getChannels(): Promise<SlackChannel[]> {
   }));
 }
 
-export async function getDirectMessages(maxResults: number = 10): Promise<SlackMessage[]> {
+export async function getDirectMessages(maxResults: number = 10, includeThreadReplies: boolean = true): Promise<SlackMessage[]> {
   const token = await getSlackToken();
+  const effectiveMaxResults = includeThreadReplies ? maxResults * 3 : maxResults;
 
   const response = await fetch('https://slack.com/api/conversations.list?types=im,mpim&limit=20', {
     headers: {
@@ -101,6 +102,7 @@ export async function getDirectMessages(maxResults: number = 10): Promise<SlackM
 
   const messages: SlackMessage[] = [];
   const userNameCache: Record<string, string> = {};
+  const threadsToFetch: { channelId: string; threadTs: string; dmName: string }[] = [];
 
   const twentyFourMonthsAgo = Date.now() - (24 * 30 * 24 * 60 * 60 * 1000);
 
@@ -119,6 +121,16 @@ export async function getDirectMessages(maxResults: number = 10): Promise<SlackM
       const historyData = await historyResponse.json();
 
       if (historyData.ok && historyData.messages) {
+        let dmName = 'Direct Message';
+        if (dm.user) {
+          if (!userNameCache[dm.user]) {
+            userNameCache[dm.user] = await getUserName(token, dm.user);
+          }
+          dmName = userNameCache[dm.user];
+        } else if (dm.is_mpim && dm.name) {
+          dmName = dm.name.replace('mpdm-', '').replace('--', ', ');
+        }
+
         for (const msg of historyData.messages) {
           const messageTimestamp = parseFloat(msg.ts) * 1000;
           if (messageTimestamp < twentyFourMonthsAgo) {
@@ -139,16 +151,6 @@ export async function getDirectMessages(maxResults: number = 10): Promise<SlackM
               userNameCache[msg.user] = userName;
             }
 
-            let dmName = 'Direct Message';
-            if (dm.user) {
-              if (!userNameCache[dm.user]) {
-                userNameCache[dm.user] = await getUserName(token, dm.user);
-              }
-              dmName = userNameCache[dm.user];
-            } else if (dm.is_mpim && dm.name) {
-              dmName = dm.name.replace('mpdm-', '').replace('--', ', ');
-            }
-
             messages.push({
               id: msg.ts,
               channelId: dm.id,
@@ -161,6 +163,10 @@ export async function getDirectMessages(maxResults: number = 10): Promise<SlackM
               threadTs: msg.thread_ts,
               replyCount: msg.reply_count || 0
             });
+
+            if (includeThreadReplies && msg.reply_count && msg.reply_count > 0 && msg.thread_ts) {
+              threadsToFetch.push({ channelId: dm.id, threadTs: msg.thread_ts, dmName });
+            }
           }
         }
       }
@@ -169,8 +175,54 @@ export async function getDirectMessages(maxResults: number = 10): Promise<SlackM
     }
   }
 
+  if (includeThreadReplies && threadsToFetch.length > 0) {
+    for (const thread of threadsToFetch.slice(0, 5)) {
+      try {
+        const repliesResponse = await fetch(
+          `https://slack.com/api/conversations.replies?channel=${thread.channelId}&ts=${thread.threadTs}&limit=10`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+
+        const repliesData = await repliesResponse.json();
+
+        if (repliesData.ok && repliesData.messages) {
+          for (const reply of repliesData.messages.slice(1)) {
+            if (reply.type === 'message') {
+              let userName = userNameCache[reply.user];
+              if (!userName && reply.user) {
+                userName = await getUserName(token, reply.user);
+                userNameCache[reply.user] = userName;
+              }
+
+              messages.push({
+                id: reply.ts,
+                channelId: thread.channelId,
+                channelName: thread.dmName,
+                text: reply.text || '',
+                userId: reply.user || '',
+                userName: userName || 'Unknown',
+                timestamp: new Date(parseFloat(reply.ts) * 1000).toISOString(),
+                isDm: true,
+                threadTs: thread.threadTs,
+                isThread: true,
+                replyCount: 0
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.error(`Error fetching thread replies:`, error);
+      }
+    }
+  }
+
   messages.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-  return messages.slice(0, maxResults);
+  return messages.slice(0, effectiveMaxResults);
 }
 
 export async function getThreadReplies(channelId: string, threadTs: string, maxResults: number = 10): Promise<SlackMessage[]> {

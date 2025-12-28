@@ -1,9 +1,9 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { FeedItem } from "@/components/feed-item";
-import { Search, Bell, Mail, Video, MessageCircle, Users, MessageSquare, CheckSquare } from "lucide-react";
+import { Search, Bell, Mail, Video, MessageCircle, Users, MessageSquare, CheckSquare, RefreshCw } from "lucide-react";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { FeedItem as FeedItemType } from "@shared/schema";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "wouter";
@@ -80,10 +80,26 @@ interface SlackMessage {
 export default function Dashboard() {
   const { user } = useAuth();
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { playNotification } = useNotificationSound();
   const prevItemCountRef = useRef<number>(0);
   const isInitialLoadRef = useRef<boolean>(true);
+  const queryClient = useQueryClient();
   const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    isInitialLoadRef.current = true;
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["feed"] }),
+      queryClient.invalidateQueries({ queryKey: ["gmail-messages"] }),
+      queryClient.invalidateQueries({ queryKey: ["calendar-events"] }),
+      queryClient.invalidateQueries({ queryKey: ["zoom-meetings"] }),
+      queryClient.invalidateQueries({ queryKey: ["slack-messages"] }),
+      queryClient.invalidateQueries({ queryKey: ["asana-tasks"] }),
+    ]);
+    setTimeout(() => setIsRefreshing(false), 500);
+  }, [queryClient]);
   
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -376,6 +392,15 @@ export default function Dashboard() {
             <h1 className="font-display font-bold text-3xl">{getGreeting()}, {userName}</h1>
           </div>
           <div className="flex gap-4">
+            <button 
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="w-10 h-10 rounded-full glass-panel flex items-center justify-center hover:bg-white/80 transition-colors disabled:opacity-50" 
+              data-testid="button-refresh"
+              title="Refresh all data"
+            >
+              <RefreshCw className={`w-5 h-5 text-muted-foreground ${isRefreshing ? 'animate-spin' : ''}`} />
+            </button>
             <button className="w-10 h-10 rounded-full glass-panel flex items-center justify-center hover:bg-white/80 transition-colors" data-testid="button-search">
               <Search className="w-5 h-5 text-muted-foreground" />
             </button>
