@@ -58,6 +58,30 @@ async function getUserName(token: string, userId: string): Promise<string> {
   }
 }
 
+let cachedBotUserId: string | null = null;
+
+async function getBotUserId(token: string): Promise<string | null> {
+  if (cachedBotUserId) return cachedBotUserId;
+  
+  try {
+    const response = await fetch('https://slack.com/api/auth.test', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    const data = await response.json();
+    if (data.ok && data.user_id) {
+      cachedBotUserId = data.user_id;
+      console.log('[Slack] Bot user ID:', cachedBotUserId);
+      return cachedBotUserId;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export async function getChannels(): Promise<SlackChannel[]> {
   const token = await getSlackToken();
 
@@ -85,6 +109,8 @@ export async function getChannels(): Promise<SlackChannel[]> {
 export async function getDirectMessages(maxResults: number = 10, includeThreadReplies: boolean = true): Promise<SlackMessage[]> {
   const token = await getSlackToken();
   const effectiveMaxResults = includeThreadReplies ? maxResults * 3 : maxResults;
+  
+  const botUserId = await getBotUserId(token);
 
   const response = await fetch('https://slack.com/api/conversations.list?types=im,mpim&limit=20', {
     headers: {
@@ -99,6 +125,8 @@ export async function getDirectMessages(maxResults: number = 10, includeThreadRe
     console.error('Slack DM list error:', data.error);
     return [];
   }
+
+  console.log('[Slack DMs] Found DM channels:', (data.channels || []).map((c: any) => ({ id: c.id, user: c.user, name: c.name })));
 
   const messages: SlackMessage[] = [];
   const userNameCache: Record<string, string> = {};
@@ -121,6 +149,8 @@ export async function getDirectMessages(maxResults: number = 10, includeThreadRe
 
       const historyData = await historyResponse.json();
 
+      console.log(`[Slack DMs] Channel ${dm.id} returned ${historyData.messages?.length || 0} messages`);
+
       if (historyData.ok && historyData.messages) {
         let dmName = 'Direct Message';
         if (dm.user) {
@@ -135,6 +165,10 @@ export async function getDirectMessages(maxResults: number = 10, includeThreadRe
         for (const msg of historyData.messages) {
           const messageTimestamp = parseFloat(msg.ts) * 1000;
           if (messageTimestamp < twentyFourMonthsAgo) {
+            continue;
+          }
+          
+          if (botUserId && msg.user === botUserId) {
             continue;
           }
           
@@ -193,6 +227,10 @@ export async function getDirectMessages(maxResults: number = 10, includeThreadRe
 
         if (repliesData.ok && repliesData.messages) {
           for (const reply of repliesData.messages.slice(1)) {
+            if (botUserId && reply.user === botUserId) {
+              continue;
+            }
+            
             if (reply.type === 'message') {
               let userName = userNameCache[reply.user];
               if (!userName && reply.user) {
