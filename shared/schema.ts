@@ -476,3 +476,219 @@ export const userPreferencesSchema = z.object({
   dateFormat: z.enum(["MM/DD/YYYY", "DD/MM/YYYY", "YYYY-MM-DD"]).optional(),
   firstDayOfWeek: z.enum(["sunday", "monday"]).optional(),
 });
+
+// =============================================================================
+// PROJECT & TASK MANAGEMENT
+// =============================================================================
+
+// Priority levels for tasks
+export const TaskPriority = {
+  LOW: "low",
+  MEDIUM: "medium",
+  HIGH: "high",
+  URGENT: "urgent",
+} as const;
+export type TaskPriorityType = typeof TaskPriority[keyof typeof TaskPriority];
+
+// Recurrence patterns
+export const RecurrencePattern = {
+  DAILY: "daily",
+  WEEKLY: "weekly",
+  BIWEEKLY: "biweekly",
+  MONTHLY: "monthly",
+  CUSTOM: "custom",
+} as const;
+export type RecurrencePatternType = typeof RecurrencePattern[keyof typeof RecurrencePattern];
+
+// Projects table
+export const projects = pgTable("projects", {
+  id: serial("id").primaryKey(),
+  tenantId: varchar("tenant_id").references(() => tenants.id, { onDelete: "cascade" }),
+  name: varchar("name").notNull(),
+  description: text("description"),
+  color: varchar("color").default("#3b82f6"),
+  ownerId: varchar("owner_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  isArchived: boolean("is_archived").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_project_tenant").on(table.tenantId),
+  index("idx_project_owner").on(table.ownerId),
+]);
+
+export type Project = typeof projects.$inferSelect;
+export type InsertProject = typeof projects.$inferInsert;
+
+export const insertProjectSchema = createInsertSchema(projects).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+
+export const createProjectSchema = z.object({
+  name: z.string().min(1, "Project name is required"),
+  description: z.string().optional(),
+  color: z.string().optional(),
+});
+
+// Project columns (for Kanban board)
+export const projectColumns = pgTable("project_columns", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  name: varchar("name").notNull(),
+  color: varchar("color").default("#6b7280"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_column_project").on(table.projectId),
+]);
+
+export type ProjectColumn = typeof projectColumns.$inferSelect;
+export type InsertProjectColumn = typeof projectColumns.$inferInsert;
+
+export const insertColumnSchema = createInsertSchema(projectColumns).omit({ 
+  id: true, 
+  createdAt: true 
+});
+
+// Project labels
+export const projectLabels = pgTable("project_labels", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  name: varchar("name").notNull(),
+  color: varchar("color").default("#6b7280"),
+}, (table) => [
+  index("idx_label_project").on(table.projectId),
+]);
+
+export type ProjectLabel = typeof projectLabels.$inferSelect;
+export type InsertProjectLabel = typeof projectLabels.$inferInsert;
+
+// Tasks table
+export const tasks = pgTable("tasks", {
+  id: serial("id").primaryKey(),
+  tenantId: varchar("tenant_id").references(() => tenants.id, { onDelete: "cascade" }),
+  projectId: integer("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  columnId: integer("column_id").references(() => projectColumns.id, { onDelete: "set null" }),
+  title: varchar("title").notNull(),
+  description: text("description"),
+  priority: varchar("priority").default("medium"),
+  dueDate: timestamp("due_date"),
+  assigneeId: varchar("assignee_id").references(() => users.id, { onDelete: "set null" }),
+  creatorId: varchar("creator_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  sortOrder: integer("sort_order").notNull().default(0),
+  isCompleted: boolean("is_completed").default(false),
+  completedAt: timestamp("completed_at"),
+  // Recurrence settings
+  isRecurring: boolean("is_recurring").default(false),
+  recurrencePattern: varchar("recurrence_pattern"),
+  recurrenceInterval: integer("recurrence_interval").default(1),
+  recurrenceEndDate: timestamp("recurrence_end_date"),
+  parentTaskId: integer("parent_task_id"),
+  labels: text("labels").array(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_task_tenant").on(table.tenantId),
+  index("idx_task_project").on(table.projectId),
+  index("idx_task_column").on(table.columnId),
+  index("idx_task_assignee").on(table.assigneeId),
+  index("idx_task_due").on(table.dueDate),
+]);
+
+export type Task = typeof tasks.$inferSelect;
+export type InsertTask = typeof tasks.$inferInsert;
+
+export const insertTaskSchema = createInsertSchema(tasks).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true,
+  completedAt: true,
+});
+
+export const createTaskSchema = z.object({
+  projectId: z.number(),
+  columnId: z.number().optional(),
+  title: z.string().min(1, "Task title is required"),
+  description: z.string().optional(),
+  priority: z.enum(["low", "medium", "high", "urgent"]).default("medium"),
+  dueDate: z.string().optional(),
+  assigneeId: z.string().optional(),
+  isRecurring: z.boolean().optional(),
+  recurrencePattern: z.enum(["daily", "weekly", "biweekly", "monthly", "custom"]).optional(),
+  recurrenceInterval: z.number().optional(),
+  recurrenceEndDate: z.string().optional(),
+  labels: z.array(z.string()).optional(),
+});
+
+export const updateTaskSchema = z.object({
+  title: z.string().optional(),
+  description: z.string().optional(),
+  priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
+  dueDate: z.string().nullable().optional(),
+  assigneeId: z.string().nullable().optional(),
+  columnId: z.number().optional(),
+  sortOrder: z.number().optional(),
+  isCompleted: z.boolean().optional(),
+  isRecurring: z.boolean().optional(),
+  recurrencePattern: z.enum(["daily", "weekly", "biweekly", "monthly", "custom"]).nullable().optional(),
+  recurrenceInterval: z.number().optional(),
+  recurrenceEndDate: z.string().nullable().optional(),
+  labels: z.array(z.string()).optional(),
+});
+
+// Subtasks table
+export const taskSubtasks = pgTable("task_subtasks", {
+  id: serial("id").primaryKey(),
+  taskId: integer("task_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
+  title: varchar("title").notNull(),
+  isCompleted: boolean("is_completed").default(false),
+  completedAt: timestamp("completed_at"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_subtask_task").on(table.taskId),
+]);
+
+export type TaskSubtask = typeof taskSubtasks.$inferSelect;
+export type InsertTaskSubtask = typeof taskSubtasks.$inferInsert;
+
+export const createSubtaskSchema = z.object({
+  taskId: z.number(),
+  title: z.string().min(1, "Subtask title is required"),
+});
+
+// Task comments table
+export const taskComments = pgTable("task_comments", {
+  id: serial("id").primaryKey(),
+  taskId: integer("task_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
+  authorId: varchar("author_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  editedAt: timestamp("edited_at"),
+}, (table) => [
+  index("idx_comment_task").on(table.taskId),
+]);
+
+export type TaskComment = typeof taskComments.$inferSelect;
+export type InsertTaskComment = typeof taskComments.$inferInsert;
+
+export const createCommentSchema = z.object({
+  taskId: z.number(),
+  content: z.string().min(1, "Comment cannot be empty"),
+});
+
+// Project members (for team assignments)
+export const projectMembers = pgTable("project_members", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  role: varchar("role").default("member"),
+  addedAt: timestamp("added_at").defaultNow(),
+}, (table) => [
+  index("idx_pmember_project").on(table.projectId),
+  index("idx_pmember_user").on(table.userId),
+]);
+
+export type ProjectMember = typeof projectMembers.$inferSelect;
+export type InsertProjectMember = typeof projectMembers.$inferInsert;
