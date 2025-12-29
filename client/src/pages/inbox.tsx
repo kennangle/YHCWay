@@ -141,7 +141,7 @@ export default function Inbox() {
       
       <UnifiedSidebar />
 
-      <main className="flex-1 ml-64 relative z-10 flex flex-col">
+      <main className="flex-1 ml-0 md:ml-64 relative z-10 flex flex-col">
         <TopBar />
         <div className="flex-1 p-8">
         <header className="flex justify-between items-center mb-8">

@@ -1045,7 +1045,7 @@ Your online status can be toggled in Privacy settings. When hidden, others won't
       
       <UnifiedSidebar />
 
-      <main className="flex-1 ml-64 relative z-10 flex flex-col">
+      <main className="flex-1 ml-0 md:ml-64 relative z-10 flex flex-col">
         <TopBar />
         <div className="flex-1 p-8">
         <header className="mb-8">

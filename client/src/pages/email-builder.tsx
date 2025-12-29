@@ -130,7 +130,7 @@ export default function EmailBuilderPage() {
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       <UnifiedSidebar />
-      <main className="flex-1 overflow-auto ml-64">
+      <main className="flex-1 overflow-auto ml-0 md:ml-64">
         <TopBar />
         <div className="p-6 max-w-7xl">
           <div className="flex items-center justify-between mb-6">

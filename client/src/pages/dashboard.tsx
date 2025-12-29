@@ -537,9 +537,9 @@ export default function Dashboard() {
       
       <UnifiedSidebar />
 
-      <main className="flex-1 ml-64 relative z-10 flex flex-col">
+      <main className="flex-1 ml-0 md:ml-64 relative z-10 flex flex-col">
         <TopBar />
-        <div className="flex-1 p-8">
+        <div className="flex-1 p-4 md:p-8">
         <header className="flex justify-between items-end mb-8">
           <div>
             <p className="text-muted-foreground font-medium mb-1">{today} · {timeStr}</p>

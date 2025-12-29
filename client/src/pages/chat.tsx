@@ -275,7 +275,7 @@ export default function Chat() {
       
       <UnifiedSidebar />
 
-      <main className="flex-1 ml-64 relative z-10 flex flex-col">
+      <main className="flex-1 ml-0 md:ml-64 relative z-10 flex flex-col">
         <TopBar />
         <div className="flex-1 flex">
         <div className="w-80 border-r border-border/50 glass-panel flex flex-col">
