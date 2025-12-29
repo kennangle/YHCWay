@@ -38,11 +38,11 @@ export function UnifiedSidebar() {
   const navItems = [
     { icon: LayoutDashboard, label: "Overview", href: "/" },
     { icon: Inbox, label: "Unified Inbox", href: "/inbox" },
+    { icon: MessageCircle, label: "Chat", href: "/chat" },
+    ...(user?.isAdmin ? [{ icon: FileText, label: "Typeform", href: "/typeform" }] : []),
     { icon: CalendarIcon, label: "Calendar", href: "/calendar" },
     { icon: CheckSquare, label: "Tasks/Projects", href: "/projects" },
     { icon: Gift, label: "Intro Offers", href: "/intro-offers" },
-    ...(user?.isAdmin ? [{ icon: FileText, label: "Typeform", href: "/typeform" }] : []),
-    { icon: MessageCircle, label: "Chat", href: "/chat" },
   ];
 
   const bottomItems = [
