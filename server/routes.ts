@@ -2494,11 +2494,12 @@ export async function registerRoutes(
       // Fetch tasks from Asana
       const asanaTasks = await getProjectTasksForImport(asanaProjectId);
       
-      // Import tasks
+      // Import tasks (skip completed tasks)
       let tasksImported = 0;
       for (const asanaTask of asanaTasks) {
-        // Skip empty task names
+        // Skip empty task names and completed tasks
         if (!asanaTask.name || asanaTask.name.trim() === '') continue;
+        if (asanaTask.completed) continue;
         
         // Find the column for this task
         let columnId = asanaTask.sectionId ? columnMap.get(asanaTask.sectionId) : null;
