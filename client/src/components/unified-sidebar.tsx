@@ -46,9 +46,9 @@ export function UnifiedSidebar() {
 
   const bottomItems = [
     { icon: BookOpen, label: "Setup Guide", href: "/setup-guide" },
-    { icon: PlusCircle, label: "Connect App", href: "/connect" },
     { icon: Mail, label: "Email Builder", href: "/email-builder" },
     ...(user?.isAdmin ? [{ icon: FileText, label: "Typeform", href: "/typeform" }] : []),
+    { icon: PlusCircle, label: "Connect App", href: "/connect" },
     { icon: Settings, label: "Settings", href: "/settings" },
     ...(user?.isAdmin ? [{ icon: Shield, label: "Admin", href: "/admin" }] : []),
   ];
