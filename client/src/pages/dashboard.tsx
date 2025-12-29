@@ -680,7 +680,7 @@ export default function Dashboard() {
         {/* Insights Section */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           {/* At-Risk Students */}
-          <Link href="/intro-offers" className="block" data-testid="insight-at-risk">
+          <Link href="/intro-offers?filter=needs_attention" className="block" data-testid="insight-at-risk">
             <div className="glass-panel p-5 rounded-xl border-l-4 border-l-amber-500 hover:bg-white/80 transition-colors cursor-pointer h-full">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">

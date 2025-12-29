@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { TopBar } from "@/components/top-bar";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
 interface IntroOffer {
   id: string;
@@ -48,15 +49,36 @@ interface PaginatedResponse<T> {
   };
 }
 
-type StatusFilter = "all" | "new" | "engaged" | "at_risk" | "converted";
+type StatusFilter = "all" | "new" | "engaged" | "at_risk" | "lapsed" | "needs_attention" | "converted";
 
 export default function IntroOffers() {
   const queryClient = useQueryClient();
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [location] = useLocation();
+  
+  // Parse initial filter from URL
+  const getInitialFilter = (): StatusFilter => {
+    const params = new URLSearchParams(window.location.search);
+    const filter = params.get("filter");
+    if (filter && ["all", "new", "engaged", "at_risk", "lapsed", "needs_attention", "converted"].includes(filter)) {
+      return filter as StatusFilter;
+    }
+    return "all";
+  };
+  
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(getInitialFilter);
   const [searchTerm, setSearchTerm] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editNotes, setEditNotes] = useState("");
   const [editStatus, setEditStatus] = useState("");
+  
+  // Update filter when URL changes
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const filter = params.get("filter");
+    if (filter && ["all", "new", "engaged", "at_risk", "lapsed", "needs_attention", "converted"].includes(filter)) {
+      setStatusFilter(filter as StatusFilter);
+    }
+  }, [location]);
 
   const { data: statusData } = useQuery<{ configured: boolean }>({
     queryKey: ["/api/mindbody-analytics/status"],
@@ -116,10 +138,18 @@ export default function IntroOffers() {
   const offers = offersData?.data || [];
   const filteredOffers = offers.filter(offer => {
     const fullName = `${offer.firstName} ${offer.lastName}`.toLowerCase();
-    return !searchTerm || 
+    const matchesSearch = !searchTerm || 
       fullName.includes(searchTerm.toLowerCase()) ||
       offer.offerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (offer.email && offer.email.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    // Apply status filter
+    if (!matchesSearch) return false;
+    if (statusFilter === "all") return true;
+    if (statusFilter === "needs_attention") {
+      return offer.memberStatus === "at_risk" || offer.memberStatus === "lapsed";
+    }
+    return offer.memberStatus === statusFilter;
   });
 
   const handleEdit = (offer: IntroOffer) => {
@@ -143,6 +173,7 @@ export default function IntroOffers() {
       case "new": return <AlertCircle className="w-4 h-4 text-blue-500" />;
       case "engaged": return <Clock className="w-4 h-4 text-green-500" />;
       case "at_risk": return <XCircle className="w-4 h-4 text-orange-500" />;
+      case "lapsed": return <XCircle className="w-4 h-4 text-red-500" />;
       case "converted": return <CheckCircle className="w-4 h-4 text-purple-500" />;
       default: return <AlertCircle className="w-4 h-4 text-gray-500" />;
     }
@@ -153,6 +184,7 @@ export default function IntroOffers() {
       case "new": return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
       case "engaged": return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
       case "at_risk": return "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400";
+      case "lapsed": return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
       case "converted": return "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400";
       default: return "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400";
     }
@@ -289,14 +321,16 @@ export default function IntroOffers() {
               />
             </div>
             <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
-              <SelectTrigger className="w-40" data-testid="select-status-filter">
+              <SelectTrigger className="w-48" data-testid="select-status-filter">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="needs_attention">Needs Attention</SelectItem>
                 <SelectItem value="new">New</SelectItem>
                 <SelectItem value="engaged">Engaged</SelectItem>
                 <SelectItem value="at_risk">At Risk</SelectItem>
+                <SelectItem value="lapsed">Lapsed</SelectItem>
                 <SelectItem value="converted">Converted</SelectItem>
               </SelectContent>
             </Select>
