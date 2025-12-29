@@ -273,11 +273,11 @@ export default function Typeform() {
                         <BarChart3 className="w-4 h-4" />
                       </button>
                       <a
-                        href={form._links?.display}
+                        href={`https://form.typeform.com/to/${form.id}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700"
-                        title="Open in Typeform"
+                        title="Open Public Form"
                         data-testid={`button-open-${form.id}`}
                       >
                         <ExternalLink className="w-4 h-4" />
