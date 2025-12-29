@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { TopBar } from "@/components/top-bar";
-import { FileText, RefreshCw, ExternalLink, BarChart3, Trash2, Plus, Lock } from "lucide-react";
+import { FileText, RefreshCw, ExternalLink, BarChart3, Trash2, Plus, Lock, Eye } from "lucide-react";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
+import { Widget } from "@typeform/embed-react";
 
 interface TypeformForm {
   id: string;
@@ -44,6 +45,7 @@ export default function Typeform() {
   const queryClient = useQueryClient();
   const [showNewFormDialog, setShowNewFormDialog] = useState(false);
   const [showResponsesDialog, setShowResponsesDialog] = useState(false);
+  const [showPreviewDialog, setShowPreviewDialog] = useState(false);
   const [selectedForm, setSelectedForm] = useState<TypeformForm | null>(null);
   const [newFormTitle, setNewFormTitle] = useState("");
 
@@ -148,6 +150,11 @@ export default function Typeform() {
     setShowResponsesDialog(true);
   };
 
+  const handlePreview = (form: TypeformForm) => {
+    setSelectedForm(form);
+    setShowPreviewDialog(true);
+  };
+
   const handleCreateForm = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newFormTitle.trim()) return;
@@ -250,6 +257,14 @@ export default function Typeform() {
                     <h3 className="font-medium text-foreground line-clamp-2">{form.title}</h3>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
+                        onClick={() => handlePreview(form)}
+                        className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700"
+                        title="Preview Form"
+                        data-testid={`button-preview-${form.id}`}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      <button
                         onClick={() => handleViewResponses(form)}
                         className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700"
                         title="View Responses"
@@ -262,7 +277,7 @@ export default function Typeform() {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700"
-                        title="Open Form"
+                        title="Open in Typeform"
                         data-testid={`button-open-${form.id}`}
                       >
                         <ExternalLink className="w-4 h-4" />
@@ -366,6 +381,23 @@ export default function Typeform() {
               ))}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] p-0">
+          <DialogHeader className="p-4 pb-0">
+            <DialogTitle>Preview: {selectedForm?.title}</DialogTitle>
+          </DialogHeader>
+          <div className="h-[70vh] p-4">
+            {selectedForm && showPreviewDialog && (
+              <Widget 
+                id={selectedForm.id} 
+                style={{ width: '100%', height: '100%' }} 
+                data-testid={`typeform-widget-${selectedForm.id}`}
+              />
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
