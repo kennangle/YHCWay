@@ -2,7 +2,7 @@ import { Clock, Mail, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Redirect, Link } from "wouter";
 import { queryClient } from "@/lib/queryClient";
-import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
+import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 
 export default function PendingApproval() {
   const { user, isLoading } = useAuth();

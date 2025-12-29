@@ -1,6 +1,6 @@
 import { Command } from "lucide-react";
 import { Link } from "wouter";
-import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
+import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 
 export default function Landing() {
   return (

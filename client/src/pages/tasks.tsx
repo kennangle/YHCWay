@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { TopBar } from "@/components/top-bar";
 import { CheckSquare, RefreshCw, ExternalLink } from "lucide-react";
-import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
+import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery } from "@tanstack/react-query";
 
 interface AsanaTask {

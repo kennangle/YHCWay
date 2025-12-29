@@ -1,7 +1,7 @@
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { TopBar } from "@/components/top-bar";
 import { Search, Mail, MessageCircle, Users, MessageSquare, PenSquare } from "lucide-react";
-import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
+import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery } from "@tanstack/react-query";
 import { SlackChannelConfig } from "@/components/slack-channel-config";
 import { EmailDetailPanel } from "@/components/email-detail-panel";

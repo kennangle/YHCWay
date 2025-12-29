@@ -3,7 +3,7 @@ import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { TopBar } from "@/components/top-bar";
 import { FeedItem } from "@/components/feed-item";
 import { Search, Bell, Mail, Video, MessageCircle, Users, MessageSquare, CheckSquare, RefreshCw, X, Gift, AlertTriangle, TrendingUp, Plus, Send, CalendarPlus } from "lucide-react";
-import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
+import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { FeedItem as FeedItemType } from "@shared/schema";
 import { useAuth } from "@/hooks/useAuth";

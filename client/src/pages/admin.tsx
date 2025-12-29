@@ -7,7 +7,7 @@ import { Redirect } from "wouter";
 import { Users, Server, Rss, Trash2, Edit2, Shield, ShieldOff, Plus, X, Key, Mail, RotateCcw, Check, XCircle, UserCheck, Clock } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import type { User, Service, FeedItem, InsertService, InsertFeedItem, AdminCreateUser } from "@shared/schema";
-import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
+import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useToast } from "@/hooks/use-toast";
 import { EmailEditor } from "@/components/email-editor";
 import { EmailBuilder } from "@/components/email-builder";
