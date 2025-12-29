@@ -2476,6 +2476,7 @@ export async function registerRoutes(
       } else {
         // Create default columns if no sections
         const defaultColumns = [
+          { name: 'Tasks', color: '#f59e0b' },
           { name: 'To Do', color: '#e2e8f0' },
           { name: 'In Progress', color: '#93c5fd' },
           { name: 'Done', color: '#86efac' },
