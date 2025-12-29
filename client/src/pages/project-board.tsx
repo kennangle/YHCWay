@@ -68,6 +68,13 @@ interface Project {
   labels: any[];
 }
 
+interface User {
+  id: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+}
+
 const PRIORITY_COLORS: Record<string, string> = {
   low: "bg-gray-100 text-gray-700",
   medium: "bg-blue-100 text-blue-700",
@@ -206,6 +213,7 @@ export default function ProjectBoard() {
     description: "", 
     priority: "medium",
     dueDate: "",
+    assigneeId: "",
   });
   const [newSubtask, setNewSubtask] = useState("");
   const [newComment, setNewComment] = useState("");
@@ -225,6 +233,15 @@ export default function ProjectBoard() {
     enabled: !!projectId,
   });
 
+  const { data: users = [] } = useQuery<User[]>({
+    queryKey: ["/api/users"],
+    queryFn: async () => {
+      const res = await fetch("/api/users", { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+
   const createTaskMutation = useMutation({
     mutationFn: async (data: any) => {
       const res = await fetch("/api/tasks", {
@@ -239,7 +256,7 @@ export default function ProjectBoard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["project", projectId] });
       setCreateTaskDialogOpen(false);
-      setNewTask({ title: "", description: "", priority: "medium", dueDate: "" });
+      setNewTask({ title: "", description: "", priority: "medium", dueDate: "", assigneeId: "" });
     },
   });
 
@@ -383,6 +400,7 @@ export default function ProjectBoard() {
         description: newTask.description || undefined,
         priority: newTask.priority,
         dueDate: newTask.dueDate || undefined,
+        assigneeId: newTask.assigneeId || undefined,
       });
     }
   };
@@ -538,6 +556,22 @@ export default function ProjectBoard() {
                   data-testid="input-task-due"
                 />
               </div>
+            </div>
+            <div>
+              <Label>Assign To</Label>
+              <Select value={newTask.assigneeId} onValueChange={(v) => setNewTask({ ...newTask, assigneeId: v })}>
+                <SelectTrigger data-testid="select-task-assignee">
+                  <SelectValue placeholder="Select a team member" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Unassigned</SelectItem>
+                  {users.map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.firstName || user.email} {user.lastName || ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>
