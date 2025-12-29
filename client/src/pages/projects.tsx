@@ -154,7 +154,8 @@ export default function Projects() {
   };
 
   const handleImportSelected = async () => {
-    for (const projectId of selectedAsanaProjects) {
+    const projectIds = Array.from(selectedAsanaProjects);
+    for (const projectId of projectIds) {
       const project = asanaProjects.find(p => p.id === projectId);
       if (project && !importedProjects.has(projectId)) {
         await importAsanaProject(project);
@@ -454,16 +455,16 @@ export default function Projects() {
           setImportedProjects(new Set());
         }
       }}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
+        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Download className="w-5 h-5" />
               Import from Asana
             </DialogTitle>
           </DialogHeader>
-          <div className="py-4">
-            <p className="text-sm text-muted-foreground mb-4">
-              Select projects to import from Asana. This will create new projects with their sections (as columns) and tasks.
+          <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+            <p className="text-sm text-muted-foreground mb-4 flex-shrink-0">
+              Select projects to import. This will create new projects with their sections and tasks.
             </p>
             {loadingAsanaProjects ? (
               <div className="flex items-center justify-center py-8">
@@ -476,17 +477,18 @@ export default function Projects() {
                 <p className="text-sm mt-2">Make sure Asana is connected in the Connect page.</p>
               </div>
             ) : (
-              <div className="space-y-2 max-h-80 overflow-y-auto">
+              <div className="space-y-2 overflow-y-auto flex-1 pr-2">
                 {asanaProjects.map((project) => (
                   <div
                     key={project.id}
-                    className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${
+                    className={`flex items-center gap-3 p-3 rounded-lg border transition-colors cursor-pointer ${
                       importedProjects.has(project.id)
                         ? 'bg-green-50 border-green-200'
                         : selectedAsanaProjects.has(project.id)
                         ? 'bg-blue-50 border-blue-200'
                         : 'bg-white hover:bg-gray-50 border-gray-200'
                     }`}
+                    onClick={() => !importedProjects.has(project.id) && !importingProjects.has(project.id) && toggleProjectSelection(project.id)}
                   >
                     <Checkbox
                       checked={selectedAsanaProjects.has(project.id) || importedProjects.has(project.id)}
@@ -497,21 +499,21 @@ export default function Projects() {
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate">{project.name}</p>
                       {project.notes && (
-                        <p className="text-sm text-muted-foreground truncate">{project.notes}</p>
+                        <p className="text-sm text-muted-foreground line-clamp-1">{project.notes}</p>
                       )}
                     </div>
                     {importingProjects.has(project.id) && (
-                      <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                      <Loader2 className="w-4 h-4 animate-spin text-blue-500 flex-shrink-0" />
                     )}
                     {importedProjects.has(project.id) && (
-                      <Check className="w-4 h-4 text-green-500" />
+                      <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
                     )}
                   </div>
                 ))}
               </div>
             )}
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0 border-t pt-4 mt-4">
             <Button variant="outline" onClick={() => setImportDialogOpen(false)}>
               {importedProjects.size > 0 ? 'Done' : 'Cancel'}
             </Button>
