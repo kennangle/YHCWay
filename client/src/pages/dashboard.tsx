@@ -48,6 +48,15 @@ interface AsanaTask {
   modifiedAt: string;
 }
 
+interface NativeTask {
+  id: number;
+  projectId: number | null;
+  title: string;
+  priority: string;
+  dueDate: string | null;
+  isCompleted: boolean;
+}
+
 interface GmailMessage {
   id: string;
   threadId: string;
@@ -262,6 +271,16 @@ export default function Dashboard() {
     retry: false,
   });
   const introOffers = introOffersData?.data || [];
+
+  const { data: upcomingTasks = [] } = useQuery<NativeTask[]>({
+    queryKey: ["upcoming-tasks"],
+    queryFn: async () => {
+      const res = await fetch("/api/tasks/upcoming?days=7", { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    retry: false,
+  });
 
   const formatSlackTime = (timestamp: string) => {
     try {
@@ -716,15 +735,53 @@ export default function Dashboard() {
                   New Event
                 </button>
               </Link>
-              <Link href="/tasks" data-testid="quick-action-task">
+              <Link href="/projects" data-testid="quick-action-task">
                 <button className="flex items-center gap-2 px-3 py-2 text-xs font-medium bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors">
                   <Plus className="w-3.5 h-3.5" />
-                  View Tasks
+                  View Projects
                 </button>
               </Link>
             </div>
           </div>
         </div>
+
+        {/* Upcoming Tasks Section */}
+        {upcomingTasks.length > 0 && (
+          <div className="glass-panel p-6 rounded-2xl mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-display font-semibold text-lg">Upcoming Tasks</h3>
+              <Link href="/projects">
+                <button className="text-sm text-primary hover:underline">View All</button>
+              </Link>
+            </div>
+            <div className="flex gap-3 overflow-x-auto pb-2">
+              {upcomingTasks.slice(0, 6).map((task) => {
+                const priorityColors: Record<string, string> = {
+                  low: "border-gray-300",
+                  medium: "border-blue-400",
+                  high: "border-orange-400",
+                  urgent: "border-red-500",
+                };
+                const dueDate = task.dueDate ? new Date(task.dueDate) : null;
+                const isOverdue = dueDate && dueDate < new Date() && !task.isCompleted;
+                return (
+                  <Link key={task.id} href="/projects" data-testid={`upcoming-task-${task.id}`}>
+                    <div className={`flex-shrink-0 px-4 py-3 rounded-lg bg-white/60 border-l-4 ${priorityColors[task.priority]} hover:bg-white/80 transition-colors cursor-pointer min-w-48`}>
+                      <p className={`font-medium text-sm ${task.isCompleted ? 'line-through text-muted-foreground' : ''}`}>
+                        {task.title}
+                      </p>
+                      {dueDate && (
+                        <p className={`text-xs mt-1 ${isOverdue ? 'text-red-600' : 'text-muted-foreground'}`}>
+                          {isOverdue ? 'Overdue: ' : 'Due: '}{dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </p>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-12 gap-8">
           <div className="col-span-12">
@@ -815,22 +872,22 @@ export default function Dashboard() {
                 )}
               </div>
 
-              <Link href="/tasks" data-testid="link-asana-card">
-                <div className="glass-panel p-5 rounded-xl border-l-4 border-l-[#F06A6A] cursor-pointer hover:bg-white/80 transition-colors">
+              <Link href="/projects" data-testid="link-projects-card">
+                <div className="glass-panel p-5 rounded-xl border-l-4 border-l-primary cursor-pointer hover:bg-white/80 transition-colors">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-full bg-[#F06A6A]/10 flex items-center justify-center">
-                      <CheckSquare className="w-5 h-5 text-[#F06A6A]" />
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <CheckSquare className="w-5 h-5 text-primary" />
                     </div>
                     <div>
-                      <h3 className="font-semibold">Asana</h3>
+                      <h3 className="font-semibold">Projects</h3>
                       <p className="text-sm text-muted-foreground">
-                        {asanaLoading ? "Loading..." : `${asanaTasks.length} tasks assigned`}
+                        {upcomingTasks.length} upcoming tasks
                       </p>
                     </div>
                   </div>
-                  {asanaTasks.length > 0 && (
+                  {upcomingTasks.length > 0 && (
                     <p className="text-xs text-muted-foreground">
-                      Latest: {asanaTasks[0]?.name?.substring(0, 40)}...
+                      Next: {upcomingTasks[0]?.title?.substring(0, 40)}...
                     </p>
                   )}
                 </div>

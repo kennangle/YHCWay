@@ -28,6 +28,18 @@ import {
   type TenantInvitation,
   type AuditLog,
   type InsertAuditLog,
+  type Project,
+  type InsertProject,
+  type ProjectColumn,
+  type InsertProjectColumn,
+  type ProjectLabel,
+  type Task,
+  type InsertTask,
+  type TaskSubtask,
+  type InsertTaskSubtask,
+  type TaskComment,
+  type InsertTaskComment,
+  type ProjectMember,
   users,
   services,
   feedItems,
@@ -46,7 +58,14 @@ import {
   tenants,
   tenantUsers,
   tenantInvitations,
-  auditLogs
+  auditLogs,
+  projects,
+  projectColumns,
+  projectLabels,
+  tasks,
+  taskSubtasks,
+  taskComments,
+  projectMembers
 } from "@shared/schema";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq, desc, and, lt, isNull, sql, inArray } from "drizzle-orm";
@@ -168,6 +187,53 @@ export interface IStorage {
   // Audit logging
   createAuditLog(log: InsertAuditLog): Promise<AuditLog>;
   getAuditLogs(tenantId: string, limit?: number, offset?: number): Promise<AuditLog[]>;
+  
+  // Project management
+  createProject(data: InsertProject): Promise<Project>;
+  getProject(id: number): Promise<Project | undefined>;
+  getUserProjects(userId: string, tenantId?: string): Promise<Project[]>;
+  updateProject(id: number, data: Partial<InsertProject>): Promise<Project | undefined>;
+  deleteProject(id: number): Promise<void>;
+  
+  // Project columns
+  getProjectColumns(projectId: number): Promise<ProjectColumn[]>;
+  createProjectColumn(data: InsertProjectColumn): Promise<ProjectColumn>;
+  updateProjectColumn(id: number, data: Partial<InsertProjectColumn>): Promise<ProjectColumn | undefined>;
+  deleteProjectColumn(id: number): Promise<void>;
+  reorderProjectColumns(projectId: number, columnIds: number[]): Promise<void>;
+  
+  // Project labels
+  getProjectLabels(projectId: number): Promise<ProjectLabel[]>;
+  createProjectLabel(projectId: number, name: string, color?: string): Promise<ProjectLabel>;
+  deleteProjectLabel(id: number): Promise<void>;
+  
+  // Project members
+  getProjectMembers(projectId: number): Promise<(ProjectMember & { user: User })[]>;
+  addProjectMember(projectId: number, userId: string, role?: string): Promise<ProjectMember>;
+  removeProjectMember(projectId: number, userId: string): Promise<void>;
+  
+  // Tasks
+  createTask(data: InsertTask): Promise<Task>;
+  getTask(id: number): Promise<Task | undefined>;
+  getProjectTasks(projectId: number): Promise<Task[]>;
+  getUserTasks(userId: string, tenantId?: string): Promise<Task[]>;
+  getUpcomingTasks(userId: string, days?: number): Promise<Task[]>;
+  updateTask(id: number, data: Partial<InsertTask>): Promise<Task | undefined>;
+  deleteTask(id: number): Promise<void>;
+  moveTask(taskId: number, columnId: number, sortOrder: number): Promise<Task | undefined>;
+  
+  // Subtasks
+  getTaskSubtasks(taskId: number): Promise<TaskSubtask[]>;
+  createSubtask(data: InsertTaskSubtask): Promise<TaskSubtask>;
+  updateSubtask(id: number, data: Partial<InsertTaskSubtask>): Promise<TaskSubtask | undefined>;
+  deleteSubtask(id: number): Promise<void>;
+  toggleSubtask(id: number): Promise<TaskSubtask | undefined>;
+  
+  // Task comments
+  getTaskComments(taskId: number): Promise<(TaskComment & { author: User })[]>;
+  createTaskComment(taskId: number, authorId: string, content: string): Promise<TaskComment>;
+  updateTaskComment(id: number, content: string): Promise<TaskComment | undefined>;
+  deleteTaskComment(id: number): Promise<void>;
 }
 
 export class DbStorage implements IStorage {
@@ -939,6 +1005,286 @@ export class DbStorage implements IStorage {
       .orderBy(desc(auditLogs.createdAt))
       .limit(limit)
       .offset(offset);
+  }
+
+  // Project management
+  async createProject(data: InsertProject): Promise<Project> {
+    const [project] = await db.insert(projects).values(data).returning();
+    // Create default columns
+    await db.insert(projectColumns).values([
+      { projectId: project.id, name: "To Do", color: "#6b7280", sortOrder: 0 },
+      { projectId: project.id, name: "In Progress", color: "#3b82f6", sortOrder: 1 },
+      { projectId: project.id, name: "Done", color: "#22c55e", sortOrder: 2 },
+    ]);
+    // Add creator as project member
+    await db.insert(projectMembers).values({
+      projectId: project.id,
+      userId: data.ownerId,
+      role: "owner",
+    });
+    return project;
+  }
+
+  async getProject(id: number): Promise<Project | undefined> {
+    const [project] = await db.select().from(projects).where(eq(projects.id, id));
+    return project;
+  }
+
+  async getUserProjects(userId: string, tenantId?: string): Promise<Project[]> {
+    const memberProjectIds = await db.select({ projectId: projectMembers.projectId })
+      .from(projectMembers)
+      .where(eq(projectMembers.userId, userId));
+    
+    if (memberProjectIds.length === 0) return [];
+    
+    const projectIds = memberProjectIds.map(p => p.projectId);
+    let query = db.select().from(projects)
+      .where(and(
+        inArray(projects.id, projectIds),
+        eq(projects.isArchived, false)
+      ));
+    
+    return await query.orderBy(desc(projects.updatedAt));
+  }
+
+  async updateProject(id: number, data: Partial<InsertProject>): Promise<Project | undefined> {
+    const [project] = await db.update(projects)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(projects.id, id))
+      .returning();
+    return project;
+  }
+
+  async deleteProject(id: number): Promise<void> {
+    await db.delete(projects).where(eq(projects.id, id));
+  }
+
+  // Project columns
+  async getProjectColumns(projectId: number): Promise<ProjectColumn[]> {
+    return await db.select().from(projectColumns)
+      .where(eq(projectColumns.projectId, projectId))
+      .orderBy(projectColumns.sortOrder);
+  }
+
+  async createProjectColumn(data: InsertProjectColumn): Promise<ProjectColumn> {
+    const existing = await db.select().from(projectColumns)
+      .where(eq(projectColumns.projectId, data.projectId));
+    const sortOrder = existing.length;
+    const [column] = await db.insert(projectColumns)
+      .values({ ...data, sortOrder })
+      .returning();
+    return column;
+  }
+
+  async updateProjectColumn(id: number, data: Partial<InsertProjectColumn>): Promise<ProjectColumn | undefined> {
+    const [column] = await db.update(projectColumns)
+      .set(data)
+      .where(eq(projectColumns.id, id))
+      .returning();
+    return column;
+  }
+
+  async deleteProjectColumn(id: number): Promise<void> {
+    await db.delete(projectColumns).where(eq(projectColumns.id, id));
+  }
+
+  async reorderProjectColumns(projectId: number, columnIds: number[]): Promise<void> {
+    for (let i = 0; i < columnIds.length; i++) {
+      await db.update(projectColumns)
+        .set({ sortOrder: i })
+        .where(and(
+          eq(projectColumns.id, columnIds[i]),
+          eq(projectColumns.projectId, projectId)
+        ));
+    }
+  }
+
+  // Project labels
+  async getProjectLabels(projectId: number): Promise<ProjectLabel[]> {
+    return await db.select().from(projectLabels)
+      .where(eq(projectLabels.projectId, projectId));
+  }
+
+  async createProjectLabel(projectId: number, name: string, color: string = "#6b7280"): Promise<ProjectLabel> {
+    const [label] = await db.insert(projectLabels)
+      .values({ projectId, name, color })
+      .returning();
+    return label;
+  }
+
+  async deleteProjectLabel(id: number): Promise<void> {
+    await db.delete(projectLabels).where(eq(projectLabels.id, id));
+  }
+
+  // Project members
+  async getProjectMembers(projectId: number): Promise<(ProjectMember & { user: User })[]> {
+    const members = await db.select()
+      .from(projectMembers)
+      .innerJoin(users, eq(projectMembers.userId, users.id))
+      .where(eq(projectMembers.projectId, projectId));
+    
+    return members.map(m => ({
+      ...m.project_members,
+      user: m.users,
+    }));
+  }
+
+  async addProjectMember(projectId: number, userId: string, role: string = "member"): Promise<ProjectMember> {
+    const [member] = await db.insert(projectMembers)
+      .values({ projectId, userId, role })
+      .returning();
+    return member;
+  }
+
+  async removeProjectMember(projectId: number, userId: string): Promise<void> {
+    await db.delete(projectMembers)
+      .where(and(
+        eq(projectMembers.projectId, projectId),
+        eq(projectMembers.userId, userId)
+      ));
+  }
+
+  // Tasks
+  async createTask(data: InsertTask): Promise<Task> {
+    const [task] = await db.insert(tasks).values(data).returning();
+    return task;
+  }
+
+  async getTask(id: number): Promise<Task | undefined> {
+    const [task] = await db.select().from(tasks).where(eq(tasks.id, id));
+    return task;
+  }
+
+  async getProjectTasks(projectId: number): Promise<Task[]> {
+    return await db.select().from(tasks)
+      .where(eq(tasks.projectId, projectId))
+      .orderBy(tasks.sortOrder);
+  }
+
+  async getUserTasks(userId: string, tenantId?: string): Promise<Task[]> {
+    let conditions = [eq(tasks.assigneeId, userId)];
+    if (tenantId) {
+      conditions.push(eq(tasks.tenantId, tenantId));
+    }
+    return await db.select().from(tasks)
+      .where(and(...conditions))
+      .orderBy(tasks.dueDate, tasks.sortOrder);
+  }
+
+  async getUpcomingTasks(userId: string, days: number = 7): Promise<Task[]> {
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + days);
+    
+    return await db.select().from(tasks)
+      .where(and(
+        eq(tasks.assigneeId, userId),
+        eq(tasks.isCompleted, false),
+        lt(tasks.dueDate, futureDate)
+      ))
+      .orderBy(tasks.dueDate);
+  }
+
+  async updateTask(id: number, data: Partial<InsertTask>): Promise<Task | undefined> {
+    const updateData: any = { ...data, updatedAt: new Date() };
+    if (data.isCompleted === true) {
+      updateData.completedAt = new Date();
+    } else if (data.isCompleted === false) {
+      updateData.completedAt = null;
+    }
+    const [task] = await db.update(tasks)
+      .set(updateData)
+      .where(eq(tasks.id, id))
+      .returning();
+    return task;
+  }
+
+  async deleteTask(id: number): Promise<void> {
+    await db.delete(tasks).where(eq(tasks.id, id));
+  }
+
+  async moveTask(taskId: number, columnId: number, sortOrder: number): Promise<Task | undefined> {
+    const [task] = await db.update(tasks)
+      .set({ columnId, sortOrder, updatedAt: new Date() })
+      .where(eq(tasks.id, taskId))
+      .returning();
+    return task;
+  }
+
+  // Subtasks
+  async getTaskSubtasks(taskId: number): Promise<TaskSubtask[]> {
+    return await db.select().from(taskSubtasks)
+      .where(eq(taskSubtasks.taskId, taskId))
+      .orderBy(taskSubtasks.sortOrder);
+  }
+
+  async createSubtask(data: InsertTaskSubtask): Promise<TaskSubtask> {
+    const existing = await db.select().from(taskSubtasks)
+      .where(eq(taskSubtasks.taskId, data.taskId));
+    const sortOrder = existing.length;
+    const [subtask] = await db.insert(taskSubtasks)
+      .values({ ...data, sortOrder })
+      .returning();
+    return subtask;
+  }
+
+  async updateSubtask(id: number, data: Partial<InsertTaskSubtask>): Promise<TaskSubtask | undefined> {
+    const [subtask] = await db.update(taskSubtasks)
+      .set(data)
+      .where(eq(taskSubtasks.id, id))
+      .returning();
+    return subtask;
+  }
+
+  async deleteSubtask(id: number): Promise<void> {
+    await db.delete(taskSubtasks).where(eq(taskSubtasks.id, id));
+  }
+
+  async toggleSubtask(id: number): Promise<TaskSubtask | undefined> {
+    const [existing] = await db.select().from(taskSubtasks)
+      .where(eq(taskSubtasks.id, id));
+    if (!existing) return undefined;
+    
+    const [subtask] = await db.update(taskSubtasks)
+      .set({ 
+        isCompleted: !existing.isCompleted,
+        completedAt: existing.isCompleted ? null : new Date()
+      })
+      .where(eq(taskSubtasks.id, id))
+      .returning();
+    return subtask;
+  }
+
+  // Task comments
+  async getTaskComments(taskId: number): Promise<(TaskComment & { author: User })[]> {
+    const comments = await db.select()
+      .from(taskComments)
+      .innerJoin(users, eq(taskComments.authorId, users.id))
+      .where(eq(taskComments.taskId, taskId))
+      .orderBy(taskComments.createdAt);
+    
+    return comments.map(c => ({
+      ...c.task_comments,
+      author: c.users,
+    }));
+  }
+
+  async createTaskComment(taskId: number, authorId: string, content: string): Promise<TaskComment> {
+    const [comment] = await db.insert(taskComments)
+      .values({ taskId, authorId, content })
+      .returning();
+    return comment;
+  }
+
+  async updateTaskComment(id: number, content: string): Promise<TaskComment | undefined> {
+    const [comment] = await db.update(taskComments)
+      .set({ content, editedAt: new Date() })
+      .where(eq(taskComments.id, id))
+      .returning();
+    return comment;
+  }
+
+  async deleteTaskComment(id: number): Promise<void> {
+    await db.delete(taskComments).where(eq(taskComments.id, id));
   }
 }
 

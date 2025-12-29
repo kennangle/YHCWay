@@ -1,7 +1,7 @@
 import type { Express, RequestHandler } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertServiceSchema, insertFeedItemSchema, ADMIN_EMAIL, adminCreateUserSchema, integrationApiKeySchema, sendMessageSchema, createConversationSchema, createTenantSchema, inviteUserSchema, type User } from "@shared/schema";
+import { insertServiceSchema, insertFeedItemSchema, ADMIN_EMAIL, adminCreateUserSchema, integrationApiKeySchema, sendMessageSchema, createConversationSchema, createTenantSchema, inviteUserSchema, createProjectSchema, createTaskSchema, updateTaskSchema, createSubtaskSchema, createCommentSchema, type User } from "@shared/schema";
 import { setupAuth, isAuthenticated } from "./auth";
 import { tenantMiddleware, requireTenant, requireTenantRole } from "./tenantMiddleware";
 import { z } from "zod";
@@ -2200,6 +2200,454 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error updating preferences:", error);
       res.status(500).json({ error: "Failed to update preferences" });
+    }
+  });
+
+  // =============================================================================
+  // PROJECT MANAGEMENT ROUTES
+  // =============================================================================
+
+  // Get all projects for user
+  app.get("/api/projects", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const tenantId = req.tenantId;
+      const projects = await storage.getUserProjects(userId, tenantId);
+      res.json(projects);
+    } catch (error) {
+      console.error("Error fetching projects:", error);
+      res.status(500).json({ error: "Failed to fetch projects" });
+    }
+  });
+
+  // Create project
+  app.post("/api/projects", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const tenantId = req.tenantId;
+      const validatedData = createProjectSchema.parse(req.body);
+      
+      const project = await storage.createProject({
+        ...validatedData,
+        ownerId: userId,
+        tenantId,
+      });
+      
+      res.status(201).json(project);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: error.errors });
+      } else {
+        console.error("Error creating project:", error);
+        res.status(500).json({ error: "Failed to create project" });
+      }
+    }
+  });
+
+  // Get single project with columns
+  app.get("/api/projects/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const projectId = parseInt(req.params.id);
+      const project = await storage.getProject(projectId);
+      if (!project) {
+        return res.status(404).json({ error: "Project not found" });
+      }
+      
+      const columns = await storage.getProjectColumns(projectId);
+      const tasks = await storage.getProjectTasks(projectId);
+      const members = await storage.getProjectMembers(projectId);
+      const labels = await storage.getProjectLabels(projectId);
+      
+      res.json({ ...project, columns, tasks, members, labels });
+    } catch (error) {
+      console.error("Error fetching project:", error);
+      res.status(500).json({ error: "Failed to fetch project" });
+    }
+  });
+
+  // Update project
+  app.patch("/api/projects/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const projectId = parseInt(req.params.id);
+      const project = await storage.updateProject(projectId, req.body);
+      if (!project) {
+        return res.status(404).json({ error: "Project not found" });
+      }
+      res.json(project);
+    } catch (error) {
+      console.error("Error updating project:", error);
+      res.status(500).json({ error: "Failed to update project" });
+    }
+  });
+
+  // Delete project
+  app.delete("/api/projects/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const projectId = parseInt(req.params.id);
+      await storage.deleteProject(projectId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting project:", error);
+      res.status(500).json({ error: "Failed to delete project" });
+    }
+  });
+
+  // Project columns
+  app.post("/api/projects/:id/columns", isAuthenticated, async (req: any, res) => {
+    try {
+      const projectId = parseInt(req.params.id);
+      const { name, color } = req.body;
+      const column = await storage.createProjectColumn({ projectId, name, color });
+      res.status(201).json(column);
+    } catch (error) {
+      console.error("Error creating column:", error);
+      res.status(500).json({ error: "Failed to create column" });
+    }
+  });
+
+  app.patch("/api/columns/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const columnId = parseInt(req.params.id);
+      const column = await storage.updateProjectColumn(columnId, req.body);
+      res.json(column);
+    } catch (error) {
+      console.error("Error updating column:", error);
+      res.status(500).json({ error: "Failed to update column" });
+    }
+  });
+
+  app.delete("/api/columns/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const columnId = parseInt(req.params.id);
+      await storage.deleteProjectColumn(columnId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting column:", error);
+      res.status(500).json({ error: "Failed to delete column" });
+    }
+  });
+
+  app.post("/api/projects/:id/columns/reorder", isAuthenticated, async (req: any, res) => {
+    try {
+      const projectId = parseInt(req.params.id);
+      const { columnIds } = req.body;
+      await storage.reorderProjectColumns(projectId, columnIds);
+      res.status(200).json({ success: true });
+    } catch (error) {
+      console.error("Error reordering columns:", error);
+      res.status(500).json({ error: "Failed to reorder columns" });
+    }
+  });
+
+  // Project members
+  app.get("/api/projects/:id/members", isAuthenticated, async (req: any, res) => {
+    try {
+      const projectId = parseInt(req.params.id);
+      const members = await storage.getProjectMembers(projectId);
+      res.json(members);
+    } catch (error) {
+      console.error("Error fetching members:", error);
+      res.status(500).json({ error: "Failed to fetch members" });
+    }
+  });
+
+  app.post("/api/projects/:id/members", isAuthenticated, async (req: any, res) => {
+    try {
+      const projectId = parseInt(req.params.id);
+      const { userId, role } = req.body;
+      const member = await storage.addProjectMember(projectId, userId, role);
+      res.status(201).json(member);
+    } catch (error) {
+      console.error("Error adding member:", error);
+      res.status(500).json({ error: "Failed to add member" });
+    }
+  });
+
+  app.delete("/api/projects/:id/members/:userId", isAuthenticated, async (req: any, res) => {
+    try {
+      const projectId = parseInt(req.params.id);
+      const userId = req.params.userId;
+      await storage.removeProjectMember(projectId, userId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error removing member:", error);
+      res.status(500).json({ error: "Failed to remove member" });
+    }
+  });
+
+  // Project labels
+  app.post("/api/projects/:id/labels", isAuthenticated, async (req: any, res) => {
+    try {
+      const projectId = parseInt(req.params.id);
+      const { name, color } = req.body;
+      const label = await storage.createProjectLabel(projectId, name, color);
+      res.status(201).json(label);
+    } catch (error) {
+      console.error("Error creating label:", error);
+      res.status(500).json({ error: "Failed to create label" });
+    }
+  });
+
+  app.delete("/api/labels/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const labelId = parseInt(req.params.id);
+      await storage.deleteProjectLabel(labelId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting label:", error);
+      res.status(500).json({ error: "Failed to delete label" });
+    }
+  });
+
+  // =============================================================================
+  // TASK MANAGEMENT ROUTES
+  // =============================================================================
+
+  // Get all tasks for user
+  app.get("/api/tasks", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const tenantId = req.tenantId;
+      const tasks = await storage.getUserTasks(userId, tenantId);
+      res.json(tasks);
+    } catch (error) {
+      console.error("Error fetching tasks:", error);
+      res.status(500).json({ error: "Failed to fetch tasks" });
+    }
+  });
+
+  // Get upcoming tasks (for dashboard)
+  app.get("/api/tasks/upcoming", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const days = parseInt(req.query.days as string) || 7;
+      const tasks = await storage.getUpcomingTasks(userId, days);
+      res.json(tasks);
+    } catch (error) {
+      console.error("Error fetching upcoming tasks:", error);
+      res.status(500).json({ error: "Failed to fetch upcoming tasks" });
+    }
+  });
+
+  // Create task
+  app.post("/api/tasks", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const tenantId = req.tenantId;
+      const validatedData = createTaskSchema.parse(req.body);
+      
+      const task = await storage.createTask({
+        ...validatedData,
+        creatorId: userId,
+        tenantId,
+        dueDate: validatedData.dueDate ? new Date(validatedData.dueDate) : undefined,
+        recurrenceEndDate: validatedData.recurrenceEndDate ? new Date(validatedData.recurrenceEndDate) : undefined,
+      });
+      
+      res.status(201).json(task);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: error.errors });
+      } else {
+        console.error("Error creating task:", error);
+        res.status(500).json({ error: "Failed to create task" });
+      }
+    }
+  });
+
+  // Get single task with subtasks and comments
+  app.get("/api/tasks/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const taskId = parseInt(req.params.id);
+      const task = await storage.getTask(taskId);
+      if (!task) {
+        return res.status(404).json({ error: "Task not found" });
+      }
+      
+      const subtasks = await storage.getTaskSubtasks(taskId);
+      const comments = await storage.getTaskComments(taskId);
+      
+      res.json({ ...task, subtasks, comments });
+    } catch (error) {
+      console.error("Error fetching task:", error);
+      res.status(500).json({ error: "Failed to fetch task" });
+    }
+  });
+
+  // Update task
+  app.patch("/api/tasks/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const taskId = parseInt(req.params.id);
+      const validatedData = updateTaskSchema.parse(req.body);
+      
+      const updateData: any = { ...validatedData };
+      if (validatedData.dueDate !== undefined) {
+        updateData.dueDate = validatedData.dueDate ? new Date(validatedData.dueDate) : null;
+      }
+      if (validatedData.recurrenceEndDate !== undefined) {
+        updateData.recurrenceEndDate = validatedData.recurrenceEndDate ? new Date(validatedData.recurrenceEndDate) : null;
+      }
+      
+      const task = await storage.updateTask(taskId, updateData);
+      if (!task) {
+        return res.status(404).json({ error: "Task not found" });
+      }
+      res.json(task);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: error.errors });
+      } else {
+        console.error("Error updating task:", error);
+        res.status(500).json({ error: "Failed to update task" });
+      }
+    }
+  });
+
+  // Move task (drag and drop)
+  app.post("/api/tasks/:id/move", isAuthenticated, async (req: any, res) => {
+    try {
+      const taskId = parseInt(req.params.id);
+      const { columnId, sortOrder } = req.body;
+      const task = await storage.moveTask(taskId, columnId, sortOrder);
+      if (!task) {
+        return res.status(404).json({ error: "Task not found" });
+      }
+      res.json(task);
+    } catch (error) {
+      console.error("Error moving task:", error);
+      res.status(500).json({ error: "Failed to move task" });
+    }
+  });
+
+  // Delete task
+  app.delete("/api/tasks/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const taskId = parseInt(req.params.id);
+      await storage.deleteTask(taskId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting task:", error);
+      res.status(500).json({ error: "Failed to delete task" });
+    }
+  });
+
+  // =============================================================================
+  // SUBTASK ROUTES
+  // =============================================================================
+
+  app.get("/api/tasks/:id/subtasks", isAuthenticated, async (req: any, res) => {
+    try {
+      const taskId = parseInt(req.params.id);
+      const subtasks = await storage.getTaskSubtasks(taskId);
+      res.json(subtasks);
+    } catch (error) {
+      console.error("Error fetching subtasks:", error);
+      res.status(500).json({ error: "Failed to fetch subtasks" });
+    }
+  });
+
+  app.post("/api/subtasks", isAuthenticated, async (req: any, res) => {
+    try {
+      const validatedData = createSubtaskSchema.parse(req.body);
+      const subtask = await storage.createSubtask(validatedData);
+      res.status(201).json(subtask);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: error.errors });
+      } else {
+        console.error("Error creating subtask:", error);
+        res.status(500).json({ error: "Failed to create subtask" });
+      }
+    }
+  });
+
+  app.patch("/api/subtasks/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const subtaskId = parseInt(req.params.id);
+      const subtask = await storage.updateSubtask(subtaskId, req.body);
+      res.json(subtask);
+    } catch (error) {
+      console.error("Error updating subtask:", error);
+      res.status(500).json({ error: "Failed to update subtask" });
+    }
+  });
+
+  app.post("/api/subtasks/:id/toggle", isAuthenticated, async (req: any, res) => {
+    try {
+      const subtaskId = parseInt(req.params.id);
+      const subtask = await storage.toggleSubtask(subtaskId);
+      if (!subtask) {
+        return res.status(404).json({ error: "Subtask not found" });
+      }
+      res.json(subtask);
+    } catch (error) {
+      console.error("Error toggling subtask:", error);
+      res.status(500).json({ error: "Failed to toggle subtask" });
+    }
+  });
+
+  app.delete("/api/subtasks/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const subtaskId = parseInt(req.params.id);
+      await storage.deleteSubtask(subtaskId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting subtask:", error);
+      res.status(500).json({ error: "Failed to delete subtask" });
+    }
+  });
+
+  // =============================================================================
+  // TASK COMMENT ROUTES
+  // =============================================================================
+
+  app.get("/api/tasks/:id/comments", isAuthenticated, async (req: any, res) => {
+    try {
+      const taskId = parseInt(req.params.id);
+      const comments = await storage.getTaskComments(taskId);
+      res.json(comments);
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+      res.status(500).json({ error: "Failed to fetch comments" });
+    }
+  });
+
+  app.post("/api/comments", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const validatedData = createCommentSchema.parse(req.body);
+      const comment = await storage.createTaskComment(validatedData.taskId, userId, validatedData.content);
+      res.status(201).json(comment);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: error.errors });
+      } else {
+        console.error("Error creating comment:", error);
+        res.status(500).json({ error: "Failed to create comment" });
+      }
+    }
+  });
+
+  app.patch("/api/comments/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const commentId = parseInt(req.params.id);
+      const { content } = req.body;
+      const comment = await storage.updateTaskComment(commentId, content);
+      res.json(comment);
+    } catch (error) {
+      console.error("Error updating comment:", error);
+      res.status(500).json({ error: "Failed to update comment" });
+    }
+  });
+
+  app.delete("/api/comments/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const commentId = parseInt(req.params.id);
+      await storage.deleteTaskComment(commentId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      res.status(500).json({ error: "Failed to delete comment" });
     }
   });
 
