@@ -129,6 +129,7 @@ export default function Admin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       toast({ title: "User created", description: "New user has been created successfully." });
       setShowAddUser(false);
     },
