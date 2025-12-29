@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { TopBar } from "@/components/top-bar";
 import { FeedItem } from "@/components/feed-item";
-import { Search, Bell, Mail, Video, MessageCircle, Users, MessageSquare, CheckSquare, RefreshCw, X, Gift } from "lucide-react";
+import { Search, Bell, Mail, Video, MessageCircle, Users, MessageSquare, CheckSquare, RefreshCw, X, Gift, AlertTriangle, TrendingUp, Plus, Send, CalendarPlus } from "lucide-react";
 import generatedBg from "@assets/generated_images/subtle_abstract_light_gradient_background_for_glassmorphism_ui.png";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { FeedItem as FeedItemType } from "@shared/schema";
@@ -656,6 +656,74 @@ export default function Dashboard() {
               })}
             </div>
           )}
+        </div>
+
+        {/* Insights Section */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          {/* At-Risk Students */}
+          <Link href="/intro-offers" className="block" data-testid="insight-at-risk">
+            <div className="glass-panel p-5 rounded-xl border-l-4 border-l-amber-500 hover:bg-white/80 transition-colors cursor-pointer h-full">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+                  <AlertTriangle className="w-5 h-5 text-amber-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-sm">Needs Attention</h3>
+                  <p className="text-2xl font-bold text-amber-600">
+                    {introOffers.filter(o => o.memberStatus === "at_risk" || o.memberStatus === "lapsed").length}
+                  </p>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {introOffers.filter(o => o.memberStatus === "at_risk").length} at-risk, {introOffers.filter(o => o.memberStatus === "lapsed").length} lapsed students
+              </p>
+            </div>
+          </Link>
+
+          {/* New Intro Offers */}
+          <Link href="/intro-offers" className="block" data-testid="insight-new-offers">
+            <div className="glass-panel p-5 rounded-xl border-l-4 border-l-green-500 hover:bg-white/80 transition-colors cursor-pointer h-full">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5 text-green-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-sm">New This Week</h3>
+                  <p className="text-2xl font-bold text-green-600">
+                    {introOffers.filter(o => o.daysSincePurchase <= 7).length}
+                  </p>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {introOffers.filter(o => o.memberStatus === "engaged").length} engaged, {introOffers.filter(o => o.memberStatus === "new").length} awaiting first class
+              </p>
+            </div>
+          </Link>
+
+          {/* Quick Actions */}
+          <div className="glass-panel p-5 rounded-xl h-full">
+            <h3 className="font-semibold text-sm mb-3">Quick Actions</h3>
+            <div className="flex flex-wrap gap-2">
+              <Link href="/email-builder" data-testid="quick-action-email">
+                <button className="flex items-center gap-2 px-3 py-2 text-xs font-medium bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors">
+                  <Send className="w-3.5 h-3.5" />
+                  Compose Email
+                </button>
+              </Link>
+              <Link href="/calendar" data-testid="quick-action-event">
+                <button className="flex items-center gap-2 px-3 py-2 text-xs font-medium bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors">
+                  <CalendarPlus className="w-3.5 h-3.5" />
+                  New Event
+                </button>
+              </Link>
+              <Link href="/tasks" data-testid="quick-action-task">
+                <button className="flex items-center gap-2 px-3 py-2 text-xs font-medium bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors">
+                  <Plus className="w-3.5 h-3.5" />
+                  View Tasks
+                </button>
+              </Link>
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-12 gap-8">
