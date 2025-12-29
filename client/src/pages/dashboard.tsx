@@ -700,7 +700,7 @@ export default function Dashboard() {
           </Link>
 
           {/* New Intro Offers */}
-          <Link href="/intro-offers" className="block" data-testid="insight-new-offers">
+          <Link href="/intro-offers?filter=new" className="block" data-testid="insight-new-offers">
             <div className="glass-panel p-5 rounded-xl border-l-4 border-l-green-500 hover:bg-white/80 transition-colors cursor-pointer h-full">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
