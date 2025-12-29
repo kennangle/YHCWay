@@ -58,11 +58,23 @@ The server handles both API routes and serves the static frontend in production.
 - **Audit Logging**: All tenant actions are logged for enterprise compliance
 - **SSO Ready**: Schema supports tenant-specific SSO configuration (SAML/OIDC)
 
+### Native Project Management
+- **Projects**: Kanban-style project boards with customizable columns
+- **Tasks**: Full task management with subtasks, priorities, due dates, and recurring tasks
+- **Comments**: Task-level commenting system for collaboration
+- **Team Assignments**: Assign tasks and projects to team members
+- **Drag & Drop**: @dnd-kit for intuitive task management
+- **Asana Import**: One-time migration feature to import projects, sections (as columns), and tasks from Asana
+  - Supports pagination for large projects (handles 100+ tasks)
+  - Maps Asana sections to project columns
+  - Preserves task completion status and due dates
+
 ### Service Integrations
 - **Gmail & Google Calendar**: OAuth via Google APIs
 - **Slack**: Bot token for channel/DM access
 - **Zoom**: Server-to-server OAuth
 - **Apple Calendar**: CalDAV via tsdav library (requires user app-specific password)
+- **Asana**: OAuth for project/task data import (one-time migration, not ongoing sync)
 - **Mindbody Analytics**: External API integration via Bearer token for intro offer tracking
   - Dedicated `/intro-offers` page for viewing and managing intro offers
   - Intro offers also appear in the dashboard unified feed

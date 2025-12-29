@@ -13,7 +13,7 @@ import { getUpcomingEvents, getEventsForMonth, isCalendarConnected, createCalend
 import { getUpcomingMeetings, isZoomConnected } from "./zoom";
 import { getRecentMessages as getSlackMessages, getAllMessages as getAllSlackMessages, getDirectMessages as getSlackDMs, getThreadReplies as getSlackThreadReplies, isSlackConnected, getChannels as getSlackChannels, getRecentMessagesFiltered, isUserSlackConnected, getUserAllMessages, getUserDirectMessages, getUserChannels } from "./slack";
 import { isAppleCalendarConnected, testAppleCalendarConnection, saveAppleCalendarCredentials, deleteAppleCalendarCredentials, getAppleCalendarEvents, getAppleCalendarEventsForMonth } from "./appleCalendar";
-import { isAsanaConnected, getMyTasks, getProjects, getUpcomingTasks, isUserAsanaConnected, getUserMyTasks, getUserProjects, getUserUpcomingTasks } from "./asana";
+import { isAsanaConnected, getMyTasks, getProjects, getUpcomingTasks, isUserAsanaConnected, getUserMyTasks, getUserProjects, getUserUpcomingTasks, getAsanaProjectsForImport, getProjectSections, getProjectTasksForImport } from "./asana";
 import { getTypeformForms, getTypeformForm, createTypeformForm, updateTypeformForm, deleteTypeformForm, getTypeformResponses, isTypeformConfigured } from "./typeform";
 import { sendInvitationEmail, getTemplateTypes, getDefaultTemplate } from "./email";
 import { appleCalendarConnectSchema, slackPreferencesUpdateSchema, emailTemplateSchema } from "@shared/schema";
@@ -2396,6 +2396,140 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error deleting label:", error);
       res.status(500).json({ error: "Failed to delete label" });
+    }
+  });
+
+  // =============================================================================
+  // ASANA IMPORT ROUTES
+  // =============================================================================
+
+  // Get Asana projects available for import
+  app.get("/api/import/asana/projects", isAuthenticated, async (req: any, res) => {
+    try {
+      const projects = await getAsanaProjectsForImport();
+      res.json(projects);
+    } catch (error: any) {
+      console.error("Error fetching Asana projects for import:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch Asana projects" });
+    }
+  });
+
+  // Import a single Asana project
+  app.post("/api/import/asana/project/:asanaProjectId", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const tenantId = req.tenantId;
+      const asanaProjectId = req.params.asanaProjectId;
+      
+      // Get project details from the request body or fetch from Asana
+      const { name, color, notes } = req.body;
+      
+      // Map Asana color to hex color
+      const colorMap: Record<string, string> = {
+        'dark-pink': '#e8384f',
+        'dark-green': '#4a7c59',
+        'dark-blue': '#4186e0',
+        'dark-red': '#e8384f',
+        'dark-teal': '#2d9d9d',
+        'dark-brown': '#8d6e63',
+        'dark-orange': '#fd612c',
+        'dark-purple': '#7c4dff',
+        'dark-warm-gray': '#8da3a6',
+        'light-pink': '#ff9eb1',
+        'light-green': '#62d26f',
+        'light-blue': '#80caff',
+        'light-red': '#ff8d85',
+        'light-teal': '#4ecbc4',
+        'light-yellow': '#f8df72',
+        'light-orange': '#ffbe5c',
+        'light-purple': '#d4b0ff',
+        'light-warm-gray': '#c7c4c4',
+      };
+      const projectColor = color ? (colorMap[color] || '#3b82f6') : '#3b82f6';
+      
+      // Create the project in our system
+      const project = await storage.createProject({
+        name: name || 'Imported Project',
+        description: notes || null,
+        color: projectColor,
+        ownerId: userId,
+        tenantId,
+      });
+      
+      // Fetch sections (columns) from Asana
+      const sections = await getProjectSections(asanaProjectId);
+      
+      // Create columns, or use defaults if no sections
+      const columnMap = new Map<string, number>();
+      
+      if (sections.length > 0) {
+        for (let i = 0; i < sections.length; i++) {
+          const section = sections[i];
+          const column = await storage.createProjectColumn({
+            projectId: project.id,
+            name: section.name,
+            color: ['#e2e8f0', '#93c5fd', '#86efac', '#fcd34d'][i % 4],
+            sortOrder: i,
+          });
+          columnMap.set(section.id, column.id);
+        }
+      } else {
+        // Create default columns if no sections
+        const defaultColumns = [
+          { name: 'To Do', color: '#e2e8f0' },
+          { name: 'In Progress', color: '#93c5fd' },
+          { name: 'Done', color: '#86efac' },
+        ];
+        for (let i = 0; i < defaultColumns.length; i++) {
+          const column = await storage.createProjectColumn({
+            projectId: project.id,
+            name: defaultColumns[i].name,
+            color: defaultColumns[i].color,
+            sortOrder: i,
+          });
+          if (i === 0) columnMap.set('default', column.id);
+        }
+      }
+      
+      // Fetch tasks from Asana
+      const asanaTasks = await getProjectTasksForImport(asanaProjectId);
+      
+      // Import tasks
+      let tasksImported = 0;
+      for (const asanaTask of asanaTasks) {
+        // Skip empty task names
+        if (!asanaTask.name || asanaTask.name.trim() === '') continue;
+        
+        // Find the column for this task
+        let columnId = asanaTask.sectionId ? columnMap.get(asanaTask.sectionId) : null;
+        if (!columnId) {
+          // Use first column as default
+          columnId = columnMap.values().next().value;
+        }
+        
+        await storage.createTask({
+          projectId: project.id,
+          columnId: columnId || null,
+          title: asanaTask.name,
+          description: asanaTask.notes || null,
+          priority: 'medium',
+          dueDate: asanaTask.dueOn ? new Date(asanaTask.dueOn) : undefined,
+          isCompleted: asanaTask.completed,
+          creatorId: userId,
+          tenantId,
+        });
+        tasksImported++;
+      }
+      
+      res.json({
+        success: true,
+        project: project,
+        tasksImported,
+        columnsCreated: columnMap.size,
+      });
+    } catch (error: any) {
+      console.error("Error importing Asana project:", error);
+      res.status(500).json({ error: error.message || "Failed to import project" });
     }
   });
 

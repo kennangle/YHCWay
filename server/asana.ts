@@ -374,3 +374,92 @@ export async function getUserUpcomingTasks(userId: string, days: number = 7, lim
     return [];
   }
 }
+
+// ==================== IMPORT FUNCTIONS ====================
+
+export interface AsanaSection {
+  id: string;
+  name: string;
+}
+
+export interface AsanaTaskForImport {
+  id: string;
+  name: string;
+  completed: boolean;
+  dueOn: string | null;
+  notes: string;
+  sectionId: string | null;
+}
+
+export async function getProjectSections(projectGid: string): Promise<AsanaSection[]> {
+  try {
+    const accessToken = await getAccessToken();
+    
+    const response = await fetch(`https://app.asana.com/api/1.0/projects/${projectGid}/sections`, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Accept': 'application/json',
+      },
+    });
+    
+    const data = await response.json() as any;
+    
+    if (data.errors) {
+      console.error('Asana API error:', data.errors);
+      return [];
+    }
+    
+    return (data.data || []).map((section: any) => ({
+      id: section.gid,
+      name: section.name,
+    }));
+  } catch (error) {
+    console.error('Error fetching Asana sections:', error);
+    return [];
+  }
+}
+
+export async function getProjectTasksForImport(projectGid: string): Promise<AsanaTaskForImport[]> {
+  try {
+    const accessToken = await getAccessToken();
+    const allTasks: AsanaTaskForImport[] = [];
+    let nextPage: string | null = `https://app.asana.com/api/1.0/projects/${projectGid}/tasks?opt_fields=name,completed,due_on,notes,memberships.section.gid&limit=100`;
+    
+    while (nextPage) {
+      const response = await fetch(nextPage, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Accept': 'application/json',
+        },
+      });
+      
+      const data = await response.json() as any;
+      
+      if (data.errors) {
+        console.error('Asana API error:', data.errors);
+        break;
+      }
+      
+      const tasks = (data.data || []).map((task: any) => ({
+        id: task.gid,
+        name: task.name,
+        completed: task.completed || false,
+        dueOn: task.due_on || null,
+        notes: task.notes || '',
+        sectionId: task.memberships?.[0]?.section?.gid || null,
+      }));
+      
+      allTasks.push(...tasks);
+      nextPage = data.next_page?.uri || null;
+    }
+    
+    return allTasks;
+  } catch (error) {
+    console.error('Error fetching Asana tasks for import:', error);
+    return [];
+  }
+}
+
+export async function getAsanaProjectsForImport(): Promise<AsanaProject[]> {
+  return getProjects(100);
+}
