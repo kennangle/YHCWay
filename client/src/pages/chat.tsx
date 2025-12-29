@@ -45,6 +45,7 @@ export default function Chat() {
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [groupName, setGroupName] = useState("");
   const [activeThread, setActiveThread] = useState<Message | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const threadEndRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
@@ -262,6 +263,26 @@ export default function Chat() {
     new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
   );
 
+  // Filter conversations and messages based on search query
+  const filteredConversations = conversations.filter(convo => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase();
+    const name = getConversationName(convo).toLowerCase();
+    const lastMessageContent = convo.lastMessage?.content?.toLowerCase() || '';
+    return name.includes(query) || lastMessageContent.includes(query);
+  });
+
+  // Highlight matching messages in the current conversation
+  const matchingMessageIds = new Set<number>();
+  if (searchQuery.trim() && selectedConversation) {
+    const query = searchQuery.toLowerCase();
+    messages.forEach(msg => {
+      if (msg.content.toLowerCase().includes(query)) {
+        matchingMessageIds.add(msg.id);
+      }
+    });
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground flex font-sans">
       <div 
@@ -373,24 +394,52 @@ export default function Chat() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input 
                 type="text" 
-                placeholder="Search conversations..." 
-                className="w-full pl-9 pr-4 py-2 rounded-lg bg-background/50 border border-border/50 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search chats & messages..." 
+                className="w-full pl-9 pr-8 py-2 rounded-lg bg-background/50 border border-border/50 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                 data-testid="input-search-conversations"
               />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded"
+                  data-testid="button-clear-search"
+                >
+                  <X className="w-3 h-3 text-muted-foreground" />
+                </button>
+              )}
             </div>
+            {searchQuery && (
+              <div className="mt-2 text-xs text-muted-foreground">
+                Found {filteredConversations.length} conversation{filteredConversations.length !== 1 ? 's' : ''}
+                {matchingMessageIds.size > 0 && selectedConversation && 
+                  ` • ${matchingMessageIds.size} matching message${matchingMessageIds.size !== 1 ? 's' : ''}`
+                }
+              </div>
+            )}
           </div>
           
           <div className="flex-1 overflow-y-auto">
             {conversationsLoading ? (
               <div className="p-4 text-center text-muted-foreground">Loading...</div>
-            ) : conversations.length === 0 ? (
+            ) : filteredConversations.length === 0 ? (
               <div className="p-8 text-center text-muted-foreground">
                 <MessageCircle className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p>No conversations yet</p>
-                <p className="text-sm mt-1">Start a new chat!</p>
+                {searchQuery ? (
+                  <>
+                    <p>No matching conversations</p>
+                    <p className="text-sm mt-1">Try a different search term</p>
+                  </>
+                ) : (
+                  <>
+                    <p>No conversations yet</p>
+                    <p className="text-sm mt-1">Start a new chat!</p>
+                  </>
+                )}
               </div>
             ) : (
-              conversations.map((convo) => (
+              filteredConversations.map((convo) => (
                 <button
                   key={convo.id}
                   onClick={() => setSelectedConversation(convo)}
