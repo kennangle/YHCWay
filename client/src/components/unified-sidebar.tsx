@@ -39,7 +39,7 @@ export function UnifiedSidebar() {
     { icon: LayoutDashboard, label: "Overview", href: "/" },
     { icon: Inbox, label: "Unified Inbox", href: "/inbox" },
     { icon: CalendarIcon, label: "Calendar", href: "/calendar" },
-    { icon: CheckSquare, label: "Projects", href: "/projects" },
+    { icon: CheckSquare, label: "Tasks/Projects", href: "/projects" },
     { icon: Gift, label: "Intro Offers", href: "/intro-offers" },
     ...(user?.isAdmin ? [{ icon: FileText, label: "Typeform", href: "/typeform" }] : []),
     { icon: MessageCircle, label: "Chat", href: "/chat" },
@@ -61,7 +61,7 @@ export function UnifiedSidebar() {
     { icon: LayoutDashboard, label: "Home", href: "/" },
     { icon: Inbox, label: "Inbox", href: "/inbox" },
     { icon: CalendarIcon, label: "Calendar", href: "/calendar" },
-    { icon: CheckSquare, label: "Projects", href: "/projects" },
+    { icon: CheckSquare, label: "Tasks/Projects", href: "/projects" },
     { icon: Settings, label: "Settings", href: "/settings" },
   ];
 
