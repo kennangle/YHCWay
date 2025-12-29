@@ -163,7 +163,7 @@ function KanbanColumn({ column, tasks, onAddTask, onTaskClick }: {
   return (
     <div 
       ref={setNodeRef}
-      className="flex-shrink-0 w-72 bg-gray-50/80 rounded-xl p-3"
+      className="flex-shrink-0 w-64 sm:w-72 bg-gray-50/80 rounded-xl p-3"
       data-testid={`column-${column.id}`}
     >
       <div className="flex items-center justify-between mb-3">
@@ -414,7 +414,7 @@ export default function ProjectBoard() {
     return (
       <div className="min-h-screen bg-background text-foreground flex font-sans">
         <UnifiedSidebar />
-        <main className="flex-1 ml-64 flex items-center justify-center">
+        <main className="flex-1 md:ml-64 flex items-center justify-center">
           <RefreshCw className="w-8 h-8 animate-spin text-primary" />
         </main>
       </div>
@@ -434,24 +434,24 @@ export default function ProjectBoard() {
       
       <UnifiedSidebar />
 
-      <main className="flex-1 ml-64 relative z-10 flex flex-col">
+      <main className="flex-1 md:ml-64 relative z-10 flex flex-col">
         <TopBar />
-        <div className="flex-1 p-8 flex flex-col">
-          <header className="flex items-center gap-4 mb-6">
+        <div className="flex-1 p-4 md:p-8 pb-20 md:pb-8 flex flex-col">
+          <header className="flex flex-wrap items-center gap-2 md:gap-4 mb-4 md:mb-6">
             <Link href="/projects">
               <Button variant="ghost" size="sm" data-testid="button-back-projects">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Projects
+                <ArrowLeft className="w-4 h-4 mr-1 md:mr-2" />
+                <span className="hidden sm:inline">Projects</span>
               </Button>
             </Link>
             <div 
-              className="w-4 h-4 rounded-full" 
+              className="w-3 h-3 md:w-4 md:h-4 rounded-full" 
               style={{ backgroundColor: project.color }} 
             />
-            <h1 className="font-display font-bold text-2xl">{project.name}</h1>
+            <h1 className="font-display font-bold text-lg md:text-2xl flex-1 truncate">{project.name}</h1>
             <button
               onClick={() => refetch()}
-              className="ml-auto p-2 hover:bg-white/80 rounded-lg transition-colors"
+              className="p-2 hover:bg-white/80 rounded-lg transition-colors"
               data-testid="button-refresh-board"
             >
               <RefreshCw className="w-4 h-4" />

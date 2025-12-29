@@ -57,16 +57,26 @@ export function UnifiedSidebar() {
     ? `${user.firstName}${user.lastName ? ` ${user.lastName}` : ''}`
     : user?.email?.split('@')[0] || 'User';
 
+  const mobileNavItems = [
+    { icon: LayoutDashboard, label: "Home", href: "/" },
+    { icon: Inbox, label: "Inbox", href: "/inbox" },
+    { icon: CalendarIcon, label: "Calendar", href: "/calendar" },
+    { icon: CheckSquare, label: "Projects", href: "/projects" },
+    { icon: Settings, label: "Settings", href: "/settings" },
+  ];
+
   return (
-    <div className="w-64 h-screen glass-panel flex flex-col border-r border-white/20 fixed left-0 top-0 z-50">
-      <div className="p-6 flex items-center gap-3">
-        <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/30">
-          <Command className="w-4 h-4" />
+    <>
+      {/* Desktop Sidebar */}
+      <div className="hidden md:flex w-64 h-screen glass-panel flex-col border-r border-white/20 fixed left-0 top-0 z-50">
+        <div className="p-6 flex items-center gap-3">
+          <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/30">
+            <Command className="w-4 h-4" />
+          </div>
+          <span className="font-display font-bold text-xl tracking-tight text-foreground">
+            UniWork
+          </span>
         </div>
-        <span className="font-display font-bold text-xl tracking-tight text-foreground">
-          UniWork
-        </span>
-      </div>
 
       <div className="flex-1 px-4 py-6 space-y-2">
         <div className="text-xs font-medium text-muted-foreground px-4 mb-2 uppercase tracking-wider">
@@ -130,5 +140,28 @@ export function UnifiedSidebar() {
         </div>
       </div>
     </div>
+
+      {/* Mobile Bottom Navigation */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-t border-gray-200 px-2 py-2 safe-area-pb">
+        <div className="flex justify-around items-center">
+          {mobileNavItems.map((item) => {
+            const isActive = location === item.href;
+            return (
+              <Link key={item.href} href={item.href}>
+                <div className={cn(
+                  "flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg transition-colors",
+                  isActive 
+                    ? "text-primary" 
+                    : "text-muted-foreground"
+                )}>
+                  <item.icon className="w-5 h-5" />
+                  <span className="text-[10px] font-medium">{item.label}</span>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+    </>
   );
 }

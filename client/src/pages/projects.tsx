@@ -123,35 +123,35 @@ export default function Projects() {
       
       <UnifiedSidebar />
 
-      <main className="flex-1 ml-64 relative z-10 flex flex-col">
+      <main className="flex-1 md:ml-64 relative z-10 flex flex-col">
         <TopBar />
-        <div className="flex-1 p-8">
-          <header className="flex justify-between items-center mb-8">
+        <div className="flex-1 p-4 md:p-8 pb-20 md:pb-8">
+          <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 md:mb-8">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                <FolderKanban className="w-6 h-6 text-primary" />
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                <FolderKanban className="w-5 h-5 md:w-6 md:h-6 text-primary" />
               </div>
               <div>
-                <h1 className="font-display font-bold text-3xl">Projects</h1>
-                <p className="text-muted-foreground">Manage your projects and tasks</p>
+                <h1 className="font-display font-bold text-2xl md:text-3xl">Projects</h1>
+                <p className="text-muted-foreground text-sm md:text-base">Manage your projects and tasks</p>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 w-full sm:w-auto">
               <button
                 onClick={() => refetch()}
                 disabled={isFetching}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/80 hover:bg-white transition-colors shadow-sm border border-gray-200 disabled:opacity-50"
+                className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg bg-white/80 hover:bg-white transition-colors shadow-sm border border-gray-200 disabled:opacity-50"
                 data-testid="button-refresh-projects"
               >
                 <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
               </button>
               <Button
                 onClick={() => setCreateDialogOpen(true)}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 flex-1 sm:flex-initial justify-center"
                 data-testid="button-create-project"
               >
                 <Plus className="w-4 h-4" />
-                New Project
+                <span className="sm:inline">New Project</span>
               </Button>
             </div>
           </header>
