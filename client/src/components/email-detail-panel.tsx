@@ -47,7 +47,7 @@ export function EmailDetailPanel({ messageId, onClose }: EmailDetailPanelProps) 
     },
   });
 
-  const { data: suggestions, isLoading: isSuggestionsLoading, refetch: refetchSuggestions, isFetching: isSuggestionsFetching } = useQuery<{ suggestions: SuggestedReply[] }>({
+  const { data: suggestions, isLoading: isSuggestionsLoading, refetch: refetchSuggestions, isFetching: isSuggestionsFetching, isError: isSuggestionsError } = useQuery<{ suggestions: SuggestedReply[] }>({
     queryKey: ["email-suggestions", messageId],
     queryFn: async () => {
       const res = await fetch("/api/ai/email-suggestions", {
@@ -59,8 +59,9 @@ export function EmailDetailPanel({ messageId, onClose }: EmailDetailPanelProps) 
       if (!res.ok) throw new Error("Failed to generate suggestions");
       return res.json();
     },
-    enabled: isReplying,
+    enabled: isReplying && !!email,
     staleTime: 5 * 60 * 1000,
+    retry: false,
   });
 
   const sendMutation = useMutation({
@@ -249,7 +250,11 @@ export function EmailDetailPanel({ messageId, onClose }: EmailDetailPanelProps) 
                   </button>
                 </div>
                 
-                {isSuggestionsLoading || isSuggestionsFetching ? (
+                {isSuggestionsError ? (
+                  <p className="text-sm text-muted-foreground py-2">
+                    AI suggestions unavailable. You can still write your reply below.
+                  </p>
+                ) : isSuggestionsLoading || isSuggestionsFetching ? (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
                     <Loader2 className="w-4 h-4 animate-spin" />
                     Generating suggestions...
