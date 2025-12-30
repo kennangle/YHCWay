@@ -3023,5 +3023,99 @@ export async function registerRoutes(
     }
   });
 
+  // =============================================================================
+  // TASK TEMPLATES ROUTES
+  // =============================================================================
+
+  app.get("/api/task-templates", isAuthenticated, requireTenant, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const tenantId = req.tenantId;
+      const templates = await storage.getTaskTemplates(userId, tenantId);
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching task templates:", error);
+      res.status(500).json({ error: "Failed to fetch task templates" });
+    }
+  });
+
+  app.get("/api/task-templates/:id", isAuthenticated, requireTenant, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const tenantId = req.tenantId;
+      const templateId = parseInt(req.params.id);
+      const template = await storage.getTaskTemplate(templateId, userId, tenantId);
+      if (!template) {
+        return res.status(404).json({ error: "Template not found" });
+      }
+      res.json(template);
+    } catch (error) {
+      console.error("Error fetching task template:", error);
+      res.status(500).json({ error: "Failed to fetch task template" });
+    }
+  });
+
+  app.post("/api/task-templates", isAuthenticated, requireTenant, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const tenantId = req.tenantId;
+      const { createTaskTemplateSchema } = await import("@shared/schema");
+      const validatedData = createTaskTemplateSchema.parse(req.body);
+      
+      const template = await storage.createTaskTemplate({
+        ...validatedData,
+        creatorId: userId,
+        tenantId: tenantId,
+      });
+      res.status(201).json(template);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: error.errors });
+      } else {
+        console.error("Error creating task template:", error);
+        res.status(500).json({ error: "Failed to create task template" });
+      }
+    }
+  });
+
+  app.patch("/api/task-templates/:id", isAuthenticated, requireTenant, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const tenantId = req.tenantId;
+      const templateId = parseInt(req.params.id);
+      const { updateTaskTemplateSchema } = await import("@shared/schema");
+      const validatedData = updateTaskTemplateSchema.parse(req.body);
+      
+      const template = await storage.updateTaskTemplate(templateId, userId, tenantId, validatedData);
+      if (!template) {
+        return res.status(404).json({ error: "Template not found or access denied" });
+      }
+      res.json(template);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: error.errors });
+      } else {
+        console.error("Error updating task template:", error);
+        res.status(500).json({ error: "Failed to update task template" });
+      }
+    }
+  });
+
+  app.delete("/api/task-templates/:id", isAuthenticated, requireTenant, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const tenantId = req.tenantId;
+      const templateId = parseInt(req.params.id);
+      const deleted = await storage.deleteTaskTemplate(templateId, userId, tenantId);
+      if (!deleted) {
+        return res.status(404).json({ error: "Template not found or access denied" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting task template:", error);
+      res.status(500).json({ error: "Failed to delete task template" });
+    }
+  });
+
   return httpServer;
 }

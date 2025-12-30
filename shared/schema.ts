@@ -752,6 +752,54 @@ export const updateTimeEntrySchema = z.object({
 });
 
 // =============================================================================
+// TASK TEMPLATES
+// =============================================================================
+
+export const taskTemplates = pgTable("task_templates", {
+  id: serial("id").primaryKey(),
+  tenantId: varchar("tenant_id").references(() => tenants.id, { onDelete: "cascade" }),
+  creatorId: varchar("creator_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  name: varchar("name").notNull(),
+  description: text("description"),
+  defaultTitle: varchar("default_title"),
+  defaultDescription: text("default_description"),
+  defaultPriority: varchar("default_priority").default("medium"),
+  defaultLabels: text("default_labels").array(),
+  subtasks: text("subtasks").array(),
+  isShared: boolean("is_shared").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_template_tenant").on(table.tenantId),
+  index("idx_template_creator").on(table.creatorId),
+]);
+
+export type TaskTemplate = typeof taskTemplates.$inferSelect;
+export type InsertTaskTemplate = typeof taskTemplates.$inferInsert;
+
+export const createTaskTemplateSchema = z.object({
+  name: z.string().min(1, "Template name is required"),
+  description: z.string().optional(),
+  defaultTitle: z.string().optional(),
+  defaultDescription: z.string().optional(),
+  defaultPriority: z.enum(["low", "medium", "high", "urgent"]).optional(),
+  defaultLabels: z.array(z.string()).optional(),
+  subtasks: z.array(z.string()).optional(),
+  isShared: z.boolean().optional(),
+});
+
+export const updateTaskTemplateSchema = z.object({
+  name: z.string().optional(),
+  description: z.string().optional(),
+  defaultTitle: z.string().optional(),
+  defaultDescription: z.string().optional(),
+  defaultPriority: z.enum(["low", "medium", "high", "urgent"]).optional(),
+  defaultLabels: z.array(z.string()).optional(),
+  subtasks: z.array(z.string()).optional(),
+  isShared: z.boolean().optional(),
+});
+
+// =============================================================================
 // NOTIFICATION PREFERENCES
 // =============================================================================
 

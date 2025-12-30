@@ -46,6 +46,8 @@ import {
   type InsertNotificationLog,
   type TimeEntry,
   type InsertTimeEntry,
+  type TaskTemplate,
+  type InsertTaskTemplate,
   users,
   services,
   feedItems,
@@ -74,7 +76,8 @@ import {
   projectMembers,
   notificationPreferences,
   notificationLog,
-  timeEntries
+  timeEntries,
+  taskTemplates
 } from "@shared/schema";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq, desc, and, lt, isNull, sql, inArray, gte, lte } from "drizzle-orm";
@@ -260,6 +263,13 @@ export interface IStorage {
   deleteTimeEntry(id: number): Promise<void>;
   getActiveTimeEntry(userId: string): Promise<TimeEntry | undefined>;
   stopTimeEntry(id: number): Promise<TimeEntry | undefined>;
+  
+  // Task templates
+  getTaskTemplates(userId: string, tenantId?: string): Promise<TaskTemplate[]>;
+  getTaskTemplate(id: number, userId?: string, tenantId?: string): Promise<TaskTemplate | undefined>;
+  createTaskTemplate(data: InsertTaskTemplate): Promise<TaskTemplate>;
+  updateTaskTemplate(id: number, userId: string, tenantId: string | undefined, data: Partial<InsertTaskTemplate>): Promise<TaskTemplate | undefined>;
+  deleteTaskTemplate(id: number, userId: string, tenantId?: string): Promise<boolean>;
 }
 
 export class DbStorage implements IStorage {
@@ -1442,6 +1452,60 @@ export class DbStorage implements IStorage {
       .where(eq(timeEntries.id, id))
       .returning();
     return updated;
+  }
+
+  async getTaskTemplates(userId: string, tenantId?: string): Promise<TaskTemplate[]> {
+    if (tenantId) {
+      return db.select().from(taskTemplates)
+        .where(
+          and(
+            eq(taskTemplates.tenantId, tenantId),
+            sql`(${taskTemplates.creatorId} = ${userId} OR ${taskTemplates.isShared} = true)`
+          )
+        )
+        .orderBy(desc(taskTemplates.createdAt));
+    }
+    return db.select().from(taskTemplates)
+      .where(eq(taskTemplates.creatorId, userId))
+      .orderBy(desc(taskTemplates.createdAt));
+  }
+
+  async getTaskTemplate(id: number, userId?: string, tenantId?: string): Promise<TaskTemplate | undefined> {
+    const conditions = [eq(taskTemplates.id, id)];
+    if (tenantId) {
+      conditions.push(eq(taskTemplates.tenantId, tenantId));
+    }
+    const [template] = await db.select().from(taskTemplates)
+      .where(and(...conditions));
+    if (!template) return undefined;
+    if (userId && template.creatorId !== userId && !template.isShared) return undefined;
+    return template;
+  }
+
+  async createTaskTemplate(data: InsertTaskTemplate): Promise<TaskTemplate> {
+    const [template] = await db.insert(taskTemplates)
+      .values(data)
+      .returning();
+    return template;
+  }
+
+  async updateTaskTemplate(id: number, userId: string, tenantId: string | undefined, data: Partial<InsertTaskTemplate>): Promise<TaskTemplate | undefined> {
+    const existing = await this.getTaskTemplate(id, userId, tenantId);
+    if (!existing || existing.creatorId !== userId) return undefined;
+    
+    const [template] = await db.update(taskTemplates)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(taskTemplates.id, id))
+      .returning();
+    return template;
+  }
+
+  async deleteTaskTemplate(id: number, userId: string, tenantId?: string): Promise<boolean> {
+    const existing = await this.getTaskTemplate(id, userId, tenantId);
+    if (!existing || existing.creatorId !== userId) return false;
+    
+    await db.delete(taskTemplates).where(eq(taskTemplates.id, id));
+    return true;
   }
 }
 

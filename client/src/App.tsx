@@ -6,6 +6,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { useLocation } from "wouter";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { CommandPalette } from "@/components/command-palette";
 
 type Theme = "light" | "dark";
 
@@ -88,6 +90,9 @@ function ApprovalGuard({ children }: { children: ReactNode }) {
 
 function Router() {
   const { user, isAuthenticated, isLoading } = useAuth();
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+
+  useKeyboardShortcuts(() => setCommandPaletteOpen(true));
 
   if (isLoading) {
     return (
@@ -113,6 +118,7 @@ function Router() {
 
   return (
     <ApprovalGuard>
+      <CommandPalette open={commandPaletteOpen} onOpenChange={setCommandPaletteOpen} />
       <Switch>
         <Route path="/pending-approval" component={PendingApproval} />
         <Route path="/" component={Dashboard} />
