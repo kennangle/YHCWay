@@ -413,6 +413,44 @@ export const emailTemplateSchema = z.object({
   htmlContent: z.string().min(1, "Email content is required"),
 });
 
+// Email layout block type for drag-and-drop builder
+export type EmailLayoutBlock = {
+  id: string;
+  type: "header" | "text" | "image" | "button" | "divider" | "spacer" | "columns" | "social";
+  content: Record<string, unknown>;
+  styles?: Record<string, string>;
+};
+
+// Email layouts table for drag-and-drop builder
+export const emailLayouts = pgTable("email_layouts", {
+  id: serial("id").primaryKey(),
+  name: varchar("name").notNull(),
+  description: varchar("description"),
+  blocks: jsonb("blocks").$type<EmailLayoutBlock[]>().notNull().default([]),
+  previewHtml: text("preview_html"),
+  isDefault: boolean("is_default").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type EmailLayout = typeof emailLayouts.$inferSelect;
+export type InsertEmailLayout = typeof emailLayouts.$inferInsert;
+
+export const emailLayoutBlockSchema = z.object({
+  id: z.string(),
+  type: z.enum(["header", "text", "image", "button", "divider", "spacer", "columns", "social"]),
+  content: z.record(z.unknown()),
+  styles: z.record(z.string()).optional(),
+});
+
+export const insertEmailLayoutSchema = createInsertSchema(emailLayouts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertEmailLayoutInput = z.infer<typeof insertEmailLayoutSchema>;
+
 // User preferences table for settings
 export const userPreferences = pgTable("user_preferences", {
   id: serial("id").primaryKey(),
