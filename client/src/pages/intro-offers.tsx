@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { TopBar } from "@/components/top-bar";
-import { Gift, RefreshCw, Users, TrendingUp, Clock, CheckCircle, XCircle, AlertCircle, Search, Edit2, Save, X } from "lucide-react";
+import { Gift, RefreshCw, Users, TrendingUp, Clock, CheckCircle, XCircle, AlertCircle, Search, Edit2, Save, X, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,6 +50,8 @@ interface PaginatedResponse<T> {
 }
 
 type StatusFilter = "all" | "new" | "engaged" | "at_risk" | "lapsed" | "needs_attention" | "converted";
+type SortField = "student" | "offer" | "purchaseDate" | "days" | "status" | "classes";
+type SortDirection = "asc" | "desc";
 
 export default function IntroOffers() {
   const queryClient = useQueryClient();
@@ -70,6 +72,8 @@ export default function IntroOffers() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editNotes, setEditNotes] = useState("");
   const [editStatus, setEditStatus] = useState("");
+  const [sortField, setSortField] = useState<SortField>("purchaseDate");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   
   // Update filter when URL changes
   useEffect(() => {
@@ -151,6 +155,47 @@ export default function IntroOffers() {
     }
     return offer.memberStatus === statusFilter;
   });
+
+  const sortedOffers = [...filteredOffers].sort((a, b) => {
+    let comparison = 0;
+    switch (sortField) {
+      case "student":
+        comparison = `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`);
+        break;
+      case "offer":
+        comparison = a.offerName.localeCompare(b.offerName);
+        break;
+      case "purchaseDate":
+        comparison = new Date(a.purchaseDate).getTime() - new Date(b.purchaseDate).getTime();
+        break;
+      case "days":
+        comparison = a.daysSincePurchase - b.daysSincePurchase;
+        break;
+      case "status":
+        comparison = (a.memberStatus || "").localeCompare(b.memberStatus || "");
+        break;
+      case "classes":
+        comparison = a.classesAttendedSincePurchase - b.classesAttendedSincePurchase;
+        break;
+    }
+    return sortDirection === "asc" ? comparison : -comparison;
+  });
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(prev => prev === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return <ArrowUpDown className="w-4 h-4 ml-1 opacity-50" />;
+    return sortDirection === "asc" 
+      ? <ArrowUp className="w-4 h-4 ml-1" /> 
+      : <ArrowDown className="w-4 h-4 ml-1" />;
+  };
 
   const handleEdit = (offer: IntroOffer) => {
     setEditingId(offer.id);
@@ -341,7 +386,7 @@ export default function IntroOffers() {
               <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-purple-500" />
               <p className="text-muted-foreground">Loading intro offers...</p>
             </div>
-          ) : filteredOffers.length === 0 ? (
+          ) : sortedOffers.length === 0 ? (
             <div className="text-center py-12">
               <Gift className="w-12 h-12 mx-auto mb-4 text-muted-foreground/30" />
               <p className="text-muted-foreground">No intro offers found</p>
@@ -351,18 +396,54 @@ export default function IntroOffers() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border">
-                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Student</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Offer</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Purchase</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Days</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Status</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Classes</th>
+                    <th 
+                      className="text-left py-3 px-4 text-sm font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
+                      onClick={() => handleSort("student")}
+                      data-testid="sort-student"
+                    >
+                      <span className="flex items-center">Student<SortIcon field="student" /></span>
+                    </th>
+                    <th 
+                      className="text-left py-3 px-4 text-sm font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
+                      onClick={() => handleSort("offer")}
+                      data-testid="sort-offer"
+                    >
+                      <span className="flex items-center">Offer<SortIcon field="offer" /></span>
+                    </th>
+                    <th 
+                      className="text-left py-3 px-4 text-sm font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
+                      onClick={() => handleSort("purchaseDate")}
+                      data-testid="sort-purchase"
+                    >
+                      <span className="flex items-center">Purchase<SortIcon field="purchaseDate" /></span>
+                    </th>
+                    <th 
+                      className="text-left py-3 px-4 text-sm font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
+                      onClick={() => handleSort("days")}
+                      data-testid="sort-days"
+                    >
+                      <span className="flex items-center">Days<SortIcon field="days" /></span>
+                    </th>
+                    <th 
+                      className="text-left py-3 px-4 text-sm font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
+                      onClick={() => handleSort("status")}
+                      data-testid="sort-status"
+                    >
+                      <span className="flex items-center">Status<SortIcon field="status" /></span>
+                    </th>
+                    <th 
+                      className="text-left py-3 px-4 text-sm font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
+                      onClick={() => handleSort("classes")}
+                      data-testid="sort-classes"
+                    >
+                      <span className="flex items-center">Classes<SortIcon field="classes" /></span>
+                    </th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Notes</th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredOffers.map((offer) => (
+                  {sortedOffers.map((offer) => (
                     <tr key={offer.id} className="border-b border-border/50 hover:bg-muted/30" data-testid={`row-offer-${offer.id}`}>
                       <td className="py-3 px-4">
                         <div>
