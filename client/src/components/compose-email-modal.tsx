@@ -150,9 +150,9 @@ export function ComposeEmailModal({ onClose }: ComposeEmailModalProps) {
             {showSuggestions && (
               <div 
                 ref={suggestionsRef}
-                className="absolute z-10 w-full mt-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-lg shadow-lg max-h-48 overflow-y-auto"
+                className="absolute z-10 w-full mt-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-lg shadow-lg max-h-64 overflow-y-auto"
               >
-                {filteredUsers.length > 0 ? (
+                {filteredUsers.length > 0 && (
                   <>
                     <div className="px-4 py-2 text-xs text-muted-foreground border-b border-gray-100 dark:border-slate-700">
                       Team Members
@@ -188,16 +188,34 @@ export function ComposeEmailModal({ onClose }: ComposeEmailModalProps) {
                       </button>
                     ))}
                   </>
-                ) : to.trim() && (
-                  <div className="px-4 py-3 text-sm text-muted-foreground">
-                    No team members found. You can still send to: <span className="font-medium text-foreground">{to}</span>
-                  </div>
                 )}
-                {to.trim() && to.includes('@') && !filteredUsers.some(u => u.email === to) && (
-                  <div className="px-4 py-2 text-xs text-muted-foreground border-t border-gray-100 dark:border-slate-700">
-                    Press Tab or click outside to send to external email
+                <div className="border-t border-gray-100 dark:border-slate-700">
+                  <div className="px-4 py-2 text-xs text-muted-foreground">
+                    Other (External Email)
                   </div>
-                )}
+                  <div className="px-4 py-2 text-sm text-muted-foreground">
+                    Type any email address above and it will be used as the recipient
+                  </div>
+                  {to.trim() && to.includes('@') && !filteredUsers.some(u => u.email === to) && (
+                    <button
+                      onClick={() => setShowSuggestions(false)}
+                      className="w-full px-4 py-3 text-left flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors bg-blue-50 dark:bg-blue-900/20"
+                      data-testid="button-use-external-email"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-800 flex items-center justify-center text-blue-600 dark:text-blue-300 text-sm font-medium">
+                        @
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm text-foreground truncate">
+                          Send to external email
+                        </div>
+                        <div className="text-xs text-blue-600 dark:text-blue-400 truncate">
+                          {to}
+                        </div>
+                      </div>
+                    </button>
+                  )}
+                </div>
               </div>
             )}
           </div>
