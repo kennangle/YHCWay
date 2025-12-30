@@ -174,16 +174,18 @@ export function EmailDetailPanel({ messageId, onClose }: EmailDetailPanelProps) 
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <div className="flex gap-2">
+          <div className="flex gap-2" style={{ position: 'relative', zIndex: 100 }}>
             <button
               type="button"
               onClick={(e) => {
+                console.log('Delete button clicked!');
                 e.preventDefault();
                 e.stopPropagation();
                 deleteMutation.mutate();
               }}
               disabled={deleteMutation.isPending}
               className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+              style={{ pointerEvents: 'auto', cursor: 'pointer' }}
               data-testid="button-delete-email"
             >
               {deleteMutation.isPending ? (
@@ -196,11 +198,13 @@ export function EmailDetailPanel({ messageId, onClose }: EmailDetailPanelProps) 
             <button
               type="button"
               onClick={(e) => {
+                console.log('Reply button clicked!');
                 e.preventDefault();
                 e.stopPropagation();
                 setIsReplying(!isReplying);
               }}
               className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+              style={{ pointerEvents: 'auto', cursor: 'pointer' }}
               data-testid="button-reply"
             >
               <Reply className="w-4 h-4" />
