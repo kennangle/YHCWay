@@ -3780,7 +3780,8 @@ export async function registerRoutes(
   app.get("/api/webhooks/:id", isAuthenticated, async (req: any, res) => {
     try {
       const webhookId = parseInt(req.params.id);
-      const webhook = await storage.getWebhook(webhookId);
+      const tenantId = req.tenantId;
+      const webhook = await storage.getWebhookPublic(webhookId, tenantId);
       if (!webhook) {
         return res.status(404).json({ error: "Webhook not found" });
       }
@@ -3809,12 +3810,23 @@ export async function registerRoutes(
       const tenantId = req.tenantId;
       const validatedData = createWebhookSchema.parse(req.body);
       
+      // Validate URL is HTTPS for security
+      try {
+        const url = new URL(validatedData.url);
+        if (url.protocol !== "https:" && !url.hostname.includes("localhost") && !url.hostname.includes("replit")) {
+          return res.status(400).json({ error: "Webhook URL must use HTTPS" });
+        }
+      } catch {
+        return res.status(400).json({ error: "Invalid URL format" });
+      }
+      
       const webhook = await storage.createWebhook({
         ...validatedData,
         tenantId,
         createdBy: userId,
       });
-      res.status(201).json(webhook);
+      const { secret, ...publicWebhook } = webhook;
+      res.status(201).json(publicWebhook);
     } catch (error) {
       if (error instanceof z.ZodError) {
         res.status(400).json({ error: error.errors });
@@ -3828,13 +3840,32 @@ export async function registerRoutes(
   app.patch("/api/webhooks/:id", isAuthenticated, async (req: any, res) => {
     try {
       const webhookId = parseInt(req.params.id);
-      const updateData = req.body;
+      const tenantId = req.tenantId;
       
-      const webhook = await storage.updateWebhook(webhookId, updateData);
+      // First verify the webhook belongs to this tenant
+      const existing = await storage.getWebhook(webhookId, tenantId);
+      if (!existing) {
+        return res.status(404).json({ error: "Webhook not found" });
+      }
+      
+      // Validate URL if being updated
+      if (req.body.url) {
+        try {
+          const url = new URL(req.body.url);
+          if (url.protocol !== "https:" && !url.hostname.includes("localhost") && !url.hostname.includes("replit")) {
+            return res.status(400).json({ error: "Webhook URL must use HTTPS" });
+          }
+        } catch {
+          return res.status(400).json({ error: "Invalid URL format" });
+        }
+      }
+      
+      const webhook = await storage.updateWebhook(webhookId, req.body);
       if (!webhook) {
         return res.status(404).json({ error: "Webhook not found" });
       }
-      res.json(webhook);
+      const { secret, ...publicWebhook } = webhook;
+      res.json(publicWebhook);
     } catch (error) {
       console.error("Error updating webhook:", error);
       res.status(500).json({ error: "Failed to update webhook" });
@@ -3844,7 +3875,8 @@ export async function registerRoutes(
   app.delete("/api/webhooks/:id", isAuthenticated, async (req: any, res) => {
     try {
       const webhookId = parseInt(req.params.id);
-      await storage.deleteWebhook(webhookId);
+      const tenantId = req.tenantId;
+      await storage.deleteWebhook(webhookId, tenantId);
       res.status(204).send();
     } catch (error) {
       console.error("Error deleting webhook:", error);
@@ -3855,7 +3887,8 @@ export async function registerRoutes(
   app.post("/api/webhooks/:id/test", isAuthenticated, async (req: any, res) => {
     try {
       const webhookId = parseInt(req.params.id);
-      const webhook = await storage.getWebhook(webhookId);
+      const tenantId = req.tenantId;
+      const webhook = await storage.getWebhook(webhookId, tenantId);
       if (!webhook) {
         return res.status(404).json({ error: "Webhook not found" });
       }

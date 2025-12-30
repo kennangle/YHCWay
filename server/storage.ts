@@ -282,11 +282,12 @@ export interface IStorage {
   deleteTaskTemplate(id: number, userId: string, tenantId?: string): Promise<boolean>;
   
   // Webhooks
-  getWebhooks(tenantId?: string): Promise<Webhook[]>;
-  getWebhook(id: number): Promise<Webhook | undefined>;
+  getWebhooks(tenantId?: string): Promise<Omit<Webhook, 'secret'>[]>;
+  getWebhook(id: number, tenantId?: string): Promise<Webhook | undefined>;
+  getWebhookPublic(id: number, tenantId?: string): Promise<Omit<Webhook, 'secret'> | undefined>;
   createWebhook(data: InsertWebhook): Promise<Webhook>;
   updateWebhook(id: number, data: Partial<InsertWebhook>): Promise<Webhook | undefined>;
-  deleteWebhook(id: number): Promise<void>;
+  deleteWebhook(id: number, tenantId?: string): Promise<void>;
   getActiveWebhooksForEvent(event: string, tenantId?: string): Promise<Webhook[]>;
   logWebhookDelivery(data: InsertWebhookDelivery): Promise<WebhookDelivery>;
   getWebhookDeliveries(webhookId: number, limit?: number): Promise<WebhookDelivery[]>;
@@ -1580,20 +1581,31 @@ export class DbStorage implements IStorage {
   }
 
   // Webhooks
-  async getWebhooks(tenantId?: string): Promise<Webhook[]> {
-    if (tenantId) {
-      return db.select().from(webhooks)
-        .where(eq(webhooks.tenantId, tenantId))
-        .orderBy(desc(webhooks.createdAt));
-    }
-    return db.select().from(webhooks)
-      .where(isNull(webhooks.tenantId))
-      .orderBy(desc(webhooks.createdAt));
+  async getWebhooks(tenantId?: string): Promise<Omit<Webhook, 'secret'>[]> {
+    const results = tenantId
+      ? await db.select().from(webhooks)
+          .where(eq(webhooks.tenantId, tenantId))
+          .orderBy(desc(webhooks.createdAt))
+      : await db.select().from(webhooks)
+          .where(isNull(webhooks.tenantId))
+          .orderBy(desc(webhooks.createdAt));
+    return results.map(({ secret, ...rest }) => rest);
   }
 
-  async getWebhook(id: number): Promise<Webhook | undefined> {
-    const [webhook] = await db.select().from(webhooks).where(eq(webhooks.id, id));
+  async getWebhook(id: number, tenantId?: string): Promise<Webhook | undefined> {
+    const conditions = [eq(webhooks.id, id)];
+    if (tenantId) {
+      conditions.push(eq(webhooks.tenantId, tenantId));
+    }
+    const [webhook] = await db.select().from(webhooks).where(and(...conditions));
     return webhook;
+  }
+
+  async getWebhookPublic(id: number, tenantId?: string): Promise<Omit<Webhook, 'secret'> | undefined> {
+    const webhook = await this.getWebhook(id, tenantId);
+    if (!webhook) return undefined;
+    const { secret, ...rest } = webhook;
+    return rest;
   }
 
   async createWebhook(data: InsertWebhook): Promise<Webhook> {
@@ -1609,13 +1621,21 @@ export class DbStorage implements IStorage {
     return webhook;
   }
 
-  async deleteWebhook(id: number): Promise<void> {
-    await db.delete(webhooks).where(eq(webhooks.id, id));
+  async deleteWebhook(id: number, tenantId?: string): Promise<void> {
+    const conditions = [eq(webhooks.id, id)];
+    if (tenantId) {
+      conditions.push(eq(webhooks.tenantId, tenantId));
+    }
+    await db.delete(webhooks).where(and(...conditions));
   }
 
   async getActiveWebhooksForEvent(event: string, tenantId?: string): Promise<Webhook[]> {
-    const allWebhooks = await this.getWebhooks(tenantId);
-    return allWebhooks.filter(w => w.isActive && w.events.includes(event));
+    const results = tenantId
+      ? await db.select().from(webhooks)
+          .where(and(eq(webhooks.tenantId, tenantId), eq(webhooks.isActive, true)))
+      : await db.select().from(webhooks)
+          .where(and(isNull(webhooks.tenantId), eq(webhooks.isActive, true)));
+    return results.filter(w => w.events.includes(event));
   }
 
   async logWebhookDelivery(data: InsertWebhookDelivery): Promise<WebhookDelivery> {

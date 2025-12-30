@@ -13,7 +13,8 @@ import {
   Shield,
   Mail,
   Gift,
-  BookOpen
+  BookOpen,
+  Webhook
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
@@ -42,6 +43,7 @@ export function UnifiedSidebar() {
     { icon: CalendarIcon, label: "Calendar", href: "/calendar" },
     { icon: CheckSquare, label: "Tasks/Projects", href: "/projects" },
     { icon: Gift, label: "Intro Offers", href: "/intro-offers" },
+    { icon: Webhook, label: "Webhooks", href: "/webhooks" },
   ];
 
   const bottomItems = [

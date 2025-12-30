@@ -74,6 +74,7 @@ import ForgotPassword from "@/pages/forgot-password";
 import ResetPassword from "@/pages/reset-password";
 import EmailBuilderPage from "@/pages/email-builder";
 import IntroOffers from "@/pages/intro-offers";
+import Webhooks from "@/pages/webhooks";
 import SetupGuide from "@/pages/setup-guide";
 import PendingApproval from "@/pages/pending-approval";
 
@@ -135,6 +136,7 @@ function Router() {
         <Route path="/admin" component={Admin} />
         <Route path="/email-builder" component={EmailBuilderPage} />
         <Route path="/intro-offers" component={IntroOffers} />
+        <Route path="/webhooks" component={Webhooks} />
         <Route path="/setup-guide" component={SetupGuide} />
         <Route path="/login">{() => <Redirect to="/dashboard" />}</Route>
         <Route path="/register">{() => <Redirect to="/dashboard" />}</Route>
