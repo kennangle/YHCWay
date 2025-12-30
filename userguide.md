@@ -236,12 +236,148 @@ Customize UniWork to work the way you prefer.
 
 ---
 
+## Projects & Tasks
+
+UniWork includes a built-in project management system for organizing your work.
+
+### Creating a Project
+
+1. Go to **Projects** in the sidebar
+2. Click **New Project**
+3. Give your project a name and optional description
+4. Your project board will be created with default columns (To Do, In Progress, Done)
+
+### Managing Tasks
+
+**Creating Tasks:**
+1. Click **+ Add Task** in any column
+2. Enter the task title
+3. Click the task to add more details like due date, priority, and assignees
+
+**Moving Tasks:**
+Simply drag and drop tasks between columns to update their status.
+
+**Task Details:**
+Click any task to open it and:
+- Add a description
+- Set a due date
+- Assign it to a team member
+- Add subtasks for breaking down work
+- Leave comments for discussion
+- Set priority (Low, Medium, High, Urgent)
+
+### Custom Columns
+
+You can add custom columns to organize work your way:
+1. Click **Add Column** at the end of your board
+2. Name your column
+3. Drag it to reorder if needed
+
+### Importing from Asana
+
+If you're migrating from Asana, you can import your projects:
+1. Go to the Projects page
+2. Click **Import from Asana**
+3. Select the Asana project to import
+4. Your sections become columns and tasks are imported automatically
+
+---
+
+## Typeform Integration
+
+Create and manage forms directly within UniWork.
+
+### Viewing Forms
+
+1. Go to **Typeform** in the sidebar (admin only)
+2. See all your Typeform forms in one place
+3. Click **Preview** to view a form without leaving UniWork
+4. Click the external link icon to open forms in Typeform
+
+### Connecting Typeform
+
+Typeform is configured by your administrator. Once connected, all your organization's forms will be accessible from UniWork.
+
+---
+
+## Email Notifications
+
+UniWork can send you email notifications when tasks are assigned to you.
+
+### What Gets Notified
+
+- **Task Assignments** - When someone assigns a task to you, you'll receive an email with the task details, project name, and a link to view it
+
+### Managing Notification Preferences
+
+1. Go to **Settings** in the sidebar
+2. Find the **Notifications** section
+3. Toggle task assignment emails on or off
+
+---
+
+## Mobile Access
+
+UniWork is fully mobile-optimized and works great on phones and tablets.
+
+### Accessing on Mobile
+
+Simply open UniWork in your mobile browser:
+- The layout automatically adjusts for smaller screens
+- All features are accessible on mobile
+- Touch-friendly buttons and navigation
+
+### Adding to Your Home Screen
+
+For quick access, you can add UniWork to your phone's home screen:
+
+**On iPhone/iPad:**
+1. Open UniWork in **Safari**
+2. Tap the **Share** button (square with arrow pointing up)
+3. Scroll down and tap **Add to Home Screen**
+4. Tap **Add**
+
+**On Android:**
+1. Open UniWork in **Chrome**
+2. Tap the **three-dot menu** in the top right
+3. Tap **Add to Home Screen**
+4. Tap **Add**
+
+This creates a shortcut icon on your home screen for quick access to UniWork.
+
+---
+
+## Chat Search
+
+Quickly find conversations and messages in Chat.
+
+### How to Search
+
+1. Go to **Chat** in the sidebar
+2. Use the **search bar** at the top of the conversation list
+3. Type a name or keywords
+4. Results filter as you type
+
+### What's Searchable
+
+- Conversation names
+- Participant names
+- Message content
+
+### Clearing Search
+
+Click the **X** button in the search bar to clear your search and see all conversations again.
+
+---
+
 ## Tips for Success
 
 1. **Connect everything** - The more services you connect, the more useful UniWork becomes
 2. **Check the Dashboard daily** - Start your day with a quick overview of what needs attention
 3. **Use the Unified Inbox** - Stop switching between email and Slack tabs
 4. **Keep the Calendar open** - Never miss a meeting with all your events in one place
+5. **Add to your home screen** - Create a shortcut for quick mobile access
+6. **Use Projects** - Manage your tasks natively without leaving UniWork
 
 ---
 
