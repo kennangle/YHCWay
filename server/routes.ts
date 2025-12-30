@@ -1009,6 +1009,7 @@ export async function registerRoutes(
         lastName: validatedData.lastName,
         isAdmin: validatedData.isAdmin,
         emailVerified: true,
+        approvalStatus: "approved",
       });
       
       // Send invitation email with login credentials

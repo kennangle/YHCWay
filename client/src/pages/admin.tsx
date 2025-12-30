@@ -266,8 +266,10 @@ export default function Admin() {
     return <Redirect to="/" />;
   }
 
+  const approvedUsers = users.filter(u => u.approvalStatus === 'approved');
+  
   const tabs = [
-    { id: "users" as TabType, label: "Users", icon: Users, count: users.length },
+    { id: "users" as TabType, label: "Users", icon: Users, count: approvedUsers.length },
     { id: "services" as TabType, label: "Services", icon: Server, count: services.length },
     { id: "feed" as TabType, label: "Feed Items", icon: Rss, count: feedItems.length },
     { id: "emails" as TabType, label: "Email Templates", icon: Mail, count: emailTemplateTypes.length },
@@ -382,7 +384,7 @@ export default function Admin() {
                 </button>
               </div>
               <div className="space-y-3">
-                {users.filter(u => u.approvalStatus === 'approved').map((u) => {
+                {approvedUsers.map((u) => {
                   const isOnline = activeSessions.includes(u.id);
                   const hasLoggedIn = !!u.firstLoginAt;
                   return (
