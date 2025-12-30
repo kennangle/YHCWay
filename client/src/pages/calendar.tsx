@@ -393,7 +393,7 @@ export default function Calendar() {
                       <>
                         <h4 className="text-xs font-medium text-foreground truncate">{event.title}</h4>
                         <p className="text-[10px] text-muted-foreground">
-                          {new Date(event.start).toLocaleDateString("en-US", { month: 'short', day: 'numeric' })} · {formatEventTime(event.start, event.end, event.isAllDay)}
+                          {new Date(event.start).toLocaleDateString("en-US", { weekday: 'short', month: 'short', day: 'numeric' })}
                         </p>
                       </>
                     );

@@ -804,12 +804,12 @@ export default function Dashboard() {
         </div>
         )}
 
-        {/* Time Tracker Widget */}
-        {isWidgetVisible("time-tracker") && (
+        {/* Time Tracker Widget - Hidden for now */}
+        {/* {isWidgetVisible("time-tracker") && (
           <div className="mb-8" style={{ order: getWidgetOrder("time-tracker") }}>
             <TimeTrackerWidget />
           </div>
-        )}
+        )} */}
 
         {/* Upcoming Tasks Section */}
         {isWidgetVisible("upcoming-tasks") && upcomingTasks.length > 0 && (
