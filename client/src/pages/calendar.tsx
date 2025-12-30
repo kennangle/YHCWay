@@ -64,6 +64,7 @@ function getMediumBg(hex: string) {
 
 export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDay, setSelectedDay] = useState<number | null>(new Date().getDate());
   const [showNewEventDialog, setShowNewEventDialog] = useState(false);
   const [newEvent, setNewEvent] = useState({
     title: "",
@@ -408,11 +409,13 @@ export default function Calendar() {
               const dayEvents = getEventsForDay(day);
               const dayMeetings = getMeetingsForDay(day);
               const hasEvents = dayEvents.length > 0 || dayMeetings.length > 0;
+              const isSelected = selectedDay === day;
               
               return (
                 <div 
                   key={day}
-                  className={`h-16 md:h-24 p-1 md:p-2 rounded-lg border ${isToday(day) ? 'bg-orange-50 border-primary' : 'border-transparent hover:bg-white/50'} transition-colors`}
+                  onClick={() => setSelectedDay(day)}
+                  className={`h-16 md:h-24 p-1 md:p-2 rounded-lg border cursor-pointer ${isToday(day) ? 'bg-orange-50 border-primary' : isSelected ? 'bg-primary/5 border-primary/50' : 'border-transparent hover:bg-white/50'} transition-colors`}
                   data-testid={`calendar-day-${day}`}
                 >
                   <div className={`text-xs md:text-sm font-medium ${isToday(day) ? 'text-primary' : 'text-foreground'}`}>
@@ -460,6 +463,63 @@ export default function Calendar() {
             })}
           </div>
         </div>
+
+        {/* Selected Day Events - Mobile view */}
+        {selectedDay && (
+          <div className="glass-panel p-4 rounded-2xl mt-6 md:hidden">
+            <h3 className="font-display font-semibold text-sm mb-3">
+              {new Date(currentDate.getFullYear(), currentDate.getMonth(), selectedDay).toLocaleDateString("en-US", { weekday: 'long', month: 'long', day: 'numeric' })}
+            </h3>
+            {(() => {
+              const dayEvents = getEventsForDay(selectedDay);
+              const dayMeetings = getMeetingsForDay(selectedDay);
+              const allDayEvents = [
+                ...dayEvents.map(e => ({ ...e, type: e.source === 'apple' ? 'apple' as const : 'calendar' as const })),
+                ...dayMeetings.map(m => ({ 
+                  id: String(m.id), 
+                  title: m.topic, 
+                  start: m.startTime, 
+                  end: new Date(new Date(m.startTime).getTime() + m.duration * 60000).toISOString(),
+                  isAllDay: false,
+                  joinUrl: m.joinUrl,
+                  type: 'zoom' as const 
+                }))
+              ].sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
+
+              if (allDayEvents.length === 0) {
+                return <p className="text-sm text-muted-foreground">No events scheduled</p>;
+              }
+
+              return (
+                <div className="space-y-2">
+                  {allDayEvents.map((event) => {
+                    const eventColor = event.type === 'zoom' 
+                      ? colors.zoom 
+                      : event.type === 'apple' 
+                        ? colors.apple 
+                        : colors.google;
+                    
+                    return (
+                      <div 
+                        key={event.id}
+                        className="p-3 rounded-lg border-l-2"
+                        style={{
+                          borderLeftColor: eventColor,
+                          backgroundColor: getLightBg(eventColor),
+                        }}
+                      >
+                        <h4 className="text-sm font-semibold text-foreground">{event.title}</h4>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {formatEventTime(event.start, event.end, event.isAllDay)}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </div>
+        )}
 
         <Dialog open={showNewEventDialog} onOpenChange={setShowNewEventDialog}>
           <DialogContent className="sm:max-w-md">
