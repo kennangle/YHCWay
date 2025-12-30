@@ -471,10 +471,25 @@ export async function registerRoutes(
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims?.sub || req.user.id;
-      const user = await storage.getUser(userId);
+      let user = await storage.getUser(userId);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
+      
+      // Auto-approve and set admin for the admin email if not already approved
+      if (user.email === ADMIN_EMAIL && (user.approvalStatus !== "approved" || !user.isAdmin)) {
+        if (user.approvalStatus !== "approved") {
+          await storage.updateUserApprovalStatus(userId, "approved");
+        }
+        if (!user.isAdmin) {
+          await storage.updateUserAdmin(userId, true);
+        }
+        user = await storage.getUser(userId);
+        if (!user) {
+          return res.status(404).json({ message: "User not found" });
+        }
+      }
+      
       const { passwordHash, ...safeUser } = user;
       res.json(safeUser);
     } catch (error) {
