@@ -252,8 +252,16 @@ export async function getDirectMessages(maxResults: number = 10, includeThreadRe
     }
   }
 
-  messages.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-  return messages.slice(0, effectiveMaxResults);
+  // Deduplicate messages by ID (thread replies might appear in both history and thread fetch)
+  const seen = new Set<string>();
+  const uniqueMessages = messages.filter(msg => {
+    if (seen.has(msg.id)) return false;
+    seen.add(msg.id);
+    return true;
+  });
+
+  uniqueMessages.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  return uniqueMessages.slice(0, effectiveMaxResults);
 }
 
 export async function getThreadReplies(channelId: string, threadTs: string, maxResults: number = 10): Promise<SlackMessage[]> {
@@ -398,7 +406,14 @@ export async function getAllMessages(maxResults: number = 30): Promise<SlackMess
     getDirectMessages(Math.floor(maxResults * 0.5))
   ]);
 
-  const allMessages = [...channelMessages, ...dmMessages];
+  // Deduplicate messages by ID
+  const seen = new Set<string>();
+  const allMessages = [...channelMessages, ...dmMessages].filter(msg => {
+    if (seen.has(msg.id)) return false;
+    seen.add(msg.id);
+    return true;
+  });
+  
   allMessages.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   return allMessages.slice(0, maxResults);
 }
