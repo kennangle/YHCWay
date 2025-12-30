@@ -11,7 +11,7 @@ import { getRecentEmails, isGmailConnected } from "./gmail";
 import { getGmailAuthUrl, handleGmailCallback, getRecentEmailsForUser, isGmailConnectedForUser, disconnectGmailForUser, getGmailClientForUser, getEmailById, sendEmail, deleteEmailById } from "./gmail-oauth";
 import { getUpcomingEvents, getEventsForMonth, isCalendarConnected, createCalendarEvent } from "./calendar";
 import { getUpcomingMeetings, isZoomConnected } from "./zoom";
-import { getRecentMessages as getSlackMessages, getAllMessages as getAllSlackMessages, getDirectMessages as getSlackDMs, getThreadReplies as getSlackThreadReplies, isSlackConnected, getChannels as getSlackChannels, getRecentMessagesFiltered, isUserSlackConnected, getUserAllMessages, getUserDirectMessages, getUserChannels } from "./slack";
+import { getRecentMessages as getSlackMessages, getAllMessages as getAllSlackMessages, getDirectMessages as getSlackDMs, getThreadReplies as getSlackThreadReplies, isSlackConnected, getChannels as getSlackChannels, getRecentMessagesFiltered, isUserSlackConnected, getUserAllMessages, getUserDirectMessages, getUserChannels, sendSlackNotification, sendSlackBlockNotification, formatUniWorkNotification } from "./slack";
 import { isAppleCalendarConnected, testAppleCalendarConnection, saveAppleCalendarCredentials, deleteAppleCalendarCredentials, getAppleCalendarEvents, getAppleCalendarEventsForMonth } from "./appleCalendar";
 import { isAsanaConnected, getMyTasks, getProjects, getUpcomingTasks, isUserAsanaConnected, getUserMyTasks, getUserProjects, getUserUpcomingTasks, getAsanaProjectsForImport, getProjectSections, getProjectTasksForImport } from "./asana";
 import { getTypeformForms, getTypeformForm, createTypeformForm, updateTypeformForm, deleteTypeformForm, getTypeformResponses, isTypeformConfigured } from "./typeform";
@@ -1422,6 +1422,39 @@ export async function registerRoutes(
       res.json({ connected: !!creds });
     } catch (error) {
       res.json({ connected: false });
+    }
+  });
+
+  // Slack notifications - send messages to channels
+  app.post("/api/slack/notify", isAuthenticated, async (req: any, res) => {
+    try {
+      const { channelId, message, type, data } = req.body;
+      
+      if (!channelId) {
+        return res.status(400).json({ error: "channelId is required" });
+      }
+
+      let result;
+      
+      if (type && data) {
+        // Use formatted notification with blocks
+        const notification = formatUniWorkNotification(type, data);
+        result = await sendSlackBlockNotification(channelId, notification.blocks, notification.text);
+      } else if (message) {
+        // Simple text message
+        result = await sendSlackNotification(channelId, message);
+      } else {
+        return res.status(400).json({ error: "Either message or (type and data) is required" });
+      }
+
+      if (result.success) {
+        res.json(result);
+      } else {
+        res.status(400).json({ error: result.error || "Failed to send notification" });
+      }
+    } catch (error: any) {
+      console.error("Error sending Slack notification:", error);
+      res.status(500).json({ error: error?.message || "Failed to send Slack notification" });
     }
   });
 

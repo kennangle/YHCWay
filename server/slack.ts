@@ -737,3 +737,184 @@ export async function getUserAllMessages(userId: string, maxResults: number = 30
   
   return allMessages.slice(0, maxResults);
 }
+
+// ==================== SLACK NOTIFICATIONS ====================
+// Functions to send notifications to Slack channels
+
+export interface SlackNotificationResult {
+  success: boolean;
+  channelId?: string;
+  timestamp?: string;
+  error?: string;
+}
+
+export async function sendSlackNotification(
+  channelId: string,
+  message: string,
+  options?: {
+    threadTs?: string;
+    unfurlLinks?: boolean;
+    mrkdwn?: boolean;
+  }
+): Promise<SlackNotificationResult> {
+  try {
+    const token = await getSlackToken();
+    
+    const payload: any = {
+      channel: channelId,
+      text: message,
+      unfurl_links: options?.unfurlLinks ?? false,
+      mrkdwn: options?.mrkdwn ?? true,
+    };
+
+    if (options?.threadTs) {
+      payload.thread_ts = options.threadTs;
+    }
+
+    const response = await fetch('https://slack.com/api/chat.postMessage', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json();
+
+    if (!data.ok) {
+      console.error('Slack postMessage error:', data.error);
+      return { success: false, error: data.error };
+    }
+
+    return {
+      success: true,
+      channelId: data.channel,
+      timestamp: data.ts,
+    };
+  } catch (error: any) {
+    console.error('Error sending Slack notification:', error);
+    return { success: false, error: error?.message || 'Failed to send notification' };
+  }
+}
+
+export async function sendSlackBlockNotification(
+  channelId: string,
+  blocks: any[],
+  text: string,
+  options?: {
+    threadTs?: string;
+  }
+): Promise<SlackNotificationResult> {
+  try {
+    const token = await getSlackToken();
+    
+    const payload: any = {
+      channel: channelId,
+      blocks: blocks,
+      text: text, // Fallback text for notifications
+    };
+
+    if (options?.threadTs) {
+      payload.thread_ts = options.threadTs;
+    }
+
+    const response = await fetch('https://slack.com/api/chat.postMessage', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json();
+
+    if (!data.ok) {
+      console.error('Slack postMessage error:', data.error);
+      return { success: false, error: data.error };
+    }
+
+    return {
+      success: true,
+      channelId: data.channel,
+      timestamp: data.ts,
+    };
+  } catch (error: any) {
+    console.error('Error sending Slack block notification:', error);
+    return { success: false, error: error?.message || 'Failed to send notification' };
+  }
+}
+
+// Helper to format UniWork notifications nicely for Slack
+export function formatUniWorkNotification(
+  type: 'task_assigned' | 'task_completed' | 'project_update' | 'comment' | 'custom',
+  data: {
+    title: string;
+    description?: string;
+    user?: string;
+    link?: string;
+  }
+): { blocks: any[]; text: string } {
+  const icons = {
+    task_assigned: '📋',
+    task_completed: '✅',
+    project_update: '📊',
+    comment: '💬',
+    custom: '🔔',
+  };
+
+  const icon = icons[type] || '🔔';
+  const text = `${icon} ${data.title}`;
+  
+  const blocks: any[] = [
+    {
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: `*${icon} ${data.title}*`,
+      },
+    },
+  ];
+
+  if (data.description) {
+    blocks.push({
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: data.description,
+      },
+    });
+  }
+
+  if (data.user) {
+    blocks.push({
+      type: 'context',
+      elements: [
+        {
+          type: 'mrkdwn',
+          text: `By ${data.user}`,
+        },
+      ],
+    });
+  }
+
+  if (data.link) {
+    blocks.push({
+      type: 'actions',
+      elements: [
+        {
+          type: 'button',
+          text: {
+            type: 'plain_text',
+            text: 'View in UniWork',
+          },
+          url: data.link,
+          action_id: 'view_in_uniwork',
+        },
+      ],
+    });
+  }
+
+  return { blocks, text };
+}
