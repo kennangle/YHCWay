@@ -249,27 +249,27 @@ export default function Calendar() {
       
       <UnifiedSidebar />
 
-      <main className="flex-1 ml-0 md:ml-64 relative z-10 flex flex-col">
+      <main className="flex-1 ml-0 md:ml-64 relative z-10 flex flex-col pb-20 md:pb-0">
         <TopBar />
-        <div className="flex-1 p-8">
-        <header className="flex justify-between items-end mb-8">
+        <div className="flex-1 p-4 md:p-8">
+        <header className="flex justify-between items-end mb-6 md:mb-8">
           <div>
-            <p className="text-muted-foreground font-medium mb-1">Your Schedule</p>
-            <h1 className="font-display font-bold text-3xl">Calendar</h1>
+            <p className="text-muted-foreground font-medium mb-1 text-sm md:text-base">Your Schedule</p>
+            <h1 className="font-display font-bold text-2xl md:text-3xl">Calendar</h1>
           </div>
-          <div className="flex gap-4">
-            <button className="w-10 h-10 rounded-full glass-panel flex items-center justify-center hover:bg-white/80 transition-colors" data-testid="button-search">
-              <Search className="w-5 h-5 text-muted-foreground" />
+          <div className="flex gap-2 md:gap-4">
+            <button className="w-9 h-9 md:w-10 md:h-10 rounded-full glass-panel flex items-center justify-center hover:bg-white/80 transition-colors" data-testid="button-search">
+              <Search className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />
             </button>
-            <button className="w-10 h-10 rounded-full glass-panel flex items-center justify-center hover:bg-white/80 transition-colors relative" data-testid="button-notifications">
-              <Bell className="w-5 h-5 text-muted-foreground" />
+            <button className="w-9 h-9 md:w-10 md:h-10 rounded-full glass-panel flex items-center justify-center hover:bg-white/80 transition-colors relative" data-testid="button-notifications">
+              <Bell className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />
             </button>
           </div>
         </header>
 
-        <div className="grid grid-cols-12 gap-6">
-          <div className="col-span-10">
-            <div className="glass-panel p-6 rounded-2xl">
+        <div className="flex flex-col lg:flex-row gap-6">
+          <div className="flex-1 min-w-0">
+            <div className="glass-panel p-4 md:p-6 rounded-2xl">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-display font-semibold text-xl">{monthName}</h2>
                 <div className="flex gap-2">
@@ -300,7 +300,7 @@ export default function Calendar() {
 
               <div className="grid grid-cols-7 gap-1">
                 {Array.from({ length: firstDayOfMonth }).map((_, i) => (
-                  <div key={`empty-${i}`} className="h-24 p-2" />
+                  <div key={`empty-${i}`} className="h-16 md:h-24 p-1 md:p-2" />
                 ))}
                 {Array.from({ length: daysInMonth }).map((_, i) => {
                   const day = i + 1;
@@ -311,18 +311,18 @@ export default function Calendar() {
                   return (
                     <div 
                       key={day}
-                      className={`h-24 p-2 rounded-lg border ${isToday(day) ? 'bg-primary/10 border-primary' : 'border-transparent hover:bg-white/50'} transition-colors`}
+                      className={`h-16 md:h-24 p-1 md:p-2 rounded-lg border ${isToday(day) ? 'bg-primary/10 border-primary' : 'border-transparent hover:bg-white/50'} transition-colors`}
                       data-testid={`calendar-day-${day}`}
                     >
-                      <div className={`text-sm font-medium ${isToday(day) ? 'text-primary' : 'text-foreground'}`}>
+                      <div className={`text-xs md:text-sm font-medium ${isToday(day) ? 'text-primary' : 'text-foreground'}`}>
                         {day}
                       </div>
                       {hasEvents && (
-                        <div className="mt-1 space-y-0.5 overflow-hidden">
+                        <div className="mt-0.5 md:mt-1 space-y-0.5 overflow-hidden">
                           {dayEvents.slice(0, 2).map(event => (
                             <div 
                               key={event.id}
-                              className="text-[10px] px-1 py-0.5 rounded truncate"
+                              className="hidden md:block text-[10px] px-1 py-0.5 rounded truncate"
                               style={{
                                 backgroundColor: getMediumBg(event.source === 'apple' ? colors.apple : colors.google),
                                 color: event.source === 'apple' ? colors.apple : colors.google,
@@ -334,7 +334,7 @@ export default function Calendar() {
                           {dayMeetings.slice(0, 2 - dayEvents.length).map(meeting => (
                             <div 
                               key={meeting.id}
-                              className="text-[10px] px-1 py-0.5 rounded truncate"
+                              className="hidden md:block text-[10px] px-1 py-0.5 rounded truncate"
                               style={{
                                 backgroundColor: getMediumBg(colors.zoom),
                                 color: colors.zoom,
@@ -343,8 +343,12 @@ export default function Calendar() {
                               {meeting.topic}
                             </div>
                           ))}
+                          <div 
+                            className="md:hidden w-1.5 h-1.5 rounded-full mx-auto"
+                            style={{ backgroundColor: colors.google }}
+                          />
                           {(dayEvents.length + dayMeetings.length) > 2 && (
-                            <div className="text-[10px] text-muted-foreground">
+                            <div className="hidden md:block text-[10px] text-muted-foreground">
                               +{(dayEvents.length + dayMeetings.length) - 2} more
                             </div>
                           )}
@@ -357,9 +361,9 @@ export default function Calendar() {
             </div>
           </div>
 
-          <div className="col-span-2 space-y-4">
+          <div className="w-full lg:w-72 flex-shrink-0 space-y-4">
             <div className="glass-panel p-4 rounded-2xl">
-              <h3 className="font-display font-semibold text-sm mb-3">Upcoming</h3>
+              <h3 className="font-display font-semibold text-sm mb-3">Upcoming Events</h3>
               
               {(calendarLoading || zoomLoading) ? (
                 <div className="text-center text-muted-foreground py-4">Loading...</div>
