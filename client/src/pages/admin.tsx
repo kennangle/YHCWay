@@ -133,9 +133,9 @@ export default function Admin() {
     mutationFn: async (data: AdminCreateUser) => {
       return apiRequest("POST", "/api/admin/users", data);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ queryKey: ["/api/admin/users"] });
+      await queryClient.refetchQueries({ queryKey: ["/api/users"] });
       toast({ title: "User created", description: "New user has been created successfully." });
       setShowAddUser(false);
     },
