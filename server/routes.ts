@@ -554,6 +554,195 @@ export async function registerRoutes(
     }
   });
 
+  // Unified search across all integrated services
+  app.get("/api/search", isAuthenticated, async (req: any, res) => {
+    try {
+      const query = (req.query.q as string || "").toLowerCase().trim();
+      const userId = req.user?.id;
+      
+      if (!query) {
+        return res.json({ results: [], query: "" });
+      }
+
+      const results: Array<{
+        id: string;
+        type: "email" | "slack" | "calendar" | "zoom" | "task" | "project";
+        title: string;
+        snippet: string;
+        timestamp: string;
+        source: string;
+        url?: string;
+        metadata?: Record<string, unknown>;
+      }> = [];
+
+      // Search Gmail messages
+      try {
+        const customConnected = userId ? await isGmailConnectedForUser(userId) : false;
+        let emails: any[] = [];
+        if (customConnected) {
+          emails = await getRecentEmailsForUser(userId, 50);
+        } else {
+          emails = await getRecentEmails(50);
+        }
+        
+        for (const email of emails) {
+          const subject = (email.subject || "").toLowerCase();
+          const from = (email.from || "").toLowerCase();
+          const snippet = (email.snippet || "").toLowerCase();
+          
+          if (subject.includes(query) || from.includes(query) || snippet.includes(query)) {
+            results.push({
+              id: email.id,
+              type: "email",
+              title: email.subject || "(No subject)",
+              snippet: email.snippet || "",
+              timestamp: email.date || new Date().toISOString(),
+              source: "Gmail",
+              metadata: { from: email.from, threadId: email.threadId }
+            });
+          }
+        }
+      } catch (e) {
+        console.log("[Search] Gmail search skipped:", (e as Error).message);
+      }
+
+      // Search Slack messages
+      try {
+        let slackMessages: any[] = [];
+        if (userId && await isUserSlackConnected(userId)) {
+          slackMessages = await getUserAllMessages(userId, 100);
+        } else if (await isSlackConnected()) {
+          slackMessages = await getAllSlackMessages(100);
+        }
+        
+        for (const msg of slackMessages) {
+          const text = (msg.text || "").toLowerCase();
+          const channel = (msg.channelName || "").toLowerCase();
+          const user = (msg.userName || "").toLowerCase();
+          
+          if (text.includes(query) || channel.includes(query) || user.includes(query)) {
+            results.push({
+              id: msg.id,
+              type: "slack",
+              title: msg.channelName || "Slack Message",
+              snippet: msg.text || "",
+              timestamp: msg.timestamp || new Date().toISOString(),
+              source: "Slack",
+              metadata: { channelId: msg.channelId, userName: msg.userName, isDm: msg.isDm }
+            });
+          }
+        }
+      } catch (e) {
+        console.log("[Search] Slack search skipped:", (e as Error).message);
+      }
+
+      // Search Calendar events
+      try {
+        const events = await getUpcomingEvents();
+        for (const event of events) {
+          const title = (event.title || "").toLowerCase();
+          const location = (event.location || "").toLowerCase();
+          const description = (event.description || "").toLowerCase();
+          
+          if (title.includes(query) || location.includes(query) || description.includes(query)) {
+            results.push({
+              id: event.id,
+              type: "calendar",
+              title: event.title,
+              snippet: event.location || event.description || "",
+              timestamp: event.start,
+              source: event.source === 'apple' ? "Apple Calendar" : "Google Calendar",
+              metadata: { end: event.end, isAllDay: event.isAllDay }
+            });
+          }
+        }
+      } catch (e) {
+        console.log("[Search] Calendar search skipped:", (e as Error).message);
+      }
+
+      // Search Zoom meetings
+      try {
+        const meetings = await getUpcomingMeetings();
+        for (const meeting of meetings) {
+          const topic = (meeting.topic || "").toLowerCase();
+          
+          if (topic.includes(query)) {
+            results.push({
+              id: String(meeting.id),
+              type: "zoom",
+              title: meeting.topic,
+              snippet: `Duration: ${meeting.duration} minutes`,
+              timestamp: meeting.startTime,
+              source: "Zoom",
+              url: meeting.joinUrl,
+              metadata: { duration: meeting.duration }
+            });
+          }
+        }
+      } catch (e) {
+        console.log("[Search] Zoom search skipped:", (e as Error).message);
+      }
+
+      // Search native tasks
+      try {
+        if (userId) {
+          const tasks = await storage.getTasksByUserId(userId);
+          for (const task of tasks) {
+            const title = (task.title || "").toLowerCase();
+            const description = (task.description || "").toLowerCase();
+            
+            if (title.includes(query) || description.includes(query)) {
+              results.push({
+                id: String(task.id),
+                type: "task",
+                title: task.title,
+                snippet: task.description || "",
+                timestamp: task.createdAt?.toISOString() || new Date().toISOString(),
+                source: "Tasks",
+                metadata: { status: task.status, priority: task.priority, dueDate: task.dueDate }
+              });
+            }
+          }
+        }
+      } catch (e) {
+        console.log("[Search] Tasks search skipped:", (e as Error).message);
+      }
+
+      // Search native projects
+      try {
+        if (userId) {
+          const projects = await storage.getProjectsByUserId(userId);
+          for (const project of projects) {
+            const name = (project.name || "").toLowerCase();
+            const description = (project.description || "").toLowerCase();
+            
+            if (name.includes(query) || description.includes(query)) {
+              results.push({
+                id: String(project.id),
+                type: "project",
+                title: project.name,
+                snippet: project.description || "",
+                timestamp: project.createdAt?.toISOString() || new Date().toISOString(),
+                source: "Projects",
+                metadata: { status: project.status }
+              });
+            }
+          }
+        }
+      } catch (e) {
+        console.log("[Search] Projects search skipped:", (e as Error).message);
+      }
+
+      // Sort by timestamp (most recent first)
+      results.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+      res.json({ results: results.slice(0, 50), query });
+    } catch (error: any) {
+      console.error("[Search] Error:", error?.message || error);
+      res.status(500).json({ error: "Search failed" });
+    }
+  });
+
   app.post("/api/feed", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const validatedData = insertFeedItemSchema.parse(req.body);
