@@ -331,7 +331,7 @@ export default function Calendar() {
                   return (
                     <div 
                       key={day}
-                      className={`h-16 md:h-24 p-1 md:p-2 rounded-lg border ${isToday(day) ? 'bg-primary/10 border-primary' : 'border-transparent hover:bg-white/50'} transition-colors`}
+                      className={`h-16 md:h-24 p-1 md:p-2 rounded-lg border ${isToday(day) ? 'bg-orange-50 border-primary' : 'border-transparent hover:bg-white/50'} transition-colors`}
                       data-testid={`calendar-day-${day}`}
                     >
                       <div className={`text-xs md:text-sm font-medium ${isToday(day) ? 'text-primary' : 'text-foreground'}`}>
@@ -342,7 +342,7 @@ export default function Calendar() {
                           {dayEvents.slice(0, 2).map(event => (
                             <div 
                               key={event.id}
-                              className="hidden md:block text-[10px] px-1 py-0.5 rounded truncate"
+                              className="hidden md:block text-[10px] font-semibold px-1 py-0.5 rounded truncate"
                               style={{
                                 backgroundColor: getMediumBg(event.source === 'apple' ? colors.apple : colors.google),
                                 color: event.source === 'apple' ? colors.apple : colors.google,
@@ -354,7 +354,7 @@ export default function Calendar() {
                           {dayMeetings.slice(0, 2 - dayEvents.length).map(meeting => (
                             <div 
                               key={meeting.id}
-                              className="hidden md:block text-[10px] px-1 py-0.5 rounded truncate"
+                              className="hidden md:block text-[10px] font-semibold px-1 py-0.5 rounded truncate"
                               style={{
                                 backgroundColor: getMediumBg(colors.zoom),
                                 color: colors.zoom,
