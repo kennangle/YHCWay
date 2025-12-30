@@ -14,7 +14,8 @@ import {
   Mail,
   Gift,
   BookOpen,
-  Webhook
+  Webhook,
+  Archive
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
@@ -39,6 +40,7 @@ export function UnifiedSidebar() {
   const navItems = [
     { icon: LayoutDashboard, label: "Overview", href: "/" },
     { icon: Inbox, label: "Unified Inbox", href: "/inbox" },
+    { icon: Archive, label: "Archive", href: "/archive" },
     { icon: MessageCircle, label: "Chat", href: "/chat" },
     { icon: CalendarIcon, label: "Calendar", href: "/calendar" },
     { icon: CheckSquare, label: "Tasks/Projects", href: "/projects" },

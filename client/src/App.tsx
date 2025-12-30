@@ -77,6 +77,7 @@ import IntroOffers from "@/pages/intro-offers";
 import Webhooks from "@/pages/webhooks";
 import SetupGuide from "@/pages/setup-guide";
 import PendingApproval from "@/pages/pending-approval";
+import ArchivePage from "@/pages/archive";
 
 function ApprovalGuard({ children }: { children: ReactNode }) {
   const { user } = useAuth();
@@ -137,6 +138,7 @@ function Router() {
         <Route path="/email-builder" component={EmailBuilderPage} />
         <Route path="/intro-offers" component={IntroOffers} />
         <Route path="/webhooks" component={Webhooks} />
+        <Route path="/archive" component={ArchivePage} />
         <Route path="/setup-guide" component={SetupGuide} />
         <Route path="/login">{() => <Redirect to="/dashboard" />}</Route>
         <Route path="/register">{() => <Redirect to="/dashboard" />}</Route>
