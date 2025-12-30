@@ -19,6 +19,7 @@ import { sendInvitationEmail, getTemplateTypes, getDefaultTemplate, sendTaskAssi
 import { appleCalendarConnectSchema, slackPreferencesUpdateSchema, emailTemplateSchema, updateNotificationPrefsSchema, createTimeEntrySchema, updateTimeEntrySchema } from "@shared/schema";
 import { broadcastToUsers, generateWsAuthToken } from "./websocket";
 import { getIntroOffers, getIntroOfferSummary, updateIntroOffer, getStudents, isMindbodyAnalyticsConfigured } from "./mindbodyAnalytics";
+import { generateEmailReplySuggestions } from "./ai-email";
 
 const isAdmin: RequestHandler = async (req: any, res, next) => {
   try {
@@ -1259,6 +1260,40 @@ export async function registerRoutes(
     } catch (error: any) {
       console.error("[Gmail] Error deleting email:", error?.message);
       res.status(500).json({ error: error?.message || "Failed to delete email" });
+    }
+  });
+
+  // AI Email Reply Suggestions
+  app.post("/api/ai/email-suggestions", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const { messageId } = req.body;
+      if (!messageId) {
+        return res.status(400).json({ error: "Missing messageId" });
+      }
+      
+      const email = await getEmailById(userId, messageId);
+      if (!email) {
+        return res.status(404).json({ error: "Email not found" });
+      }
+      
+      const suggestions = await generateEmailReplySuggestions({
+        subject: email.subject,
+        from: email.from,
+        to: email.to,
+        body: email.body,
+        date: email.date,
+      });
+      
+      res.json({ suggestions });
+    } catch (error: any) {
+      console.error("[AI] Error generating email suggestions:", error?.message);
+      res.status(500).json({ error: error?.message || "Failed to generate suggestions" });
     }
   });
 

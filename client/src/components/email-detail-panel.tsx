@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { X, Reply, Send, ArrowLeft, Loader2, Trash2 } from "lucide-react";
+import { X, Reply, Send, ArrowLeft, Loader2, Trash2, Sparkles, RefreshCw } from "lucide-react";
 import DOMPurify from "dompurify";
 
 interface EmailDetail {
@@ -17,10 +17,21 @@ interface EmailDetail {
   body: string;
 }
 
+interface SuggestedReply {
+  tone: "professional" | "friendly" | "brief";
+  text: string;
+}
+
 interface EmailDetailPanelProps {
   messageId: string;
   onClose: () => void;
 }
+
+const toneLabels: Record<string, { label: string; color: string }> = {
+  professional: { label: "Professional", color: "bg-blue-100 text-blue-700" },
+  friendly: { label: "Friendly", color: "bg-green-100 text-green-700" },
+  brief: { label: "Brief", color: "bg-purple-100 text-purple-700" },
+};
 
 export function EmailDetailPanel({ messageId, onClose }: EmailDetailPanelProps) {
   const [isReplying, setIsReplying] = useState(false);
@@ -34,6 +45,22 @@ export function EmailDetailPanel({ messageId, onClose }: EmailDetailPanelProps) 
       if (!res.ok) throw new Error("Failed to load email");
       return res.json();
     },
+  });
+
+  const { data: suggestions, isLoading: isSuggestionsLoading, refetch: refetchSuggestions, isFetching: isSuggestionsFetching } = useQuery<{ suggestions: SuggestedReply[] }>({
+    queryKey: ["email-suggestions", messageId],
+    queryFn: async () => {
+      const res = await fetch("/api/ai/email-suggestions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ messageId }),
+      });
+      if (!res.ok) throw new Error("Failed to generate suggestions");
+      return res.json();
+    },
+    enabled: isReplying,
+    staleTime: 5 * 60 * 1000,
   });
 
   const sendMutation = useMutation({
@@ -105,6 +132,10 @@ export function EmailDetailPanel({ messageId, onClose }: EmailDetailPanelProps) 
       body: replyBody,
       threadId: email.threadId,
     });
+  }
+
+  function handleUseSuggestion(text: string) {
+    setReplyBody(text);
   }
 
   if (isLoading) {
@@ -201,6 +232,56 @@ export function EmailDetailPanel({ messageId, onClose }: EmailDetailPanelProps) 
 
           {isReplying && (
             <div className="p-6 border-t bg-gray-50">
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-medium">AI Suggested Replies</span>
+                  </div>
+                  <button
+                    onClick={() => refetchSuggestions()}
+                    disabled={isSuggestionsFetching}
+                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+                    data-testid="button-refresh-suggestions"
+                  >
+                    <RefreshCw className={`w-3 h-3 ${isSuggestionsFetching ? 'animate-spin' : ''}`} />
+                    Regenerate
+                  </button>
+                </div>
+                
+                {isSuggestionsLoading || isSuggestionsFetching ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Generating suggestions...
+                  </div>
+                ) : suggestions?.suggestions && suggestions.suggestions.length > 0 ? (
+                  <div className="space-y-2">
+                    {suggestions.suggestions.map((suggestion, index) => {
+                      const toneInfo = toneLabels[suggestion.tone] || toneLabels.professional;
+                      return (
+                        <button
+                          key={index}
+                          onClick={() => handleUseSuggestion(suggestion.text)}
+                          className="w-full text-left p-3 bg-white border rounded-lg hover:border-primary/50 hover:bg-primary/5 transition-colors group"
+                          data-testid={`button-apply-suggestion-${index}`}
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${toneInfo.color}`}>
+                              {toneInfo.label}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-700 line-clamp-2">{suggestion.text}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground py-2">
+                    No suggestions available. Click Regenerate to try again.
+                  </p>
+                )}
+              </div>
+
               <div className="mb-2">
                 <span className="text-sm text-muted-foreground">
                   Replying to: {extractEmail(email.from)}
