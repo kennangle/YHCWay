@@ -60,6 +60,9 @@ async function upsertUser(claims: any) {
   const existingUser = await storage.getUser(userId);
   const isAdmin = email === ADMIN_EMAIL ? true : (existingUser?.isAdmin ?? false);
   
+  // Auto-approve admin users, keep existing status for others
+  const approvalStatus = isAdmin ? "approved" : (existingUser?.approvalStatus ?? "pending");
+  
   await storage.upsertUser({
     id: userId,
     email: email,
@@ -67,6 +70,7 @@ async function upsertUser(claims: any) {
     lastName: claims["last_name"],
     profileImageUrl: claims["profile_image_url"],
     isAdmin: isAdmin,
+    approvalStatus: approvalStatus,
   });
 }
 
