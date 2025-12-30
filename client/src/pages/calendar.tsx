@@ -279,187 +279,185 @@ export default function Calendar() {
           </div>
         </header>
 
-        <div className="flex flex-col lg:flex-row gap-6">
-          <div className="flex-1 min-w-0">
-            <div className="glass-panel p-4 md:p-6 rounded-2xl">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="font-display font-semibold text-xl">{monthName}</h2>
-                <div className="flex gap-2">
-                  <button 
-                    onClick={handleRefresh}
-                    disabled={isRefreshing}
-                    className="w-8 h-8 rounded-lg bg-white/50 flex items-center justify-center hover:bg-white transition-colors disabled:opacity-50"
-                    data-testid="button-refresh-calendar"
-                  >
-                    <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                  </button>
-                  <button 
-                    onClick={goToPrevMonth}
-                    className="w-8 h-8 rounded-lg bg-white/50 flex items-center justify-center hover:bg-white transition-colors"
-                    data-testid="button-prev-month"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <button 
-                    onClick={goToNextMonth}
-                    className="w-8 h-8 rounded-lg bg-white/50 flex items-center justify-center hover:bg-white transition-colors"
-                    data-testid="button-next-month"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-7 gap-1 mb-2">
-                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                  <div key={day} className="text-center text-xs font-medium text-muted-foreground py-2">
-                    {day}
+        {/* Upcoming Events - Horizontal scroll at top */}
+        <div className="glass-panel p-4 rounded-2xl mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-display font-semibold text-sm">Upcoming Events</h3>
+            <button 
+              onClick={() => setShowNewEventDialog(true)}
+              className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-medium hover:bg-primary/90 transition-colors" 
+              data-testid="button-new-event"
+            >
+              + New Event
+            </button>
+          </div>
+          
+          {(calendarLoading || zoomLoading) ? (
+            <div className="text-center text-muted-foreground py-4">Loading...</div>
+          ) : upcomingEvents.length === 0 ? (
+            <div className="text-center text-muted-foreground py-4">No upcoming events</div>
+          ) : (
+            <div className="flex gap-3 overflow-x-auto pb-2">
+              {upcomingEvents.slice(0, 8).map((event) => {
+                const eventColor = event.type === 'zoom' 
+                  ? colors.zoom 
+                  : event.type === 'apple' 
+                    ? colors.apple 
+                    : colors.google;
+                
+                const getEventUrl = () => {
+                  if (event.type === 'zoom' && 'joinUrl' in event) {
+                    return event.joinUrl;
+                  }
+                  if (event.type === 'calendar') {
+                    return `https://calendar.google.com/calendar/event?eid=${btoa(event.id + ' primary').replace(/=/g, '')}`;
+                  }
+                  return null;
+                };
+                const eventUrl = getEventUrl();
+                
+                const content = (
+                  <div className="min-w-[160px] max-w-[200px]">
+                    <h4 className="text-xs font-semibold text-foreground truncate">{event.title}</h4>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      {new Date(event.start).toLocaleDateString("en-US", { weekday: 'short', month: 'short', day: 'numeric' })}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {formatEventTime(event.start, event.end, event.isAllDay)}
+                    </p>
                   </div>
-                ))}
-              </div>
+                );
+                
+                return eventUrl ? (
+                  <a
+                    key={event.id}
+                    href={eventUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-shrink-0 p-3 rounded-lg border-l-2 hover:opacity-80 transition-opacity cursor-pointer"
+                    style={{
+                      borderLeftColor: eventColor,
+                      backgroundColor: getLightBg(eventColor),
+                    }}
+                    data-testid={`upcoming-event-${event.id}`}
+                  >
+                    {content}
+                  </a>
+                ) : (
+                  <div 
+                    key={event.id}
+                    className="flex-shrink-0 p-3 rounded-lg border-l-2"
+                    style={{
+                      borderLeftColor: eventColor,
+                      backgroundColor: getLightBg(eventColor),
+                    }}
+                    data-testid={`upcoming-event-${event.id}`}
+                  >
+                    {content}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
-              <div className="grid grid-cols-7 gap-1">
-                {Array.from({ length: firstDayOfMonth }).map((_, i) => (
-                  <div key={`empty-${i}`} className="h-16 md:h-24 p-1 md:p-2" />
-                ))}
-                {Array.from({ length: daysInMonth }).map((_, i) => {
-                  const day = i + 1;
-                  const dayEvents = getEventsForDay(day);
-                  const dayMeetings = getMeetingsForDay(day);
-                  const hasEvents = dayEvents.length > 0 || dayMeetings.length > 0;
-                  
-                  return (
-                    <div 
-                      key={day}
-                      className={`h-16 md:h-24 p-1 md:p-2 rounded-lg border ${isToday(day) ? 'bg-orange-50 border-primary' : 'border-transparent hover:bg-white/50'} transition-colors`}
-                      data-testid={`calendar-day-${day}`}
-                    >
-                      <div className={`text-xs md:text-sm font-medium ${isToday(day) ? 'text-primary' : 'text-foreground'}`}>
-                        {day}
-                      </div>
-                      {hasEvents && (
-                        <div className="mt-0.5 md:mt-1 space-y-0.5 overflow-hidden">
-                          {dayEvents.slice(0, 2).map(event => (
-                            <div 
-                              key={event.id}
-                              className="hidden md:block text-[10px] font-semibold px-1 py-0.5 rounded truncate"
-                              style={{
-                                backgroundColor: getMediumBg(event.source === 'apple' ? colors.apple : colors.google),
-                                color: event.source === 'apple' ? colors.apple : colors.google,
-                              }}
-                            >
-                              {event.title}
-                            </div>
-                          ))}
-                          {dayMeetings.slice(0, 2 - dayEvents.length).map(meeting => (
-                            <div 
-                              key={meeting.id}
-                              className="hidden md:block text-[10px] font-semibold px-1 py-0.5 rounded truncate"
-                              style={{
-                                backgroundColor: getMediumBg(colors.zoom),
-                                color: colors.zoom,
-                              }}
-                            >
-                              {meeting.topic}
-                            </div>
-                          ))}
-                          <div 
-                            className="md:hidden w-1.5 h-1.5 rounded-full mx-auto"
-                            style={{ backgroundColor: colors.google }}
-                          />
-                          {(dayEvents.length + dayMeetings.length) > 2 && (
-                            <div className="hidden md:block text-[10px] text-muted-foreground">
-                              +{(dayEvents.length + dayMeetings.length) - 2} more
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+        {/* Full-width Calendar */}
+        <div className="glass-panel p-4 md:p-6 rounded-2xl">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="font-display font-semibold text-xl">{monthName}</h2>
+            <div className="flex gap-2">
+              <button 
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                className="w-8 h-8 rounded-lg bg-white/50 flex items-center justify-center hover:bg-white transition-colors disabled:opacity-50"
+                data-testid="button-refresh-calendar"
+              >
+                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              </button>
+              <button 
+                onClick={goToPrevMonth}
+                className="w-8 h-8 rounded-lg bg-white/50 flex items-center justify-center hover:bg-white transition-colors"
+                data-testid="button-prev-month"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button 
+                onClick={goToNextMonth}
+                className="w-8 h-8 rounded-lg bg-white/50 flex items-center justify-center hover:bg-white transition-colors"
+                data-testid="button-next-month"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
             </div>
           </div>
 
-          <div className="w-full lg:w-72 flex-shrink-0 space-y-4">
-            <div className="glass-panel p-4 rounded-2xl">
-              <h3 className="font-display font-semibold text-sm mb-3">Upcoming Events</h3>
-              
-              {(calendarLoading || zoomLoading) ? (
-                <div className="text-center text-muted-foreground py-4">Loading...</div>
-              ) : upcomingEvents.length === 0 ? (
-                <div className="text-center text-muted-foreground py-4">No upcoming events</div>
-              ) : (
-                <div className="space-y-2">
-                  {upcomingEvents.slice(0, 5).map((event) => {
-                    const eventColor = event.type === 'zoom' 
-                      ? colors.zoom 
-                      : event.type === 'apple' 
-                        ? colors.apple 
-                        : colors.google;
-                    
-                    const getEventUrl = () => {
-                      if (event.type === 'zoom' && 'joinUrl' in event) {
-                        return event.joinUrl;
-                      }
-                      if (event.type === 'calendar') {
-                        return `https://calendar.google.com/calendar/event?eid=${btoa(event.id + ' primary').replace(/=/g, '')}`;
-                      }
-                      return null;
-                    };
-                    const eventUrl = getEventUrl();
-                    
-                    const content = (
-                      <>
-                        <h4 className="text-xs font-medium text-foreground truncate">{event.title}</h4>
-                        <p className="text-[10px] text-muted-foreground">
-                          {new Date(event.start).toLocaleDateString("en-US", { weekday: 'short', month: 'short', day: 'numeric' })} · {formatEventTime(event.start, event.end, event.isAllDay)}
-                        </p>
-                      </>
-                    );
-                    
-                    return eventUrl ? (
-                      <a
-                        key={event.id}
-                        href={eventUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block p-2 rounded-lg border-l-2 hover:opacity-80 transition-opacity cursor-pointer"
-                        style={{
-                          borderLeftColor: eventColor,
-                          backgroundColor: getLightBg(eventColor),
-                        }}
-                        data-testid={`upcoming-event-${event.id}`}
-                      >
-                        {content}
-                      </a>
-                    ) : (
-                      <div 
-                        key={event.id}
-                        className="p-2 rounded-lg border-l-2"
-                        style={{
-                          borderLeftColor: eventColor,
-                          backgroundColor: getLightBg(eventColor),
-                        }}
-                        data-testid={`upcoming-event-${event.id}`}
-                      >
-                        {content}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+          <div className="grid grid-cols-7 gap-1 mb-2">
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+              <div key={day} className="text-center text-xs font-medium text-muted-foreground py-2">
+                {day}
+              </div>
+            ))}
+          </div>
 
-            <div className="glass-panel p-4 rounded-2xl bg-gradient-to-br from-primary/10 to-transparent border-primary/10">
-              <button 
-                onClick={() => setShowNewEventDialog(true)}
-                className="w-full py-2 rounded-lg bg-primary text-white text-sm font-medium shadow-lg shadow-primary/30 hover:bg-primary/90 transition-colors" 
-                data-testid="button-new-event"
-              >
-                + New Event
-              </button>
-            </div>
+          <div className="grid grid-cols-7 gap-1">
+            {Array.from({ length: firstDayOfMonth }).map((_, i) => (
+              <div key={`empty-${i}`} className="h-16 md:h-24 p-1 md:p-2" />
+            ))}
+            {Array.from({ length: daysInMonth }).map((_, i) => {
+              const day = i + 1;
+              const dayEvents = getEventsForDay(day);
+              const dayMeetings = getMeetingsForDay(day);
+              const hasEvents = dayEvents.length > 0 || dayMeetings.length > 0;
+              
+              return (
+                <div 
+                  key={day}
+                  className={`h-16 md:h-24 p-1 md:p-2 rounded-lg border ${isToday(day) ? 'bg-orange-50 border-primary' : 'border-transparent hover:bg-white/50'} transition-colors`}
+                  data-testid={`calendar-day-${day}`}
+                >
+                  <div className={`text-xs md:text-sm font-medium ${isToday(day) ? 'text-primary' : 'text-foreground'}`}>
+                    {day}
+                  </div>
+                  {hasEvents && (
+                    <div className="mt-0.5 md:mt-1 space-y-0.5 overflow-hidden">
+                      {dayEvents.slice(0, 2).map(event => (
+                        <div 
+                          key={event.id}
+                          className="hidden md:block text-[10px] font-semibold px-1 py-0.5 rounded truncate"
+                          style={{
+                            backgroundColor: getMediumBg(event.source === 'apple' ? colors.apple : colors.google),
+                            color: event.source === 'apple' ? colors.apple : colors.google,
+                          }}
+                        >
+                          {event.title}
+                        </div>
+                      ))}
+                      {dayMeetings.slice(0, 2 - dayEvents.length).map(meeting => (
+                        <div 
+                          key={meeting.id}
+                          className="hidden md:block text-[10px] font-semibold px-1 py-0.5 rounded truncate"
+                          style={{
+                            backgroundColor: getMediumBg(colors.zoom),
+                            color: colors.zoom,
+                          }}
+                        >
+                          {meeting.topic}
+                        </div>
+                      ))}
+                      <div 
+                        className="md:hidden w-1.5 h-1.5 rounded-full mx-auto"
+                        style={{ backgroundColor: colors.google }}
+                      />
+                      {(dayEvents.length + dayMeetings.length) > 2 && (
+                        <div className="hidden md:block text-[10px] text-muted-foreground">
+                          +{(dayEvents.length + dayMeetings.length) - 2} more
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 
