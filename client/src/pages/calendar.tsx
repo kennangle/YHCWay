@@ -364,7 +364,7 @@ export default function Calendar() {
 
         {/* Full-width Calendar */}
         <div className="glass-panel p-4 md:p-6 rounded-2xl">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-4">
             <h2 className="font-display font-semibold text-xl">{monthName}</h2>
             <div className="flex gap-2">
               <button 
@@ -389,6 +389,22 @@ export default function Calendar() {
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
+            </div>
+          </div>
+          
+          {/* Color Legend */}
+          <div className="flex flex-wrap gap-4 mb-4 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: colors.google }} />
+              <span>Google Calendar</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: colors.apple }} />
+              <span>Apple Calendar</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: colors.zoom }} />
+              <span>Zoom Meetings</span>
             </div>
           </div>
 
@@ -447,10 +463,23 @@ export default function Calendar() {
                           {meeting.topic}
                         </div>
                       ))}
-                      <div 
-                        className="md:hidden w-1.5 h-1.5 rounded-full mx-auto"
-                        style={{ backgroundColor: colors.google }}
-                      />
+                      {/* Mobile dots with proper colors */}
+                      <div className="md:hidden flex gap-0.5 justify-center flex-wrap">
+                        {dayEvents.slice(0, 3).map(event => (
+                          <div 
+                            key={event.id}
+                            className="w-1.5 h-1.5 rounded-full"
+                            style={{ backgroundColor: event.source === 'apple' ? colors.apple : colors.google }}
+                          />
+                        ))}
+                        {dayMeetings.slice(0, Math.max(0, 3 - dayEvents.length)).map(meeting => (
+                          <div 
+                            key={meeting.id}
+                            className="w-1.5 h-1.5 rounded-full"
+                            style={{ backgroundColor: colors.zoom }}
+                          />
+                        ))}
+                      </div>
                       {(dayEvents.length + dayMeetings.length) > 2 && (
                         <div className="hidden md:block text-[10px] text-muted-foreground">
                           +{(dayEvents.length + dayMeetings.length) - 2} more

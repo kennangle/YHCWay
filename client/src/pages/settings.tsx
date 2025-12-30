@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTheme } from "@/App";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { TopBar } from "@/components/top-bar";
-import { User, Bell, Shield, Palette, HelpCircle, ChevronLeft, Check, Globe, Mail, MessageSquare, Calendar, Video, CheckSquare, MessageCircle, Volume2, Moon, Sun, ExternalLink, Trash2, Download, Eye, EyeOff } from "lucide-react";
+import { User, Bell, Shield, Palette, HelpCircle, ChevronLeft, Check, Globe, Mail, MessageSquare, Calendar, Video, CheckSquare, MessageCircle, Volume2, Moon, Sun, ExternalLink, Trash2, Download, Eye, EyeOff, FileText, Plus, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -120,7 +120,293 @@ const playNotificationSound = (soundType: string) => {
   oscillator.stop(audioContext.currentTime + 0.5);
 };
 
-type SettingsSection = "main" | "account" | "notifications" | "privacy" | "appearance" | "language" | "help";
+type SettingsSection = "main" | "account" | "notifications" | "privacy" | "appearance" | "language" | "help" | "templates";
+
+interface TaskTemplate {
+  id: number;
+  name: string;
+  description: string | null;
+  defaultPriority: string;
+  estimatedMinutes: number | null;
+}
+
+function TemplatesSectionContent({ renderBackButton }: { renderBackButton: () => React.ReactNode }) {
+  const [editingTemplate, setEditingTemplate] = useState<TaskTemplate | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    defaultPriority: "medium",
+    estimatedMinutes: "",
+  });
+  const queryClient = useQueryClient();
+
+  const { data: templates = [], isLoading } = useQuery<TaskTemplate[]>({
+    queryKey: ["task-templates"],
+    queryFn: async () => {
+      const res = await fetch("/api/task-templates", { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: typeof formData) => {
+      const res = await fetch("/api/task-templates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          name: data.name,
+          description: data.description || null,
+          defaultPriority: data.defaultPriority,
+          estimatedMinutes: data.estimatedMinutes ? parseInt(data.estimatedMinutes) : null,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to create template");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["task-templates"] });
+      setIsCreating(false);
+      setFormData({ name: "", description: "", defaultPriority: "medium", estimatedMinutes: "" });
+      toast.success("Template created!");
+    },
+    onError: () => toast.error("Failed to create template"),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: typeof formData }) => {
+      const res = await fetch(`/api/task-templates/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          name: data.name,
+          description: data.description || null,
+          defaultPriority: data.defaultPriority,
+          estimatedMinutes: data.estimatedMinutes ? parseInt(data.estimatedMinutes) : null,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to update template");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["task-templates"] });
+      setEditingTemplate(null);
+      setFormData({ name: "", description: "", defaultPriority: "medium", estimatedMinutes: "" });
+      toast.success("Template updated!");
+    },
+    onError: () => toast.error("Failed to update template"),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/task-templates/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to delete template");
+      return id;
+    },
+    onSuccess: (deletedId) => {
+      queryClient.invalidateQueries({ queryKey: ["task-templates"] });
+      // Clear editing state if the deleted template was being edited
+      if (editingTemplate?.id === deletedId) {
+        setEditingTemplate(null);
+        setFormData({ name: "", description: "", defaultPriority: "medium", estimatedMinutes: "" });
+      }
+      toast.success("Template deleted!");
+    },
+    onError: () => toast.error("Failed to delete template"),
+  });
+
+  const handleEdit = (template: TaskTemplate) => {
+    setEditingTemplate(template);
+    setFormData({
+      name: template.name,
+      description: template.description || "",
+      defaultPriority: template.defaultPriority,
+      estimatedMinutes: template.estimatedMinutes?.toString() || "",
+    });
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name.trim()) return;
+    
+    if (editingTemplate) {
+      updateMutation.mutate({ id: editingTemplate.id, data: formData });
+    } else {
+      createMutation.mutate(formData);
+    }
+  };
+
+  const handleCancel = () => {
+    setIsCreating(false);
+    setEditingTemplate(null);
+    setFormData({ name: "", description: "", defaultPriority: "medium", estimatedMinutes: "" });
+  };
+
+  const priorityLabels: Record<string, string> = {
+    low: "Low",
+    medium: "Medium",
+    high: "High",
+    urgent: "Urgent",
+  };
+
+  return (
+    <div className="max-w-2xl">
+      {renderBackButton()}
+      <div className="mb-8">
+        <h2 className="font-display font-bold text-2xl mb-2">Task Templates</h2>
+        <p className="text-muted-foreground">Create reusable templates for common tasks. Use them from the command palette (Cmd+K).</p>
+      </div>
+
+      <div className="space-y-4">
+        {/* Create/Edit Form */}
+        {(isCreating || editingTemplate) && (
+          <div className="glass-card p-6 rounded-2xl">
+            <h3 className="text-lg font-semibold mb-4">
+              {editingTemplate ? "Edit Template" : "New Template"}
+            </h3>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="name">Template Name</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="e.g., Weekly Report"
+                  className="mt-1"
+                  data-testid="input-template-name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="description">Description (optional)</Label>
+                <Input
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="What this template is used for"
+                  className="mt-1"
+                  data-testid="input-template-description"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="priority">Default Priority</Label>
+                  <Select
+                    value={formData.defaultPriority}
+                    onValueChange={(val) => setFormData({ ...formData, defaultPriority: val })}
+                  >
+                    <SelectTrigger className="mt-1" data-testid="select-template-priority">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="urgent">Urgent</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="estimatedMinutes">Est. Time (minutes)</Label>
+                  <Input
+                    id="estimatedMinutes"
+                    type="number"
+                    value={formData.estimatedMinutes}
+                    onChange={(e) => setFormData({ ...formData, estimatedMinutes: e.target.value })}
+                    placeholder="30"
+                    className="mt-1"
+                    data-testid="input-template-time"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button type="button" variant="outline" onClick={handleCancel}>
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={createMutation.isPending || updateMutation.isPending}
+                  data-testid="button-save-template"
+                >
+                  {editingTemplate ? "Save Changes" : "Create Template"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* Add Button */}
+        {!isCreating && !editingTemplate && (
+          <Button
+            onClick={() => setIsCreating(true)}
+            className="w-full"
+            data-testid="button-add-template"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Create New Template
+          </Button>
+        )}
+
+        {/* Templates List */}
+        <div className="glass-card p-6 rounded-2xl">
+          <h3 className="text-lg font-semibold mb-4">Your Templates</h3>
+          {isLoading ? (
+            <p className="text-muted-foreground">Loading templates...</p>
+          ) : templates.length === 0 ? (
+            <p className="text-muted-foreground">No templates yet. Create one to get started!</p>
+          ) : (
+            <div className="space-y-3">
+              {templates.map((template) => (
+                <div
+                  key={template.id}
+                  className="flex items-center justify-between p-4 bg-white/50 rounded-lg"
+                  data-testid={`template-item-${template.id}`}
+                >
+                  <div className="flex-1">
+                    <h4 className="font-medium">{template.name}</h4>
+                    {template.description && (
+                      <p className="text-sm text-muted-foreground">{template.description}</p>
+                    )}
+                    <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
+                      <span>Priority: {priorityLabels[template.defaultPriority] || template.defaultPriority}</span>
+                      {template.estimatedMinutes && (
+                        <span>Est: {template.estimatedMinutes} min</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEdit(template)}
+                      data-testid={`button-edit-template-${template.id}`}
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => deleteMutation.mutate(template.id)}
+                      className="text-destructive hover:text-destructive"
+                      data-testid={`button-delete-template-${template.id}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function Settings() {
   const [activeSection, setActiveSection] = useState<SettingsSection>("main");
@@ -229,6 +515,12 @@ export default function Settings() {
       icon: Globe,
       title: "Language & Region",
       description: "Set your timezone and date preferences",
+    },
+    {
+      id: "templates" as const,
+      icon: FileText,
+      title: "Task Templates",
+      description: "Create reusable task templates for common workflows",
     },
     {
       id: "help" as const,
@@ -1013,6 +1305,10 @@ Your online status can be toggled in Privacy settings. When hidden, others won't
     </div>
   );
 
+  const renderTemplatesSection = () => (
+    <TemplatesSectionContent renderBackButton={renderBackButton} />
+  );
+
   const renderContent = () => {
     switch (activeSection) {
       case "account":
@@ -1025,6 +1321,8 @@ Your online status can be toggled in Privacy settings. When hidden, others won't
         return renderAppearanceSection();
       case "language":
         return renderLanguageSection();
+      case "templates":
+        return renderTemplatesSection();
       case "help":
         return renderHelpSection();
       default:
