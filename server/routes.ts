@@ -20,6 +20,7 @@ import { appleCalendarConnectSchema, slackPreferencesUpdateSchema, emailTemplate
 import { broadcastToUsers, generateWsAuthToken } from "./websocket";
 import { getIntroOffers, getIntroOfferSummary, updateIntroOffer, getStudents, isMindbodyAnalyticsConfigured } from "./mindbodyAnalytics";
 import { generateEmailReplySuggestions } from "./ai-email";
+import { extractTasksFromContent, generateDailyBriefing, generateMeetingPrep, smartSearch, draftEmail, analyzeCalendar, prioritizeTasks } from "./ai-assistant";
 
 const isAdmin: RequestHandler = async (req: any, res, next) => {
   try {
@@ -1294,6 +1295,312 @@ export async function registerRoutes(
     } catch (error: any) {
       console.error("[AI] Error generating email suggestions:", error?.message);
       res.status(500).json({ error: error?.message || "Failed to generate suggestions" });
+    }
+  });
+
+  // AI Extract Tasks from Content
+  app.post("/api/ai/extract-tasks", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const { content, source, senderName } = req.body;
+      if (!content || !source) {
+        return res.status(400).json({ error: "Missing content or source" });
+      }
+      
+      const tasks = await extractTasksFromContent(content, source, senderName);
+      res.json({ tasks });
+    } catch (error: any) {
+      console.error("[AI] Error extracting tasks:", error?.message);
+      res.status(500).json({ error: error?.message || "Failed to extract tasks" });
+    }
+  });
+
+  // AI Daily Briefing
+  app.get("/api/ai/daily-briefing", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const userTasks = await storage.getUserTasks(userId);
+      const meetings = await getUpcomingEvents(10);
+      
+      let emails: any[] = [];
+      try {
+        if (await isGmailConnectedForUser(userId)) {
+          emails = await getRecentEmailsForUser(userId, 20);
+        }
+      } catch (e) {
+        console.log("[AI Briefing] Gmail not available");
+      }
+      
+      let slackMessages: any[] = [];
+      try {
+        if (await isUserSlackConnected(userId)) {
+          slackMessages = await getUserDirectMessages(userId, 20);
+        }
+      } catch (e) {
+        console.log("[AI Briefing] Slack not available");
+      }
+      
+      const briefing = await generateDailyBriefing({
+        tasks: userTasks.map(t => ({
+          title: t.title,
+          dueDate: t.dueDate?.toISOString(),
+          priority: t.priority || "medium",
+          isCompleted: t.isCompleted || false,
+        })),
+        meetings: meetings.map((m: any) => ({
+          title: m.title,
+          start: m.start,
+          attendees: m.attendees || [],
+        })),
+        emails: emails.map((e: any) => ({
+          subject: e.subject,
+          from: e.from,
+          snippet: e.snippet,
+          isUnread: e.isUnread,
+        })),
+        slackMessages: slackMessages.map((m: any) => ({
+          text: m.text,
+          userName: m.userName,
+          channelName: m.channelName,
+        })),
+      });
+      
+      res.json(briefing);
+    } catch (error: any) {
+      console.error("[AI] Error generating daily briefing:", error?.message);
+      res.status(500).json({ error: error?.message || "Failed to generate briefing" });
+    }
+  });
+
+  // AI Meeting Prep
+  app.post("/api/ai/meeting-prep", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const { meetingTitle, meetingStart, attendees } = req.body;
+      if (!meetingTitle) {
+        return res.status(400).json({ error: "Missing meeting title" });
+      }
+      
+      let recentEmails: any[] = [];
+      try {
+        if (await isGmailConnectedForUser(userId)) {
+          recentEmails = await getRecentEmailsForUser(userId, 20);
+        }
+      } catch (e) {
+        console.log("[AI Meeting Prep] Gmail not available");
+      }
+      
+      const userTasks = await storage.getUserTasks(userId);
+      
+      let slackMessages: any[] = [];
+      try {
+        if (await isUserSlackConnected(userId)) {
+          slackMessages = await getUserDirectMessages(userId, 20);
+        }
+      } catch (e) {
+        console.log("[AI Meeting Prep] Slack not available");
+      }
+      
+      const prep = await generateMeetingPrep({
+        meeting: {
+          title: meetingTitle,
+          start: meetingStart || new Date().toISOString(),
+          attendees: attendees || [],
+        },
+        recentEmails: recentEmails.map((e: any) => ({
+          subject: e.subject,
+          from: e.from,
+          snippet: e.snippet,
+        })),
+        relatedTasks: userTasks.slice(0, 20).map(t => ({
+          title: t.title,
+          description: t.description || undefined,
+        })),
+        slackMessages: slackMessages.map((m: any) => ({
+          text: m.text,
+          userName: m.userName,
+        })),
+      });
+      
+      res.json(prep);
+    } catch (error: any) {
+      console.error("[AI] Error generating meeting prep:", error?.message);
+      res.status(500).json({ error: error?.message || "Failed to generate meeting prep" });
+    }
+  });
+
+  // AI Smart Search
+  app.post("/api/ai/smart-search", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const { query } = req.body;
+      if (!query) {
+        return res.status(400).json({ error: "Missing search query" });
+      }
+      
+      let emails: any[] = [];
+      try {
+        if (await isGmailConnectedForUser(userId)) {
+          emails = await getRecentEmailsForUser(userId, 30);
+        }
+      } catch (e) {
+        console.log("[AI Smart Search] Gmail not available");
+      }
+      
+      const userTasks = await storage.getUserTasks(userId);
+      const meetings = await getUpcomingEvents(20);
+      
+      let slackMessages: any[] = [];
+      try {
+        if (await isUserSlackConnected(userId)) {
+          slackMessages = await getUserAllMessages(userId, 30);
+        }
+      } catch (e) {
+        console.log("[AI Smart Search] Slack not available");
+      }
+      
+      const result = await smartSearch(query, {
+        emails: emails.map((e: any) => ({
+          id: e.id,
+          subject: e.subject,
+          from: e.from,
+          snippet: e.snippet,
+          date: e.date,
+        })),
+        tasks: userTasks.map(t => ({
+          id: t.id,
+          title: t.title,
+          description: t.description || undefined,
+        })),
+        meetings: meetings.map((m: any) => ({
+          id: m.id,
+          title: m.title,
+          start: m.start,
+        })),
+        slackMessages: slackMessages.map((m: any) => ({
+          id: m.id,
+          text: m.text,
+          userName: m.userName,
+          channelName: m.channelName,
+        })),
+      });
+      
+      res.json(result);
+    } catch (error: any) {
+      console.error("[AI] Error in smart search:", error?.message);
+      res.status(500).json({ error: error?.message || "Failed to search" });
+    }
+  });
+
+  // AI Email Drafting
+  app.post("/api/ai/draft-email", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const { prompt, replyToMessageId } = req.body;
+      if (!prompt) {
+        return res.status(400).json({ error: "Missing prompt" });
+      }
+      
+      let context: { replyTo?: { from: string; subject: string; body: string } } | undefined;
+      
+      if (replyToMessageId) {
+        try {
+          const email = await getEmailById(userId, replyToMessageId);
+          context = {
+            replyTo: {
+              from: email.from,
+              subject: email.subject,
+              body: email.body,
+            }
+          };
+        } catch (e) {
+          console.log("[AI Draft Email] Could not fetch reply-to email");
+        }
+      }
+      
+      const draft = await draftEmail(prompt, context);
+      res.json(draft);
+    } catch (error: any) {
+      console.error("[AI] Error drafting email:", error?.message);
+      res.status(500).json({ error: error?.message || "Failed to draft email" });
+    }
+  });
+
+  // AI Calendar Analysis
+  app.get("/api/ai/calendar-insights", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const meetings = await getUpcomingEvents(50);
+      
+      const insights = await analyzeCalendar(
+        meetings.map((m: any) => ({
+          title: m.title,
+          start: m.start,
+          end: m.end,
+          duration: m.duration || 60,
+        }))
+      );
+      
+      res.json(insights);
+    } catch (error: any) {
+      console.error("[AI] Error analyzing calendar:", error?.message);
+      res.status(500).json({ error: error?.message || "Failed to analyze calendar" });
+    }
+  });
+
+  // AI Task Prioritization
+  app.get("/api/ai/prioritize-tasks", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const userTasks = await storage.getUserTasks(userId);
+      const incompleteTasks = userTasks.filter(t => !t.isCompleted);
+      
+      if (incompleteTasks.length === 0) {
+        return res.json({ prioritizedTasks: [] });
+      }
+      
+      const prioritized = await prioritizeTasks(
+        incompleteTasks.map(t => ({
+          id: t.id,
+          title: t.title,
+          description: t.description || undefined,
+          dueDate: t.dueDate?.toISOString(),
+          priority: t.priority || "medium",
+        }))
+      );
+      
+      res.json({ prioritizedTasks: prioritized });
+    } catch (error: any) {
+      console.error("[AI] Error prioritizing tasks:", error?.message);
+      res.status(500).json({ error: error?.message || "Failed to prioritize tasks" });
     }
   });
 

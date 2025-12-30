@@ -12,6 +12,8 @@ import { useNotificationSound } from "@/hooks/useNotificationSound";
 import { Input } from "@/components/ui/input";
 import { DashboardWidgetConfig, getDefaultWidgets, WidgetConfig, WidgetId } from "@/components/dashboard-widget-config";
 import { TimeTrackerWidget } from "@/components/time-tracker-widget";
+import { AIAssistantPanel } from "@/components/ai-assistant-panel";
+import { Brain } from "lucide-react";
 
 type FilterType = "all" | "mentions" | "unread";
 
@@ -117,6 +119,7 @@ export default function Dashboard() {
   const notificationsRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [aiPanelOpen, setAiPanelOpen] = useState(false);
   const today = currentTime.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
   const timeStr = currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 
@@ -1144,6 +1147,28 @@ export default function Dashboard() {
         )}
         </div>
       </main>
+
+      {/* AI Assistant Floating Button */}
+      <button
+        onClick={() => setAiPanelOpen(true)}
+        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-gradient-to-r from-primary to-purple-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-105 flex items-center justify-center"
+        data-testid="button-open-ai-assistant"
+      >
+        <Brain className="w-6 h-6" />
+      </button>
+
+      {/* AI Assistant Panel */}
+      {aiPanelOpen && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          <div 
+            className="absolute inset-0 bg-black/30" 
+            onClick={() => setAiPanelOpen(false)}
+          />
+          <div className="relative w-full max-w-xl h-full animate-in slide-in-from-right duration-300">
+            <AIAssistantPanel onClose={() => setAiPanelOpen(false)} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

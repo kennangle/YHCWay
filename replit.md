@@ -69,9 +69,21 @@ The server handles both API routes and serves the static frontend in production.
   - Maps Asana sections to project columns
   - Preserves task completion status and due dates
 
+### AI Assistant Features
+Powered by OpenAI GPT-4.1-mini via Replit AI Integrations (uses `AI_INTEGRATIONS_OPENAI_API_KEY`):
+- **Daily Briefing**: Morning summary of tasks, meetings, and urgent messages
+- **Smart Search**: Natural language search across emails, tasks, calendar, and Slack
+- **Email Drafting**: Compose emails from simple prompts
+- **Smart Task Generation**: Extract actionable tasks from emails/Slack/meeting notes
+- **Meeting Prep**: Context summary before meetings (related emails, tasks, Slack)
+- **Calendar Optimization**: Identify overloaded days and suggest focus time blocks
+- **Task Prioritization**: AI-powered ranking of tasks by urgency and importance
+
+All AI features are user-scoped for security (data isolation per user). Note: Calendar data uses the Replit Google Calendar connector which is app-level (admin's calendar shared with team).
+
 ### Service Integrations
-- **Gmail & Google Calendar**: OAuth via Google APIs
-- **Slack**: Bot token for channel/DM access
+- **Gmail & Google Calendar**: OAuth via Google APIs (gmail.modify, gmail.send scopes)
+- **Slack**: Bot token for channel/DM access + user-specific message retrieval
 - **Zoom**: Server-to-server OAuth
 - **Apple Calendar**: CalDAV via tsdav library (requires user app-specific password)
 - **Asana**: OAuth for project/task data import (one-time migration, not ongoing sync)
