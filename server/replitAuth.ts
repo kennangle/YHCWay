@@ -156,6 +156,14 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
 
   const now = Math.floor(Date.now() / 1000);
   if (now <= user.expires_at) {
+    // Backfill login timestamp for existing sessions that haven't been tracked yet
+    const userId = user.claims?.sub;
+    if (userId) {
+      const existingUser = await storage.getUser(userId);
+      if (existingUser && !existingUser.firstLoginAt) {
+        await storage.recordUserLogin(userId);
+      }
+    }
     return next();
   }
 
