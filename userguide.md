@@ -370,6 +370,137 @@ Click the **X** button in the search bar to clear your search and see all conver
 
 ---
 
+## Keyboard Shortcuts
+
+UniWork supports keyboard shortcuts to help you navigate quickly without using your mouse.
+
+### Navigation Shortcuts
+
+Press **G** followed by a letter to navigate:
+- **G + I** - Go to Unified Inbox
+- **G + C** - Go to Calendar
+- **G + P** - Go to Projects
+- **G + T** - Go to Tasks
+- **G + D** - Go to Dashboard
+- **G + S** - Go to Settings
+- **G + H** - Go to Chat
+
+### Other Shortcuts
+
+- **Escape** - Cancel current action or close dialogs
+
+---
+
+## Command Palette
+
+The Command Palette gives you quick access to everything in UniWork.
+
+### Opening the Command Palette
+
+Press **Cmd + K** (Mac) or **Ctrl + K** (Windows/Linux) to open it.
+
+### What You Can Do
+
+- **Navigate** - Quickly jump to any page
+- **Create tasks** - Start a new task from anywhere
+- **Use templates** - Apply saved task templates
+- **Search** - Find projects, tasks, and more
+
+Just start typing to filter the available actions.
+
+---
+
+## Task Templates
+
+Save time by creating templates for tasks you create repeatedly.
+
+### Creating a Template
+
+1. Go to **Settings** or use the Command Palette
+2. Find **Task Templates**
+3. Click **Create Template**
+4. Fill in the default task details:
+   - Template name
+   - Default task title
+   - Description
+   - Priority
+   - Subtasks
+5. Save your template
+
+### Using Templates
+
+1. Open the Command Palette (**Cmd + K**)
+2. Type "template" or the template name
+3. Select your template
+4. A new task is created with the template's default values
+
+### Sharing Templates
+
+Templates can be marked as "shared" so your team members can use them too.
+
+---
+
+## Time Tracking
+
+Track time spent on tasks and projects with the built-in time tracker.
+
+### Starting a Timer
+
+1. On the Dashboard, find the **Time Tracker** widget
+2. Optionally enter a description of what you're working on
+3. Click **Start** to begin timing
+
+### Stopping a Timer
+
+Click **Stop** when you're done. The time will be recorded.
+
+### Viewing Time Summary
+
+The Time Tracker widget shows:
+- Current active timer (if running)
+- Total time tracked today
+- Number of entries today
+
+---
+
+## Dashboard Widgets
+
+Customize your Dashboard to show the information that matters most to you.
+
+### Available Widgets
+
+- **Unified Feed** - Recent activity from all services
+- **Today's Schedule** - Upcoming events
+- **Quick Stats** - Summary counts
+- **Time Tracker** - Track time on tasks
+- **Upcoming Tasks** - Due dates approaching
+
+### Customizing Widgets
+
+1. Click the **Settings** icon on the Dashboard
+2. Toggle widgets on or off
+3. Drag widgets to reorder them
+4. Changes save automatically
+
+---
+
+## Calendar View
+
+The Calendar page displays events from all your connected calendar sources.
+
+### Event Sources
+
+Events are pulled from:
+- **Google Calendar** - Your Google account events
+- **Apple Calendar** - Your iCloud calendar events
+- **Zoom Meetings** - Scheduled Zoom calls
+
+### Zoom Meetings
+
+Zoom meetings include a **Join** button for quick access to your video calls directly from the calendar.
+
+---
+
 ## Tips for Success
 
 1. **Connect everything** - The more services you connect, the more useful UniWork becomes
@@ -378,6 +509,10 @@ Click the **X** button in the search bar to clear your search and see all conver
 4. **Keep the Calendar open** - Never miss a meeting with all your events in one place
 5. **Add to your home screen** - Create a shortcut for quick mobile access
 6. **Use Projects** - Manage your tasks natively without leaving UniWork
+7. **Learn keyboard shortcuts** - Press G + letter to navigate quickly
+8. **Use the Command Palette** - Press Cmd + K for quick access to anything
+9. **Create templates** - Save time on repetitive tasks with templates
+10. **Track your time** - Use the time tracker to understand where your time goes
 
 ---
 
