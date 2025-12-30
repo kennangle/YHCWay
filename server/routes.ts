@@ -575,68 +575,62 @@ export async function registerRoutes(
         metadata?: Record<string, unknown>;
       }> = [];
 
-      // Search Gmail messages
+      // Search Gmail messages (only if user has personal connection)
       try {
-        const customConnected = userId ? await isGmailConnectedForUser(userId) : false;
-        let emails: any[] = [];
-        if (customConnected) {
-          emails = await getRecentEmailsForUser(userId, 50);
-        } else {
-          emails = await getRecentEmails(50);
-        }
-        
-        for (const email of emails) {
-          const subject = (email.subject || "").toLowerCase();
-          const from = (email.from || "").toLowerCase();
-          const snippet = (email.snippet || "").toLowerCase();
-          
-          if (subject.includes(query) || from.includes(query) || snippet.includes(query)) {
-            results.push({
-              id: email.id,
-              type: "email",
-              title: email.subject || "(No subject)",
-              snippet: email.snippet || "",
-              timestamp: email.date || new Date().toISOString(),
-              source: "Gmail",
-              metadata: { from: email.from, threadId: email.threadId }
-            });
+        if (userId) {
+          const customConnected = await isGmailConnectedForUser(userId);
+          if (customConnected) {
+            const emails = await getRecentEmailsForUser(userId, 50);
+            for (const email of emails) {
+              const subject = (email.subject || "").toLowerCase();
+              const from = (email.from || "").toLowerCase();
+              const snippet = (email.snippet || "").toLowerCase();
+              
+              if (subject.includes(query) || from.includes(query) || snippet.includes(query)) {
+                results.push({
+                  id: email.id,
+                  type: "email",
+                  title: email.subject || "(No subject)",
+                  snippet: email.snippet || "",
+                  timestamp: email.date || new Date().toISOString(),
+                  source: "Gmail",
+                  metadata: { from: email.from, threadId: email.threadId }
+                });
+              }
+            }
           }
         }
       } catch (e) {
         console.log("[Search] Gmail search skipped:", (e as Error).message);
       }
 
-      // Search Slack messages
+      // Search Slack messages (only if user has personal connection)
       try {
-        let slackMessages: any[] = [];
         if (userId && await isUserSlackConnected(userId)) {
-          slackMessages = await getUserAllMessages(userId, 100);
-        } else if (await isSlackConnected()) {
-          slackMessages = await getAllSlackMessages(100);
-        }
-        
-        for (const msg of slackMessages) {
-          const text = (msg.text || "").toLowerCase();
-          const channel = (msg.channelName || "").toLowerCase();
-          const user = (msg.userName || "").toLowerCase();
-          
-          if (text.includes(query) || channel.includes(query) || user.includes(query)) {
-            results.push({
-              id: msg.id,
-              type: "slack",
-              title: msg.channelName || "Slack Message",
-              snippet: msg.text || "",
-              timestamp: msg.timestamp || new Date().toISOString(),
-              source: "Slack",
-              metadata: { channelId: msg.channelId, userName: msg.userName, isDm: msg.isDm }
-            });
+          const slackMessages = await getUserAllMessages(userId, 100);
+          for (const msg of slackMessages) {
+            const text = (msg.text || "").toLowerCase();
+            const channel = (msg.channelName || "").toLowerCase();
+            const user = (msg.userName || "").toLowerCase();
+            
+            if (text.includes(query) || channel.includes(query) || user.includes(query)) {
+              results.push({
+                id: msg.id,
+                type: "slack",
+                title: msg.channelName || "Slack Message",
+                snippet: msg.text || "",
+                timestamp: msg.timestamp || new Date().toISOString(),
+                source: "Slack",
+                metadata: { channelId: msg.channelId, userName: msg.userName, isDm: msg.isDm }
+              });
+            }
           }
         }
       } catch (e) {
         console.log("[Search] Slack search skipped:", (e as Error).message);
       }
 
-      // Search Calendar events
+      // Search Calendar events (uses shared connector - OK for single-tenant)
       try {
         const events = await getUpcomingEvents();
         for (const event of events) {
@@ -651,7 +645,7 @@ export async function registerRoutes(
               title: event.title,
               snippet: event.location || event.description || "",
               timestamp: event.start,
-              source: event.source === 'apple' ? "Apple Calendar" : "Google Calendar",
+              source: "Calendar",
               metadata: { end: event.end, isAllDay: event.isAllDay }
             });
           }
@@ -660,7 +654,7 @@ export async function registerRoutes(
         console.log("[Search] Calendar search skipped:", (e as Error).message);
       }
 
-      // Search Zoom meetings
+      // Search Zoom meetings (uses shared connector - OK for single-tenant)
       try {
         const meetings = await getUpcomingMeetings();
         for (const meeting of meetings) {
@@ -686,8 +680,8 @@ export async function registerRoutes(
       // Search native tasks
       try {
         if (userId) {
-          const tasks = await storage.getTasksByUserId(userId);
-          for (const task of tasks) {
+          const userTasks = await storage.getUserTasks(userId);
+          for (const task of userTasks) {
             const title = (task.title || "").toLowerCase();
             const description = (task.description || "").toLowerCase();
             
@@ -699,7 +693,7 @@ export async function registerRoutes(
                 snippet: task.description || "",
                 timestamp: task.createdAt?.toISOString() || new Date().toISOString(),
                 source: "Tasks",
-                metadata: { status: task.status, priority: task.priority, dueDate: task.dueDate }
+                metadata: { priority: task.priority, dueDate: task.dueDate, completed: task.isCompleted }
               });
             }
           }
@@ -711,8 +705,8 @@ export async function registerRoutes(
       // Search native projects
       try {
         if (userId) {
-          const projects = await storage.getProjectsByUserId(userId);
-          for (const project of projects) {
+          const userProjects = await storage.getUserProjects(userId);
+          for (const project of userProjects) {
             const name = (project.name || "").toLowerCase();
             const description = (project.description || "").toLowerCase();
             
@@ -724,7 +718,7 @@ export async function registerRoutes(
                 snippet: project.description || "",
                 timestamp: project.createdAt?.toISOString() || new Date().toISOString(),
                 source: "Projects",
-                metadata: { status: project.status }
+                metadata: { isArchived: project.isArchived }
               });
             }
           }
