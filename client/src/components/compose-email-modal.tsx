@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { X, Send, Loader2 } from "lucide-react";
+import { RichTextEditor } from "./rich-text-editor";
 
 interface User {
   id: string;
@@ -102,9 +103,12 @@ export function ComposeEmailModal({ onClose }: ComposeEmailModalProps) {
   });
 
   function handleSend() {
-    if (!to.trim() || !subject.trim() || !body.trim()) return;
+    const bodyText = body.replace(/<[^>]*>/g, '').trim();
+    if (!to.trim() || !subject.trim() || !bodyText) return;
     sendMutation.mutate({ to, subject, body });
   }
+
+  const hasBodyContent = body.replace(/<[^>]*>/g, '').trim().length > 0;
 
   const getUserDisplayName = (user: User) => {
     if (user.firstName || user.lastName) {
@@ -234,13 +238,11 @@ export function ComposeEmailModal({ onClose }: ComposeEmailModalProps) {
           
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Message</label>
-            <textarea
+            <RichTextEditor
               value={body}
-              onChange={(e) => setBody(e.target.value)}
+              onChange={setBody}
               placeholder="Write your message..."
-              rows={10}
-              className="w-full px-4 py-2 border border-gray-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
-              data-testid="input-compose-body"
+              minHeight="180px"
             />
           </div>
         </div>
@@ -260,7 +262,7 @@ export function ComposeEmailModal({ onClose }: ComposeEmailModalProps) {
             </button>
             <button
               onClick={handleSend}
-              disabled={!to.trim() || !subject.trim() || !body.trim() || sendMutation.isPending}
+              disabled={!to.trim() || !subject.trim() || !hasBodyContent || sendMutation.isPending}
               className="flex items-center gap-2 px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
               data-testid="button-send-compose"
             >
