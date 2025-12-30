@@ -176,7 +176,12 @@ export function EmailDetailPanel({ messageId, onClose }: EmailDetailPanelProps) 
           </button>
           <div className="flex gap-2">
             <button
-              onClick={() => deleteMutation.mutate()}
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                deleteMutation.mutate();
+              }}
               disabled={deleteMutation.isPending}
               className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
               data-testid="button-delete-email"
@@ -189,7 +194,12 @@ export function EmailDetailPanel({ messageId, onClose }: EmailDetailPanelProps) 
               Delete
             </button>
             <button
-              onClick={() => setIsReplying(!isReplying)}
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsReplying(!isReplying);
+              }}
               className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
               data-testid="button-reply"
             >
@@ -301,14 +311,24 @@ export function EmailDetailPanel({ messageId, onClose }: EmailDetailPanelProps) 
               />
               <div className="flex justify-end gap-2 mt-4">
                 <button
-                  onClick={() => setIsReplying(false)}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsReplying(false);
+                  }}
                   className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                   data-testid="button-cancel-reply"
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={handleSendReply}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleSendReply();
+                  }}
                   disabled={!replyBody.trim() || sendMutation.isPending}
                   className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
                   data-testid="button-send-reply"
