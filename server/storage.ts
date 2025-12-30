@@ -104,6 +104,7 @@ export interface IStorage {
   updateUserApprovalStatus(id: string, status: string, approvedBy?: string): Promise<User | undefined>;
   recordUserLogin(id: string): Promise<User | undefined>;
   getActiveSessions(): Promise<string[]>;
+  deleteUser(id: string): Promise<void>;
   
   getOAuthAccount(userId: string, provider: string): Promise<OAuthAccount | undefined>;
   getOAuthAccountByProvider(provider: string, providerAccountId: string): Promise<OAuthAccount | undefined>;
@@ -395,6 +396,11 @@ export class DbStorage implements IStorage {
       }
     }
     return Array.from(activeUserIds);
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    // Delete user and all related data (cascading deletes should handle most)
+    await db.delete(users).where(eq(users.id, id));
   }
 
   async getOAuthAccount(userId: string, provider: string): Promise<OAuthAccount | undefined> {

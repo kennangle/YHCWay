@@ -617,6 +617,25 @@ export async function registerRoutes(
     }
   });
 
+  app.delete("/api/admin/users/:id", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const userToDelete = await storage.getUser(req.params.id);
+      if (!userToDelete) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      // Prevent deleting yourself
+      const currentUserId = req.user?.id || req.user?.claims?.sub;
+      if (req.params.id === currentUserId) {
+        return res.status(400).json({ error: "Cannot delete yourself" });
+      }
+      await storage.deleteUser(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ error: "Failed to delete user" });
+    }
+  });
+
   app.put("/api/admin/services/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id);

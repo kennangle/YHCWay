@@ -144,6 +144,20 @@ export default function Admin() {
     },
   });
 
+  const deleteUserMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return apiRequest("DELETE", `/api/admin/users/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      toast({ title: "User deleted", description: "User has been removed from the system." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to delete user.", variant: "destructive" });
+    },
+  });
+
   const createServiceMutation = useMutation({
     mutationFn: async (data: InsertService) => {
       return apiRequest("POST", "/api/services", data);
@@ -422,6 +436,18 @@ export default function Admin() {
                       data-testid={`button-toggle-admin-${u.id}`}
                     >
                       {u.isAdmin ? <ShieldOff className="w-4 h-4" /> : <Shield className="w-4 h-4" />}
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (confirm(`Are you sure you want to delete ${u.firstName || u.email}? This cannot be undone.`)) {
+                          deleteUserMutation.mutate(u.id);
+                        }
+                      }}
+                      className="p-2 hover:bg-red-50 text-red-500 rounded-lg transition-all"
+                      title="Delete user"
+                      data-testid={`button-delete-user-${u.id}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
