@@ -52,6 +52,10 @@ import {
   type InsertWebhook,
   type WebhookDelivery,
   type InsertWebhookDelivery,
+  type ArchivedEmail,
+  type InsertArchivedEmail,
+  type ArchivedSlackMessage,
+  type InsertArchivedSlackMessage,
   users,
   services,
   feedItems,
@@ -84,7 +88,9 @@ import {
   taskTemplates,
   sessions,
   webhooks,
-  webhookDeliveries
+  webhookDeliveries,
+  archivedEmails,
+  archivedSlackMessages
 } from "@shared/schema";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq, desc, and, lt, isNull, sql, inArray, gte, lte } from "drizzle-orm";
@@ -1648,6 +1654,52 @@ export class DbStorage implements IStorage {
       .where(eq(webhookDeliveries.webhookId, webhookId))
       .orderBy(desc(webhookDeliveries.deliveredAt))
       .limit(limit);
+  }
+
+  // Archived Emails
+  async getArchivedEmails(userId: string): Promise<ArchivedEmail[]> {
+    return db.select().from(archivedEmails)
+      .where(eq(archivedEmails.userId, userId))
+      .orderBy(desc(archivedEmails.archivedAt));
+  }
+
+  async archiveEmail(data: InsertArchivedEmail): Promise<ArchivedEmail> {
+    const [archived] = await db.insert(archivedEmails).values(data).returning();
+    return archived;
+  }
+
+  async isEmailArchived(userId: string, emailId: string): Promise<boolean> {
+    const [existing] = await db.select().from(archivedEmails)
+      .where(and(eq(archivedEmails.userId, userId), eq(archivedEmails.emailId, emailId)));
+    return !!existing;
+  }
+
+  async unarchiveEmail(userId: string, emailId: string): Promise<void> {
+    await db.delete(archivedEmails)
+      .where(and(eq(archivedEmails.userId, userId), eq(archivedEmails.emailId, emailId)));
+  }
+
+  // Archived Slack Messages
+  async getArchivedSlackMessages(userId: string): Promise<ArchivedSlackMessage[]> {
+    return db.select().from(archivedSlackMessages)
+      .where(eq(archivedSlackMessages.userId, userId))
+      .orderBy(desc(archivedSlackMessages.archivedAt));
+  }
+
+  async archiveSlackMessage(data: InsertArchivedSlackMessage): Promise<ArchivedSlackMessage> {
+    const [archived] = await db.insert(archivedSlackMessages).values(data).returning();
+    return archived;
+  }
+
+  async isSlackMessageArchived(userId: string, messageId: string): Promise<boolean> {
+    const [existing] = await db.select().from(archivedSlackMessages)
+      .where(and(eq(archivedSlackMessages.userId, userId), eq(archivedSlackMessages.messageId, messageId)));
+    return !!existing;
+  }
+
+  async unarchiveSlackMessage(userId: string, messageId: string): Promise<void> {
+    await db.delete(archivedSlackMessages)
+      .where(and(eq(archivedSlackMessages.userId, userId), eq(archivedSlackMessages.messageId, messageId)));
   }
 }
 
