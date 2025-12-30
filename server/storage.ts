@@ -48,6 +48,10 @@ import {
   type InsertTimeEntry,
   type TaskTemplate,
   type InsertTaskTemplate,
+  type Webhook,
+  type InsertWebhook,
+  type WebhookDelivery,
+  type InsertWebhookDelivery,
   users,
   services,
   feedItems,
@@ -78,7 +82,9 @@ import {
   notificationLog,
   timeEntries,
   taskTemplates,
-  sessions
+  sessions,
+  webhooks,
+  webhookDeliveries
 } from "@shared/schema";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq, desc, and, lt, isNull, sql, inArray, gte, lte } from "drizzle-orm";
@@ -274,6 +280,16 @@ export interface IStorage {
   createTaskTemplate(data: InsertTaskTemplate): Promise<TaskTemplate>;
   updateTaskTemplate(id: number, userId: string, tenantId: string | undefined, data: Partial<InsertTaskTemplate>): Promise<TaskTemplate | undefined>;
   deleteTaskTemplate(id: number, userId: string, tenantId?: string): Promise<boolean>;
+  
+  // Webhooks
+  getWebhooks(tenantId?: string): Promise<Webhook[]>;
+  getWebhook(id: number): Promise<Webhook | undefined>;
+  createWebhook(data: InsertWebhook): Promise<Webhook>;
+  updateWebhook(id: number, data: Partial<InsertWebhook>): Promise<Webhook | undefined>;
+  deleteWebhook(id: number): Promise<void>;
+  getActiveWebhooksForEvent(event: string, tenantId?: string): Promise<Webhook[]>;
+  logWebhookDelivery(data: InsertWebhookDelivery): Promise<WebhookDelivery>;
+  getWebhookDeliveries(webhookId: number, limit?: number): Promise<WebhookDelivery[]>;
 }
 
 export class DbStorage implements IStorage {
@@ -1561,6 +1577,57 @@ export class DbStorage implements IStorage {
     
     await db.delete(taskTemplates).where(eq(taskTemplates.id, id));
     return true;
+  }
+
+  // Webhooks
+  async getWebhooks(tenantId?: string): Promise<Webhook[]> {
+    if (tenantId) {
+      return db.select().from(webhooks)
+        .where(eq(webhooks.tenantId, tenantId))
+        .orderBy(desc(webhooks.createdAt));
+    }
+    return db.select().from(webhooks)
+      .where(isNull(webhooks.tenantId))
+      .orderBy(desc(webhooks.createdAt));
+  }
+
+  async getWebhook(id: number): Promise<Webhook | undefined> {
+    const [webhook] = await db.select().from(webhooks).where(eq(webhooks.id, id));
+    return webhook;
+  }
+
+  async createWebhook(data: InsertWebhook): Promise<Webhook> {
+    const [webhook] = await db.insert(webhooks).values(data).returning();
+    return webhook;
+  }
+
+  async updateWebhook(id: number, data: Partial<InsertWebhook>): Promise<Webhook | undefined> {
+    const [webhook] = await db.update(webhooks)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(webhooks.id, id))
+      .returning();
+    return webhook;
+  }
+
+  async deleteWebhook(id: number): Promise<void> {
+    await db.delete(webhooks).where(eq(webhooks.id, id));
+  }
+
+  async getActiveWebhooksForEvent(event: string, tenantId?: string): Promise<Webhook[]> {
+    const allWebhooks = await this.getWebhooks(tenantId);
+    return allWebhooks.filter(w => w.isActive && w.events.includes(event));
+  }
+
+  async logWebhookDelivery(data: InsertWebhookDelivery): Promise<WebhookDelivery> {
+    const [delivery] = await db.insert(webhookDeliveries).values(data).returning();
+    return delivery;
+  }
+
+  async getWebhookDeliveries(webhookId: number, limit: number = 20): Promise<WebhookDelivery[]> {
+    return db.select().from(webhookDeliveries)
+      .where(eq(webhookDeliveries.webhookId, webhookId))
+      .orderBy(desc(webhookDeliveries.deliveredAt))
+      .limit(limit);
   }
 }
 
