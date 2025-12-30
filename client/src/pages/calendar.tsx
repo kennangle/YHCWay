@@ -1,6 +1,6 @@
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { TopBar } from "@/components/top-bar";
-import { Search, Bell, ChevronLeft, ChevronRight, Clock, MapPin, Video, Apple, X } from "lucide-react";
+import { Search, Bell, ChevronLeft, ChevronRight, Clock, MapPin, Video, Apple, X, RefreshCw } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
@@ -176,6 +176,18 @@ export default function Calendar() {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
   };
 
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["calendar-month"] }),
+      queryClient.invalidateQueries({ queryKey: ["apple-calendar-month"] }),
+      queryClient.invalidateQueries({ queryKey: ["zoom-meetings"] }),
+    ]);
+    setTimeout(() => setIsRefreshing(false), 500);
+  };
+
   const today = new Date();
   const isToday = (day: number) => {
     return today.getDate() === day && 
@@ -273,6 +285,14 @@ export default function Calendar() {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-display font-semibold text-xl">{monthName}</h2>
                 <div className="flex gap-2">
+                  <button 
+                    onClick={handleRefresh}
+                    disabled={isRefreshing}
+                    className="w-8 h-8 rounded-lg bg-white/50 flex items-center justify-center hover:bg-white transition-colors disabled:opacity-50"
+                    data-testid="button-refresh-calendar"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  </button>
                   <button 
                     onClick={goToPrevMonth}
                     className="w-8 h-8 rounded-lg bg-white/50 flex items-center justify-center hover:bg-white transition-colors"
