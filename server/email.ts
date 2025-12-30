@@ -168,6 +168,87 @@ export function getTemplateTypes() {
   ];
 }
 
+// Default templates for all template types
+const DEFAULT_WELCOME_SUBJECT = "Welcome to UniWork!";
+const DEFAULT_WELCOME_HTML = `
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <h1 style="color: #FD971E; text-align: center;">Welcome to UniWork!</h1>
+  <h2 style="color: #666;">Hello {{firstName}},</h2>
+  <p style="color: #444; line-height: 1.6;">
+    Welcome to your new unified workspace! We're excited to have you on board.
+  </p>
+  <p style="color: #444; line-height: 1.6;">
+    UniWork brings all your work tools together in one place - email, calendar, tasks, and more.
+  </p>
+  <div style="text-align: center; margin: 30px 0;">
+    <a href="{{loginUrl}}" 
+       style="background-color: #FD971E; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold;">
+      Get Started
+    </a>
+  </div>
+  <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+  <p style="color: #999; font-size: 12px; text-align: center;">
+    UniWork - Your Unified Workspace
+  </p>
+</div>
+`;
+
+const DEFAULT_NEWSLETTER_SUBJECT = "UniWork Newsletter";
+const DEFAULT_NEWSLETTER_HTML = `
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <h1 style="color: #FD971E; text-align: center;">UniWork Updates</h1>
+  <h2 style="color: #666;">Hello {{firstName}},</h2>
+  <p style="color: #444; line-height: 1.6;">
+    Here are the latest updates and announcements from UniWork.
+  </p>
+  <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+    <p style="color: #444;">Add your newsletter content here...</p>
+  </div>
+  <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+  <p style="color: #999; font-size: 12px; text-align: center;">
+    UniWork - Your Unified Workspace
+  </p>
+</div>
+`;
+
+const DEFAULT_NOTIFICATION_SUBJECT = "UniWork Notification";
+const DEFAULT_NOTIFICATION_HTML = `
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <h1 style="color: #FD971E; text-align: center;">Notification</h1>
+  <h2 style="color: #666;">Hello {{firstName}},</h2>
+  <p style="color: #444; line-height: 1.6;">
+    You have a new notification from UniWork.
+  </p>
+  <div style="background-color: #fff8f0; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #FD971E;">
+    <p style="color: #444;">Notification content goes here...</p>
+  </div>
+  <div style="text-align: center; margin: 30px 0;">
+    <a href="{{loginUrl}}" 
+       style="background-color: #FD971E; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold;">
+      View Details
+    </a>
+  </div>
+  <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+  <p style="color: #999; font-size: 12px; text-align: center;">
+    UniWork - Your Unified Workspace
+  </p>
+</div>
+`;
+
+const DEFAULT_CUSTOM_SUBJECT = "Custom Email";
+const DEFAULT_CUSTOM_HTML = `
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <h1 style="color: #FD971E; text-align: center;">UniWork</h1>
+  <p style="color: #444; line-height: 1.6;">
+    Start designing your custom email template here. Use variables like {{firstName}}, {{lastName}}, and {{email}} to personalize your messages.
+  </p>
+  <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+  <p style="color: #999; font-size: 12px; text-align: center;">
+    UniWork - Your Unified Workspace
+  </p>
+</div>
+`;
+
 // Get default template content
 export function getDefaultTemplate(templateType: string): { subject: string; htmlContent: string } | null {
   switch (templateType) {
@@ -175,6 +256,14 @@ export function getDefaultTemplate(templateType: string): { subject: string; htm
       return { subject: DEFAULT_INVITATION_SUBJECT, htmlContent: DEFAULT_INVITATION_HTML };
     case 'password_reset':
       return { subject: DEFAULT_RESET_SUBJECT, htmlContent: DEFAULT_RESET_HTML };
+    case 'welcome':
+      return { subject: DEFAULT_WELCOME_SUBJECT, htmlContent: DEFAULT_WELCOME_HTML };
+    case 'newsletter':
+      return { subject: DEFAULT_NEWSLETTER_SUBJECT, htmlContent: DEFAULT_NEWSLETTER_HTML };
+    case 'notification':
+      return { subject: DEFAULT_NOTIFICATION_SUBJECT, htmlContent: DEFAULT_NOTIFICATION_HTML };
+    case 'custom':
+      return { subject: DEFAULT_CUSTOM_SUBJECT, htmlContent: DEFAULT_CUSTOM_HTML };
     default:
       return null;
   }
