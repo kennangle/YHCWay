@@ -443,12 +443,27 @@ export const userPreferences = pgTable("user_preferences", {
   timezone: varchar("timezone").default("America/New_York"),
   dateFormat: varchar("date_format").default("MM/DD/YYYY"),
   firstDayOfWeek: varchar("first_day_of_week").default("sunday"),
+  // Dashboard widget configuration
+  dashboardWidgets: jsonb("dashboard_widgets").$type<DashboardWidgetConfig[]>(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Dashboard widget configuration type
+export type DashboardWidgetConfig = {
+  id: string;
+  visible: boolean;
+  order: number;
+};
+
 export type UserPreference = typeof userPreferences.$inferSelect;
 export type InsertUserPreference = typeof userPreferences.$inferInsert;
+
+export const dashboardWidgetConfigSchema = z.object({
+  id: z.string(),
+  visible: z.boolean(),
+  order: z.number(),
+});
 
 export const userPreferencesSchema = z.object({
   googleCalendarColor: z.string().optional(),
@@ -475,6 +490,8 @@ export const userPreferencesSchema = z.object({
   timezone: z.string().optional(),
   dateFormat: z.enum(["MM/DD/YYYY", "DD/MM/YYYY", "YYYY-MM-DD"]).optional(),
   firstDayOfWeek: z.enum(["sunday", "monday"]).optional(),
+  // Dashboard widgets
+  dashboardWidgets: z.array(dashboardWidgetConfigSchema).optional(),
 });
 
 // =============================================================================
@@ -692,6 +709,47 @@ export const projectMembers = pgTable("project_members", {
 
 export type ProjectMember = typeof projectMembers.$inferSelect;
 export type InsertProjectMember = typeof projectMembers.$inferInsert;
+
+// =============================================================================
+// TIME TRACKING
+// =============================================================================
+
+export const timeEntries = pgTable("time_entries", {
+  id: serial("id").primaryKey(),
+  taskId: integer("task_id").references(() => tasks.id, { onDelete: "cascade" }),
+  projectId: integer("project_id").references(() => projects.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  description: text("description"),
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time"),
+  duration: integer("duration"), // in seconds, null if timer is running
+  isBillable: boolean("is_billable").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_time_entry_task").on(table.taskId),
+  index("idx_time_entry_project").on(table.projectId),
+  index("idx_time_entry_user").on(table.userId),
+]);
+
+export type TimeEntry = typeof timeEntries.$inferSelect;
+export type InsertTimeEntry = typeof timeEntries.$inferInsert;
+
+export const createTimeEntrySchema = z.object({
+  taskId: z.number().optional(),
+  projectId: z.number().optional(),
+  description: z.string().optional(),
+  startTime: z.string(),
+  endTime: z.string().optional(),
+  duration: z.number().optional(),
+  isBillable: z.boolean().optional(),
+});
+
+export const updateTimeEntrySchema = z.object({
+  description: z.string().optional(),
+  endTime: z.string().optional(),
+  duration: z.number().optional(),
+  isBillable: z.boolean().optional(),
+});
 
 // =============================================================================
 // NOTIFICATION PREFERENCES

@@ -4,12 +4,14 @@ import { TopBar } from "@/components/top-bar";
 import { FeedItem } from "@/components/feed-item";
 import { Search, Bell, Mail, Video, MessageCircle, Users, MessageSquare, CheckSquare, RefreshCw, X, Gift, AlertTriangle, TrendingUp, Plus, Send, CalendarPlus } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import type { FeedItem as FeedItemType } from "@shared/schema";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "wouter";
 import { useNotificationSound } from "@/hooks/useNotificationSound";
 import { Input } from "@/components/ui/input";
+import { DashboardWidgetConfig, getDefaultWidgets, WidgetConfig, WidgetId } from "@/components/dashboard-widget-config";
+import { TimeTrackerWidget } from "@/components/time-tracker-widget";
 
 type FilterType = "all" | "mentions" | "unread";
 
@@ -117,6 +119,48 @@ export default function Dashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const today = currentTime.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
   const timeStr = currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+
+  const { data: userPrefs } = useQuery({
+    queryKey: ["preferences"],
+    queryFn: async () => {
+      const res = await fetch("/api/preferences", { credentials: "include" });
+      if (!res.ok) return null;
+      return res.json();
+    },
+  });
+
+  const widgetConfigs = useMemo<WidgetConfig[]>(() => {
+    if (userPrefs?.dashboardWidgets) {
+      return userPrefs.dashboardWidgets;
+    }
+    return getDefaultWidgets();
+  }, [userPrefs?.dashboardWidgets]);
+
+  const saveWidgetsMutation = useMutation({
+    mutationFn: async (widgets: WidgetConfig[]) => {
+      const res = await fetch("/api/preferences", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ dashboardWidgets: widgets }),
+      });
+      if (!res.ok) throw new Error("Failed to save widget preferences");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["preferences"] });
+    },
+  });
+
+  const isWidgetVisible = useCallback((widgetId: WidgetId) => {
+    const widget = widgetConfigs.find(w => w.id === widgetId);
+    return widget?.visible !== false;
+  }, [widgetConfigs]);
+
+  const getWidgetOrder = useCallback((widgetId: WidgetId): number => {
+    const widget = widgetConfigs.find(w => w.id === widgetId);
+    return widget?.order ?? 999;
+  }, [widgetConfigs]);
   
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
@@ -546,6 +590,10 @@ export default function Dashboard() {
             <h1 className="font-display font-bold text-3xl">{getGreeting()}, {userName}</h1>
           </div>
           <div className="flex gap-4">
+            <DashboardWidgetConfig 
+              widgets={widgetConfigs}
+              onSave={(widgets) => saveWidgetsMutation.mutate(widgets)}
+            />
             <button 
               onClick={handleRefresh}
               disabled={isRefreshing}
@@ -647,40 +695,43 @@ export default function Dashboard() {
           </div>
         </header>
 
-        <div className="glass-panel p-6 rounded-2xl mb-8">
-          <h3 className="font-display font-semibold text-lg mb-4">Upcoming Events</h3>
-          
-          {calendarLoading ? (
-            <div className="text-center text-muted-foreground py-4">Loading events...</div>
-          ) : calendarEvents.length === 0 ? (
-            <div className="text-center text-muted-foreground py-4">No upcoming events</div>
-          ) : (
-            <div className="flex gap-3 overflow-x-auto pb-2">
-              {calendarEvents.slice(0, 10).map((event) => {
-                const isNow = isEventNow(event.start, event.end, event.isAllDay);
-                return (
-                  <Link key={event.id} href="/calendar" data-testid={`upcoming-event-${event.id}`}>
-                    <div className="flex-shrink-0 flex items-center gap-3 px-4 py-2 rounded-lg bg-white/60 border border-white/30 hover:bg-white/80 transition-colors cursor-pointer">
-                      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isNow ? 'bg-primary animate-pulse' : 'bg-green-500'}`}></div>
-                      <span className={`text-xs font-semibold flex-shrink-0 ${isNow ? 'text-primary' : 'text-muted-foreground'}`}>
-                        {isNow ? 'NOW' : formatEventStartTime(event.start, event.isAllDay)}
-                      </span>
-                      <span className="font-medium text-foreground text-sm truncate max-w-48">{event.title}</span>
-                      <span className="text-xs text-muted-foreground flex-shrink-0">
-                        {formatEventTime(event.start, event.end, event.isAllDay)}
-                      </span>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
-        </div>
+        {isWidgetVisible("upcoming-events") && (
+          <div className="glass-panel p-6 rounded-2xl mb-8" style={{ order: getWidgetOrder("upcoming-events") }}>
+            <h3 className="font-display font-semibold text-lg mb-4">Upcoming Events</h3>
+            
+            {calendarLoading ? (
+              <div className="text-center text-muted-foreground py-4">Loading events...</div>
+            ) : calendarEvents.length === 0 ? (
+              <div className="text-center text-muted-foreground py-4">No upcoming events</div>
+            ) : (
+              <div className="flex gap-3 overflow-x-auto pb-2">
+                {calendarEvents.slice(0, 10).map((event) => {
+                  const isNow = isEventNow(event.start, event.end, event.isAllDay);
+                  return (
+                    <Link key={event.id} href="/calendar" data-testid={`upcoming-event-${event.id}`}>
+                      <div className="flex-shrink-0 flex items-center gap-3 px-4 py-2 rounded-lg bg-white/60 border border-white/30 hover:bg-white/80 transition-colors cursor-pointer">
+                        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isNow ? 'bg-primary animate-pulse' : 'bg-green-500'}`}></div>
+                        <span className={`text-xs font-semibold flex-shrink-0 ${isNow ? 'text-primary' : 'text-muted-foreground'}`}>
+                          {isNow ? 'NOW' : formatEventStartTime(event.start, event.isAllDay)}
+                        </span>
+                        <span className="font-medium text-foreground text-sm truncate max-w-48">{event.title}</span>
+                        <span className="text-xs text-muted-foreground flex-shrink-0">
+                          {formatEventTime(event.start, event.end, event.isAllDay)}
+                        </span>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Insights Section */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          {/* At-Risk Students */}
-          <Link href="/intro-offers?filter=needs_attention" className="block" data-testid="insight-at-risk">
+        {isWidgetVisible("insights") && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8" style={{ order: getWidgetOrder("insights") }}>
+            {/* At-Risk Students */}
+            <Link href="/intro-offers?filter=needs_attention" className="block" data-testid="insight-at-risk">
             <div className="glass-panel p-5 rounded-xl border-l-4 border-l-amber-500 hover:bg-white/80 transition-colors cursor-pointer h-full">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
@@ -744,10 +795,18 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+        )}
+
+        {/* Time Tracker Widget */}
+        {isWidgetVisible("time-tracker") && (
+          <div className="mb-8" style={{ order: getWidgetOrder("time-tracker") }}>
+            <TimeTrackerWidget />
+          </div>
+        )}
 
         {/* Upcoming Tasks Section */}
-        {upcomingTasks.length > 0 && (
-          <div className="glass-panel p-6 rounded-2xl mb-8">
+        {isWidgetVisible("upcoming-tasks") && upcomingTasks.length > 0 && (
+          <div className="glass-panel p-6 rounded-2xl mb-8" style={{ order: getWidgetOrder("upcoming-tasks") }}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-display font-semibold text-lg">Upcoming Tasks</h3>
               <Link href="/projects">
@@ -783,7 +842,8 @@ export default function Dashboard() {
           </div>
         )}
 
-        <div className="grid grid-cols-12 gap-8">
+        {isWidgetVisible("service-summary") && (
+        <div className="grid grid-cols-12 gap-8" style={{ order: getWidgetOrder("service-summary") }}>
           <div className="col-span-12">
             <div className="flex items-center justify-between mb-6">
               <h2 className="font-display font-semibold text-xl">Service Summary</h2>
@@ -1074,6 +1134,7 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+        )}
         </div>
       </main>
     </div>

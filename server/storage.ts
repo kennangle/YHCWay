@@ -44,6 +44,8 @@ import {
   type InsertNotificationPreference,
   type NotificationLogEntry,
   type InsertNotificationLog,
+  type TimeEntry,
+  type InsertTimeEntry,
   users,
   services,
   feedItems,
@@ -71,10 +73,11 @@ import {
   taskComments,
   projectMembers,
   notificationPreferences,
-  notificationLog
+  notificationLog,
+  timeEntries
 } from "@shared/schema";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { eq, desc, and, lt, isNull, sql, inArray } from "drizzle-orm";
+import { eq, desc, and, lt, isNull, sql, inArray, gte, lte } from "drizzle-orm";
 import pg from "pg";
 
 const { Pool } = pg;
@@ -246,6 +249,17 @@ export interface IStorage {
   updateNotificationPreferences(userId: string, prefs: Partial<Omit<NotificationPreference, 'id' | 'userId' | 'createdAt' | 'updatedAt'>>): Promise<NotificationPreference>;
   logNotification(data: InsertNotificationLog): Promise<NotificationLogEntry>;
   getNotificationLogs(userId: string, limit?: number): Promise<NotificationLogEntry[]>;
+  
+  // Time tracking
+  createTimeEntry(data: InsertTimeEntry): Promise<TimeEntry>;
+  getTimeEntry(id: number): Promise<TimeEntry | undefined>;
+  getUserTimeEntries(userId: string, startDate?: Date, endDate?: Date): Promise<TimeEntry[]>;
+  getTaskTimeEntries(taskId: number): Promise<TimeEntry[]>;
+  getProjectTimeEntries(projectId: number): Promise<TimeEntry[]>;
+  updateTimeEntry(id: number, data: Partial<InsertTimeEntry>): Promise<TimeEntry | undefined>;
+  deleteTimeEntry(id: number): Promise<void>;
+  getActiveTimeEntry(userId: string): Promise<TimeEntry | undefined>;
+  stopTimeEntry(id: number): Promise<TimeEntry | undefined>;
 }
 
 export class DbStorage implements IStorage {
@@ -1352,6 +1366,82 @@ export class DbStorage implements IStorage {
         isNull(notificationLog.readAt)
       ));
     return result[0]?.count || 0;
+  }
+
+  // Time tracking
+  async createTimeEntry(data: InsertTimeEntry): Promise<TimeEntry> {
+    const [entry] = await db.insert(timeEntries)
+      .values(data)
+      .returning();
+    return entry;
+  }
+
+  async getTimeEntry(id: number): Promise<TimeEntry | undefined> {
+    const [entry] = await db.select().from(timeEntries)
+      .where(eq(timeEntries.id, id));
+    return entry;
+  }
+
+  async getUserTimeEntries(userId: string, startDate?: Date, endDate?: Date): Promise<TimeEntry[]> {
+    const conditions = [eq(timeEntries.userId, userId)];
+    if (startDate) {
+      conditions.push(gte(timeEntries.startTime, startDate));
+    }
+    if (endDate) {
+      conditions.push(lte(timeEntries.startTime, endDate));
+    }
+    return db.select().from(timeEntries)
+      .where(and(...conditions))
+      .orderBy(desc(timeEntries.startTime));
+  }
+
+  async getTaskTimeEntries(taskId: number): Promise<TimeEntry[]> {
+    return db.select().from(timeEntries)
+      .where(eq(timeEntries.taskId, taskId))
+      .orderBy(desc(timeEntries.startTime));
+  }
+
+  async getProjectTimeEntries(projectId: number): Promise<TimeEntry[]> {
+    return db.select().from(timeEntries)
+      .where(eq(timeEntries.projectId, projectId))
+      .orderBy(desc(timeEntries.startTime));
+  }
+
+  async updateTimeEntry(id: number, data: Partial<InsertTimeEntry>): Promise<TimeEntry | undefined> {
+    const [entry] = await db.update(timeEntries)
+      .set(data)
+      .where(eq(timeEntries.id, id))
+      .returning();
+    return entry;
+  }
+
+  async deleteTimeEntry(id: number): Promise<void> {
+    await db.delete(timeEntries).where(eq(timeEntries.id, id));
+  }
+
+  async getActiveTimeEntry(userId: string): Promise<TimeEntry | undefined> {
+    const [entry] = await db.select().from(timeEntries)
+      .where(and(
+        eq(timeEntries.userId, userId),
+        isNull(timeEntries.endTime)
+      ))
+      .orderBy(desc(timeEntries.startTime))
+      .limit(1);
+    return entry;
+  }
+
+  async stopTimeEntry(id: number): Promise<TimeEntry | undefined> {
+    const entry = await this.getTimeEntry(id);
+    if (!entry || entry.endTime) return entry;
+    
+    const endTime = new Date();
+    const duration = Math.floor((endTime.getTime() - entry.startTime.getTime()) / 1000);
+    
+    const [updated] = await db.update(timeEntries)
+      .set({ endTime, duration })
+      .where(eq(timeEntries.id, id))
+      .returning();
+    return updated;
   }
 }
 

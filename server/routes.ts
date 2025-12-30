@@ -16,7 +16,7 @@ import { isAppleCalendarConnected, testAppleCalendarConnection, saveAppleCalenda
 import { isAsanaConnected, getMyTasks, getProjects, getUpcomingTasks, isUserAsanaConnected, getUserMyTasks, getUserProjects, getUserUpcomingTasks, getAsanaProjectsForImport, getProjectSections, getProjectTasksForImport } from "./asana";
 import { getTypeformForms, getTypeformForm, createTypeformForm, updateTypeformForm, deleteTypeformForm, getTypeformResponses, isTypeformConfigured } from "./typeform";
 import { sendInvitationEmail, getTemplateTypes, getDefaultTemplate, sendTaskAssignedNotification } from "./email";
-import { appleCalendarConnectSchema, slackPreferencesUpdateSchema, emailTemplateSchema, updateNotificationPrefsSchema } from "@shared/schema";
+import { appleCalendarConnectSchema, slackPreferencesUpdateSchema, emailTemplateSchema, updateNotificationPrefsSchema, createTimeEntrySchema, updateTimeEntrySchema } from "@shared/schema";
 import { broadcastToUsers, generateWsAuthToken } from "./websocket";
 import { getIntroOffers, getIntroOfferSummary, updateIntroOffer, getStudents, isMindbodyAnalyticsConfigured } from "./mindbodyAnalytics";
 
@@ -2884,6 +2884,142 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error fetching notification logs:", error);
       res.status(500).json({ error: "Failed to fetch notification logs" });
+    }
+  });
+
+  // =============================================================================
+  // TIME TRACKING ROUTES
+  // =============================================================================
+
+  // Get all time entries for user
+  app.get("/api/time-entries", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
+      const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+      const entries = await storage.getUserTimeEntries(userId, startDate, endDate);
+      res.json(entries);
+    } catch (error) {
+      console.error("Error fetching time entries:", error);
+      res.status(500).json({ error: "Failed to fetch time entries" });
+    }
+  });
+
+  // Get active timer for user
+  app.get("/api/time-entries/active", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const entry = await storage.getActiveTimeEntry(userId);
+      res.json(entry || null);
+    } catch (error) {
+      console.error("Error fetching active timer:", error);
+      res.status(500).json({ error: "Failed to fetch active timer" });
+    }
+  });
+
+  // Get time entries for a specific task
+  app.get("/api/tasks/:id/time-entries", isAuthenticated, async (req: any, res) => {
+    try {
+      const taskId = parseInt(req.params.id);
+      const entries = await storage.getTaskTimeEntries(taskId);
+      res.json(entries);
+    } catch (error) {
+      console.error("Error fetching task time entries:", error);
+      res.status(500).json({ error: "Failed to fetch task time entries" });
+    }
+  });
+
+  // Get time entries for a project
+  app.get("/api/projects/:id/time-entries", isAuthenticated, async (req: any, res) => {
+    try {
+      const projectId = parseInt(req.params.id);
+      const entries = await storage.getProjectTimeEntries(projectId);
+      res.json(entries);
+    } catch (error) {
+      console.error("Error fetching project time entries:", error);
+      res.status(500).json({ error: "Failed to fetch project time entries" });
+    }
+  });
+
+  // Start a timer (create time entry)
+  app.post("/api/time-entries", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const validatedData = createTimeEntrySchema.parse(req.body);
+      
+      // Stop any existing active timer first
+      const activeEntry = await storage.getActiveTimeEntry(userId);
+      if (activeEntry) {
+        await storage.stopTimeEntry(activeEntry.id);
+      }
+      
+      const entry = await storage.createTimeEntry({
+        ...validatedData,
+        userId,
+        startTime: new Date(validatedData.startTime),
+        endTime: validatedData.endTime ? new Date(validatedData.endTime) : undefined,
+      });
+      res.status(201).json(entry);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: error.errors });
+      } else {
+        console.error("Error creating time entry:", error);
+        res.status(500).json({ error: "Failed to create time entry" });
+      }
+    }
+  });
+
+  // Stop the active timer
+  app.post("/api/time-entries/:id/stop", isAuthenticated, async (req: any, res) => {
+    try {
+      const entryId = parseInt(req.params.id);
+      const entry = await storage.stopTimeEntry(entryId);
+      if (!entry) {
+        return res.status(404).json({ error: "Time entry not found" });
+      }
+      res.json(entry);
+    } catch (error) {
+      console.error("Error stopping timer:", error);
+      res.status(500).json({ error: "Failed to stop timer" });
+    }
+  });
+
+  // Update time entry
+  app.patch("/api/time-entries/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const entryId = parseInt(req.params.id);
+      const validatedData = updateTimeEntrySchema.parse(req.body);
+      
+      const updateData: any = { ...validatedData };
+      if (validatedData.endTime) {
+        updateData.endTime = new Date(validatedData.endTime);
+      }
+      
+      const entry = await storage.updateTimeEntry(entryId, updateData);
+      if (!entry) {
+        return res.status(404).json({ error: "Time entry not found" });
+      }
+      res.json(entry);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: error.errors });
+      } else {
+        console.error("Error updating time entry:", error);
+        res.status(500).json({ error: "Failed to update time entry" });
+      }
+    }
+  });
+
+  // Delete time entry
+  app.delete("/api/time-entries/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const entryId = parseInt(req.params.id);
+      await storage.deleteTimeEntry(entryId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting time entry:", error);
+      res.status(500).json({ error: "Failed to delete time entry" });
     }
   });
 
