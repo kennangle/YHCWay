@@ -21,7 +21,10 @@ function getOAuth2Client() {
   // In development: use REPLIT_DEV_DOMAIN if available
   let redirectUri: string;
   
-  if (process.env.NODE_ENV === 'production' || !process.env.REPLIT_DEV_DOMAIN) {
+  if (process.env.APP_URL) {
+    // Use custom domain if configured
+    redirectUri = `${process.env.APP_URL}/api/gmail/callback`;
+  } else if (process.env.NODE_ENV === 'production' || !process.env.REPLIT_DEV_DOMAIN) {
     redirectUri = 'https://sync-connect--ken196.replit.app/api/gmail/callback';
   } else {
     redirectUri = `https://${process.env.REPLIT_DEV_DOMAIN}/api/gmail/callback`;
