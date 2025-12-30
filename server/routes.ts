@@ -3735,5 +3735,121 @@ export async function registerRoutes(
     }
   });
 
+  // ==================== WEBHOOKS ====================
+  
+  const { createWebhookSchema, WebhookEvent } = await import("@shared/schema");
+  const { triggerWebhook, testWebhook } = await import("./webhook-service");
+  
+  app.get("/api/webhooks", isAuthenticated, async (req: any, res) => {
+    try {
+      const tenantId = req.tenantId;
+      const webhooks = await storage.getWebhooks(tenantId);
+      res.json(webhooks);
+    } catch (error) {
+      console.error("Error fetching webhooks:", error);
+      res.status(500).json({ error: "Failed to fetch webhooks" });
+    }
+  });
+
+  app.get("/api/webhooks/events", isAuthenticated, async (req: any, res) => {
+    res.json({
+      events: Object.entries(WebhookEvent).map(([key, value]) => ({
+        id: value,
+        name: key.split('_').map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(' '),
+      })),
+    });
+  });
+
+  app.get("/api/webhooks/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const webhookId = parseInt(req.params.id);
+      const webhook = await storage.getWebhook(webhookId);
+      if (!webhook) {
+        return res.status(404).json({ error: "Webhook not found" });
+      }
+      res.json(webhook);
+    } catch (error) {
+      console.error("Error fetching webhook:", error);
+      res.status(500).json({ error: "Failed to fetch webhook" });
+    }
+  });
+
+  app.get("/api/webhooks/:id/deliveries", isAuthenticated, async (req: any, res) => {
+    try {
+      const webhookId = parseInt(req.params.id);
+      const limit = parseInt(req.query.limit as string) || 20;
+      const deliveries = await storage.getWebhookDeliveries(webhookId, limit);
+      res.json(deliveries);
+    } catch (error) {
+      console.error("Error fetching webhook deliveries:", error);
+      res.status(500).json({ error: "Failed to fetch webhook deliveries" });
+    }
+  });
+
+  app.post("/api/webhooks", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const tenantId = req.tenantId;
+      const validatedData = createWebhookSchema.parse(req.body);
+      
+      const webhook = await storage.createWebhook({
+        ...validatedData,
+        tenantId,
+        createdBy: userId,
+      });
+      res.status(201).json(webhook);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: error.errors });
+      } else {
+        console.error("Error creating webhook:", error);
+        res.status(500).json({ error: "Failed to create webhook" });
+      }
+    }
+  });
+
+  app.patch("/api/webhooks/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const webhookId = parseInt(req.params.id);
+      const updateData = req.body;
+      
+      const webhook = await storage.updateWebhook(webhookId, updateData);
+      if (!webhook) {
+        return res.status(404).json({ error: "Webhook not found" });
+      }
+      res.json(webhook);
+    } catch (error) {
+      console.error("Error updating webhook:", error);
+      res.status(500).json({ error: "Failed to update webhook" });
+    }
+  });
+
+  app.delete("/api/webhooks/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const webhookId = parseInt(req.params.id);
+      await storage.deleteWebhook(webhookId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting webhook:", error);
+      res.status(500).json({ error: "Failed to delete webhook" });
+    }
+  });
+
+  app.post("/api/webhooks/:id/test", isAuthenticated, async (req: any, res) => {
+    try {
+      const webhookId = parseInt(req.params.id);
+      const webhook = await storage.getWebhook(webhookId);
+      if (!webhook) {
+        return res.status(404).json({ error: "Webhook not found" });
+      }
+      
+      const result = await testWebhook(webhook.url, webhook.secret || undefined);
+      res.json(result);
+    } catch (error) {
+      console.error("Error testing webhook:", error);
+      res.status(500).json({ error: "Failed to test webhook" });
+    }
+  });
+
   return httpServer;
 }
