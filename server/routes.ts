@@ -1248,13 +1248,28 @@ export async function registerRoutes(
         .filter(p => p.isEnabled)
         .map(p => p.channelId);
       
-      if (preferences.length === 0) {
-        const allMessages = await getAllSlackMessages(30);
-        res.json(allMessages);
-        return;
+      // Check if user has personal Slack OAuth connected
+      const userConnected = await isUserSlackConnected(userId);
+      
+      // Fetch DMs - use user token if available for personal DMs, otherwise bot token
+      let dmMessages;
+      if (userConnected) {
+        dmMessages = await getUserDirectMessages(userId, 15);
+      } else {
+        dmMessages = await getSlackDMs(15);
       }
       
-      const dmMessages = await getSlackDMs(10);
+      if (preferences.length === 0) {
+        // No channel preferences set - return DMs only (or all messages if user connected)
+        if (userConnected) {
+          const allMessages = await getUserAllMessages(userId, 30);
+          res.json(allMessages);
+        } else {
+          const allMessages = await getAllSlackMessages(30);
+          res.json(allMessages);
+        }
+        return;
+      }
       
       if (enabledChannelIds.length === 0) {
         res.json(dmMessages);

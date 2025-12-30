@@ -533,7 +533,8 @@ export async function getUserDirectMessages(userId: string, maxResults: number =
     return [];
   }
 
-  const response = await fetch('https://slack.com/api/conversations.list?types=im,mpim&limit=20', {
+  // Fetch up to 100 DM channels when using user token (more comprehensive than bot)
+  const response = await fetch('https://slack.com/api/conversations.list?types=im,mpim&limit=100', {
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
@@ -547,12 +548,16 @@ export async function getUserDirectMessages(userId: string, maxResults: number =
     return [];
   }
 
+  const allDmChannels = data.channels || [];
+  console.log(`[Slack User DMs] Found ${allDmChannels.length} DM channels for user ${userId}`);
+
   const messages: SlackMessage[] = [];
   const userNameCache: Record<string, string> = {};
 
   const twentyFourMonthsAgo = Date.now() - (24 * 30 * 24 * 60 * 60 * 1000);
 
-  for (const dm of (data.channels || []).slice(0, 10)) {
+  // Fetch from up to 20 DM channels with user token
+  for (const dm of allDmChannels.slice(0, 20)) {
     try {
       const historyResponse = await fetch(
         `https://slack.com/api/conversations.history?channel=${dm.id}&limit=10`,
