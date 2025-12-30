@@ -130,10 +130,17 @@ export default function Dashboard() {
   });
 
   const widgetConfigs = useMemo<WidgetConfig[]>(() => {
+    const defaults = getDefaultWidgets();
     if (userPrefs?.dashboardWidgets) {
-      return userPrefs.dashboardWidgets;
+      const stored = userPrefs.dashboardWidgets as WidgetConfig[];
+      const storedIds = new Set(stored.map(w => w.id));
+      const newWidgets = defaults.filter(d => !storedIds.has(d.id)).map((w, i) => ({
+        ...w,
+        order: stored.length + i,
+      }));
+      return [...stored, ...newWidgets];
     }
-    return getDefaultWidgets();
+    return defaults;
   }, [userPrefs?.dashboardWidgets]);
 
   const saveWidgetsMutation = useMutation({

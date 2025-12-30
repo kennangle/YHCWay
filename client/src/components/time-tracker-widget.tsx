@@ -144,7 +144,7 @@ export function TimeTrackerWidget() {
         </div>
       </div>
 
-      <div className="flex gap-3 items-center">
+      <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
         <Input
           placeholder="What are you working on?"
           value={activeEntry ? (activeEntry.description || "") : description}
@@ -155,7 +155,7 @@ export function TimeTrackerWidget() {
         />
         
         {activeEntry ? (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between sm:justify-end gap-3">
             <div className="flex items-center gap-2 px-3 py-2 bg-green-100 text-green-700 rounded-lg">
               <Timer className="w-4 h-4 animate-pulse" />
               <span className="font-mono font-semibold">{formatDuration(elapsedTime)}</span>
@@ -174,7 +174,7 @@ export function TimeTrackerWidget() {
           <Button
             onClick={handleStart}
             disabled={startMutation.isPending}
-            className="bg-green-600 hover:bg-green-700"
+            className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
             data-testid="button-start-timer"
           >
             <Play className="w-4 h-4 mr-2" />
