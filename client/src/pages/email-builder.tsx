@@ -132,7 +132,7 @@ export default function EmailBuilderPage() {
       <UnifiedSidebar />
       <main className="flex-1 overflow-auto ml-0 md:ml-64">
         <TopBar />
-        <div className="p-6 max-w-7xl">
+        <div className="p-6 w-full overflow-x-hidden">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-primary/10 rounded-lg">

@@ -144,45 +144,47 @@ export function EmailBuilder({ initialHtml, onSave, variables = [] }: EmailBuild
 
   return (
     <div className="flex flex-col h-[600px] border rounded-lg overflow-hidden bg-white">
-      <div className="flex items-center justify-between p-2 border-b bg-gray-50">
+      <div className="flex flex-wrap items-center justify-between gap-2 p-2 border-b bg-gray-50">
         <div className="text-sm font-medium">Email Builder</div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {variables.length > 0 && (
-            <div className="flex items-center gap-1 mr-2">
+            <div className="flex flex-wrap items-center gap-1">
               <span className="text-xs text-gray-500">Insert:</span>
               {variables.map((v) => (
                 <button
                   key={v}
                   onClick={() => insertVariable(v)}
                   disabled={!selectedBlock || selectedBlock.type !== 'text'}
-                  className="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-800 rounded disabled:opacity-50"
+                  className="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-800 rounded disabled:opacity-50 whitespace-nowrap"
                 >
                   {`{{${v}}}`}
                 </button>
               ))}
             </div>
           )}
-          <button
-            onClick={() => { setShowSource(false); setShowPreview(!showPreview); }}
-            className={`flex items-center gap-1 px-3 py-1.5 rounded text-sm ${showPreview ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'}`}
-          >
-            <Eye className="w-4 h-4" />
-            Preview
-          </button>
-          <button
-            onClick={() => { setShowPreview(false); setShowSource(!showSource); }}
-            className={`flex items-center gap-1 px-3 py-1.5 rounded text-sm ${showSource ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'}`}
-          >
-            <Code className="w-4 h-4" />
-            HTML
-          </button>
-          <button
-            onClick={handleSave}
-            className="flex items-center gap-1 px-3 py-1.5 bg-primary text-primary-foreground rounded text-sm font-medium"
-          >
-            <Save className="w-4 h-4" />
-            Apply
-          </button>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={() => { setShowSource(false); setShowPreview(!showPreview); }}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded text-sm whitespace-nowrap ${showPreview ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'}`}
+            >
+              <Eye className="w-4 h-4" />
+              Preview
+            </button>
+            <button
+              onClick={() => { setShowPreview(false); setShowSource(!showSource); }}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded text-sm whitespace-nowrap ${showSource ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'}`}
+            >
+              <Code className="w-4 h-4" />
+              HTML
+            </button>
+            <button
+              onClick={handleSave}
+              className="flex items-center gap-1 px-3 py-1.5 bg-primary text-primary-foreground rounded text-sm font-medium whitespace-nowrap"
+            >
+              <Save className="w-4 h-4" />
+              Apply
+            </button>
+          </div>
         </div>
       </div>
 
