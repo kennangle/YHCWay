@@ -29,7 +29,7 @@ export function ComposeEmailModal({ onClose }: ComposeEmailModalProps) {
   });
 
   const filteredUsers = users.filter(user => {
-    if (!to.trim()) return false;
+    if (!to.trim()) return true; // Show all users when empty
     const searchTerm = to.toLowerCase();
     const fullName = `${user.firstName || ''} ${user.lastName || ''}`.toLowerCase();
     return (
@@ -139,49 +139,65 @@ export function ComposeEmailModal({ onClose }: ComposeEmailModalProps) {
               value={to}
               onChange={(e) => {
                 setTo(e.target.value);
-                setShowSuggestions(e.target.value.length > 0);
+                setShowSuggestions(true);
               }}
-              onFocus={() => to.length > 0 && setShowSuggestions(true)}
+              onFocus={() => setShowSuggestions(true)}
               onKeyDown={handleKeyDown}
               placeholder="recipient@example.com"
               className="w-full px-4 py-2 border border-gray-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
               data-testid="input-compose-to"
             />
-            {showSuggestions && filteredUsers.length > 0 && (
+            {showSuggestions && (
               <div 
                 ref={suggestionsRef}
                 className="absolute z-10 w-full mt-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-lg shadow-lg max-h-48 overflow-y-auto"
               >
-                {filteredUsers.map((user, index) => (
-                  <button
-                    key={user.id}
-                    onClick={() => selectUser(user)}
-                    className={`w-full px-4 py-3 text-left flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors ${
-                      index === selectedIndex ? 'bg-gray-100 dark:bg-slate-700' : ''
-                    }`}
-                    data-testid={`suggestion-user-${user.id}`}
-                  >
-                    {user.profileImageUrl ? (
-                      <img 
-                        src={user.profileImageUrl} 
-                        alt="" 
-                        className="w-8 h-8 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-sm font-medium">
-                        {(user.firstName?.[0] || user.email?.[0] || '?').toUpperCase()}
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm text-foreground truncate">
-                        {getUserDisplayName(user)}
-                      </div>
-                      <div className="text-xs text-muted-foreground truncate">
-                        {user.email}
-                      </div>
+                {filteredUsers.length > 0 ? (
+                  <>
+                    <div className="px-4 py-2 text-xs text-muted-foreground border-b border-gray-100 dark:border-slate-700">
+                      Team Members
                     </div>
-                  </button>
-                ))}
+                    {filteredUsers.map((user, index) => (
+                      <button
+                        key={user.id}
+                        onClick={() => selectUser(user)}
+                        className={`w-full px-4 py-3 text-left flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors ${
+                          index === selectedIndex ? 'bg-gray-100 dark:bg-slate-700' : ''
+                        }`}
+                        data-testid={`suggestion-user-${user.id}`}
+                      >
+                        {user.profileImageUrl ? (
+                          <img 
+                            src={user.profileImageUrl} 
+                            alt="" 
+                            className="w-8 h-8 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-sm font-medium">
+                            {(user.firstName?.[0] || user.email?.[0] || '?').toUpperCase()}
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-sm text-foreground truncate">
+                            {getUserDisplayName(user)}
+                          </div>
+                          <div className="text-xs text-muted-foreground truncate">
+                            {user.email}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </>
+                ) : to.trim() && (
+                  <div className="px-4 py-3 text-sm text-muted-foreground">
+                    No team members found. You can still send to: <span className="font-medium text-foreground">{to}</span>
+                  </div>
+                )}
+                {to.trim() && to.includes('@') && !filteredUsers.some(u => u.email === to) && (
+                  <div className="px-4 py-2 text-xs text-muted-foreground border-t border-gray-100 dark:border-slate-700">
+                    Press Tab or click outside to send to external email
+                  </div>
+                )}
               </div>
             )}
           </div>

@@ -105,8 +105,28 @@ export function EmailBuilder({ initialHtml, onSave, variables = [] }: EmailBuild
 
   const insertVariable = (variable: string) => {
     if (selectedBlock && selectedBlock.type === 'text') {
-      const content = selectedBlock.content + `{{${variable}}}`;
-      handleUpdateBlock({ ...selectedBlock, content });
+      const content = (selectedBlock as any).content + `{{${variable}}}`;
+      handleUpdateBlock({ ...selectedBlock, content } as any);
+    } else if (blocks.length === 0) {
+      // No blocks yet, create a new text block with the variable
+      const newBlock = createBlock('text');
+      (newBlock as any).content = `{{${variable}}}`;
+      setBlocks([newBlock]);
+      setSelectedBlockId(newBlock.id);
+    } else {
+      // Find the last text block and append to it, or create a new one
+      const lastTextBlock = [...blocks].reverse().find(b => b.type === 'text');
+      if (lastTextBlock) {
+        const content = (lastTextBlock as any).content + `{{${variable}}}`;
+        handleUpdateBlock({ ...lastTextBlock, content } as any);
+        setSelectedBlockId(lastTextBlock.id);
+      } else {
+        // Create a new text block
+        const newBlock = createBlock('text');
+        (newBlock as any).content = `{{${variable}}}`;
+        setBlocks(prev => [...prev, newBlock]);
+        setSelectedBlockId(newBlock.id);
+      }
     }
   };
 
@@ -154,8 +174,7 @@ export function EmailBuilder({ initialHtml, onSave, variables = [] }: EmailBuild
                 <button
                   key={v}
                   onClick={() => insertVariable(v)}
-                  disabled={!selectedBlock || selectedBlock.type !== 'text'}
-                  className="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-800 rounded disabled:opacity-50 whitespace-nowrap"
+                  className="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-800 rounded whitespace-nowrap cursor-pointer"
                 >
                   {`{{${v}}}`}
                 </button>
