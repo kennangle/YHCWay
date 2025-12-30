@@ -1,8 +1,8 @@
-# UniWork - Unified Workspace Application
+# UniWork360 - Unified Workspace Application
 
 ## Overview
 
-UniWork is a unified workspace application that integrates multiple productivity tools (Slack, Gmail, Google Calendar, Zoom) into a single, cohesive interface. The application provides a dashboard with a unified feed of activities, service connection management, and an admin panel for managing users, services, and feed items.
+UniWork360 is a unified workspace application that integrates multiple productivity tools (Slack, Gmail, Google Calendar, Zoom) into a single, cohesive interface. The application provides a dashboard with a unified feed of activities, service connection management, and an admin panel for managing users, services, and feed items.
 
 The app uses a glassmorphism UI design with a modern React frontend and an Express.js backend, backed by PostgreSQL for data persistence.
 

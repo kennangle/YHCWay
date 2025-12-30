@@ -717,7 +717,7 @@ export default function Settings() {
               (v) => handlePreferenceChange("notifyAsana", v),
               "toggle-notify-asana"
             )}
-            {renderToggle(MessageCircle, "UniWork Chat", "Direct messages from teammates", 
+            {renderToggle(MessageCircle, "UniWork360 Chat", "Direct messages from teammates", 
               preferences?.notifyChat ?? true, 
               (v) => handlePreferenceChange("notifyChat", v),
               "toggle-notify-chat"
@@ -728,7 +728,7 @@ export default function Settings() {
             <h3 className="text-lg font-semibold mb-2">Delivery Method</h3>
             <p className="text-sm text-muted-foreground mb-4">How do you want to receive notifications?</p>
             
-            {renderToggle(Bell, "In-App Notifications", "Show alerts within UniWork", 
+            {renderToggle(Bell, "In-App Notifications", "Show alerts within UniWork360", 
               preferences?.notifyInApp ?? true, 
               (v) => handlePreferenceChange("notifyInApp", v),
               "toggle-notify-inapp"
@@ -859,7 +859,7 @@ export default function Settings() {
                   </div>
                   <div>
                     <p className="font-medium text-foreground">Show Online Status</p>
-                    <p className="text-sm text-muted-foreground">Others can see when you're active in UniWork Chat</p>
+                    <p className="text-sm text-muted-foreground">Others can see when you're active in UniWork360 Chat</p>
                   </div>
                 </div>
                 <Switch
@@ -874,7 +874,7 @@ export default function Settings() {
             <div className="glass-card p-6 rounded-2xl">
               <h3 className="text-lg font-semibold mb-2">Connected Services</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                Services you've connected to UniWork. You can manage connections on the Connect page.
+                Services you've connected to UniWork360. You can manage connections on the Connect page.
               </p>
               
               {connectedServices.length === 0 ? (
@@ -917,7 +917,7 @@ export default function Settings() {
 
             <div className="glass-card p-6 rounded-2xl">
               <h3 className="text-lg font-semibold mb-2">Your Data</h3>
-              <p className="text-sm text-muted-foreground mb-4">Download or delete your data from UniWork.</p>
+              <p className="text-sm text-muted-foreground mb-4">Download or delete your data from UniWork360.</p>
               
               <div className="space-y-3">
                 <Button 
@@ -987,7 +987,7 @@ export default function Settings() {
       {renderBackButton()}
       <div className="mb-8">
         <h2 className="font-display font-bold text-2xl mb-2">Appearance</h2>
-        <p className="text-muted-foreground">Customize how UniWork looks for you.</p>
+        <p className="text-muted-foreground">Customize how UniWork360 looks for you.</p>
       </div>
 
       {isLoading ? (
@@ -1070,7 +1070,7 @@ export default function Settings() {
             <div className="space-y-4">
               <div>
                 <Label className="text-sm font-medium">Timezone</Label>
-                <p className="text-sm text-muted-foreground mb-2">Used for displaying times throughout UniWork</p>
+                <p className="text-sm text-muted-foreground mb-2">Used for displaying times throughout UniWork360</p>
                 <Select
                   value={preferences?.timezone || "America/New_York"}
                   onValueChange={(v) => handlePreferenceChange("timezone", v)}
@@ -1135,7 +1135,7 @@ export default function Settings() {
     {
       id: "getting-started",
       title: "Getting Started",
-      content: `Welcome to UniWork! Here's how to get started:
+      content: `Welcome to UniWork360! Here's how to get started:
 
 1. **Connect Your Services** - Go to "Connect App" in the sidebar to link your Gmail, Google Calendar, Slack, Zoom, and other tools.
 
@@ -1143,17 +1143,17 @@ export default function Settings() {
 
 3. **Check Your Calendar** - The Calendar page combines events from Google Calendar, Apple Calendar, and Zoom meetings.
 
-4. **Chat with Teammates** - Use the built-in Chat feature to message other UniWork users directly.
+4. **Chat with Teammates** - Use the built-in Chat feature to message other UniWork360 users directly.
 
 5. **Customize Settings** - Visit Settings to personalize notifications, appearance, and more.`
     },
     {
       id: "connecting-services",
       title: "Connecting Services",
-      content: `UniWork integrates with the following services:
+      content: `UniWork360 integrates with the following services:
 
 **Gmail & Google Calendar**
-Click "Connect" next to Gmail or Google Calendar and sign in with your Google account. You'll be asked to grant UniWork permission to read your emails and calendar events.
+Click "Connect" next to Gmail or Google Calendar and sign in with your Google account. You'll be asked to grant UniWork360 permission to read your emails and calendar events.
 
 **Slack**
 Slack integration uses a shared workspace connection. Your admin configures the Slack bot token, and you can then view messages from channels you're part of.
@@ -1165,18 +1165,18 @@ Zoom meetings are automatically synced when your admin configures the Zoom integ
 To connect Apple Calendar, you'll need to create an app-specific password in your Apple ID settings. Go to appleid.apple.com, sign in, and generate an app-specific password under Security.
 
 **Asana**
-Connect Asana by providing your personal access token from the Asana developer console. This lets UniWork show your tasks and project updates.`
+Connect Asana by providing your personal access token from the Asana developer console. This lets UniWork360 show your tasks and project updates.`
     },
     {
       id: "notifications",
       title: "Managing Notifications",
-      content: `Control how UniWork alerts you about new activity:
+      content: `Control how UniWork360 alerts you about new activity:
 
 **Service Notifications**
 Toggle notifications on or off for each connected service (Gmail, Slack, Calendar, Zoom, Asana, Chat).
 
 **Delivery Methods**
-- In-App: See notifications within UniWork
+- In-App: See notifications within UniWork360
 - Email Digest: Get a daily summary email
 - Sound: Play a sound when new notifications arrive
 
@@ -1204,11 +1204,11 @@ Set times when you don't want to be disturbed. During quiet hours, all notificat
     },
     {
       id: "chat",
-      title: "UniWork Chat",
-      content: `Chat with other UniWork users in your organization:
+      title: "UniWork360 Chat",
+      content: `Chat with other UniWork360 users in your organization:
 
 **Starting a Conversation**
-Click the "+" button to start a new chat with any UniWork user.
+Click the "+" button to start a new chat with any UniWork360 user.
 
 **Messaging**
 Type your message and press Enter or click Send. Messages are delivered instantly.
@@ -1245,7 +1245,7 @@ Your online status can be toggled in Privacy settings. When hidden, others won't
       {renderBackButton()}
       <div className="mb-8">
         <h2 className="font-display font-bold text-2xl mb-2">Help & Support</h2>
-        <p className="text-muted-foreground">Learn how to use UniWork effectively.</p>
+        <p className="text-muted-foreground">Learn how to use UniWork360 effectively.</p>
       </div>
 
       <div className="space-y-4">
@@ -1295,9 +1295,9 @@ Your online status can be toggled in Privacy settings. When hidden, others won't
         </div>
 
         <div className="glass-card p-6 rounded-2xl">
-          <h3 className="text-lg font-semibold mb-2">About UniWork</h3>
+          <h3 className="text-lg font-semibold mb-2">About UniWork360</h3>
           <p className="text-muted-foreground">
-            UniWork brings all your work tools together in one unified dashboard. View emails, calendar events, chat messages, and tasks from Gmail, Google Calendar, Slack, Zoom, Apple Calendar, Asana, and more — all in one place.
+            UniWork360 brings all your work tools together in one unified dashboard. View emails, calendar events, chat messages, and tasks from Gmail, Google Calendar, Slack, Zoom, Apple Calendar, Asana, and more — all in one place.
           </p>
           <p className="text-sm text-muted-foreground mt-4">Version 1.0.0</p>
         </div>

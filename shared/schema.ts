@@ -946,3 +946,45 @@ export const webhookDeliveries = pgTable("webhook_deliveries", {
 
 export type WebhookDelivery = typeof webhookDeliveries.$inferSelect;
 export type InsertWebhookDelivery = typeof webhookDeliveries.$inferInsert;
+
+// =============================================================================
+// ARCHIVED ITEMS
+// =============================================================================
+
+export const archivedEmails = pgTable("archived_emails", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  emailId: varchar("email_id").notNull(),
+  threadId: varchar("thread_id"),
+  subject: varchar("subject"),
+  from: varchar("from_address"),
+  snippet: text("snippet"),
+  date: varchar("date"),
+  isUnread: boolean("is_unread").default(false),
+  archivedAt: timestamp("archived_at").defaultNow(),
+}, (table) => [
+  index("idx_archived_email_user").on(table.userId),
+  index("idx_archived_email_id").on(table.emailId),
+]);
+
+export type ArchivedEmail = typeof archivedEmails.$inferSelect;
+export type InsertArchivedEmail = typeof archivedEmails.$inferInsert;
+
+export const archivedSlackMessages = pgTable("archived_slack_messages", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  messageId: varchar("message_id").notNull(),
+  channelId: varchar("channel_id"),
+  channelName: varchar("channel_name"),
+  text: text("text"),
+  userName: varchar("user_name"),
+  timestamp: varchar("timestamp"),
+  isDm: boolean("is_dm").default(false),
+  archivedAt: timestamp("archived_at").defaultNow(),
+}, (table) => [
+  index("idx_archived_slack_user").on(table.userId),
+  index("idx_archived_slack_message_id").on(table.messageId),
+]);
+
+export type ArchivedSlackMessage = typeof archivedSlackMessages.$inferSelect;
+export type InsertArchivedSlackMessage = typeof archivedSlackMessages.$inferInsert;

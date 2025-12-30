@@ -230,7 +230,7 @@ function ConnectForm({
           <li>Go to <a href="https://appleid.apple.com" target="_blank" rel="noopener noreferrer" className="underline">appleid.apple.com</a></li>
           <li>Sign in and go to Security</li>
           <li>Click "App-Specific Passwords"</li>
-          <li>Generate a new password for "UniWork"</li>
+          <li>Generate a new password for "UniWork360"</li>
         </ol>
       </div>
 

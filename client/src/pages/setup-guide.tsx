@@ -96,7 +96,7 @@ export default function SetupGuide() {
     {
       id: "gmail",
       title: "Connect Gmail",
-      description: "View and manage your emails directly from UniWork. Send, reply, and organize your inbox without switching apps.",
+      description: "View and manage your emails directly from UniWork360. Send, reply, and organize your inbox without switching apps.",
       icon: Mail,
       connected: serviceStatus.gmail,
       href: "/connect",
@@ -183,7 +183,7 @@ export default function SetupGuide() {
         <div className="flex-1 p-8 max-w-4xl mx-auto w-full">
           <header className="mb-8">
             <h1 className="font-display font-bold text-3xl mb-2" data-testid="text-setup-title">
-              Welcome to UniWork!
+              Welcome to UniWork360!
             </h1>
             <p className="text-muted-foreground text-lg">
               Let's get your workspace set up. Follow these steps to connect your favorite tools.
