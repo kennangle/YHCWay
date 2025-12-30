@@ -35,7 +35,12 @@ export function TopBar() {
   return (
     <div className="h-14 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-b border-gray-200 dark:border-slate-700 flex items-center justify-between px-6 gap-4 sticky top-0 z-40">
       <GlobalSearch />
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
+        {user && (
+          <span className="text-sm font-medium text-muted-foreground" data-testid="text-current-user">
+            {user.firstName || user.email?.split('@')[0]}
+          </span>
+        )}
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
