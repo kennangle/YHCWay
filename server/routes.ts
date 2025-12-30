@@ -435,12 +435,29 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Mindbody Analytics is not configured" });
       }
       const { id } = req.params;
+      const tenantId = req.tenantId;
       const parseResult = introOfferUpdateSchema.safeParse(req.body);
       if (!parseResult.success) {
         return res.status(400).json({ error: "Invalid request body", details: parseResult.error.errors });
       }
       const { status, notes } = parseResult.data;
       const updated = await updateIntroOffer(id, { status, notes });
+      
+      // Trigger webhook for intro offer status change
+      if (status) {
+        const { triggerWebhook } = await import("./webhook-service");
+        triggerWebhook("intro_offer.status_changed", {
+          offerId: id,
+          newStatus: status,
+          notes: notes || null,
+          studentName: updated.firstName && updated.lastName 
+            ? `${updated.firstName} ${updated.lastName}` 
+            : undefined,
+          offerName: updated.offerName,
+          updatedAt: new Date().toISOString(),
+        }, tenantId).catch(err => console.error("[Webhook] Error triggering intro offer webhook:", err));
+      }
+      
       res.json(updated);
     } catch (error) {
       console.error("Error updating intro offer:", error);
