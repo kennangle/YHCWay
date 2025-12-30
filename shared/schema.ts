@@ -889,3 +889,60 @@ export const notificationLog = pgTable("notification_log", {
 
 export type NotificationLogEntry = typeof notificationLog.$inferSelect;
 export type InsertNotificationLog = typeof notificationLog.$inferInsert;
+
+// =============================================================================
+// WEBHOOKS
+// =============================================================================
+
+export const WebhookEvent = {
+  INTRO_OFFER_STATUS_CHANGED: "intro_offer.status_changed",
+  INTRO_OFFER_CREATED: "intro_offer.created",
+  TASK_COMPLETED: "task.completed",
+  TASK_CREATED: "task.created",
+} as const;
+export type WebhookEventType = typeof WebhookEvent[keyof typeof WebhookEvent];
+
+export const webhooks = pgTable("webhooks", {
+  id: serial("id").primaryKey(),
+  tenantId: varchar("tenant_id").references(() => tenants.id, { onDelete: "cascade" }),
+  name: varchar("name").notNull(),
+  url: varchar("url").notNull(),
+  secret: varchar("secret"),
+  events: text("events").array().notNull(),
+  isActive: boolean("is_active").default(true),
+  createdBy: varchar("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_webhook_tenant").on(table.tenantId),
+  index("idx_webhook_active").on(table.isActive),
+]);
+
+export type Webhook = typeof webhooks.$inferSelect;
+export type InsertWebhook = typeof webhooks.$inferInsert;
+
+export const createWebhookSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  url: z.string().url("Must be a valid URL"),
+  secret: z.string().optional(),
+  events: z.array(z.string()).min(1, "Select at least one event"),
+  isActive: z.boolean().default(true),
+});
+
+export const webhookDeliveries = pgTable("webhook_deliveries", {
+  id: serial("id").primaryKey(),
+  webhookId: integer("webhook_id").notNull().references(() => webhooks.id, { onDelete: "cascade" }),
+  event: varchar("event").notNull(),
+  payload: jsonb("payload").notNull(),
+  responseStatus: integer("response_status"),
+  responseBody: text("response_body"),
+  success: boolean("success").default(false),
+  attempts: integer("attempts").default(1),
+  deliveredAt: timestamp("delivered_at").defaultNow(),
+}, (table) => [
+  index("idx_webhook_delivery_webhook").on(table.webhookId),
+  index("idx_webhook_delivery_event").on(table.event),
+]);
+
+export type WebhookDelivery = typeof webhookDeliveries.$inferSelect;
+export type InsertWebhookDelivery = typeof webhookDeliveries.$inferInsert;
