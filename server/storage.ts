@@ -77,7 +77,8 @@ import {
   notificationPreferences,
   notificationLog,
   timeEntries,
-  taskTemplates
+  taskTemplates,
+  sessions
 } from "@shared/schema";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq, desc, and, lt, isNull, sql, inArray, gte, lte } from "drizzle-orm";
@@ -102,6 +103,7 @@ export interface IStorage {
   updateUserPassword(id: string, passwordHash: string): Promise<User | undefined>;
   updateUserApprovalStatus(id: string, status: string, approvedBy?: string): Promise<User | undefined>;
   recordUserLogin(id: string): Promise<User | undefined>;
+  getActiveSessions(): Promise<string[]>;
   
   getOAuthAccount(userId: string, provider: string): Promise<OAuthAccount | undefined>;
   getOAuthAccountByProvider(provider: string, providerAccountId: string): Promise<OAuthAccount | undefined>;
@@ -369,6 +371,30 @@ export class DbStorage implements IStorage {
       .where(eq(users.id, id))
       .returning();
     return user;
+  }
+
+  async getActiveSessions(): Promise<string[]> {
+    // Get active sessions (not expired) and extract user IDs from session data
+    const now = new Date();
+    const activeSessions = await db
+      .select()
+      .from(sessions)
+      .where(sql`${sessions.expire} > ${now}`);
+    
+    const activeUserIds: Set<string> = new Set();
+    for (const session of activeSessions) {
+      try {
+        const sessData = session.sess as any;
+        // Replit Auth stores user info in passport.user.claims.sub
+        const userId = sessData?.passport?.user?.claims?.sub;
+        if (userId) {
+          activeUserIds.add(userId);
+        }
+      } catch (e) {
+        // Skip malformed sessions
+      }
+    }
+    return Array.from(activeUserIds);
   }
 
   async getOAuthAccount(userId: string, provider: string): Promise<OAuthAccount | undefined> {

@@ -75,6 +75,12 @@ export default function Admin() {
     enabled: !!user?.isAdmin,
   });
 
+  const { data: activeSessions = [] } = useQuery<string[]>({
+    queryKey: ["/api/admin/active-sessions"],
+    enabled: !!user?.isAdmin,
+    refetchInterval: 30000,
+  });
+
   const toggleAdminMutation = useMutation({
     mutationFn: async ({ id, isAdmin }: { id: string; isAdmin: boolean }) => {
       return apiRequest("PATCH", `/api/admin/users/${id}`, { isAdmin });
@@ -362,18 +368,36 @@ export default function Admin() {
                 </button>
               </div>
               <div className="space-y-3">
-                {users.filter(u => u.approvalStatus === 'approved').map((u) => (
+                {users.filter(u => u.approvalStatus === 'approved').map((u) => {
+                  const isOnline = activeSessions.includes(u.id);
+                  const hasLoggedIn = !!u.firstLoginAt;
+                  return (
                 <div key={u.id} className="flex items-center justify-between p-4 bg-white/50 rounded-xl" data-testid={`row-user-${u.id}`}>
                   <div className="flex items-center gap-3">
-                    {u.profileImageUrl ? (
-                      <img src={u.profileImageUrl} alt="" className="w-10 h-10 rounded-full" />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-400 to-blue-500 flex items-center justify-center text-white font-semibold">
-                        {(u.firstName?.[0] || u.email?.[0] || "U").toUpperCase()}
-                      </div>
-                    )}
+                    <div className="relative">
+                      {u.profileImageUrl ? (
+                        <img src={u.profileImageUrl} alt="" className="w-10 h-10 rounded-full" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-400 to-blue-500 flex items-center justify-center text-white font-semibold">
+                          {(u.firstName?.[0] || u.email?.[0] || "U").toUpperCase()}
+                        </div>
+                      )}
+                      <div 
+                        className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white ${
+                          isOnline ? "bg-green-500" : "bg-gray-300"
+                        }`}
+                        title={isOnline ? "Online" : "Offline"}
+                      />
+                    </div>
                     <div>
-                      <div className="font-medium">{u.firstName} {u.lastName}</div>
+                      <div className="font-medium flex items-center gap-2">
+                        {u.firstName} {u.lastName}
+                        {!hasLoggedIn && (
+                          <span className="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded font-normal" title="Never logged in">
+                            Never logged in
+                          </span>
+                        )}
+                      </div>
                       <div className="text-sm text-muted-foreground">{u.email}</div>
                     </div>
                   </div>
@@ -401,7 +425,8 @@ export default function Admin() {
                     </button>
                   </div>
                 </div>
-              ))}
+                  );
+              })}
               </div>
             </div>
           </div>

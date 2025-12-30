@@ -590,6 +590,16 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/admin/active-sessions", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const activeSessions = await storage.getActiveSessions();
+      res.json(activeSessions);
+    } catch (error) {
+      console.error("Error fetching active sessions:", error);
+      res.status(500).json({ error: "Failed to fetch active sessions" });
+    }
+  });
+
   app.patch("/api/admin/users/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const { isAdmin: adminStatus } = req.body;
