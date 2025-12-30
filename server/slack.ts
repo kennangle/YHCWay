@@ -112,7 +112,7 @@ export async function getDirectMessages(maxResults: number = 10, includeThreadRe
   
   const botUserId = await getBotUserId(token);
 
-  const response = await fetch('https://slack.com/api/conversations.list?types=im,mpim&limit=20', {
+  const response = await fetch('https://slack.com/api/conversations.list?types=im,mpim&limit=50', {
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
@@ -126,7 +126,8 @@ export async function getDirectMessages(maxResults: number = 10, includeThreadRe
     return [];
   }
 
-  console.log('[Slack DMs] Found DM channels:', (data.channels || []).map((c: any) => ({ id: c.id, user: c.user, name: c.name })));
+  const allDmChannels = data.channels || [];
+  console.log(`[Slack DMs] Found ${allDmChannels.length} DM channels:`, allDmChannels.map((c: any) => ({ id: c.id, user: c.user, name: c.name })));
 
   const messages: SlackMessage[] = [];
   const userNameCache: Record<string, string> = {};
@@ -134,7 +135,8 @@ export async function getDirectMessages(maxResults: number = 10, includeThreadRe
 
   const twentyFourMonthsAgo = Date.now() - (24 * 30 * 24 * 60 * 60 * 1000);
 
-  for (const dm of (data.channels || []).slice(0, 5)) {
+  // Increase from 5 to 15 DM channels to fetch
+  for (const dm of allDmChannels.slice(0, 15)) {
     try {
       const historyResponse = await fetch(
         `https://slack.com/api/conversations.history?channel=${dm.id}&limit=10&_t=${Date.now()}`,
