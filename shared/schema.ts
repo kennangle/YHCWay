@@ -692,3 +692,54 @@ export const projectMembers = pgTable("project_members", {
 
 export type ProjectMember = typeof projectMembers.$inferSelect;
 export type InsertProjectMember = typeof projectMembers.$inferInsert;
+
+// =============================================================================
+// NOTIFICATION PREFERENCES
+// =============================================================================
+
+export const notificationPreferences = pgTable("notification_preferences", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }).unique(),
+  emailTaskAssigned: boolean("email_task_assigned").default(true),
+  emailTaskDue: boolean("email_task_due").default(true),
+  emailCalendarConflict: boolean("email_calendar_conflict").default(true),
+  emailImportantEmails: boolean("email_important_emails").default(false),
+  emailDailyDigest: boolean("email_daily_digest").default(false),
+  pushEnabled: boolean("push_enabled").default(false),
+  pushSubscription: jsonb("push_subscription"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_notif_pref_user").on(table.userId),
+]);
+
+export type NotificationPreference = typeof notificationPreferences.$inferSelect;
+export type InsertNotificationPreference = typeof notificationPreferences.$inferInsert;
+
+export const updateNotificationPrefsSchema = z.object({
+  emailTaskAssigned: z.boolean().optional(),
+  emailTaskDue: z.boolean().optional(),
+  emailCalendarConflict: z.boolean().optional(),
+  emailImportantEmails: z.boolean().optional(),
+  emailDailyDigest: z.boolean().optional(),
+  pushEnabled: z.boolean().optional(),
+});
+
+// Notification log for tracking sent notifications
+export const notificationLog = pgTable("notification_log", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  type: varchar("type").notNull(), // 'task_assigned', 'task_due', 'calendar_conflict', 'important_email'
+  title: varchar("title").notNull(),
+  message: text("message"),
+  metadata: jsonb("metadata"),
+  sentVia: varchar("sent_via").notNull(), // 'email', 'push', 'both'
+  sentAt: timestamp("sent_at").defaultNow(),
+  readAt: timestamp("read_at"),
+}, (table) => [
+  index("idx_notif_log_user").on(table.userId),
+  index("idx_notif_log_type").on(table.type),
+]);
+
+export type NotificationLogEntry = typeof notificationLog.$inferSelect;
+export type InsertNotificationLog = typeof notificationLog.$inferInsert;

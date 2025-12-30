@@ -40,6 +40,10 @@ import {
   type TaskComment,
   type InsertTaskComment,
   type ProjectMember,
+  type NotificationPreference,
+  type InsertNotificationPreference,
+  type NotificationLogEntry,
+  type InsertNotificationLog,
   users,
   services,
   feedItems,
@@ -65,7 +69,9 @@ import {
   tasks,
   taskSubtasks,
   taskComments,
-  projectMembers
+  projectMembers,
+  notificationPreferences,
+  notificationLog
 } from "@shared/schema";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq, desc, and, lt, isNull, sql, inArray } from "drizzle-orm";
@@ -234,6 +240,12 @@ export interface IStorage {
   createTaskComment(taskId: number, authorId: string, content: string): Promise<TaskComment>;
   updateTaskComment(id: number, content: string): Promise<TaskComment | undefined>;
   deleteTaskComment(id: number): Promise<void>;
+  
+  // Notification preferences and logs
+  getNotificationPreferences(userId: string): Promise<NotificationPreference | undefined>;
+  updateNotificationPreferences(userId: string, prefs: Partial<Omit<NotificationPreference, 'id' | 'userId' | 'createdAt' | 'updatedAt'>>): Promise<NotificationPreference>;
+  logNotification(data: InsertNotificationLog): Promise<NotificationLogEntry>;
+  getNotificationLogs(userId: string, limit?: number): Promise<NotificationLogEntry[]>;
 }
 
 export class DbStorage implements IStorage {
@@ -1286,6 +1298,60 @@ export class DbStorage implements IStorage {
 
   async deleteTaskComment(id: number): Promise<void> {
     await db.delete(taskComments).where(eq(taskComments.id, id));
+  }
+
+  // Notification preferences
+  async getNotificationPreferences(userId: string): Promise<NotificationPreference | undefined> {
+    const [prefs] = await db.select().from(notificationPreferences)
+      .where(eq(notificationPreferences.userId, userId));
+    return prefs;
+  }
+
+  async updateNotificationPreferences(userId: string, data: Partial<Omit<NotificationPreference, 'id' | 'userId' | 'createdAt' | 'updatedAt'>>): Promise<NotificationPreference> {
+    const existing = await this.getNotificationPreferences(userId);
+    if (existing) {
+      const [updated] = await db.update(notificationPreferences)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(notificationPreferences.userId, userId))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db.insert(notificationPreferences)
+        .values({ userId, ...data })
+        .returning();
+      return created;
+    }
+  }
+
+  // Notification log
+  async logNotification(data: InsertNotificationLog): Promise<NotificationLogEntry> {
+    const [entry] = await db.insert(notificationLog)
+      .values(data)
+      .returning();
+    return entry;
+  }
+
+  async getNotificationLogs(userId: string, limit: number = 50): Promise<NotificationLogEntry[]> {
+    return db.select().from(notificationLog)
+      .where(eq(notificationLog.userId, userId))
+      .orderBy(desc(notificationLog.sentAt))
+      .limit(limit);
+  }
+
+  async markNotificationRead(id: number): Promise<void> {
+    await db.update(notificationLog)
+      .set({ readAt: new Date() })
+      .where(eq(notificationLog.id, id));
+  }
+
+  async getUnreadNotificationCount(userId: string): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)` })
+      .from(notificationLog)
+      .where(and(
+        eq(notificationLog.userId, userId),
+        isNull(notificationLog.readAt)
+      ));
+    return result[0]?.count || 0;
   }
 }
 

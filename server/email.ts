@@ -179,3 +179,181 @@ export function getDefaultTemplate(templateType: string): { subject: string; htm
       return null;
   }
 }
+
+// =============================================================================
+// NOTIFICATION EMAILS
+// =============================================================================
+
+const NOTIFICATION_TASK_ASSIGNED_HTML = `
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <h1 style="color: #FD971E; text-align: center;">UniWork</h1>
+  <h2 style="color: #333;">New Task Assigned to You</h2>
+  <div style="background-color: #fff8f0; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #FD971E;">
+    <h3 style="margin: 0 0 10px 0; color: #333;">{{taskTitle}}</h3>
+    <p style="margin: 5px 0; color: #666;"><strong>Project:</strong> {{projectName}}</p>
+    <p style="margin: 5px 0; color: #666;"><strong>Assigned by:</strong> {{assignerName}}</p>
+    {{#if dueDate}}<p style="margin: 5px 0; color: #666;"><strong>Due:</strong> {{dueDate}}</p>{{/if}}
+    {{#if priority}}<p style="margin: 5px 0; color: #666;"><strong>Priority:</strong> {{priority}}</p>{{/if}}
+  </div>
+  <div style="text-align: center; margin: 30px 0;">
+    <a href="{{taskUrl}}" 
+       style="background-color: #FD971E; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold;">
+      View Task
+    </a>
+  </div>
+  <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+  <p style="color: #999; font-size: 12px; text-align: center;">
+    You're receiving this because you have task assignment notifications enabled in UniWork.
+  </p>
+</div>
+`;
+
+const NOTIFICATION_TASK_DUE_HTML = `
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <h1 style="color: #FD971E; text-align: center;">UniWork</h1>
+  <h2 style="color: #333;">Task Due Reminder</h2>
+  <div style="background-color: #fff3e0; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ff9800;">
+    <h3 style="margin: 0 0 10px 0; color: #333;">{{taskTitle}}</h3>
+    <p style="margin: 5px 0; color: #666;"><strong>Project:</strong> {{projectName}}</p>
+    <p style="margin: 5px 0; color: #e65100;"><strong>Due:</strong> {{dueDate}}</p>
+  </div>
+  <div style="text-align: center; margin: 30px 0;">
+    <a href="{{taskUrl}}" 
+       style="background-color: #FD971E; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold;">
+      View Task
+    </a>
+  </div>
+  <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+  <p style="color: #999; font-size: 12px; text-align: center;">
+    You're receiving this because you have task due notifications enabled in UniWork.
+  </p>
+</div>
+`;
+
+const NOTIFICATION_CALENDAR_CONFLICT_HTML = `
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <h1 style="color: #FD971E; text-align: center;">UniWork</h1>
+  <h2 style="color: #333;">Calendar Conflict Detected</h2>
+  <div style="background-color: #ffebee; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f44336;">
+    <p style="margin: 0 0 15px 0; color: #666;">You have overlapping events:</p>
+    <div style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 10px;">
+      <p style="margin: 0; font-weight: bold; color: #333;">{{event1Title}}</p>
+      <p style="margin: 5px 0 0 0; color: #666;">{{event1Time}}</p>
+    </div>
+    <div style="background: white; padding: 15px; border-radius: 6px;">
+      <p style="margin: 0; font-weight: bold; color: #333;">{{event2Title}}</p>
+      <p style="margin: 5px 0 0 0; color: #666;">{{event2Time}}</p>
+    </div>
+  </div>
+  <div style="text-align: center; margin: 30px 0;">
+    <a href="{{calendarUrl}}" 
+       style="background-color: #FD971E; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold;">
+      View Calendar
+    </a>
+  </div>
+  <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+  <p style="color: #999; font-size: 12px; text-align: center;">
+    You're receiving this because you have calendar conflict notifications enabled in UniWork.
+  </p>
+</div>
+`;
+
+export async function sendTaskAssignedNotification(
+  to: string, 
+  taskTitle: string, 
+  projectName: string, 
+  assignerName: string,
+  taskUrl: string,
+  dueDate?: string,
+  priority?: string
+): Promise<boolean> {
+  try {
+    const variables: Record<string, string> = {
+      taskTitle,
+      projectName,
+      assignerName,
+      taskUrl,
+      dueDate: dueDate || '',
+      priority: priority || ''
+    };
+    
+    let htmlContent = replaceTemplateVariables(NOTIFICATION_TASK_ASSIGNED_HTML, variables);
+    // Handle conditional blocks
+    if (!dueDate) {
+      htmlContent = htmlContent.replace(/\{\{#if dueDate\}\}[\s\S]*?\{\{\/if\}\}/g, '');
+    } else {
+      htmlContent = htmlContent.replace(/\{\{#if dueDate\}\}([\s\S]*?)\{\{\/if\}\}/g, '$1');
+    }
+    if (!priority) {
+      htmlContent = htmlContent.replace(/\{\{#if priority\}\}[\s\S]*?\{\{\/if\}\}/g, '');
+    } else {
+      htmlContent = htmlContent.replace(/\{\{#if priority\}\}([\s\S]*?)\{\{\/if\}\}/g, '$1');
+    }
+    
+    const sendSmtpEmail = new brevo.SendSmtpEmail();
+    sendSmtpEmail.subject = `New Task: ${taskTitle}`;
+    sendSmtpEmail.htmlContent = htmlContent;
+    sendSmtpEmail.sender = { name: SENDER_NAME, email: SENDER_EMAIL };
+    sendSmtpEmail.to = [{ email: to }];
+
+    await apiInstance.sendTransacEmail(sendSmtpEmail);
+    console.log(`[Notification] Task assigned email sent to ${to}`);
+    return true;
+  } catch (error) {
+    console.error("[Notification] Error sending task assigned email:", error);
+    return false;
+  }
+}
+
+export async function sendTaskDueNotification(
+  to: string, 
+  taskTitle: string, 
+  projectName: string, 
+  taskUrl: string,
+  dueDate: string
+): Promise<boolean> {
+  try {
+    const variables = { taskTitle, projectName, taskUrl, dueDate };
+    const htmlContent = replaceTemplateVariables(NOTIFICATION_TASK_DUE_HTML, variables);
+    
+    const sendSmtpEmail = new brevo.SendSmtpEmail();
+    sendSmtpEmail.subject = `Task Due Soon: ${taskTitle}`;
+    sendSmtpEmail.htmlContent = htmlContent;
+    sendSmtpEmail.sender = { name: SENDER_NAME, email: SENDER_EMAIL };
+    sendSmtpEmail.to = [{ email: to }];
+
+    await apiInstance.sendTransacEmail(sendSmtpEmail);
+    console.log(`[Notification] Task due email sent to ${to}`);
+    return true;
+  } catch (error) {
+    console.error("[Notification] Error sending task due email:", error);
+    return false;
+  }
+}
+
+export async function sendCalendarConflictNotification(
+  to: string, 
+  event1Title: string, 
+  event1Time: string,
+  event2Title: string, 
+  event2Time: string,
+  calendarUrl: string
+): Promise<boolean> {
+  try {
+    const variables = { event1Title, event1Time, event2Title, event2Time, calendarUrl };
+    const htmlContent = replaceTemplateVariables(NOTIFICATION_CALENDAR_CONFLICT_HTML, variables);
+    
+    const sendSmtpEmail = new brevo.SendSmtpEmail();
+    sendSmtpEmail.subject = `Calendar Conflict: ${event1Title} vs ${event2Title}`;
+    sendSmtpEmail.htmlContent = htmlContent;
+    sendSmtpEmail.sender = { name: SENDER_NAME, email: SENDER_EMAIL };
+    sendSmtpEmail.to = [{ email: to }];
+
+    await apiInstance.sendTransacEmail(sendSmtpEmail);
+    console.log(`[Notification] Calendar conflict email sent to ${to}`);
+    return true;
+  } catch (error) {
+    console.error("[Notification] Error sending calendar conflict email:", error);
+    return false;
+  }
+}

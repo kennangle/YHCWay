@@ -15,8 +15,8 @@ import { getRecentMessages as getSlackMessages, getAllMessages as getAllSlackMes
 import { isAppleCalendarConnected, testAppleCalendarConnection, saveAppleCalendarCredentials, deleteAppleCalendarCredentials, getAppleCalendarEvents, getAppleCalendarEventsForMonth } from "./appleCalendar";
 import { isAsanaConnected, getMyTasks, getProjects, getUpcomingTasks, isUserAsanaConnected, getUserMyTasks, getUserProjects, getUserUpcomingTasks, getAsanaProjectsForImport, getProjectSections, getProjectTasksForImport } from "./asana";
 import { getTypeformForms, getTypeformForm, createTypeformForm, updateTypeformForm, deleteTypeformForm, getTypeformResponses, isTypeformConfigured } from "./typeform";
-import { sendInvitationEmail, getTemplateTypes, getDefaultTemplate } from "./email";
-import { appleCalendarConnectSchema, slackPreferencesUpdateSchema, emailTemplateSchema } from "@shared/schema";
+import { sendInvitationEmail, getTemplateTypes, getDefaultTemplate, sendTaskAssignedNotification } from "./email";
+import { appleCalendarConnectSchema, slackPreferencesUpdateSchema, emailTemplateSchema, updateNotificationPrefsSchema } from "@shared/schema";
 import { broadcastToUsers, generateWsAuthToken } from "./websocket";
 import { getIntroOffers, getIntroOfferSummary, updateIntroOffer, getStudents, isMindbodyAnalyticsConfigured } from "./mindbodyAnalytics";
 
@@ -2616,6 +2616,9 @@ export async function registerRoutes(
       const taskId = parseInt(req.params.id);
       const validatedData = updateTaskSchema.parse(req.body);
       
+      // Get original task to check if assignee changed
+      const originalTask = await storage.getTask(taskId);
+      
       const updateData: any = { ...validatedData };
       if (validatedData.dueDate !== undefined) {
         updateData.dueDate = validatedData.dueDate ? new Date(validatedData.dueDate) : null;
@@ -2628,6 +2631,48 @@ export async function registerRoutes(
       if (!task) {
         return res.status(404).json({ error: "Task not found" });
       }
+      
+      // Send notification if task was assigned to someone new
+      if (validatedData.assigneeId && 
+          validatedData.assigneeId !== originalTask?.assigneeId &&
+          validatedData.assigneeId !== req.user.id) {
+        // Get assignee details and notification preferences
+        const assignee = await storage.getUser(validatedData.assigneeId);
+        const prefs = await storage.getNotificationPreferences(validatedData.assigneeId);
+        
+        if (assignee?.email && (prefs?.emailTaskAssigned !== false)) {
+          // Get project name
+          const project = task.projectId ? await storage.getProject(task.projectId) : null;
+          const projectName = project?.name || 'No Project';
+          const assignerName = req.user.firstName || req.user.email?.split('@')[0] || 'Someone';
+          const baseUrl = process.env.REPL_SLUG ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co` : 'http://localhost:5000';
+          const taskUrl = `${baseUrl}/projects/${task.projectId}`;
+          
+          // Send email notification (async, don't block response)
+          sendTaskAssignedNotification(
+            assignee.email,
+            task.title,
+            projectName,
+            assignerName,
+            taskUrl,
+            task.dueDate?.toLocaleDateString(),
+            task.priority || undefined
+          ).then(sent => {
+            if (sent) {
+              // Log the notification
+              storage.logNotification({
+                userId: validatedData.assigneeId!,
+                type: 'task_assigned',
+                title: `New task: ${task.title}`,
+                message: `You were assigned to "${task.title}" by ${assignerName}`,
+                metadata: { taskId: task.id, projectId: task.projectId },
+                sentVia: 'email'
+              });
+            }
+          });
+        }
+      }
+      
       res.json(task);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -2784,6 +2829,61 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error deleting comment:", error);
       res.status(500).json({ error: "Failed to delete comment" });
+    }
+  });
+
+  // =============================================================================
+  // NOTIFICATION PREFERENCE ROUTES
+  // =============================================================================
+
+  app.get("/api/notifications/preferences", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const prefs = await storage.getNotificationPreferences(userId);
+      
+      // Return default preferences if none exist
+      if (!prefs) {
+        return res.json({
+          emailTaskAssigned: true,
+          emailDueDate: true,
+          emailCalendarConflicts: true,
+          emailDigest: false,
+          digestFrequency: 'daily'
+        });
+      }
+      
+      res.json(prefs);
+    } catch (error) {
+      console.error("Error fetching notification preferences:", error);
+      res.status(500).json({ error: "Failed to fetch notification preferences" });
+    }
+  });
+
+  app.put("/api/notifications/preferences", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const validatedData = updateNotificationPrefsSchema.parse(req.body);
+      const prefs = await storage.updateNotificationPreferences(userId, validatedData);
+      res.json(prefs);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: error.errors });
+      } else {
+        console.error("Error updating notification preferences:", error);
+        res.status(500).json({ error: "Failed to update notification preferences" });
+      }
+    }
+  });
+
+  app.get("/api/notifications/logs", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const limit = parseInt(req.query.limit as string) || 50;
+      const logs = await storage.getNotificationLogs(userId, limit);
+      res.json(logs);
+    } catch (error) {
+      console.error("Error fetching notification logs:", error);
+      res.status(500).json({ error: "Failed to fetch notification logs" });
     }
   });
 
