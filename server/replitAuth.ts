@@ -89,6 +89,11 @@ export async function setupAuth(app: Express) {
     const user = {};
     updateUserSession(user, tokens);
     await upsertUser(tokens.claims());
+    // Record login timestamp
+    const userId = tokens.claims()["sub"];
+    if (userId) {
+      await storage.recordUserLogin(userId);
+    }
     verified(null, user);
   };
 

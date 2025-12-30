@@ -78,6 +78,8 @@ export const users = pgTable("users", {
   approvalStatus: varchar("approval_status").default("pending"),
   approvalDate: timestamp("approval_date"),
   approvedBy: varchar("approved_by"),
+  firstLoginAt: timestamp("first_login_at"),
+  lastLoginAt: timestamp("last_login_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

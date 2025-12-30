@@ -101,6 +101,7 @@ export interface IStorage {
   updateUserAdmin(id: string, isAdmin: boolean): Promise<User | undefined>;
   updateUserPassword(id: string, passwordHash: string): Promise<User | undefined>;
   updateUserApprovalStatus(id: string, status: string, approvedBy?: string): Promise<User | undefined>;
+  recordUserLogin(id: string): Promise<User | undefined>;
   
   getOAuthAccount(userId: string, provider: string): Promise<OAuthAccount | undefined>;
   getOAuthAccountByProvider(provider: string, providerAccountId: string): Promise<OAuthAccount | undefined>;
@@ -340,6 +341,28 @@ export class DbStorage implements IStorage {
         updateData.approvedBy = approvedBy;
       }
     }
+    const [user] = await db
+      .update(users)
+      .set(updateData)
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  async recordUserLogin(id: string): Promise<User | undefined> {
+    const now = new Date();
+    const existingUser = await this.getUser(id);
+    
+    const updateData: Record<string, unknown> = { 
+      lastLoginAt: now,
+      updatedAt: now
+    };
+    
+    // Set firstLoginAt only if this is the first login
+    if (!existingUser?.firstLoginAt) {
+      updateData.firstLoginAt = now;
+    }
+    
     const [user] = await db
       .update(users)
       .set(updateData)
