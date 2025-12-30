@@ -170,7 +170,7 @@ export type OAuthAccount = typeof oauthAccounts.$inferSelect;
 export type InsertOAuthAccount = typeof oauthAccounts.$inferInsert;
 
 // Admin email constant
-export const ADMIN_EMAIL = "ken@kennangle.com";
+export const ADMIN_EMAIL = "ken@yogahealthcenter.com";
 
 export const services = pgTable("services", {
   id: serial("id").primaryKey(),
