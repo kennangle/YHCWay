@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { TopBar } from "@/components/top-bar";
-import { ArrowLeft, Plus, MoreVertical, Calendar, User, Clock, Flag, MessageSquare, CheckSquare, RefreshCw, GripVertical, Trash2, Edit, LayoutGrid, List, Search, Filter, X } from "lucide-react";
+import { ArrowLeft, Plus, MoreVertical, Calendar, User, Clock, Flag, MessageSquare, CheckSquare, RefreshCw, GripVertical, Trash2, Edit, LayoutGrid, List, Search, Filter, X, Users, UserPlus, UserMinus } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "wouter";
@@ -222,6 +222,8 @@ export default function ProjectBoard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [showCompleted, setShowCompleted] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState("");
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -243,6 +245,46 @@ export default function ProjectBoard() {
       const res = await fetch("/api/users", { credentials: "include" });
       if (!res.ok) return [];
       return res.json();
+    },
+  });
+
+  const { data: projectMembers = [], refetch: refetchMembers } = useQuery<{ userId: string; role: string; user: User }[]>({
+    queryKey: ["project-members", projectId],
+    queryFn: async () => {
+      const res = await fetch(`/api/projects/${projectId}/members`, { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!projectId,
+  });
+
+  const addMemberMutation = useMutation({
+    mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
+      const res = await fetch(`/api/projects/${projectId}/members`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ userId, role }),
+      });
+      if (!res.ok) throw new Error("Failed to add member");
+      return res.json();
+    },
+    onSuccess: () => {
+      refetchMembers();
+      setSelectedUserId("");
+    },
+  });
+
+  const removeMemberMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const res = await fetch(`/api/projects/${projectId}/members/${userId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to remove member");
+    },
+    onSuccess: () => {
+      refetchMembers();
     },
   });
 
@@ -486,6 +528,19 @@ export default function ProjectBoard() {
                 style={{ backgroundColor: project.color }} 
               />
               <h1 className="font-display font-bold text-lg md:text-2xl flex-1 truncate">{project.name}</h1>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShareDialogOpen(true)}
+                className="flex items-center gap-1.5"
+                data-testid="button-share-project"
+              >
+                <Users className="w-4 h-4" />
+                <span className="hidden sm:inline">Share</span>
+                {projectMembers.length > 0 && (
+                  <span className="bg-primary/10 text-primary text-xs px-1.5 rounded-full">{projectMembers.length}</span>
+                )}
+              </Button>
               <button
                 onClick={() => refetch()}
                 className="p-2 hover:bg-white/80 rounded-lg transition-colors"
@@ -895,6 +950,96 @@ export default function ProjectBoard() {
               </div>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Share Project Dialog */}
+      <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5" />
+              Share Project
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label>Add Team Member</Label>
+              <div className="flex gap-2 mt-2">
+                <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                  <SelectTrigger className="flex-1" data-testid="select-add-member">
+                    <SelectValue placeholder="Select a user" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {users
+                      .filter(u => !projectMembers.some(m => m.userId === u.id))
+                      .map((user) => (
+                        <SelectItem key={user.id} value={user.id}>
+                          {user.firstName || user.email} {user.lastName || ''}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  onClick={() => {
+                    if (selectedUserId) {
+                      addMemberMutation.mutate({ userId: selectedUserId, role: "member" });
+                    }
+                  }}
+                  disabled={!selectedUserId || addMemberMutation.isPending}
+                  data-testid="button-add-member"
+                >
+                  <UserPlus className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+
+            <div>
+              <Label>Current Members ({projectMembers.length})</Label>
+              <div className="mt-2 space-y-2 max-h-60 overflow-y-auto">
+                {projectMembers.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-4 text-center">
+                    No members yet. Add team members to collaborate on this project.
+                  </p>
+                ) : (
+                  projectMembers.map((member) => (
+                    <div
+                      key={member.userId}
+                      className="flex items-center justify-between p-3 rounded-lg bg-gray-50"
+                      data-testid={`member-${member.userId}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-400 to-blue-500 flex items-center justify-center text-white text-sm font-semibold">
+                          {(member.user?.firstName?.[0] || member.user?.email?.[0] || "?").toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">
+                            {member.user?.firstName || member.user?.email} {member.user?.lastName || ''}
+                          </p>
+                          <p className="text-xs text-muted-foreground capitalize">{member.role}</p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        onClick={() => removeMemberMutation.mutate(member.userId)}
+                        disabled={removeMemberMutation.isPending}
+                        data-testid={`button-remove-member-${member.userId}`}
+                      >
+                        <UserMinus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShareDialogOpen(false)}>
+              Done
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
