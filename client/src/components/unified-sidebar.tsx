@@ -42,14 +42,13 @@ export function UnifiedSidebar() {
   const navItems = [
     { icon: LayoutDashboard, label: "Overview", href: "/" },
     { icon: Inbox, label: "Unified Inbox", href: "/inbox" },
-    { icon: Archive, label: "Archive", href: "/archive" },
     { icon: MessageCircle, label: "Chat", href: "/chat" },
     { icon: CalendarIcon, label: "Calendar", href: "/calendar" },
     { icon: FolderKanban, label: "Projects", href: "/projects" },
     { icon: ListTodo, label: "Tasks", href: "/tasks" },
     { icon: CheckSquare, label: "Asana (Temp)", href: "/asana" },
     { icon: Gift, label: "Intro Offers", href: "/intro-offers" },
-    { icon: Webhook, label: "Webhooks", href: "/webhooks" },
+    { icon: Archive, label: "Archive", href: "/archive" },
   ];
 
   const bottomItems = [
@@ -58,6 +57,7 @@ export function UnifiedSidebar() {
     ...(user?.isAdmin ? [{ icon: FileText, label: "Typeform", href: "/typeform" }] : []),
     { icon: PlusCircle, label: "Connect App", href: "/connect" },
     { icon: Settings, label: "Settings", href: "/settings" },
+    { icon: Webhook, label: "Webhooks", href: "/webhooks" },
     ...(user?.isAdmin ? [{ icon: Shield, label: "Admin", href: "/admin" }] : []),
   ];
 
