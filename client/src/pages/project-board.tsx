@@ -1,7 +1,7 @@
-import { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { TopBar } from "@/components/top-bar";
-import { ArrowLeft, Plus, MoreVertical, Calendar, User, Clock, Flag, MessageSquare, CheckSquare, RefreshCw, GripVertical, Trash2, Edit, LayoutGrid, List, Search, Filter, X, Users, UserPlus, UserMinus, GanttChart, CalendarRange } from "lucide-react";
+import { ArrowLeft, Plus, MoreVertical, Calendar, User, Clock, Flag, MessageSquare, CheckSquare, RefreshCw, GripVertical, Trash2, Edit, LayoutGrid, List, Search, Filter, X, Users, UserPlus, UserMinus, GanttChart, CalendarRange, ChevronRight, ChevronDown, Square, Check } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "wouter";
@@ -88,7 +88,14 @@ const PRIORITY_COLORS: Record<string, string> = {
   urgent: "bg-red-100 text-red-700",
 };
 
-function TaskCard({ task, onClick }: { task: Task; onClick: () => void }) {
+function TaskCard({ task, onClick, isExpanded, onToggleExpand, subtasks, onToggleSubtask }: { 
+  task: Task; 
+  onClick: () => void;
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
+  subtasks?: TaskSubtask[];
+  onToggleSubtask?: (subtaskId: number, isCompleted: boolean) => void;
+}) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: `task-${task.id}`,
     data: { type: "task", task },
@@ -112,67 +119,112 @@ function TaskCard({ task, onClick }: { task: Task; onClick: () => void }) {
   };
 
   const dueInfo = formatDueDate(task.dueDate);
+  const hasSubtasks = (task.subtaskCount ?? 0) > 0;
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`bg-white rounded-lg p-3 shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer group ${
+      className={`bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow group ${
         task.isCompleted ? "opacity-60" : ""
       }`}
-      onClick={onClick}
       data-testid={`task-card-${task.id}`}
     >
-      <div className="flex items-start gap-2">
-        <button
-          {...attributes}
-          {...listeners}
-          className="mt-1 opacity-0 group-hover:opacity-50 hover:opacity-100 cursor-grab"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <GripVertical className="w-4 h-4 text-muted-foreground" />
-        </button>
-        <div className="flex-1 min-w-0">
-          <h4 className={`text-sm font-medium ${task.isCompleted ? "line-through text-muted-foreground" : ""}`}>
-            {task.title}
-          </h4>
-          {task.description && (
-            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{task.description}</p>
-          )}
-          <div className="flex items-center gap-2 mt-2 flex-wrap">
-            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${PRIORITY_COLORS[task.priority]}`}>
-              {task.priority}
-            </span>
-            {dueInfo && (
-              <span className={`text-[10px] flex items-center gap-1 ${dueInfo.className}`}>
-                <Calendar className="w-3 h-3" />
-                {dueInfo.text}
-              </span>
+      <div className="p-3 cursor-pointer" onClick={onClick}>
+        <div className="flex items-start gap-2">
+          <button
+            {...attributes}
+            {...listeners}
+            className="mt-1 opacity-0 group-hover:opacity-50 hover:opacity-100 cursor-grab"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <GripVertical className="w-4 h-4 text-muted-foreground" />
+          </button>
+          <div className="flex-1 min-w-0">
+            <h4 className={`text-sm font-medium ${task.isCompleted ? "line-through text-muted-foreground" : ""}`}>
+              {task.title}
+            </h4>
+            {task.description && (
+              <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{task.description}</p>
             )}
-            {task.isRecurring && (
-              <span className="text-[10px] flex items-center gap-1 text-purple-600">
-                <Clock className="w-3 h-3" />
-                Recurring
+            <div className="flex items-center gap-2 mt-2 flex-wrap">
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${PRIORITY_COLORS[task.priority]}`}>
+                {task.priority}
               </span>
-            )}
-            {(task.subtaskCount ?? 0) > 0 && (
-              <span className="text-[10px] flex items-center gap-1 text-muted-foreground">
-                <CheckSquare className="w-3 h-3" />
-                {task.completedSubtaskCount ?? 0}/{task.subtaskCount}
-              </span>
-            )}
+              {dueInfo && (
+                <span className={`text-[10px] flex items-center gap-1 ${dueInfo.className}`}>
+                  <Calendar className="w-3 h-3" />
+                  {dueInfo.text}
+                </span>
+              )}
+              {task.isRecurring && (
+                <span className="text-[10px] flex items-center gap-1 text-purple-600">
+                  <Clock className="w-3 h-3" />
+                  Recurring
+                </span>
+              )}
+              {hasSubtasks && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleExpand?.();
+                  }}
+                  className="text-[10px] flex items-center gap-1 text-primary hover:text-primary/80 transition-colors"
+                  data-testid={`button-expand-subtasks-${task.id}`}
+                >
+                  {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                  <CheckSquare className="w-3 h-3" />
+                  {task.completedSubtaskCount ?? 0}/{task.subtaskCount}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
+      
+      {isExpanded && hasSubtasks && (
+        <div className="border-t border-gray-100 px-3 py-2 bg-gray-50/50">
+          <div className="space-y-1.5">
+            {subtasks?.map((subtask) => (
+              <div 
+                key={subtask.id}
+                className="flex items-center gap-2 group/subtask"
+              >
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleSubtask?.(subtask.id, !subtask.isCompleted);
+                  }}
+                  className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
+                    subtask.isCompleted 
+                      ? "bg-green-500 border-green-500 text-white" 
+                      : "border-gray-300 hover:border-primary"
+                  }`}
+                  data-testid={`checkbox-subtask-${subtask.id}`}
+                >
+                  {subtask.isCompleted && <Check className="w-3 h-3" />}
+                </button>
+                <span className={`text-xs ${subtask.isCompleted ? "line-through text-muted-foreground" : ""}`}>
+                  {subtask.title}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function KanbanColumn({ column, tasks, onAddTask, onTaskClick }: { 
+function KanbanColumn({ column, tasks, onAddTask, onTaskClick, expandedTasks, onToggleExpand, taskSubtasks, onToggleSubtask }: { 
   column: ProjectColumn; 
   tasks: Task[]; 
   onAddTask: () => void;
   onTaskClick: (task: Task) => void;
+  expandedTasks: Set<number>;
+  onToggleExpand: (taskId: number) => void;
+  taskSubtasks: Record<number, TaskSubtask[]>;
+  onToggleSubtask: (subtaskId: number, isCompleted: boolean) => void;
 }) {
   const { setNodeRef } = useSortable({
     id: `column-${column.id}`,
@@ -204,7 +256,15 @@ function KanbanColumn({ column, tasks, onAddTask, onTaskClick }: {
       <SortableContext items={tasks.map(t => `task-${t.id}`)} strategy={verticalListSortingStrategy}>
         <div className="space-y-2 min-h-[100px]">
           {tasks.map((task) => (
-            <TaskCard key={task.id} task={task} onClick={() => onTaskClick(task)} />
+            <TaskCard 
+              key={task.id} 
+              task={task} 
+              onClick={() => onTaskClick(task)}
+              isExpanded={expandedTasks.has(task.id)}
+              onToggleExpand={() => onToggleExpand(task.id)}
+              subtasks={taskSubtasks[task.id]}
+              onToggleSubtask={onToggleSubtask}
+            />
           ))}
         </div>
       </SortableContext>
@@ -589,6 +649,8 @@ export default function ProjectBoard() {
   const [showCompleted, setShowCompleted] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState("");
+  const [expandedTasks, setExpandedTasks] = useState<Set<number>>(new Set());
+  const [taskSubtasks, setTaskSubtasks] = useState<Record<number, TaskSubtask[]>>({});
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -776,8 +838,42 @@ export default function ProjectBoard() {
       if (!res.ok) throw new Error("Failed to toggle subtask");
       return res.json();
     },
-    onSuccess: () => refetch(),
+    onSuccess: (updatedSubtask) => {
+      refetch();
+      setTaskSubtasks(prev => {
+        const taskId = updatedSubtask.taskId;
+        const subtasks = prev[taskId] || [];
+        return {
+          ...prev,
+          [taskId]: subtasks.map(s => s.id === updatedSubtask.id ? updatedSubtask : s)
+        };
+      });
+    },
   });
+
+  const handleToggleExpand = useCallback(async (taskId: number) => {
+    setExpandedTasks(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(taskId)) {
+        newSet.delete(taskId);
+      } else {
+        newSet.add(taskId);
+        if (!taskSubtasks[taskId]) {
+          fetch(`/api/tasks/${taskId}/subtasks`, { credentials: "include" })
+            .then(res => res.json())
+            .then(subtasks => {
+              setTaskSubtasks(prev => ({ ...prev, [taskId]: subtasks }));
+            })
+            .catch(console.error);
+        }
+      }
+      return newSet;
+    });
+  }, [taskSubtasks]);
+
+  const handleInlineToggleSubtask = useCallback((subtaskId: number, isCompleted: boolean) => {
+    toggleSubtaskMutation.mutate(subtaskId);
+  }, [toggleSubtaskMutation]);
 
   const createCommentMutation = useMutation({
     mutationFn: async (data: { taskId: number; content: string }) => {
@@ -1070,6 +1166,10 @@ export default function ProjectBoard() {
                       tasks={getColumnTasks(column.id)}
                       onAddTask={() => openAddTask(column.id)}
                       onTaskClick={openTaskDetail}
+                      expandedTasks={expandedTasks}
+                      onToggleExpand={handleToggleExpand}
+                      taskSubtasks={taskSubtasks}
+                      onToggleSubtask={handleInlineToggleSubtask}
                     />
                   )
                 ))}
@@ -1108,68 +1208,114 @@ export default function ProjectBoard() {
                     filteredTasks.map((task) => {
                       const column = project.columns.find(c => c.id === task.columnId);
                       const assignee = users.find(u => u.id === task.assigneeId);
+                      const hasSubtasks = (task.subtaskCount ?? 0) > 0;
+                      const isExpanded = expandedTasks.has(task.id);
                       return (
-                        <tr 
-                          key={task.id} 
-                          className="border-b last:border-0 hover:bg-white/50 transition-colors cursor-pointer"
-                          onClick={() => openTaskDetail(task)}
-                          data-testid={`row-task-${task.id}`}
-                        >
-                          <td className="p-3">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                updateTaskMutation.mutate({
-                                  id: task.id,
-                                  data: { isCompleted: !task.isCompleted }
-                                });
-                              }}
-                              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                                task.isCompleted ? "bg-green-500 border-green-500" : "border-gray-300 hover:border-primary"
-                              }`}
-                              data-testid={`checkbox-task-${task.id}`}
-                            >
-                              {task.isCompleted && <CheckSquare className="w-3 h-3 text-white" />}
-                            </button>
-                          </td>
-                          <td className="p-3">
-                            <div className={task.isCompleted ? "line-through text-muted-foreground" : ""}>
-                              <p className="font-medium text-sm">{task.title}</p>
-                              <div className="flex items-center gap-2">
-                                {task.description && (
-                                  <p className="text-xs text-muted-foreground line-clamp-1">{task.description}</p>
-                                )}
-                                {(task.subtaskCount ?? 0) > 0 && (
-                                  <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                    <CheckSquare className="w-3 h-3" />
-                                    {task.completedSubtaskCount ?? 0}/{task.subtaskCount}
-                                  </span>
-                                )}
+                        <React.Fragment key={task.id}>
+                          <tr 
+                            className="border-b last:border-0 hover:bg-white/50 transition-colors cursor-pointer"
+                            onClick={() => openTaskDetail(task)}
+                            data-testid={`row-task-${task.id}`}
+                          >
+                            <td className="p-3">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  updateTaskMutation.mutate({
+                                    id: task.id,
+                                    data: { isCompleted: !task.isCompleted }
+                                  });
+                                }}
+                                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                  task.isCompleted ? "bg-green-500 border-green-500" : "border-gray-300 hover:border-primary"
+                                }`}
+                                data-testid={`checkbox-task-${task.id}`}
+                              >
+                                {task.isCompleted && <CheckSquare className="w-3 h-3 text-white" />}
+                              </button>
+                            </td>
+                            <td className="p-3">
+                              <div className={task.isCompleted ? "line-through text-muted-foreground" : ""}>
+                                <p className="font-medium text-sm">{task.title}</p>
+                                <div className="flex items-center gap-2">
+                                  {task.description && (
+                                    <p className="text-xs text-muted-foreground line-clamp-1">{task.description}</p>
+                                  )}
+                                  {hasSubtasks && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleToggleExpand(task.id);
+                                      }}
+                                      className="text-xs text-primary hover:text-primary/80 flex items-center gap-1"
+                                      data-testid={`button-list-expand-subtasks-${task.id}`}
+                                    >
+                                      {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                                      <CheckSquare className="w-3 h-3" />
+                                      {task.completedSubtaskCount ?? 0}/{task.subtaskCount}
+                                    </button>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          </td>
-                          <td className="p-3 hidden md:table-cell">
-                            <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: column?.color || "#ccc" }} />
-                              <span className="text-sm">{column?.name || "Backlog"}</span>
-                            </div>
-                          </td>
-                          <td className="p-3 hidden md:table-cell">
-                            <span className={`text-xs px-2 py-1 rounded-full ${PRIORITY_COLORS[task.priority]}`}>
-                              {task.priority}
-                            </span>
-                          </td>
-                          <td className="p-3 hidden lg:table-cell text-sm text-muted-foreground">
-                            {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : "-"}
-                          </td>
-                          <td className="p-3 hidden lg:table-cell text-sm">
-                            {assignee ? (
-                              <span>{assignee.firstName || assignee.email}</span>
-                            ) : (
-                              <span className="text-muted-foreground">Unassigned</span>
-                            )}
-                          </td>
-                        </tr>
+                            </td>
+                            <td className="p-3 hidden md:table-cell">
+                              <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: column?.color || "#ccc" }} />
+                                <span className="text-sm">{column?.name || "Backlog"}</span>
+                              </div>
+                            </td>
+                            <td className="p-3 hidden md:table-cell">
+                              <span className={`text-xs px-2 py-1 rounded-full ${PRIORITY_COLORS[task.priority]}`}>
+                                {task.priority}
+                              </span>
+                            </td>
+                            <td className="p-3 hidden lg:table-cell text-sm text-muted-foreground">
+                              {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : "-"}
+                            </td>
+                            <td className="p-3 hidden lg:table-cell text-sm">
+                              {assignee ? (
+                                <span>{assignee.firstName || assignee.email}</span>
+                              ) : (
+                                <span className="text-muted-foreground">Unassigned</span>
+                              )}
+                            </td>
+                          </tr>
+                          {isExpanded && hasSubtasks && (
+                            <tr className="bg-gray-50/50">
+                              <td colSpan={6} className="p-0">
+                                <div className="pl-12 py-2 space-y-1.5">
+                                  {taskSubtasks[task.id]?.map((subtask) => (
+                                    <div 
+                                      key={subtask.id}
+                                      className="flex items-center gap-2"
+                                    >
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleInlineToggleSubtask(subtask.id, !subtask.isCompleted);
+                                        }}
+                                        className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
+                                          subtask.isCompleted 
+                                            ? "bg-green-500 border-green-500 text-white" 
+                                            : "border-gray-300 hover:border-primary"
+                                        }`}
+                                        data-testid={`checkbox-list-subtask-${subtask.id}`}
+                                      >
+                                        {subtask.isCompleted && <Check className="w-3 h-3" />}
+                                      </button>
+                                      <span className={`text-sm ${subtask.isCompleted ? "line-through text-muted-foreground" : ""}`}>
+                                        {subtask.title}
+                                      </span>
+                                    </div>
+                                  ))}
+                                  {!taskSubtasks[task.id] && (
+                                    <div className="text-xs text-muted-foreground">Loading subtasks...</div>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
                       );
                     })
                   )}
