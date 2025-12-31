@@ -2927,7 +2927,19 @@ export async function registerRoutes(
       const members = await storage.getProjectMembers(projectId);
       const labels = await storage.getProjectLabels(projectId);
       
-      res.json({ ...project, columns, tasks, members, labels });
+      // Add subtask counts to each task
+      const tasksWithSubtaskCounts = await Promise.all(
+        tasks.map(async (task) => {
+          const subtasks = await storage.getTaskSubtasks(task.id);
+          return {
+            ...task,
+            subtaskCount: subtasks.length,
+            completedSubtaskCount: subtasks.filter(s => s.isCompleted).length,
+          };
+        })
+      );
+      
+      res.json({ ...project, columns, tasks: tasksWithSubtaskCounts, members, labels });
     } catch (error) {
       console.error("Error fetching project:", error);
       res.status(500).json({ error: "Failed to fetch project" });

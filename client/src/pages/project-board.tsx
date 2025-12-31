@@ -42,6 +42,8 @@ interface Task {
   createdAt: string;
   subtasks?: TaskSubtask[];
   comments?: TaskComment[];
+  subtaskCount?: number;
+  completedSubtaskCount?: number;
 }
 
 interface TaskSubtask {
@@ -1127,9 +1129,17 @@ export default function ProjectBoard() {
                           <td className="p-3">
                             <div className={task.isCompleted ? "line-through text-muted-foreground" : ""}>
                               <p className="font-medium text-sm">{task.title}</p>
-                              {task.description && (
-                                <p className="text-xs text-muted-foreground line-clamp-1">{task.description}</p>
-                              )}
+                              <div className="flex items-center gap-2">
+                                {task.description && (
+                                  <p className="text-xs text-muted-foreground line-clamp-1">{task.description}</p>
+                                )}
+                                {(task.subtaskCount ?? 0) > 0 && (
+                                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                    <CheckSquare className="w-3 h-3" />
+                                    {task.completedSubtaskCount ?? 0}/{task.subtaskCount}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </td>
                           <td className="p-3 hidden md:table-cell">
