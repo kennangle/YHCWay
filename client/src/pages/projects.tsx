@@ -4,7 +4,7 @@ import { TopBar } from "@/components/top-bar";
 import { 
   FolderKanban, Plus, MoreVertical, Calendar, Trash2, Edit, RefreshCw, 
   CheckCircle2, Clock, AlertTriangle, TrendingUp, LayoutGrid, List,
-  Search, Filter, ChevronRight, Users, ListTodo
+  Search, Filter, ChevronRight, Users, ListTodo, Download, Loader2, Check
 } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -14,9 +14,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Progress } from "@/components/ui/progress";
 import { format } from "date-fns";
+import { toast } from "sonner";
+
+interface AsanaProject {
+  id: string;
+  name: string;
+  color: string | null;
+  notes: string;
+}
 
 interface Task {
   id: number;
@@ -61,6 +70,10 @@ export default function Projects() {
   const [newProject, setNewProject] = useState({ name: "", description: "", color: "#3b82f6" });
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [searchQuery, setSearchQuery] = useState("");
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [selectedAsanaProjects, setSelectedAsanaProjects] = useState<Set<string>>(new Set());
+  const [importingProjects, setImportingProjects] = useState<Set<string>>(new Set());
+  const [importedProjects, setImportedProjects] = useState<Set<string>>(new Set());
 
   const { data: projects = [], isLoading: projectsLoading, isFetching, refetch } = useQuery<Project[]>({
     queryKey: ["projects"],
@@ -79,6 +92,77 @@ export default function Projects() {
       return res.json();
     },
   });
+
+  const { data: asanaProjects = [], isLoading: loadingAsanaProjects } = useQuery<AsanaProject[]>({
+    queryKey: ["asana-projects-import"],
+    queryFn: async () => {
+      const res = await fetch("/api/import/asana/projects", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch Asana projects");
+      return res.json();
+    },
+    enabled: importDialogOpen,
+  });
+
+  const importAsanaProject = async (project: AsanaProject) => {
+    setImportingProjects(prev => new Set(prev).add(project.id));
+    try {
+      const res = await fetch(`/api/import/asana/project/${project.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ name: project.name, color: project.color, notes: project.notes }),
+      });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to import project");
+      }
+      const result = await res.json();
+      setImportedProjects(prev => new Set(prev).add(project.id));
+      setSelectedAsanaProjects(prev => {
+        const next = new Set(prev);
+        next.delete(project.id);
+        return next;
+      });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      toast.success(`Imported "${project.name}" with ${result.tasksImported} tasks`);
+    } catch (error: any) {
+      console.error("Import error:", error);
+      toast.error(`Failed to import "${project.name}": ${error.message || "Unknown error"}`);
+      setSelectedAsanaProjects(prev => {
+        const next = new Set(prev);
+        next.delete(project.id);
+        return next;
+      });
+    } finally {
+      setImportingProjects(prev => {
+        const next = new Set(prev);
+        next.delete(project.id);
+        return next;
+      });
+    }
+  };
+
+  const handleImportSelected = async () => {
+    const projectIds = Array.from(selectedAsanaProjects);
+    for (const projectId of projectIds) {
+      const project = asanaProjects.find(p => p.id === projectId);
+      if (project && !importedProjects.has(projectId)) {
+        await importAsanaProject(project);
+      }
+    }
+  };
+
+  const toggleProjectSelection = (projectId: string) => {
+    setSelectedAsanaProjects(prev => {
+      const next = new Set(prev);
+      if (next.has(projectId)) {
+        next.delete(projectId);
+      } else {
+        next.add(projectId);
+      }
+      return next;
+    });
+  };
 
   const projectsWithStats: ProjectWithStats[] = projects.map(project => {
     const projectTasks = allTasks.filter(t => t.projectId === project.id);
@@ -229,6 +313,15 @@ export default function Projects() {
               >
                 <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
               </button>
+              <Button
+                variant="outline"
+                onClick={() => setImportDialogOpen(true)}
+                className="flex items-center gap-2"
+                data-testid="button-import-asana"
+              >
+                <Download className="w-4 h-4" />
+                <span className="hidden sm:inline">Import from Asana</span>
+              </Button>
               <Button
                 onClick={() => setCreateDialogOpen(true)}
                 className="flex items-center gap-2 flex-1 sm:flex-initial justify-center"
@@ -631,6 +724,93 @@ export default function Projects() {
               data-testid="button-confirm-edit"
             >
               {updateProjectMutation.isPending ? "Saving..." : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={importDialogOpen} onOpenChange={(open) => {
+        setImportDialogOpen(open);
+        if (!open) {
+          setSelectedAsanaProjects(new Set());
+          setImportedProjects(new Set());
+        }
+      }}>
+        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="flex items-center gap-2">
+              <Download className="w-5 h-5" />
+              Import from Asana
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+            <p className="text-sm text-muted-foreground mb-4 flex-shrink-0">
+              Select projects to import. This will create new projects with their sections and tasks.
+            </p>
+            {loadingAsanaProjects ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                <span className="ml-2 text-muted-foreground">Loading Asana projects...</span>
+              </div>
+            ) : asanaProjects.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>No projects found in Asana.</p>
+                <p className="text-sm mt-2">Make sure Asana is connected in the Connect page.</p>
+              </div>
+            ) : (
+              <div className="space-y-2 overflow-y-auto flex-1 pr-2">
+                {asanaProjects.map((project) => (
+                  <div
+                    key={project.id}
+                    className={`flex items-center gap-3 p-3 rounded-lg border transition-colors cursor-pointer ${
+                      importedProjects.has(project.id)
+                        ? 'bg-green-50 border-green-200'
+                        : selectedAsanaProjects.has(project.id)
+                        ? 'bg-blue-50 border-blue-200'
+                        : 'bg-white hover:bg-gray-50 border-gray-200'
+                    }`}
+                    onClick={() => !importedProjects.has(project.id) && !importingProjects.has(project.id) && toggleProjectSelection(project.id)}
+                  >
+                    <Checkbox
+                      checked={selectedAsanaProjects.has(project.id) || importedProjects.has(project.id)}
+                      disabled={importedProjects.has(project.id) || importingProjects.has(project.id)}
+                      onCheckedChange={() => toggleProjectSelection(project.id)}
+                      data-testid={`checkbox-asana-project-${project.id}`}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{project.name}</p>
+                      {project.notes && (
+                        <p className="text-sm text-muted-foreground line-clamp-1">{project.notes}</p>
+                      )}
+                    </div>
+                    {importingProjects.has(project.id) && (
+                      <Loader2 className="w-4 h-4 animate-spin text-blue-500 flex-shrink-0" />
+                    )}
+                    {importedProjects.has(project.id) && (
+                      <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <DialogFooter className="flex-shrink-0 border-t pt-4 mt-4">
+            <Button variant="outline" onClick={() => setImportDialogOpen(false)}>
+              {importedProjects.size > 0 ? 'Done' : 'Cancel'}
+            </Button>
+            <Button
+              onClick={handleImportSelected}
+              disabled={selectedAsanaProjects.size === 0 || importingProjects.size > 0}
+              data-testid="button-confirm-import"
+            >
+              {importingProjects.size > 0 ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  Importing...
+                </>
+              ) : (
+                `Import ${selectedAsanaProjects.size} Project${selectedAsanaProjects.size !== 1 ? 's' : ''}`
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
