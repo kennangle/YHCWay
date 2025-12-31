@@ -743,16 +743,16 @@ export default function ProjectBoard() {
       console.log("[Subtask] Created successfully:", result);
       return result;
     },
-    onSuccess: async () => {
-      console.log("[Subtask] onSuccess - refetching task data");
+    onSuccess: async (newSubtask) => {
+      console.log("[Subtask] onSuccess - adding subtask to state");
       refetch();
       setNewSubtask("");
-      if (selectedTask) {
-        const res = await fetch(`/api/tasks/${selectedTask.id}`, { credentials: "include" });
-        const fullTask = await res.json();
-        console.log("[Subtask] Refetched task with subtasks:", fullTask.subtasks);
-        setSelectedTask(fullTask);
-      }
+      setSelectedTask(prev => {
+        if (!prev) return prev;
+        const updatedSubtasks = [...(prev.subtasks || []), newSubtask];
+        console.log("[Subtask] Updated subtasks:", updatedSubtasks);
+        return { ...prev, subtasks: updatedSubtasks };
+      });
     },
     onError: (error) => {
       console.error("[Subtask] Mutation error:", error);
