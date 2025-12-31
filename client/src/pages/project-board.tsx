@@ -65,6 +65,7 @@ interface Project {
   name: string;
   description: string | null;
   color: string;
+  notes: string | null;
   columns: ProjectColumn[];
   tasks: Task[];
   members: any[];
@@ -199,6 +200,52 @@ function KanbanColumn({ column, tasks, onAddTask, onTaskClick }: {
           ))}
         </div>
       </SortableContext>
+    </div>
+  );
+}
+
+function NotesColumn({ 
+  column, 
+  notes, 
+  onSave 
+}: { 
+  column: ProjectColumn; 
+  notes: string | null;
+  onSave: (notes: string) => void;
+}) {
+  const [localNotes, setLocalNotes] = useState(notes || "");
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleBlur = () => {
+    if (localNotes !== (notes || "")) {
+      setIsSaving(true);
+      onSave(localNotes);
+      setTimeout(() => setIsSaving(false), 500);
+    }
+  };
+
+  return (
+    <div 
+      className="flex-shrink-0 w-64 sm:w-72 bg-purple-50/80 rounded-xl p-3 flex flex-col"
+      data-testid={`column-${column.id}`}
+    >
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: column.color }} />
+          <h3 className="font-semibold text-sm">{column.name}</h3>
+          {isSaving && (
+            <span className="text-xs text-purple-600">Saving...</span>
+          )}
+        </div>
+      </div>
+      <textarea
+        value={localNotes}
+        onChange={(e) => setLocalNotes(e.target.value)}
+        onBlur={handleBlur}
+        placeholder="Type your notes here..."
+        className="flex-1 min-h-[200px] w-full p-3 rounded-lg border border-purple-200 bg-white/80 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-transparent"
+        data-testid="textarea-project-notes"
+      />
     </div>
   );
 }
@@ -598,6 +645,22 @@ export default function ProjectBoard() {
     },
   });
 
+  const updateNotesMutation = useMutation({
+    mutationFn: async (notes: string) => {
+      const res = await fetch(`/api/projects/${projectId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ notes }),
+      });
+      if (!res.ok) throw new Error("Failed to save notes");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["project", projectId] });
+    },
+  });
+
   const createTaskMutation = useMutation({
     mutationFn: async (data: any) => {
       const res = await fetch("/api/tasks", {
@@ -973,13 +1036,22 @@ export default function ProjectBoard() {
             >
               <div className="flex gap-4 overflow-x-auto pb-4 flex-1">
                 {project.columns.map((column) => (
-                  <KanbanColumn
-                    key={column.id}
-                    column={column}
-                    tasks={getColumnTasks(column.id)}
-                    onAddTask={() => openAddTask(column.id)}
-                    onTaskClick={openTaskDetail}
-                  />
+                  column.name === "Notes" ? (
+                    <NotesColumn
+                      key={column.id}
+                      column={column}
+                      notes={project.notes}
+                      onSave={(notes) => updateNotesMutation.mutate(notes)}
+                    />
+                  ) : (
+                    <KanbanColumn
+                      key={column.id}
+                      column={column}
+                      tasks={getColumnTasks(column.id)}
+                      onAddTask={() => openAddTask(column.id)}
+                      onTaskClick={openTaskDetail}
+                    />
+                  )
                 ))}
               </div>
               <DragOverlay>

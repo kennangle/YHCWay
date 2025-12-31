@@ -566,6 +566,7 @@ export const projects = pgTable("projects", {
   color: varchar("color").default("#3b82f6"),
   ownerId: varchar("owner_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   isArchived: boolean("is_archived").default(false),
+  notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
