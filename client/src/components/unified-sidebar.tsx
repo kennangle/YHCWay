@@ -5,6 +5,8 @@ import {
   Calendar as CalendarIcon, 
   MessageCircle,
   CheckSquare,
+  FolderKanban,
+  ListTodo,
   FileText,
   Settings, 
   PlusCircle,
@@ -43,7 +45,9 @@ export function UnifiedSidebar() {
     { icon: Archive, label: "Archive", href: "/archive" },
     { icon: MessageCircle, label: "Chat", href: "/chat" },
     { icon: CalendarIcon, label: "Calendar", href: "/calendar" },
-    { icon: CheckSquare, label: "Tasks/Projects", href: "/projects" },
+    { icon: FolderKanban, label: "Projects", href: "/projects" },
+    { icon: ListTodo, label: "Tasks", href: "/tasks" },
+    { icon: CheckSquare, label: "Asana (Temp)", href: "/asana" },
     { icon: Gift, label: "Intro Offers", href: "/intro-offers" },
     { icon: Webhook, label: "Webhooks", href: "/webhooks" },
   ];
@@ -65,7 +69,8 @@ export function UnifiedSidebar() {
     { icon: LayoutDashboard, label: "Home", href: "/" },
     { icon: Inbox, label: "Inbox", href: "/inbox" },
     { icon: CalendarIcon, label: "Calendar", href: "/calendar" },
-    { icon: CheckSquare, label: "Tasks/Projects", href: "/projects" },
+    { icon: FolderKanban, label: "Projects", href: "/projects" },
+    { icon: ListTodo, label: "Tasks", href: "/tasks" },
     { icon: Settings, label: "Settings", href: "/settings" },
   ];
 

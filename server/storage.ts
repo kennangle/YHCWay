@@ -93,7 +93,7 @@ import {
   archivedSlackMessages
 } from "@shared/schema";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { eq, desc, and, lt, isNull, sql, inArray, gte, lte } from "drizzle-orm";
+import { eq, desc, and, lt, isNull, sql, inArray, gte, lte, or } from "drizzle-orm";
 import pg from "pg";
 
 const { Pool } = pg;
@@ -245,6 +245,7 @@ export interface IStorage {
   getTask(id: number): Promise<Task | undefined>;
   getProjectTasks(projectId: number): Promise<Task[]>;
   getUserTasks(userId: string, tenantId?: string): Promise<Task[]>;
+  getAllUserTasks(userId: string, tenantId?: string): Promise<Task[]>;
   getUpcomingTasks(userId: string, days?: number): Promise<Task[]>;
   updateTask(id: number, data: Partial<InsertTask>): Promise<Task | undefined>;
   deleteTask(id: number): Promise<void>;
@@ -1278,6 +1279,16 @@ export class DbStorage implements IStorage {
 
   async getUserTasks(userId: string, tenantId?: string): Promise<Task[]> {
     let conditions = [eq(tasks.assigneeId, userId)];
+    if (tenantId) {
+      conditions.push(eq(tasks.tenantId, tenantId));
+    }
+    return await db.select().from(tasks)
+      .where(and(...conditions))
+      .orderBy(tasks.dueDate, tasks.sortOrder);
+  }
+
+  async getAllUserTasks(userId: string, tenantId?: string): Promise<Task[]> {
+    let conditions = [or(eq(tasks.assigneeId, userId), eq(tasks.creatorId, userId))];
     if (tenantId) {
       conditions.push(eq(tasks.tenantId, tenantId));
     }

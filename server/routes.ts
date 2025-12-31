@@ -3187,6 +3187,19 @@ export async function registerRoutes(
     }
   });
 
+  // Get all tasks across all projects for user
+  app.get("/api/tasks/all", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const tenantId = req.tenantId;
+      const tasks = await storage.getAllUserTasks(userId, tenantId);
+      res.json(tasks);
+    } catch (error) {
+      console.error("Error fetching all tasks:", error);
+      res.status(500).json({ error: "Failed to fetch tasks" });
+    }
+  });
+
   // Get upcoming tasks (for dashboard)
   app.get("/api/tasks/upcoming", isAuthenticated, async (req: any, res) => {
     try {

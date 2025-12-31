@@ -1,59 +1,192 @@
-import { useEffect } from "react";
+import { useState } from "react";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { TopBar } from "@/components/top-bar";
-import { CheckSquare, RefreshCw, ExternalLink } from "lucide-react";
+import { ListTodo, Plus, RefreshCw, Calendar, Flag, CheckCircle2, Circle, Clock, Filter, ChevronDown, ChevronRight, FolderKanban } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Link } from "wouter";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { format } from "date-fns";
 
-interface AsanaTask {
-  id: string;
-  name: string;
-  completed: boolean;
-  dueOn: string | null;
-  dueAt: string | null;
-  assignee: { name: string; email?: string } | null;
-  projectName: string | null;
-  notes: string;
-  permalink: string;
+interface Task {
+  id: number;
+  projectId: number;
+  columnId: number | null;
+  title: string;
+  description: string | null;
+  priority: string;
+  dueDate: string | null;
+  assigneeId: string | null;
+  creatorId: string;
+  sortOrder: number;
+  isCompleted: boolean;
+  completedAt: string | null;
+  labels: string[] | null;
   createdAt: string;
-  modifiedAt: string;
+  updatedAt: string;
 }
 
+interface Project {
+  id: number;
+  name: string;
+  color: string;
+}
+
+type FilterType = "all" | "today" | "upcoming" | "overdue" | "completed";
+
 export default function Tasks() {
-  const { data: asanaTasks = [], isLoading, isFetching, refetch } = useQuery<AsanaTask[]>({
-    queryKey: ["asana-tasks"],
+  const queryClient = useQueryClient();
+  const [filter, setFilter] = useState<FilterType>("all");
+  const [expandedProjects, setExpandedProjects] = useState<Set<number>>(new Set());
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+  const [newTask, setNewTask] = useState({ title: "", description: "", priority: "medium", dueDate: "" });
+
+  const { data: tasks = [], isLoading: tasksLoading, isFetching, refetch } = useQuery<Task[]>({
+    queryKey: ["all-tasks"],
     queryFn: async () => {
-      const res = await fetch("/api/asana/tasks", { credentials: "include" });
-      if (!res.ok) {
-        console.warn("Asana integration not available");
-        return [];
-      }
+      const res = await fetch("/api/tasks/all", { credentials: "include" });
+      if (!res.ok) return [];
       return res.json();
     },
-    retry: false,
-    staleTime: 0,
   });
 
-  useEffect(() => {
-    refetch();
-  }, [refetch]);
+  const { data: projects = [] } = useQuery<Project[]>({
+    queryKey: ["projects"],
+    queryFn: async () => {
+      const res = await fetch("/api/projects", { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
 
-  const handleRefresh = () => {
-    refetch();
-  };
+  const toggleTaskMutation = useMutation({
+    mutationFn: async ({ taskId, isCompleted }: { taskId: number; isCompleted: boolean }) => {
+      const res = await fetch(`/api/tasks/${taskId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ isCompleted }),
+      });
+      if (!res.ok) throw new Error("Failed to update task");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["all-tasks"] });
+    },
+  });
 
-  const formatDueDate = (dueOn: string | null) => {
-    if (!dueOn) return null;
-    const date = new Date(dueOn);
+  const createTaskMutation = useMutation({
+    mutationFn: async (data: typeof newTask & { projectId: number }) => {
+      const res = await fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          ...data,
+          dueDate: data.dueDate || undefined,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to create task");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["all-tasks"] });
+      setCreateDialogOpen(false);
+      setNewTask({ title: "", description: "", priority: "medium", dueDate: "" });
+      setSelectedProjectId(null);
+    },
+  });
+
+  const filterTasks = (taskList: Task[]) => {
     const now = new Date();
-    const diffDays = Math.ceil((date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    
-    if (diffDays < 0) return { text: `Overdue by ${Math.abs(diffDays)} days`, className: "text-red-600 bg-red-50" };
-    if (diffDays === 0) return { text: "Due today", className: "text-orange-600 bg-orange-50" };
-    if (diffDays === 1) return { text: "Due tomorrow", className: "text-yellow-600 bg-yellow-50" };
-    if (diffDays <= 7) return { text: `Due in ${diffDays} days`, className: "text-blue-600 bg-blue-50" };
-    return { text: date.toLocaleDateString(), className: "text-muted-foreground bg-muted" };
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+    const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+    switch (filter) {
+      case "today":
+        return taskList.filter(t => {
+          if (!t.dueDate || t.isCompleted) return false;
+          const due = new Date(t.dueDate);
+          return due >= today && due < tomorrow;
+        });
+      case "upcoming":
+        return taskList.filter(t => {
+          if (!t.dueDate || t.isCompleted) return false;
+          const due = new Date(t.dueDate);
+          return due >= today && due < nextWeek;
+        });
+      case "overdue":
+        return taskList.filter(t => {
+          if (!t.dueDate || t.isCompleted) return false;
+          const due = new Date(t.dueDate);
+          return due < today;
+        });
+      case "completed":
+        return taskList.filter(t => t.isCompleted);
+      default:
+        return taskList.filter(t => !t.isCompleted);
+    }
   };
+
+  const filteredTasks = filterTasks(tasks);
+
+  const tasksByProject = filteredTasks.reduce((acc, task) => {
+    const projectId = task.projectId;
+    if (!acc[projectId]) acc[projectId] = [];
+    acc[projectId].push(task);
+    return acc;
+  }, {} as Record<number, Task[]>);
+
+  const toggleProject = (projectId: number) => {
+    setExpandedProjects(prev => {
+      const next = new Set(prev);
+      if (next.has(projectId)) {
+        next.delete(projectId);
+      } else {
+        next.add(projectId);
+      }
+      return next;
+    });
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case "urgent": return "text-red-600 bg-red-50";
+      case "high": return "text-orange-600 bg-orange-50";
+      case "medium": return "text-yellow-600 bg-yellow-50";
+      case "low": return "text-green-600 bg-green-50";
+      default: return "text-gray-600 bg-gray-50";
+    }
+  };
+
+  const formatDueDate = (dueDate: string | null) => {
+    if (!dueDate) return null;
+    const date = new Date(dueDate);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const diffDays = Math.ceil((date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 0) return { text: `Overdue`, className: "text-red-600 bg-red-50" };
+    if (diffDays === 0) return { text: "Today", className: "text-orange-600 bg-orange-50" };
+    if (diffDays === 1) return { text: "Tomorrow", className: "text-yellow-600 bg-yellow-50" };
+    if (diffDays <= 7) return { text: format(date, "EEE"), className: "text-blue-600 bg-blue-50" };
+    return { text: format(date, "MMM d"), className: "text-gray-600 bg-gray-50" };
+  };
+
+  const handleCreateTask = () => {
+    if (newTask.title.trim() && selectedProjectId) {
+      createTaskMutation.mutate({ ...newTask, projectId: selectedProjectId });
+    }
+  };
+
+  const isLoading = tasksLoading;
 
   return (
     <div className="min-h-screen bg-background text-foreground flex font-sans">
@@ -70,102 +203,272 @@ export default function Tasks() {
 
       <main className="flex-1 ml-0 md:ml-64 relative z-10 flex flex-col">
         <TopBar />
-        <div className="flex-1 p-8">
-        <header className="flex justify-between items-center mb-8">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-[#F06A6A]/10 flex items-center justify-center">
-              <CheckSquare className="w-6 h-6 text-[#F06A6A]" />
+        <div className="flex-1 p-4 md:p-8 pb-20 md:pb-8">
+          <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 md:mb-8">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                <ListTodo className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+              </div>
+              <div>
+                <h1 className="font-display font-bold text-2xl md:text-3xl">Tasks</h1>
+                <p className="text-muted-foreground text-sm md:text-base">All your tasks across projects</p>
+              </div>
             </div>
-            <div>
-              <h1 className="font-display font-bold text-3xl">Tasks</h1>
-              <p className="text-muted-foreground">Your Asana tasks in one place</p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => refetch()}
+                disabled={isFetching}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/80 hover:bg-white transition-colors shadow-sm border border-gray-200 disabled:opacity-50"
+                data-testid="button-refresh-tasks"
+              >
+                <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
+              </button>
+              <Button
+                onClick={() => setCreateDialogOpen(true)}
+                disabled={projects.length === 0}
+                className="flex items-center gap-2"
+                data-testid="button-create-task"
+              >
+                <Plus className="w-4 h-4" />
+                New Task
+              </Button>
             </div>
-          </div>
-          <button
-            onClick={handleRefresh}
-            disabled={isFetching}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/80 hover:bg-white transition-colors shadow-sm border border-gray-200 disabled:opacity-50"
-            data-testid="button-refresh-tasks"
-          >
-            <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
-            <span className="font-medium">Refresh</span>
-          </button>
-        </header>
+          </header>
 
-        <div className="glass-panel rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="font-semibold text-lg">
-              {asanaTasks.length} {asanaTasks.length === 1 ? 'Task' : 'Tasks'}
-            </h2>
-            {isFetching && !isLoading && (
-              <span className="text-sm text-muted-foreground">Refreshing...</span>
+          <div className="flex gap-2 mb-6 flex-wrap">
+            {[
+              { id: "all", label: "Active", icon: Circle },
+              { id: "today", label: "Today", icon: Clock },
+              { id: "upcoming", label: "Upcoming", icon: Calendar },
+              { id: "overdue", label: "Overdue", icon: Flag },
+              { id: "completed", label: "Completed", icon: CheckCircle2 },
+            ].map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                onClick={() => setFilter(id as FilterType)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-colors ${
+                  filter === id
+                    ? "bg-primary text-white shadow-sm"
+                    : "bg-white/80 text-muted-foreground hover:bg-white"
+                }`}
+                data-testid={`filter-${id}`}
+              >
+                <Icon className="w-4 h-4" />
+                {label}
+              </button>
+            ))}
+          </div>
+
+          <div className="glass-panel rounded-2xl p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="font-semibold text-lg flex items-center gap-2">
+                <Filter className="w-5 h-5 text-muted-foreground" />
+                {filteredTasks.length} {filteredTasks.length === 1 ? 'Task' : 'Tasks'}
+              </h2>
+              {isFetching && !isLoading && (
+                <span className="text-sm text-muted-foreground">Refreshing...</span>
+              )}
+            </div>
+
+            {isLoading ? (
+              <div className="text-center text-muted-foreground py-12">
+                <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
+                <p>Loading tasks...</p>
+              </div>
+            ) : filteredTasks.length === 0 ? (
+              <div className="text-center py-12">
+                <ListTodo className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
+                <p className="text-muted-foreground mb-2">
+                  {filter === "all" ? "No active tasks" : `No ${filter} tasks`}
+                </p>
+                {projects.length === 0 ? (
+                  <Link href="/projects">
+                    <Button variant="outline" className="mt-4">
+                      <FolderKanban className="w-4 h-4 mr-2" />
+                      Create a Project First
+                    </Button>
+                  </Link>
+                ) : (
+                  <Button onClick={() => setCreateDialogOpen(true)} className="mt-4">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Task
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {Object.entries(tasksByProject).map(([projectIdStr, projectTasks]) => {
+                  const projectId = parseInt(projectIdStr);
+                  const project = projects.find(p => p.id === projectId);
+                  const isExpanded = expandedProjects.has(projectId) || expandedProjects.size === 0;
+
+                  return (
+                    <div key={projectId} className="border rounded-xl overflow-hidden">
+                      <button
+                        onClick={() => toggleProject(projectId)}
+                        className="w-full flex items-center gap-3 p-4 bg-white/50 hover:bg-white/80 transition-colors"
+                        data-testid={`project-header-${projectId}`}
+                      >
+                        {isExpanded ? (
+                          <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                        ) : (
+                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                        )}
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: project?.color || "#3b82f6" }}
+                        />
+                        <span className="font-medium">{project?.name || "Unknown Project"}</span>
+                        <span className="text-sm text-muted-foreground">({projectTasks.length})</span>
+                      </button>
+
+                      {(isExpanded || expandedProjects.size === 0) && (
+                        <div className="divide-y">
+                          {projectTasks.map(task => {
+                            const dueInfo = formatDueDate(task.dueDate);
+                            return (
+                              <div
+                                key={task.id}
+                                className="flex items-start gap-4 p-4 hover:bg-white/50 transition-colors"
+                                data-testid={`task-item-${task.id}`}
+                              >
+                                <button
+                                  onClick={() => toggleTaskMutation.mutate({ taskId: task.id, isCompleted: !task.isCompleted })}
+                                  className={`w-5 h-5 rounded-full border-2 flex-shrink-0 mt-0.5 transition-colors ${
+                                    task.isCompleted
+                                      ? "bg-green-500 border-green-500"
+                                      : "border-gray-300 hover:border-primary"
+                                  }`}
+                                  data-testid={`toggle-task-${task.id}`}
+                                >
+                                  {task.isCompleted && (
+                                    <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  )}
+                                </button>
+                                <div className="flex-1 min-w-0">
+                                  <p className={`font-medium ${task.isCompleted ? "line-through text-muted-foreground" : ""}`}>
+                                    {task.title}
+                                  </p>
+                                  {task.description && (
+                                    <p className="text-sm text-muted-foreground line-clamp-1 mt-1">
+                                      {task.description}
+                                    </p>
+                                  )}
+                                  <div className="flex items-center gap-2 mt-2 flex-wrap">
+                                    <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${getPriorityColor(task.priority)}`}>
+                                      {task.priority}
+                                    </span>
+                                    {dueInfo && (
+                                      <span className={`text-xs px-2 py-0.5 rounded-full ${dueInfo.className}`}>
+                                        {dueInfo.text}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                <Link href={`/projects/${task.projectId}`}>
+                                  <Button variant="ghost" size="sm" className="text-muted-foreground">
+                                    View
+                                  </Button>
+                                </Link>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </div>
-
-          {isLoading ? (
-            <div className="text-center text-muted-foreground py-12">
-              <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-[#F06A6A]" />
-              <p>Loading tasks...</p>
-            </div>
-          ) : asanaTasks.length === 0 ? (
-            <div className="text-center py-12">
-              <CheckSquare className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
-              <p className="text-muted-foreground mb-2">No tasks assigned to you</p>
-              <p className="text-sm text-muted-foreground">Tasks from Asana will appear here</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {asanaTasks.map((task) => {
-                const dueInfo = formatDueDate(task.dueOn);
-                return (
-                  <a
-                    key={task.id}
-                    href={task.permalink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block p-4 rounded-xl bg-white/50 hover:bg-white/80 transition-all border border-gray-100 hover:border-gray-200 hover:shadow-sm group"
-                    data-testid={`task-item-${task.id}`}
-                  >
-                    <div className="flex items-start gap-4">
-                      <div className={`w-5 h-5 rounded border-2 flex-shrink-0 mt-0.5 ${task.completed ? 'bg-green-500 border-green-500' : 'border-gray-300 group-hover:border-[#F06A6A]'}`}>
-                        {task.completed && (
-                          <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                          </svg>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-4">
-                          <p className={`font-medium ${task.completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
-                            {task.name}
-                          </p>
-                          <ExternalLink className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
-                        </div>
-                        <div className="flex items-center gap-3 mt-2 flex-wrap">
-                          {task.projectName && (
-                            <span className="text-xs px-2 py-1 rounded-full bg-purple-50 text-purple-600">
-                              {task.projectName}
-                            </span>
-                          )}
-                          {dueInfo && (
-                            <span className={`text-xs px-2 py-1 rounded-full ${dueInfo.className}`}>
-                              {dueInfo.text}
-                            </span>
-                          )}
-                        </div>
-                        {task.notes && (
-                          <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{task.notes}</p>
-                        )}
-                      </div>
-                    </div>
-                  </a>
-                );
-              })}
-            </div>
-          )}
-        </div>
         </div>
       </main>
+
+      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Task</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="task-project">Project</Label>
+              <Select value={selectedProjectId?.toString() || ""} onValueChange={(v) => setSelectedProjectId(parseInt(v))}>
+                <SelectTrigger data-testid="select-project">
+                  <SelectValue placeholder="Select a project" />
+                </SelectTrigger>
+                <SelectContent>
+                  {projects.map((project) => (
+                    <SelectItem key={project.id} value={project.id.toString()}>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: project.color }} />
+                        {project.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="task-title">Task Title</Label>
+              <Input
+                id="task-title"
+                value={newTask.title}
+                onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                placeholder="What needs to be done?"
+                data-testid="input-task-title"
+              />
+            </div>
+            <div>
+              <Label htmlFor="task-description">Description (optional)</Label>
+              <Textarea
+                id="task-description"
+                value={newTask.description}
+                onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                placeholder="Add more details..."
+                data-testid="input-task-description"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="task-priority">Priority</Label>
+                <Select value={newTask.priority} onValueChange={(v) => setNewTask({ ...newTask, priority: v })}>
+                  <SelectTrigger data-testid="select-priority">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="urgent">Urgent</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="task-due-date">Due Date (optional)</Label>
+                <Input
+                  id="task-due-date"
+                  type="date"
+                  value={newTask.dueDate}
+                  onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
+                  data-testid="input-task-due-date"
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
+            <Button
+              onClick={handleCreateTask}
+              disabled={!newTask.title.trim() || !selectedProjectId || createTaskMutation.isPending}
+              data-testid="button-confirm-create-task"
+            >
+              {createTaskMutation.isPending ? "Creating..." : "Create Task"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
