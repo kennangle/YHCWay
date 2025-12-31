@@ -1144,9 +1144,9 @@ export class DbStorage implements IStorage {
     // Create default columns
     await db.insert(projectColumns).values([
       { projectId: project.id, name: "Tasks", color: "#f59e0b", sortOrder: 0 },
-      { projectId: project.id, name: "To Do", color: "#6b7280", sortOrder: 1 },
-      { projectId: project.id, name: "In Progress", color: "#3b82f6", sortOrder: 2 },
-      { projectId: project.id, name: "Done", color: "#22c55e", sortOrder: 3 },
+      { projectId: project.id, name: "In Progress", color: "#3b82f6", sortOrder: 1 },
+      { projectId: project.id, name: "Done", color: "#22c55e", sortOrder: 2 },
+      { projectId: project.id, name: "Notes", color: "#8b5cf6", sortOrder: 3 },
     ]);
     // Add creator as project member
     await db.insert(projectMembers).values({

@@ -3112,9 +3112,9 @@ export async function registerRoutes(
         // Create default columns if no sections
         const defaultColumns = [
           { name: 'Tasks', color: '#f59e0b' },
-          { name: 'To Do', color: '#e2e8f0' },
           { name: 'In Progress', color: '#93c5fd' },
           { name: 'Done', color: '#86efac' },
+          { name: 'Notes', color: '#d4b0ff' },
         ];
         for (let i = 0; i < defaultColumns.length; i++) {
           const column = await storage.createProjectColumn({
