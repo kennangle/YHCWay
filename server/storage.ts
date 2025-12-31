@@ -19,8 +19,6 @@ import {
   type UserPreference,
   type SlackUserCredential,
   type InsertSlackUserCredential,
-  type AsanaUserCredential,
-  type InsertAsanaUserCredential,
   type Tenant,
   type InsertTenant,
   type TenantUser,
@@ -73,7 +71,6 @@ import {
   emailTemplates,
   userPreferences,
   slackUserCredentials,
-  asanaUserCredentials,
   userDisabledIntegrations,
   tenants,
   tenantUsers,
@@ -186,11 +183,6 @@ export interface IStorage {
   getSlackUserCredentials(userId: string): Promise<SlackUserCredential | undefined>;
   saveSlackUserCredentials(userId: string, slackUserId: string, slackTeamId: string, accessToken: string, scope?: string): Promise<SlackUserCredential>;
   deleteSlackUserCredentials(userId: string): Promise<void>;
-  
-  // Asana user credentials
-  getAsanaUserCredentials(userId: string): Promise<AsanaUserCredential | undefined>;
-  saveAsanaUserCredentials(userId: string, asanaUserId: string, accessToken: string, refreshToken?: string, expiresAt?: Date, scope?: string): Promise<AsanaUserCredential>;
-  deleteAsanaUserCredentials(userId: string): Promise<void>;
   
   // User disabled integrations
   getUserDisabledIntegrations(userId: string): Promise<string[]>;
@@ -917,43 +909,6 @@ export class DbStorage implements IStorage {
   async deleteSlackUserCredentials(userId: string): Promise<void> {
     await db.delete(slackUserCredentials)
       .where(eq(slackUserCredentials.userId, userId));
-  }
-
-  // Asana user credentials
-  async getAsanaUserCredentials(userId: string): Promise<AsanaUserCredential | undefined> {
-    const [creds] = await db.select()
-      .from(asanaUserCredentials)
-      .where(eq(asanaUserCredentials.userId, userId));
-    return creds;
-  }
-
-  async saveAsanaUserCredentials(
-    userId: string, 
-    asanaUserId: string, 
-    accessToken: string, 
-    refreshToken?: string,
-    expiresAt?: Date,
-    scope?: string
-  ): Promise<AsanaUserCredential> {
-    const existing = await this.getAsanaUserCredentials(userId);
-    
-    if (existing) {
-      const [updated] = await db.update(asanaUserCredentials)
-        .set({ asanaUserId, accessToken, refreshToken, expiresAt, scope, updatedAt: new Date() })
-        .where(eq(asanaUserCredentials.userId, userId))
-        .returning();
-      return updated;
-    }
-    
-    const [created] = await db.insert(asanaUserCredentials)
-      .values({ userId, asanaUserId, accessToken, refreshToken, expiresAt, scope })
-      .returning();
-    return created;
-  }
-
-  async deleteAsanaUserCredentials(userId: string): Promise<void> {
-    await db.delete(asanaUserCredentials)
-      .where(eq(asanaUserCredentials.userId, userId));
   }
 
   // User disabled integrations

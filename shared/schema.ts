@@ -315,22 +315,6 @@ export const slackUserCredentials = pgTable("slack_user_credentials", {
 export type SlackUserCredential = typeof slackUserCredentials.$inferSelect;
 export type InsertSlackUserCredential = typeof slackUserCredentials.$inferInsert;
 
-// Asana user credentials for per-user OAuth
-export const asanaUserCredentials = pgTable("asana_user_credentials", {
-  id: serial("id").primaryKey(),
-  userId: varchar("user_id").notNull().unique().references(() => users.id, { onDelete: "cascade" }),
-  asanaUserId: varchar("asana_user_id").notNull(),
-  accessToken: text("access_token").notNull(),
-  refreshToken: text("refresh_token"),
-  expiresAt: timestamp("expires_at"),
-  scope: text("scope"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
-export type AsanaUserCredential = typeof asanaUserCredentials.$inferSelect;
-export type InsertAsanaUserCredential = typeof asanaUserCredentials.$inferInsert;
-
 // User disabled integrations - allows users to hide system-level integrations
 export const userDisabledIntegrations = pgTable("user_disabled_integrations", {
   id: serial("id").primaryKey(),
@@ -466,7 +450,6 @@ export const userPreferences = pgTable("user_preferences", {
   notifySlack: boolean("notify_slack").default(true),
   notifyCalendar: boolean("notify_calendar").default(true),
   notifyZoom: boolean("notify_zoom").default(true),
-  notifyAsana: boolean("notify_asana").default(true),
   notifyChat: boolean("notify_chat").default(true),
   // Notifications - delivery
   notifyInApp: boolean("notify_in_app").default(true),
@@ -515,7 +498,6 @@ export const userPreferencesSchema = z.object({
   notifySlack: z.boolean().optional(),
   notifyCalendar: z.boolean().optional(),
   notifyZoom: z.boolean().optional(),
-  notifyAsana: z.boolean().optional(),
   notifyChat: z.boolean().optional(),
   notifyInApp: z.boolean().optional(),
   notifyEmail: z.boolean().optional(),

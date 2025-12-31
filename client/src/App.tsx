@@ -78,7 +78,6 @@ import Webhooks from "@/pages/webhooks";
 import SetupGuide from "@/pages/setup-guide";
 import PendingApproval from "@/pages/pending-approval";
 import ArchivePage from "@/pages/archive";
-import Asana from "@/pages/asana";
 
 function ApprovalGuard({ children }: { children: ReactNode }) {
   const { user } = useAuth();
@@ -131,7 +130,6 @@ function Router() {
         <Route path="/tasks" component={Tasks} />
         <Route path="/projects" component={Projects} />
         <Route path="/projects/:id" component={ProjectBoard} />
-        <Route path="/asana" component={Asana} />
         <Route path="/typeform" component={Typeform} />
         <Route path="/chat" component={Chat} />
         <Route path="/connect" component={Connect} />
