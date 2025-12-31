@@ -3128,14 +3128,14 @@ export async function registerRoutes(
       };
       const projectColor = color ? (colorMap[color] || '#3b82f6') : '#3b82f6';
       
-      // Create the project in our system
+      // Create the project in our system (skip default columns - we'll create from Asana sections)
       const project = await storage.createProject({
         name: name || 'Imported Project',
         description: notes || null,
         color: projectColor,
         ownerId: userId,
         tenantId,
-      });
+      }, { skipDefaultColumns: true });
       
       // Fetch sections (columns) from Asana
       const sections = await getProjectSections(asanaProjectId);

@@ -223,7 +223,7 @@ export interface IStorage {
   getAuditLogs(tenantId: string, limit?: number, offset?: number): Promise<AuditLog[]>;
   
   // Project management
-  createProject(data: InsertProject): Promise<Project>;
+  createProject(data: InsertProject, options?: { skipDefaultColumns?: boolean }): Promise<Project>;
   getProject(id: number): Promise<Project | undefined>;
   getUserProjects(userId: string, tenantId?: string): Promise<Project[]>;
   updateProject(id: number, data: Partial<InsertProject>): Promise<Project | undefined>;
@@ -1139,15 +1139,17 @@ export class DbStorage implements IStorage {
   }
 
   // Project management
-  async createProject(data: InsertProject): Promise<Project> {
+  async createProject(data: InsertProject, options?: { skipDefaultColumns?: boolean }): Promise<Project> {
     const [project] = await db.insert(projects).values(data).returning();
-    // Create default columns
-    await db.insert(projectColumns).values([
-      { projectId: project.id, name: "Tasks", color: "#f59e0b", sortOrder: 0 },
-      { projectId: project.id, name: "In Progress", color: "#3b82f6", sortOrder: 1 },
-      { projectId: project.id, name: "Done", color: "#22c55e", sortOrder: 2 },
-      { projectId: project.id, name: "Notes", color: "#8b5cf6", sortOrder: 3 },
-    ]);
+    // Create default columns unless explicitly skipped (for imports)
+    if (!options?.skipDefaultColumns) {
+      await db.insert(projectColumns).values([
+        { projectId: project.id, name: "Tasks", color: "#f59e0b", sortOrder: 0 },
+        { projectId: project.id, name: "In Progress", color: "#3b82f6", sortOrder: 1 },
+        { projectId: project.id, name: "Done", color: "#22c55e", sortOrder: 2 },
+        { projectId: project.id, name: "Notes", color: "#8b5cf6", sortOrder: 3 },
+      ]);
+    }
     // Add creator as project member
     await db.insert(projectMembers).values({
       projectId: project.id,
