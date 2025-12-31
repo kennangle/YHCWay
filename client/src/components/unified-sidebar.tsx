@@ -57,7 +57,6 @@ export function UnifiedSidebar() {
     ...(user?.isAdmin ? [{ icon: FileText, label: "Typeform", href: "/typeform" }] : []),
     { icon: PlusCircle, label: "Connect App", href: "/connect" },
     { icon: Settings, label: "Settings", href: "/settings" },
-    { icon: Webhook, label: "Webhooks", href: "/webhooks" },
     ...(user?.isAdmin ? [{ icon: Shield, label: "Admin", href: "/admin" }] : []),
   ];
 

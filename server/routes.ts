@@ -4039,5 +4039,66 @@ export async function registerRoutes(
     }
   });
 
+  // Feedback endpoints
+  app.post("/api/feedback", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      const tenantId = req.tenantId;
+      if (!userId || !tenantId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const { type, title, description } = req.body;
+      if (!type || !title || !description) {
+        return res.status(400).json({ error: "type, title, and description are required" });
+      }
+      if (!["bug", "feature"].includes(type)) {
+        return res.status(400).json({ error: "type must be 'bug' or 'feature'" });
+      }
+      const entry = await storage.createFeedbackEntry({
+        tenantId,
+        userId,
+        type,
+        title,
+        description,
+      });
+      res.status(201).json(entry);
+    } catch (error) {
+      console.error("Error creating feedback:", error);
+      res.status(500).json({ error: "Failed to create feedback" });
+    }
+  });
+
+  app.get("/api/feedback", isAuthenticated, async (req: any, res) => {
+    try {
+      const tenantId = req.tenantId;
+      if (!tenantId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const entries = await storage.getFeedbackEntriesForTenant(tenantId);
+      res.json(entries);
+    } catch (error) {
+      console.error("Error fetching feedback:", error);
+      res.status(500).json({ error: "Failed to fetch feedback" });
+    }
+  });
+
+  app.patch("/api/feedback/:id/status", isAuthenticated, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { status } = req.body;
+      if (!["open", "in_progress", "resolved"].includes(status)) {
+        return res.status(400).json({ error: "Invalid status" });
+      }
+      const updated = await storage.updateFeedbackStatus(id, status);
+      if (!updated) {
+        return res.status(404).json({ error: "Feedback not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating feedback status:", error);
+      res.status(500).json({ error: "Failed to update feedback status" });
+    }
+  });
+
   return httpServer;
 }

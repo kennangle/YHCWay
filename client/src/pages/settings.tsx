@@ -3,12 +3,15 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTheme } from "@/App";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { TopBar } from "@/components/top-bar";
-import { User, Bell, Shield, Palette, HelpCircle, ChevronLeft, Check, Globe, Mail, MessageSquare, Calendar, Video, CheckSquare, MessageCircle, Volume2, Moon, Sun, ExternalLink, Trash2, Download, Eye, EyeOff, FileText, Plus, Pencil } from "lucide-react";
+import { User, Bell, Shield, Palette, HelpCircle, ChevronLeft, Check, Globe, Mail, MessageSquare, Calendar, Video, CheckSquare, MessageCircle, Volume2, Moon, Sun, ExternalLink, Trash2, Download, Eye, EyeOff, FileText, Plus, Pencil, Webhook, Bug, Play, CheckCircle, XCircle, Clock, RefreshCw, Edit2, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 
@@ -120,7 +123,7 @@ const playNotificationSound = (soundType: string) => {
   oscillator.stop(audioContext.currentTime + 0.5);
 };
 
-type SettingsSection = "main" | "account" | "notifications" | "privacy" | "appearance" | "language" | "help" | "templates";
+type SettingsSection = "main" | "account" | "notifications" | "privacy" | "appearance" | "language" | "help" | "templates" | "webhooks" | "feedback";
 
 interface TaskTemplate {
   id: number;
@@ -128,6 +131,44 @@ interface TaskTemplate {
   description: string | null;
   defaultPriority: string;
   estimatedMinutes: number | null;
+}
+
+interface WebhookType {
+  id: number;
+  name: string;
+  url: string;
+  secret?: string;
+  events: string[];
+  isActive: boolean;
+  createdAt: string;
+}
+
+interface WebhookDelivery {
+  id: number;
+  event: string;
+  success: boolean;
+  responseStatus: number;
+  deliveredAt: string;
+}
+
+interface WebhookEvent {
+  id: string;
+  name: string;
+}
+
+interface FeedbackEntry {
+  id: number;
+  type: "bug" | "feature";
+  title: string;
+  description: string;
+  status: "open" | "in_progress" | "resolved";
+  createdAt: string;
+  user: {
+    id: string;
+    email: string;
+    firstName?: string;
+    lastName?: string;
+  };
 }
 
 function TemplatesSectionContent({ renderBackButton }: { renderBackButton: () => React.ReactNode }) {
@@ -408,6 +449,449 @@ function TemplatesSectionContent({ renderBackButton }: { renderBackButton: () =>
   );
 }
 
+function WebhooksSectionContent({ renderBackButton }: { renderBackButton: () => React.ReactNode }) {
+  const queryClient = useQueryClient();
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editingWebhook, setEditingWebhook] = useState<WebhookType | null>(null);
+  const [viewDeliveriesId, setViewDeliveriesId] = useState<number | null>(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    url: "",
+    secret: "",
+    events: [] as string[],
+    isActive: true,
+  });
+
+  const { data: webhooks = [], isLoading } = useQuery<WebhookType[]>({
+    queryKey: ["/api/webhooks"],
+    queryFn: async () => {
+      const res = await fetch("/api/webhooks", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch webhooks");
+      return res.json();
+    },
+  });
+
+  const { data: eventsData } = useQuery<{ events: WebhookEvent[] }>({
+    queryKey: ["/api/webhooks/events"],
+    queryFn: async () => {
+      const res = await fetch("/api/webhooks/events", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch events");
+      return res.json();
+    },
+  });
+
+  const { data: deliveries = [] } = useQuery<WebhookDelivery[]>({
+    queryKey: ["/api/webhooks", viewDeliveriesId, "deliveries"],
+    queryFn: async () => {
+      if (!viewDeliveriesId) return [];
+      const res = await fetch(`/api/webhooks/${viewDeliveriesId}/deliveries`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch deliveries");
+      return res.json();
+    },
+    enabled: !!viewDeliveriesId,
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: typeof formData) => {
+      const res = await fetch("/api/webhooks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to create webhook");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/webhooks"] });
+      setIsCreateOpen(false);
+      resetForm();
+      toast.success("Webhook created successfully");
+    },
+    onError: () => toast.error("Failed to create webhook"),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: Partial<typeof formData> }) => {
+      const res = await fetch(`/api/webhooks/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to update webhook");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/webhooks"] });
+      setEditingWebhook(null);
+      resetForm();
+      toast.success("Webhook updated successfully");
+    },
+    onError: () => toast.error("Failed to update webhook"),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/webhooks/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to delete webhook");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/webhooks"] });
+      toast.success("Webhook deleted");
+    },
+    onError: () => toast.error("Failed to delete webhook"),
+  });
+
+  const testMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/webhooks/${id}/test`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to test webhook");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      if (data.success) {
+        toast.success("Webhook test successful!");
+      } else {
+        toast.error(`Webhook test failed: ${data.error || "Unknown error"}`);
+      }
+    },
+    onError: () => toast.error("Failed to test webhook"),
+  });
+
+  const resetForm = () => {
+    setFormData({ name: "", url: "", secret: "", events: [], isActive: true });
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingWebhook) {
+      updateMutation.mutate({ id: editingWebhook.id, data: formData });
+    } else {
+      createMutation.mutate(formData);
+    }
+  };
+
+  const handleEdit = (webhook: WebhookType) => {
+    setEditingWebhook(webhook);
+    setFormData({
+      name: webhook.name,
+      url: webhook.url,
+      secret: webhook.secret || "",
+      events: webhook.events,
+      isActive: webhook.isActive,
+    });
+  };
+
+  const toggleEvent = (eventId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      events: prev.events.includes(eventId)
+        ? prev.events.filter(e => e !== eventId)
+        : [...prev.events, eventId]
+    }));
+  };
+
+  const events = eventsData?.events || [];
+
+  return (
+    <div className="max-w-4xl">
+      {renderBackButton()}
+      <div className="mb-8 flex justify-between items-start">
+        <div>
+          <h2 className="font-display font-bold text-2xl mb-2">Webhooks</h2>
+          <p className="text-muted-foreground">Configure webhooks to send real-time notifications to external services.</p>
+        </div>
+        <Dialog open={isCreateOpen || !!editingWebhook} onOpenChange={(open) => {
+          if (!open) {
+            setIsCreateOpen(false);
+            setEditingWebhook(null);
+            resetForm();
+          }
+        }}>
+          <DialogTrigger asChild>
+            <Button onClick={() => setIsCreateOpen(true)} data-testid="button-add-webhook">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Webhook
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>{editingWebhook ? "Edit Webhook" : "Create Webhook"}</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label>Name</Label>
+                <Input
+                  value={formData.name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="My Webhook"
+                  required
+                  data-testid="input-webhook-name"
+                />
+              </div>
+              <div>
+                <Label>URL</Label>
+                <Input
+                  type="url"
+                  value={formData.url}
+                  onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
+                  placeholder="https://example.com/webhook"
+                  required
+                  data-testid="input-webhook-url"
+                />
+              </div>
+              <div>
+                <Label>Secret (optional)</Label>
+                <Input
+                  value={formData.secret}
+                  onChange={(e) => setFormData(prev => ({ ...prev, secret: e.target.value }))}
+                  placeholder="Optional signing secret"
+                  data-testid="input-webhook-secret"
+                />
+              </div>
+              <div>
+                <Label>Events</Label>
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  {events.map(event => (
+                    <label key={event.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <Checkbox
+                        checked={formData.events.includes(event.id)}
+                        onCheckedChange={() => toggleEvent(event.id)}
+                        data-testid={`checkbox-event-${event.id}`}
+                      />
+                      {event.name}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={formData.isActive}
+                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isActive: checked }))}
+                  data-testid="switch-webhook-active"
+                />
+                <Label>Active</Label>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => {
+                  setIsCreateOpen(false);
+                  setEditingWebhook(null);
+                  resetForm();
+                }}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending} data-testid="button-save-webhook">
+                  {editingWebhook ? "Save Changes" : "Create Webhook"}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {isLoading ? (
+        <p className="text-muted-foreground">Loading webhooks...</p>
+      ) : webhooks.length === 0 ? (
+        <div className="glass-card p-8 rounded-2xl text-center">
+          <Webhook className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+          <h3 className="font-semibold mb-2">No webhooks configured</h3>
+          <p className="text-muted-foreground mb-4">Create your first webhook to start receiving notifications.</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {webhooks.map(webhook => (
+            <div key={webhook.id} className="glass-card p-6 rounded-2xl" data-testid={`webhook-item-${webhook.id}`}>
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className={`w-3 h-3 rounded-full ${webhook.isActive ? 'bg-green-500' : 'bg-gray-400'}`} />
+                  <div>
+                    <h3 className="font-semibold">{webhook.name}</h3>
+                    <p className="text-sm text-muted-foreground truncate max-w-md">{webhook.url}</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="ghost" size="sm" onClick={() => testMutation.mutate(webhook.id)} data-testid={`button-test-webhook-${webhook.id}`}>
+                    <Play className="w-4 h-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => setViewDeliveriesId(viewDeliveriesId === webhook.id ? null : webhook.id)} data-testid={`button-deliveries-webhook-${webhook.id}`}>
+                    <Clock className="w-4 h-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => handleEdit(webhook)} data-testid={`button-edit-webhook-${webhook.id}`}>
+                    <Edit2 className="w-4 h-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" className="text-destructive" onClick={() => deleteMutation.mutate(webhook.id)} data-testid={`button-delete-webhook-${webhook.id}`}>
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {webhook.events.map(event => (
+                  <span key={event} className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full">{event}</span>
+                ))}
+              </div>
+              {viewDeliveriesId === webhook.id && (
+                <div className="mt-4 border-t pt-4">
+                  <h4 className="font-medium mb-2">Recent Deliveries</h4>
+                  {deliveries.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No deliveries yet</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {deliveries.slice(0, 5).map(delivery => (
+                        <div key={delivery.id} className="flex items-center justify-between text-sm bg-white/50 p-2 rounded">
+                          <div className="flex items-center gap-2">
+                            {delivery.success ? <CheckCircle className="w-4 h-4 text-green-500" /> : <XCircle className="w-4 h-4 text-red-500" />}
+                            <span>{delivery.event}</span>
+                          </div>
+                          <span className="text-muted-foreground">{new Date(delivery.deliveredAt).toLocaleString()}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FeedbackSectionContent({ renderBackButton }: { renderBackButton: () => React.ReactNode }) {
+  const queryClient = useQueryClient();
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+
+  const { data: feedback = [], isLoading } = useQuery<FeedbackEntry[]>({
+    queryKey: ["/api/feedback"],
+    queryFn: async () => {
+      const res = await fetch("/api/feedback", { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: number; status: string }) => {
+      const res = await fetch(`/api/feedback/${id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) throw new Error("Failed to update status");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/feedback"] });
+      toast.success("Status updated");
+    },
+    onError: () => toast.error("Failed to update status"),
+  });
+
+  const filteredFeedback = feedback.filter(item => {
+    if (statusFilter !== "all" && item.status !== statusFilter) return false;
+    if (typeFilter !== "all" && item.type !== typeFilter) return false;
+    return true;
+  });
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "open": return "bg-yellow-100 text-yellow-800";
+      case "in_progress": return "bg-blue-100 text-blue-800";
+      case "resolved": return "bg-green-100 text-green-800";
+      default: return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getTypeIcon = (type: string) => {
+    return type === "bug" ? <Bug className="w-4 h-4 text-red-500" /> : <Lightbulb className="w-4 h-4 text-yellow-500" />;
+  };
+
+  return (
+    <div className="max-w-4xl">
+      {renderBackButton()}
+      <div className="mb-8">
+        <h2 className="font-display font-bold text-2xl mb-2">Feedback</h2>
+        <p className="text-muted-foreground">View and manage bug reports and feature requests from your team.</p>
+      </div>
+
+      <div className="flex gap-4 mb-6">
+        <Select value={typeFilter} onValueChange={setTypeFilter}>
+          <SelectTrigger className="w-40" data-testid="select-type-filter">
+            <SelectValue placeholder="Type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Types</SelectItem>
+            <SelectItem value="bug">Bug Reports</SelectItem>
+            <SelectItem value="feature">Feature Requests</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-40" data-testid="select-status-filter">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="open">Open</SelectItem>
+            <SelectItem value="in_progress">In Progress</SelectItem>
+            <SelectItem value="resolved">Resolved</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {isLoading ? (
+        <p className="text-muted-foreground">Loading feedback...</p>
+      ) : filteredFeedback.length === 0 ? (
+        <div className="glass-card p-8 rounded-2xl text-center">
+          <Bug className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+          <h3 className="font-semibold mb-2">No feedback yet</h3>
+          <p className="text-muted-foreground">Bug reports and feature requests from your team will appear here.</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filteredFeedback.map(item => (
+            <div key={item.id} className="glass-card p-6 rounded-2xl" data-testid={`feedback-item-${item.id}`}>
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  {getTypeIcon(item.type)}
+                  <div>
+                    <h3 className="font-semibold">{item.title}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {item.user?.firstName || item.user?.email?.split('@')[0]} • {new Date(item.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+                <Select 
+                  value={item.status} 
+                  onValueChange={(status) => updateStatusMutation.mutate({ id: item.id, status })}
+                >
+                  <SelectTrigger className={`w-32 h-8 text-xs ${getStatusColor(item.status)}`} data-testid={`select-status-${item.id}`}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="open">Open</SelectItem>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="resolved">Resolved</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{item.description}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Settings() {
   const [activeSection, setActiveSection] = useState<SettingsSection>("main");
   const [mounted, setMounted] = useState(false);
@@ -521,6 +1005,18 @@ export default function Settings() {
       icon: FileText,
       title: "Task Templates",
       description: "Create reusable task templates for common workflows",
+    },
+    {
+      id: "webhooks" as const,
+      icon: Webhook,
+      title: "Webhooks",
+      description: "Manage webhooks for external integrations",
+    },
+    {
+      id: "feedback" as const,
+      icon: Bug,
+      title: "Feedback",
+      description: "View bug reports and feature requests",
     },
     {
       id: "help" as const,
@@ -1309,6 +1805,14 @@ Your online status can be toggled in Privacy settings. When hidden, others won't
     <TemplatesSectionContent renderBackButton={renderBackButton} />
   );
 
+  const renderWebhooksSection = () => (
+    <WebhooksSectionContent renderBackButton={renderBackButton} />
+  );
+
+  const renderFeedbackSection = () => (
+    <FeedbackSectionContent renderBackButton={renderBackButton} />
+  );
+
   const renderContent = () => {
     switch (activeSection) {
       case "account":
@@ -1323,6 +1827,10 @@ Your online status can be toggled in Privacy settings. When hidden, others won't
         return renderLanguageSection();
       case "templates":
         return renderTemplatesSection();
+      case "webhooks":
+        return renderWebhooksSection();
+      case "feedback":
+        return renderFeedbackSection();
       case "help":
         return renderHelpSection();
       default:
