@@ -23,7 +23,7 @@ export default function Landing() {
           </div>
           
           <h1 className="font-display font-bold text-5xl md:text-6xl mb-6 tracking-tight">
-            UniWork360
+            The YHC Way
           </h1>
           
           <p className="text-xl text-muted-foreground mb-10 leading-relaxed">

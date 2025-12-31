@@ -58,7 +58,7 @@ export default function Register() {
       await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       toast({
         title: "Account created",
-        description: "Welcome to UniWork360!",
+        description: "Welcome to The YHC Way!",
       });
       setLocation("/dashboard");
     } catch (error: any) {
@@ -91,7 +91,7 @@ export default function Register() {
                 <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center text-white shadow-xl shadow-primary/30">
                   <Command className="w-6 h-6" />
                 </div>
-                <span className="font-display font-bold text-3xl">UniWork360</span>
+                <span className="font-display font-bold text-3xl">The YHC Way</span>
               </div>
             </Link>
           </div>

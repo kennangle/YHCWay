@@ -81,7 +81,7 @@ export function UnifiedSidebar() {
             <Command className="w-4 h-4" />
           </div>
           <span className="font-display font-bold text-xl tracking-tight text-foreground">
-            UniWork360
+            The YHC Way
           </span>
         </div>
 
