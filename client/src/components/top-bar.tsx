@@ -1,4 +1,4 @@
-import { Moon, Sun, LogOut } from "lucide-react";
+import { Moon, Sun, LogOut, Bug, Lightbulb } from "lucide-react";
 import { useTheme } from "@/App";
 import { useAuth } from "@/hooks/useAuth";
 import { queryClient } from "@/lib/queryClient";
@@ -41,6 +41,43 @@ export function TopBar() {
             {user.firstName || user.email?.split('@')[0]}
           </span>
         )}
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <a href="mailto:support@uniwork360.com?subject=Bug Report" target="_blank" rel="noopener noreferrer">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 text-muted-foreground hover:text-red-500"
+                data-testid="button-report-bug"
+              >
+                <Bug className="h-4 w-4" />
+              </Button>
+            </a>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Report a Bug</p>
+          </TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <a href="mailto:support@uniwork360.com?subject=Feature Request" target="_blank" rel="noopener noreferrer">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 text-muted-foreground hover:text-yellow-500"
+                data-testid="button-request-feature"
+              >
+                <Lightbulb className="h-4 w-4" />
+              </Button>
+            </a>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Request a Feature</p>
+          </TooltipContent>
+        </Tooltip>
+
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
