@@ -238,7 +238,7 @@ Customize UniWork to work the way you prefer.
 
 ## Projects & Tasks
 
-UniWork includes a built-in project management system for organizing your work.
+UniWork includes a powerful project management system for organizing your work, with multiple views just like Asana.
 
 ### Creating a Project
 
@@ -246,6 +246,39 @@ UniWork includes a built-in project management system for organizing your work.
 2. Click **New Project**
 3. Give your project a name and optional description
 4. Your project board will be created with default columns (To Do, In Progress, Done)
+
+### Project Views
+
+UniWork offers four different ways to view your project:
+
+**Board View** (Kanban)
+- The default view showing tasks as cards organized in columns
+- Drag and drop tasks between columns to update their status
+- Perfect for visualizing workflow stages
+
+**List View**
+- A spreadsheet-like view showing all tasks in rows
+- Quickly see task status, priority, due date, and assignee at a glance
+- Great for bulk reviewing tasks
+
+**Gantt Chart View**
+- A timeline-based view showing task durations
+- See task start dates and end dates as horizontal bars
+- Identify task overlap and scheduling conflicts
+- View task progress and milestones
+- Perfect for project planning and resource management
+
+**Timeline View**
+- Tasks grouped by due date (Today, Tomorrow, This Week, etc.)
+- Overdue tasks highlighted at the top
+- Tasks without due dates shown at the bottom
+- Ideal for focusing on what's due next
+
+To switch views, use the view buttons in the top-right corner of your project:
+- Grid icon = Board View
+- List icon = List View
+- Gantt icon = Gantt Chart View
+- Calendar range icon = Timeline View
 
 ### Managing Tasks
 
@@ -255,12 +288,15 @@ UniWork includes a built-in project management system for organizing your work.
 3. Click the task to add more details like due date, priority, and assignees
 
 **Moving Tasks:**
-Simply drag and drop tasks between columns to update their status.
+Simply drag and drop tasks between columns to update their status (in Board view).
 
 **Task Details:**
 Click any task to open it and:
 - Add a description
+- Set a start date (for Gantt view scheduling)
 - Set a due date
+- Set task progress (0-100%)
+- Mark as milestone (for key project dates)
 - Assign it to a team member
 - Add subtasks for breaking down work
 - Leave comments for discussion

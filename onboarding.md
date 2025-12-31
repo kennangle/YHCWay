@@ -125,6 +125,25 @@ View your schedule:
 - Upcoming events sidebar
 - Navigate between months with arrow buttons
 
+### Projects
+Manage your work with a powerful project management system:
+
+**Multiple Views:**
+- **Board** - Kanban-style columns with drag-and-drop tasks
+- **List** - Spreadsheet view for quick overview
+- **Gantt** - Timeline chart showing task durations and scheduling
+- **Timeline** - Tasks grouped by due date
+
+**Task Features:**
+- Set start dates and due dates
+- Track progress (0-100%)
+- Mark milestones for key dates
+- Add subtasks and comments
+- Assign to team members
+
+**Importing from Asana:**
+Click "Import from Asana" to bring in your existing projects. Sections become columns and tasks are imported automatically.
+
 ---
 
 ## Tips
