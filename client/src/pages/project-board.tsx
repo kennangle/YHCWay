@@ -782,12 +782,12 @@ export default function ProjectBoard() {
             </div>
             <div>
               <Label>Assign To</Label>
-              <Select value={newTask.assigneeId} onValueChange={(v) => setNewTask({ ...newTask, assigneeId: v })}>
+              <Select value={newTask.assigneeId || "unassigned"} onValueChange={(v) => setNewTask({ ...newTask, assigneeId: v === "unassigned" ? "" : v })}>
                 <SelectTrigger data-testid="select-task-assignee">
                   <SelectValue placeholder="Select a team member" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Unassigned</SelectItem>
+                  <SelectItem value="unassigned">Unassigned</SelectItem>
                   {users.map((user) => (
                     <SelectItem key={user.id} value={user.id}>
                       {user.firstName || user.email} {user.lastName || ''}
