@@ -56,6 +56,8 @@ import {
   type InsertArchivedEmail,
   type ArchivedSlackMessage,
   type InsertArchivedSlackMessage,
+  type FeedbackEntry,
+  type InsertFeedbackEntry,
   users,
   services,
   feedItems,
@@ -90,7 +92,8 @@ import {
   webhooks,
   webhookDeliveries,
   archivedEmails,
-  archivedSlackMessages
+  archivedSlackMessages,
+  feedbackEntries
 } from "@shared/schema";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq, desc, and, lt, isNull, sql, inArray, gte, lte, or } from "drizzle-orm";
@@ -298,6 +301,11 @@ export interface IStorage {
   getActiveWebhooksForEvent(event: string, tenantId?: string): Promise<Webhook[]>;
   logWebhookDelivery(data: InsertWebhookDelivery): Promise<WebhookDelivery>;
   getWebhookDeliveries(webhookId: number, limit?: number): Promise<WebhookDelivery[]>;
+  
+  // Feedback entries
+  createFeedbackEntry(data: InsertFeedbackEntry): Promise<FeedbackEntry>;
+  getFeedbackEntriesForTenant(tenantId: string): Promise<(FeedbackEntry & { user: User })[]>;
+  updateFeedbackStatus(id: number, status: string): Promise<FeedbackEntry | undefined>;
 }
 
 export class DbStorage implements IStorage {
@@ -1711,6 +1719,36 @@ export class DbStorage implements IStorage {
   async unarchiveSlackMessage(userId: string, messageId: string): Promise<void> {
     await db.delete(archivedSlackMessages)
       .where(and(eq(archivedSlackMessages.userId, userId), eq(archivedSlackMessages.messageId, messageId)));
+  }
+
+  // Feedback entries
+  async createFeedbackEntry(data: InsertFeedbackEntry): Promise<FeedbackEntry> {
+    const [entry] = await db.insert(feedbackEntries).values({
+      ...data,
+      type: data.type as "bug" | "feature",
+      status: (data.status || "open") as "open" | "in_progress" | "resolved"
+    }).returning();
+    return entry;
+  }
+
+  async getFeedbackEntriesForTenant(tenantId: string): Promise<(FeedbackEntry & { user: User })[]> {
+    const entries = await db.select().from(feedbackEntries)
+      .leftJoin(users, eq(feedbackEntries.userId, users.id))
+      .where(eq(feedbackEntries.tenantId, tenantId))
+      .orderBy(desc(feedbackEntries.createdAt));
+    
+    return entries.map(e => ({
+      ...e.feedback_entries,
+      user: e.users!
+    }));
+  }
+
+  async updateFeedbackStatus(id: number, status: string): Promise<FeedbackEntry | undefined> {
+    const [updated] = await db.update(feedbackEntries)
+      .set({ status: status as "open" | "in_progress" | "resolved" })
+      .where(eq(feedbackEntries.id, id))
+      .returning();
+    return updated;
   }
 }
 

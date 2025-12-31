@@ -988,3 +988,40 @@ export const archivedSlackMessages = pgTable("archived_slack_messages", {
 
 export type ArchivedSlackMessage = typeof archivedSlackMessages.$inferSelect;
 export type InsertArchivedSlackMessage = typeof archivedSlackMessages.$inferInsert;
+
+// =============================================================================
+// FEEDBACK ENTRIES (Bug Reports & Feature Requests)
+// =============================================================================
+
+export const FeedbackType = {
+  BUG: "bug",
+  FEATURE: "feature",
+} as const;
+
+export const FeedbackStatus = {
+  OPEN: "open",
+  IN_PROGRESS: "in_progress",
+  RESOLVED: "resolved",
+} as const;
+
+export const feedbackEntries = pgTable("feedback_entries", {
+  id: serial("id").primaryKey(),
+  tenantId: varchar("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  type: varchar("type").notNull().$type<"bug" | "feature">(),
+  title: varchar("title").notNull(),
+  description: text("description").notNull(),
+  status: varchar("status").notNull().default("open").$type<"open" | "in_progress" | "resolved">(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_feedback_tenant").on(table.tenantId),
+  index("idx_feedback_status").on(table.status),
+]);
+
+export const insertFeedbackEntrySchema = createInsertSchema(feedbackEntries).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type FeedbackEntry = typeof feedbackEntries.$inferSelect;
+export type InsertFeedbackEntry = z.infer<typeof insertFeedbackEntrySchema>;
