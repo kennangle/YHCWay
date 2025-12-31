@@ -2,10 +2,10 @@ import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { TopBar } from "@/components/top-bar";
 import { FeedItem } from "@/components/feed-item";
-import { Search, Bell, Mail, Video, MessageCircle, Users, MessageSquare, CheckSquare, RefreshCw, X, Gift, AlertTriangle, TrendingUp, Plus, Send, CalendarPlus } from "lucide-react";
+import { Search, Bell, Mail, Video, MessageCircle, Users, MessageSquare, CheckSquare, RefreshCw, X, Gift, AlertTriangle, TrendingUp, Plus, Send, CalendarPlus, Share2, Trash2 } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import type { FeedItem as FeedItemType } from "@shared/schema";
+import type { FeedItem as FeedItemType, SharedItem, User } from "@shared/schema";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "wouter";
 import { useNotificationSound } from "@/hooks/useNotificationSound";
@@ -14,6 +14,7 @@ import { DashboardWidgetConfig, getDefaultWidgets, WidgetConfig, WidgetId } from
 import { TimeTrackerWidget } from "@/components/time-tracker-widget";
 import { AIAssistantPanel } from "@/components/ai-assistant-panel";
 import { Brain } from "lucide-react";
+import { toast } from "sonner";
 
 type FilterType = "all" | "mentions" | "unread";
 
@@ -334,6 +335,30 @@ export default function Dashboard() {
       return res.json();
     },
     retry: false,
+  });
+
+  const { data: sharedItems = [] } = useQuery<(SharedItem & { sharedBy: User })[]>({
+    queryKey: ["shared-items"],
+    queryFn: async () => {
+      const res = await fetch("/api/shared-items", { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    retry: false,
+  });
+
+  const deleteSharedItemMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/shared-items/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to delete");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["shared-items"] });
+      toast.success("Removed from shared items");
+    },
   });
 
   const formatSlackTime = (timestamp: string) => {
@@ -805,6 +830,63 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+        )}
+
+        {/* Shared with Team Section */}
+        {sharedItems.length > 0 && (
+          <div className="glass-panel p-6 rounded-2xl mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-display font-semibold text-lg flex items-center gap-2">
+                <Share2 className="w-5 h-5 text-primary" />
+                Shared with Team
+              </h3>
+              <span className="text-sm text-muted-foreground">{sharedItems.length} items</span>
+            </div>
+            <div className="space-y-3">
+              {sharedItems.slice(0, 5).map((item) => {
+                const isEmail = item.itemType === "email";
+                return (
+                  <div
+                    key={item.id}
+                    className={`p-4 rounded-xl bg-white/60 border-l-4 ${isEmail ? 'border-l-red-400' : 'border-l-purple-400'} hover:bg-white/80 transition-colors`}
+                    data-testid={`shared-item-${item.id}`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3">
+                        <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${isEmail ? 'bg-red-100' : 'bg-purple-100'}`}>
+                          {isEmail ? (
+                            <Mail className="w-4 h-4 text-red-600" />
+                          ) : (
+                            <MessageCircle className="w-4 h-4 text-purple-600" />
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-medium text-sm">{item.title}</p>
+                          {item.preview && (
+                            <p className="text-xs text-muted-foreground line-clamp-1 mt-1">{item.preview}</p>
+                          )}
+                          {item.note && (
+                            <p className="text-xs text-primary mt-1 italic">"{item.note}"</p>
+                          )}
+                          <p className="text-xs text-muted-foreground mt-2">
+                            Shared by {item.sharedBy?.firstName || item.sharedBy?.email?.split('@')[0] || 'Team member'} · {formatRelativeTime(new Date(item.sharedAt!))}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => deleteSharedItemMutation.mutate(item.id)}
+                        className="p-1.5 rounded-lg hover:bg-gray-200 transition-colors text-muted-foreground hover:text-red-600"
+                        title="Remove"
+                        data-testid={`button-remove-shared-${item.id}`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         )}
 
         {/* Time Tracker Widget - Hidden for now */}
