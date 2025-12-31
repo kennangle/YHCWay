@@ -1,7 +1,7 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { TopBar } from "@/components/top-bar";
-import { ArrowLeft, Plus, MoreVertical, Calendar, User, Clock, Flag, MessageSquare, CheckSquare, RefreshCw, GripVertical, Trash2, Edit } from "lucide-react";
+import { ArrowLeft, Plus, MoreVertical, Calendar, User, Clock, Flag, MessageSquare, CheckSquare, RefreshCw, GripVertical, Trash2, Edit, LayoutGrid, List, Search, Filter, X } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "wouter";
@@ -218,6 +218,10 @@ export default function ProjectBoard() {
   const [newSubtask, setNewSubtask] = useState("");
   const [newComment, setNewComment] = useState("");
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const [viewMode, setViewMode] = useState<"board" | "list">("board");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [priorityFilter, setPriorityFilter] = useState<string>("all");
+  const [showCompleted, setShowCompleted] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -428,6 +432,20 @@ export default function ProjectBoard() {
     setSelectedTask(fullTask);
   };
 
+  const filteredTasks = useMemo(() => {
+    if (!project) return [];
+    return project.tasks.filter(task => {
+      if (!showCompleted && task.isCompleted) return false;
+      if (searchQuery && !task.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+      if (priorityFilter !== "all" && task.priority !== priorityFilter) return false;
+      return true;
+    });
+  }, [project?.tasks, searchQuery, priorityFilter, showCompleted]);
+
+  const getColumnTasks = (columnId: number) => {
+    return filteredTasks.filter(t => t.columnId === columnId);
+  };
+
   if (isLoading || !project) {
     return (
       <div className="min-h-screen bg-background text-foreground flex font-sans">
@@ -455,52 +473,202 @@ export default function ProjectBoard() {
       <main className="flex-1 md:ml-64 relative z-10 flex flex-col">
         <TopBar />
         <div className="flex-1 p-4 md:p-8 pb-20 md:pb-8 flex flex-col">
-          <header className="flex flex-wrap items-center gap-2 md:gap-4 mb-4 md:mb-6">
-            <Link href="/projects">
-              <Button variant="ghost" size="sm" data-testid="button-back-projects">
-                <ArrowLeft className="w-4 h-4 mr-1 md:mr-2" />
-                <span className="hidden sm:inline">Projects</span>
+          <header className="mb-4 md:mb-6 space-y-3">
+            <div className="flex flex-wrap items-center gap-2 md:gap-4">
+              <Link href="/projects">
+                <Button variant="ghost" size="sm" data-testid="button-back-projects">
+                  <ArrowLeft className="w-4 h-4 mr-1 md:mr-2" />
+                  <span className="hidden sm:inline">Projects</span>
+                </Button>
+              </Link>
+              <div 
+                className="w-3 h-3 md:w-4 md:h-4 rounded-full" 
+                style={{ backgroundColor: project.color }} 
+              />
+              <h1 className="font-display font-bold text-lg md:text-2xl flex-1 truncate">{project.name}</h1>
+              <button
+                onClick={() => refetch()}
+                className="p-2 hover:bg-white/80 rounded-lg transition-colors"
+                data-testid="button-refresh-board"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="flex flex-wrap gap-2 items-center">
+              <div className="relative flex-1 min-w-[200px] max-w-xs">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search tasks..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 bg-white/80 h-9"
+                  data-testid="input-search-tasks"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded"
+                  >
+                    <X className="w-3 h-3 text-muted-foreground" />
+                  </button>
+                )}
+              </div>
+
+              <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                <SelectTrigger className="w-32 h-9 bg-white/80" data-testid="select-priority-filter">
+                  <SelectValue placeholder="Priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Priorities</SelectItem>
+                  <SelectItem value="urgent">Urgent</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Button
+                variant={showCompleted ? "default" : "outline"}
+                size="sm"
+                onClick={() => setShowCompleted(!showCompleted)}
+                className="h-9"
+                data-testid="button-toggle-completed"
+              >
+                <CheckSquare className="w-4 h-4 mr-1" />
+                {showCompleted ? "Hide Done" : "Show Done"}
               </Button>
-            </Link>
-            <div 
-              className="w-3 h-3 md:w-4 md:h-4 rounded-full" 
-              style={{ backgroundColor: project.color }} 
-            />
-            <h1 className="font-display font-bold text-lg md:text-2xl flex-1 truncate">{project.name}</h1>
-            <button
-              onClick={() => refetch()}
-              className="p-2 hover:bg-white/80 rounded-lg transition-colors"
-              data-testid="button-refresh-board"
-            >
-              <RefreshCw className="w-4 h-4" />
-            </button>
+
+              <div className="flex border rounded-lg bg-white/80 overflow-hidden ml-auto">
+                <button
+                  onClick={() => setViewMode("board")}
+                  className={`p-2 transition-colors ${viewMode === "board" ? "bg-primary text-white" : "hover:bg-gray-100"}`}
+                  data-testid="button-view-board"
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode("list")}
+                  className={`p-2 transition-colors ${viewMode === "list" ? "bg-primary text-white" : "hover:bg-gray-100"}`}
+                  data-testid="button-view-list"
+                >
+                  <List className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
           </header>
 
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCorners}
-            onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd}
-          >
-            <div className="flex gap-4 overflow-x-auto pb-4 flex-1">
-              {project.columns.map((column) => (
-                <KanbanColumn
-                  key={column.id}
-                  column={column}
-                  tasks={project.tasks.filter(t => t.columnId === column.id)}
-                  onAddTask={() => openAddTask(column.id)}
-                  onTaskClick={openTaskDetail}
-                />
-              ))}
+          {viewMode === "board" ? (
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCorners}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+            >
+              <div className="flex gap-4 overflow-x-auto pb-4 flex-1">
+                {project.columns.map((column) => (
+                  <KanbanColumn
+                    key={column.id}
+                    column={column}
+                    tasks={getColumnTasks(column.id)}
+                    onAddTask={() => openAddTask(column.id)}
+                    onTaskClick={openTaskDetail}
+                  />
+                ))}
+              </div>
+              <DragOverlay>
+                {activeTask && (
+                  <div className="bg-white rounded-lg p-3 shadow-lg border border-gray-200 w-72">
+                    <h4 className="text-sm font-medium">{activeTask.title}</h4>
+                  </div>
+                )}
+              </DragOverlay>
+            </DndContext>
+          ) : (
+            <div className="glass-panel rounded-xl overflow-hidden flex-1">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b bg-gray-50/50">
+                    <th className="text-left p-3 font-medium text-sm w-8"></th>
+                    <th className="text-left p-3 font-medium text-sm">Task</th>
+                    <th className="text-left p-3 font-medium text-sm hidden md:table-cell">Status</th>
+                    <th className="text-left p-3 font-medium text-sm hidden md:table-cell">Priority</th>
+                    <th className="text-left p-3 font-medium text-sm hidden lg:table-cell">Due Date</th>
+                    <th className="text-left p-3 font-medium text-sm hidden lg:table-cell">Assignee</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredTasks.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                        {searchQuery || priorityFilter !== "all" ? "No tasks match your filters" : "No tasks yet"}
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredTasks.map((task) => {
+                      const column = project.columns.find(c => c.id === task.columnId);
+                      const assignee = users.find(u => u.id === task.assigneeId);
+                      return (
+                        <tr 
+                          key={task.id} 
+                          className="border-b last:border-0 hover:bg-white/50 transition-colors cursor-pointer"
+                          onClick={() => openTaskDetail(task)}
+                          data-testid={`row-task-${task.id}`}
+                        >
+                          <td className="p-3">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateTaskMutation.mutate({
+                                  id: task.id,
+                                  data: { isCompleted: !task.isCompleted }
+                                });
+                              }}
+                              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                task.isCompleted ? "bg-green-500 border-green-500" : "border-gray-300 hover:border-primary"
+                              }`}
+                              data-testid={`checkbox-task-${task.id}`}
+                            >
+                              {task.isCompleted && <CheckSquare className="w-3 h-3 text-white" />}
+                            </button>
+                          </td>
+                          <td className="p-3">
+                            <div className={task.isCompleted ? "line-through text-muted-foreground" : ""}>
+                              <p className="font-medium text-sm">{task.title}</p>
+                              {task.description && (
+                                <p className="text-xs text-muted-foreground line-clamp-1">{task.description}</p>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-3 hidden md:table-cell">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: column?.color || "#ccc" }} />
+                              <span className="text-sm">{column?.name || "Backlog"}</span>
+                            </div>
+                          </td>
+                          <td className="p-3 hidden md:table-cell">
+                            <span className={`text-xs px-2 py-1 rounded-full ${PRIORITY_COLORS[task.priority]}`}>
+                              {task.priority}
+                            </span>
+                          </td>
+                          <td className="p-3 hidden lg:table-cell text-sm text-muted-foreground">
+                            {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : "-"}
+                          </td>
+                          <td className="p-3 hidden lg:table-cell text-sm">
+                            {assignee ? (
+                              <span>{assignee.firstName || assignee.email}</span>
+                            ) : (
+                              <span className="text-muted-foreground">Unassigned</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
             </div>
-            <DragOverlay>
-              {activeTask && (
-                <div className="bg-white rounded-lg p-3 shadow-lg border border-gray-200 w-72">
-                  <h4 className="text-sm font-medium">{activeTask.title}</h4>
-                </div>
-              )}
-            </DragOverlay>
-          </DndContext>
+          )}
         </div>
       </main>
 
