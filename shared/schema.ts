@@ -630,7 +630,10 @@ export const tasks = pgTable("tasks", {
   title: varchar("title").notNull(),
   description: text("description"),
   priority: varchar("priority").default("medium"),
+  startDate: timestamp("start_date"),
   dueDate: timestamp("due_date"),
+  progress: integer("progress").default(0),
+  isMilestone: boolean("is_milestone").default(false),
   assigneeId: varchar("assignee_id").references(() => users.id, { onDelete: "set null" }),
   creatorId: varchar("creator_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   sortOrder: integer("sort_order").notNull().default(0),
@@ -651,6 +654,7 @@ export const tasks = pgTable("tasks", {
   index("idx_task_column").on(table.columnId),
   index("idx_task_assignee").on(table.assigneeId),
   index("idx_task_due").on(table.dueDate),
+  index("idx_task_start").on(table.startDate),
 ]);
 
 export type Task = typeof tasks.$inferSelect;
@@ -669,7 +673,10 @@ export const createTaskSchema = z.object({
   title: z.string().min(1, "Task title is required"),
   description: z.string().optional(),
   priority: z.enum(["low", "medium", "high", "urgent"]).default("medium"),
+  startDate: z.string().optional(),
   dueDate: z.string().optional(),
+  progress: z.number().min(0).max(100).optional(),
+  isMilestone: z.boolean().optional(),
   assigneeId: z.string().optional(),
   isRecurring: z.boolean().optional(),
   recurrencePattern: z.enum(["daily", "weekly", "biweekly", "monthly", "custom"]).optional(),
@@ -682,7 +689,10 @@ export const updateTaskSchema = z.object({
   title: z.string().optional(),
   description: z.string().optional(),
   priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
+  startDate: z.string().nullable().optional(),
   dueDate: z.string().nullable().optional(),
+  progress: z.number().min(0).max(100).optional(),
+  isMilestone: z.boolean().optional(),
   assigneeId: z.string().nullable().optional(),
   columnId: z.number().optional(),
   sortOrder: z.number().optional(),
@@ -733,6 +743,27 @@ export type InsertTaskComment = typeof taskComments.$inferInsert;
 export const createCommentSchema = z.object({
   taskId: z.number(),
   content: z.string().min(1, "Comment cannot be empty"),
+});
+
+// Task dependencies table for Gantt chart
+export const taskDependencies = pgTable("task_dependencies", {
+  id: serial("id").primaryKey(),
+  taskId: integer("task_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
+  dependsOnTaskId: integer("depends_on_task_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
+  dependencyType: varchar("dependency_type").default("finish_to_start"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_dep_task").on(table.taskId),
+  index("idx_dep_depends_on").on(table.dependsOnTaskId),
+]);
+
+export type TaskDependency = typeof taskDependencies.$inferSelect;
+export type InsertTaskDependency = typeof taskDependencies.$inferInsert;
+
+export const createDependencySchema = z.object({
+  taskId: z.number(),
+  dependsOnTaskId: z.number(),
+  dependencyType: z.enum(["finish_to_start", "start_to_start", "finish_to_finish", "start_to_finish"]).optional(),
 });
 
 // Project members (for team assignments)

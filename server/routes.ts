@@ -3224,6 +3224,7 @@ export async function registerRoutes(
         ...validatedData,
         creatorId: userId,
         tenantId,
+        startDate: validatedData.startDate ? new Date(validatedData.startDate) : undefined,
         dueDate: validatedData.dueDate ? new Date(validatedData.dueDate) : undefined,
         recurrenceEndDate: validatedData.recurrenceEndDate ? new Date(validatedData.recurrenceEndDate) : undefined,
       });
