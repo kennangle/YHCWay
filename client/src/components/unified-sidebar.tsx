@@ -46,6 +46,7 @@ export function UnifiedSidebar() {
     { icon: CalendarIcon, label: "Calendar", href: "/calendar" },
     { icon: FolderKanban, label: "Projects", href: "/projects" },
     { icon: ListTodo, label: "Tasks", href: "/tasks" },
+    { icon: CheckSquare, label: "Asana (Temp)", href: "/asana" },
     { icon: Gift, label: "Intro Offers", href: "/intro-offers" },
     { icon: Archive, label: "Archive", href: "/archive" },
   ];

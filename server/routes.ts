@@ -13,6 +13,7 @@ import { getUpcomingEvents, getEventsForMonth, isCalendarConnected, createCalend
 import { getUpcomingMeetings, isZoomConnected } from "./zoom";
 import { getRecentMessages as getSlackMessages, getAllMessages as getAllSlackMessages, getDirectMessages as getSlackDMs, getThreadReplies as getSlackThreadReplies, isSlackConnected, getChannels as getSlackChannels, getRecentMessagesFiltered, isUserSlackConnected, getUserAllMessages, getUserDirectMessages, getUserChannels, sendSlackNotification, sendSlackBlockNotification, formatUniWorkNotification } from "./slack";
 import { isAppleCalendarConnected, testAppleCalendarConnection, saveAppleCalendarCredentials, deleteAppleCalendarCredentials, getAppleCalendarEvents, getAppleCalendarEventsForMonth } from "./appleCalendar";
+import { isAsanaConnected, getMyTasks, getProjects, getUpcomingTasks, isUserAsanaConnected, getUserMyTasks, getUserProjects, getUserUpcomingTasks, getAsanaProjectsForImport, getProjectSections, getProjectTasksForImport } from "./asana";
 import { getTypeformForms, getTypeformForm, createTypeformForm, updateTypeformForm, deleteTypeformForm, getTypeformResponses, isTypeformConfigured } from "./typeform";
 import { sendInvitationEmail, getTemplateTypes, getDefaultTemplate, sendTaskAssignedNotification } from "./email";
 import { appleCalendarConnectSchema, slackPreferencesUpdateSchema, emailTemplateSchema, updateNotificationPrefsSchema, createTimeEntrySchema, updateTimeEntrySchema } from "@shared/schema";
@@ -2016,6 +2017,139 @@ export async function registerRoutes(
     } catch (error: any) {
       console.error("Error sending Slack notification:", error);
       res.status(500).json({ error: error?.message || "Failed to send Slack notification" });
+    }
+  });
+
+  // Asana OAuth - per-user authentication
+  app.get("/api/asana/connect", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const clientId = process.env.ASANA_CLIENT_ID;
+      if (!clientId) {
+        return res.status(500).json({ error: "Asana OAuth not configured" });
+      }
+      
+      const host = req.get('host') || 'localhost:5000';
+      const redirectUri = `${req.protocol}://${host}/api/asana/callback`;
+      
+      const authUrl = `https://app.asana.com/-/oauth_authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&state=${userId}`;
+      
+      res.json({ authUrl });
+    } catch (error: any) {
+      console.error("Error generating Asana auth URL:", error);
+      res.status(500).json({ error: error?.message || "Failed to initiate Asana connection" });
+    }
+  });
+
+  app.get("/api/asana/callback", async (req, res) => {
+    console.log('[Asana Callback] Starting callback handler');
+    console.log('[Asana Callback] Query params:', req.query);
+    try {
+      const { code, state: userId } = req.query;
+      
+      if (!code || !userId || typeof code !== 'string' || typeof userId !== 'string') {
+        console.log('[Asana Callback] Invalid params - code:', !!code, 'userId:', userId);
+        return res.redirect('/connect?error=invalid_callback');
+      }
+      
+      console.log('[Asana Callback] Valid params - userId:', userId);
+      
+      const clientId = process.env.ASANA_CLIENT_ID;
+      const clientSecret = process.env.ASANA_CLIENT_SECRET;
+      
+      if (!clientId || !clientSecret) {
+        console.log('[Asana Callback] Missing credentials');
+        return res.redirect('/connect?error=asana_not_configured');
+      }
+      
+      const host = req.get('host') || 'localhost:5000';
+      const redirectUri = `${req.protocol}://${host}/api/asana/callback`;
+      console.log('[Asana Callback] Using redirect URI:', redirectUri);
+      
+      // Exchange code for tokens
+      const tokenResponse = await fetch('https://app.asana.com/-/oauth_token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          grant_type: 'authorization_code',
+          client_id: clientId,
+          client_secret: clientSecret,
+          code,
+          redirect_uri: redirectUri,
+        }),
+      });
+      
+      console.log('[Asana Callback] Token response status:', tokenResponse.status);
+      const tokenData = await tokenResponse.json() as any;
+      console.log('[Asana Callback] Token response keys:', Object.keys(tokenData));
+      
+      if (tokenData.error) {
+        console.error('[Asana Callback] Token error:', tokenData.error, tokenData.error_description);
+        return res.redirect('/connect?error=asana_auth_failed');
+      }
+      
+      const accessToken = tokenData.access_token;
+      const refreshToken = tokenData.refresh_token;
+      const expiresIn = tokenData.expires_in;
+      const asanaUserId = tokenData.data?.gid || tokenData.data?.id;
+      
+      console.log('[Asana Callback] Got tokens - hasAccess:', !!accessToken, 'hasRefresh:', !!refreshToken, 'asanaUserId:', asanaUserId);
+      
+      if (!accessToken) {
+        console.error('[Asana Callback] Missing access token in response');
+        return res.redirect('/connect?error=asana_missing_token');
+      }
+      
+      // Calculate expiry date
+      const expiresAt = expiresIn ? new Date(Date.now() + expiresIn * 1000) : undefined;
+      
+      // Save user credentials and enable the integration
+      console.log('[Asana Callback] Saving credentials for user:', userId);
+      const savedCreds = await storage.saveAsanaUserCredentials(userId, asanaUserId || '', accessToken, refreshToken, expiresAt);
+      console.log('[Asana Callback] Saved credentials:', savedCreds?.id);
+      
+      await storage.enableIntegration(userId, 'asana');
+      console.log('[Asana Callback] Enabled integration, redirecting to success');
+      
+      res.redirect('/connect?success=asana');
+    } catch (error: any) {
+      console.error("[Asana Callback] Error:", error);
+      res.redirect('/connect?error=asana_connection_failed');
+    }
+  });
+
+  app.post("/api/asana/disconnect", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      // Delete user OAuth credentials and add to disabled list
+      await storage.deleteAsanaUserCredentials(userId);
+      await storage.disableIntegration(userId, 'asana');
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error disconnecting Asana:", error);
+      res.status(500).json({ error: error?.message || "Failed to disconnect Asana" });
+    }
+  });
+
+  app.get("/api/asana/user-status", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.json({ connected: false });
+      }
+      const creds = await storage.getAsanaUserCredentials(userId);
+      res.json({ connected: !!creds });
+    } catch (error) {
+      res.json({ connected: false });
     }
   });
 
