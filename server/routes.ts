@@ -3408,6 +3408,168 @@ export async function registerRoutes(
   });
 
   // =============================================================================
+  // TASK PLACEMENT ROUTES (Asana-style multi-homing)
+  // =============================================================================
+
+  app.patch("/api/tasks/:id/placement", isAuthenticated, requireTenant, async (req: any, res) => {
+    try {
+      const userId = req.user?.id || req.user?.claims?.sub;
+      const tenantId = req.tenantId as string;
+      const taskId = parseInt(req.params.id);
+
+      const { projectId, columnId, sortOrder, orderKey } = req.body ?? {};
+      if (!projectId) {
+        return res.status(400).json({ error: "PROJECT_ID_REQUIRED" });
+      }
+
+      await storage.updateTaskPlacement({
+        tenantId,
+        taskId,
+        projectId: Number(projectId),
+        columnId: columnId === null || columnId === undefined ? null : Number(columnId),
+        sortOrder: sortOrder === undefined ? undefined : Number(sortOrder),
+        orderKey: orderKey ?? null,
+        movedBy: userId,
+      });
+
+      res.json({ ok: true });
+    } catch (e: unknown) {
+      if (e instanceof Error && e.message === "TASK_NOT_IN_PROJECT") {
+        return res.status(404).json({ error: "TASK_NOT_IN_PROJECT" });
+      }
+      console.error("Error updating task placement:", e);
+      res.status(500).json({ error: "INTERNAL_ERROR" });
+    }
+  });
+
+  // Add task to project
+  app.post("/api/tasks/:id/projects", isAuthenticated, requireTenant, async (req: any, res) => {
+    try {
+      const userId = req.user?.id || req.user?.claims?.sub;
+      const tenantId = req.tenantId as string;
+      const taskId = parseInt(req.params.id);
+
+      const { projectId, columnId, sortOrder } = req.body ?? {};
+      if (!projectId) {
+        return res.status(400).json({ error: "PROJECT_ID_REQUIRED" });
+      }
+
+      await storage.addTaskToProject({
+        tenantId,
+        taskId,
+        projectId: Number(projectId),
+        columnId: columnId != null ? Number(columnId) : null,
+        sortOrder: sortOrder != null ? Number(sortOrder) : 0,
+        addedBy: userId,
+      });
+
+      res.status(201).json({ ok: true });
+    } catch (error) {
+      console.error("Error adding task to project:", error);
+      res.status(500).json({ error: "Failed to add task to project" });
+    }
+  });
+
+  // Remove task from project
+  app.delete("/api/tasks/:taskId/projects/:projectId", isAuthenticated, requireTenant, async (req: any, res) => {
+    try {
+      const tenantId = req.tenantId as string;
+      const taskId = parseInt(req.params.taskId);
+      const projectId = parseInt(req.params.projectId);
+
+      await storage.removeTaskFromProject({
+        tenantId,
+        taskId,
+        projectId,
+      });
+
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error removing task from project:", error);
+      res.status(500).json({ error: "Failed to remove task from project" });
+    }
+  });
+
+  // =============================================================================
+  // TASK STORIES ROUTES (Unified comments + activity feed)
+  // =============================================================================
+
+  app.get("/api/tasks/:id/stories", isAuthenticated, requireTenant, async (req: any, res) => {
+    try {
+      const tenantId = req.tenantId as string;
+      const taskId = parseInt(req.params.id);
+
+      const stories = await storage.getTaskStories(taskId, tenantId);
+      res.json({ stories });
+    } catch (error) {
+      console.error("Error fetching task stories:", error);
+      res.status(500).json({ error: "Failed to fetch task stories" });
+    }
+  });
+
+  app.post("/api/tasks/:id/comments", isAuthenticated, requireTenant, async (req: any, res) => {
+    try {
+      const userId = req.user?.id || req.user?.claims?.sub;
+      const tenantId = req.tenantId as string;
+      const taskId = parseInt(req.params.id);
+      const { body } = req.body ?? {};
+      
+      if (!body) {
+        return res.status(400).json({ error: "BODY_REQUIRED" });
+      }
+
+      const created = await storage.createTaskStoryComment({
+        tenantId,
+        taskId,
+        authorId: userId,
+        body: String(body),
+      });
+
+      res.status(201).json(created);
+    } catch (error) {
+      console.error("Error creating task comment:", error);
+      res.status(500).json({ error: "Failed to create comment" });
+    }
+  });
+
+  // =============================================================================
+  // PROJECT BOARD ROUTE (Placement-aware)
+  // =============================================================================
+
+  app.get("/api/projects/:projectId/board", isAuthenticated, requireTenant, async (req: any, res) => {
+    try {
+      const tenantId = req.tenantId as string;
+      const projectId = parseInt(req.params.projectId);
+
+      const columns = await storage.getProjectColumns(projectId);
+      const placements = await storage.getProjectTaskPlacements(projectId, tenantId);
+
+      const byColumn: Record<string, unknown[]> = {};
+      for (const row of placements) {
+        const key = row.columnId == null ? "null" : String(row.columnId);
+        if (!byColumn[key]) byColumn[key] = [];
+        byColumn[key].push({
+          ...row.task,
+          placement: {
+            projectId: row.projectId,
+            columnId: row.columnId,
+            sortOrder: row.sortOrder,
+            orderKey: row.orderKey,
+          },
+        });
+      }
+
+      res.json({
+        columns,
+        tasksByColumn: byColumn,
+      });
+    } catch (error) {
+      console.error("Error fetching project board:", error);
+      res.status(500).json({ error: "Failed to fetch project board" });
+    }
+  });
+
+  // =============================================================================
   // SUBTASK ROUTES
   // =============================================================================
 

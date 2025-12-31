@@ -60,6 +60,12 @@ import {
   type InsertFeedbackEntry,
   type SharedItem,
   type InsertSharedItem,
+  type TaskProject,
+  type InsertTaskProject,
+  type TaskStory,
+  type InsertTaskStory,
+  type EventOutbox,
+  type InsertEventOutbox,
   users,
   services,
   feedItems,
@@ -96,10 +102,13 @@ import {
   archivedEmails,
   archivedSlackMessages,
   feedbackEntries,
-  sharedItems
+  sharedItems,
+  taskProjects,
+  taskStories,
+  eventOutbox
 } from "@shared/schema";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { eq, desc, and, lt, isNull, sql, inArray, gte, lte, or } from "drizzle-orm";
+import { eq, desc, and, lt, isNull, sql, inArray, gte, lte, or, asc } from "drizzle-orm";
 import pg from "pg";
 
 const { Pool } = pg;
@@ -314,6 +323,89 @@ export interface IStorage {
   createSharedItem(data: InsertSharedItem): Promise<SharedItem>;
   getSharedItems(tenantId: string): Promise<(SharedItem & { sharedBy: User })[]>;
   deleteSharedItem(id: number, tenantId: string): Promise<void>;
+  
+  // Multi-homing + placement (Asana-style)
+  addTaskToProject(params: {
+    tenantId: string;
+    taskId: number;
+    projectId: number;
+    columnId?: number | null;
+    sortOrder?: number;
+    orderKey?: string | null;
+    addedBy: string;
+  }): Promise<void>;
+  
+  removeTaskFromProject(params: {
+    tenantId: string;
+    taskId: number;
+    projectId: number;
+  }): Promise<void>;
+  
+  updateTaskPlacement(params: {
+    tenantId: string;
+    taskId: number;
+    projectId: number;
+    columnId: number | null;
+    sortOrder?: number;
+    orderKey?: string | null;
+    movedBy: string;
+  }): Promise<void>;
+  
+  getProjectTaskPlacements(projectId: number, tenantId: string): Promise<Array<{
+    task: Task;
+    projectId: number;
+    columnId: number | null;
+    sortOrder: number;
+    orderKey: string | null;
+  }>>;
+  
+  // Task stories (unified comments + activity)
+  getTaskStories(taskId: number, tenantId: string): Promise<Array<{
+    id: number;
+    storyType: string;
+    authorId: string | null;
+    createdAt: Date;
+    body: string | null;
+    activityType: string | null;
+    activityPayload: unknown;
+    isEdited: boolean;
+    editedAt: Date | null;
+  }>>;
+  
+  createTaskStoryComment(params: {
+    tenantId: string;
+    taskId: number;
+    authorId: string;
+    body: string;
+  }): Promise<{ id: number }>;
+  
+  createTaskStoryActivity(params: {
+    tenantId: string;
+    taskId: number;
+    activityType: string;
+    activityPayload: unknown;
+    actorId?: string | null;
+  }): Promise<{ id: number }>;
+  
+  // Event outbox
+  enqueueOutboxEvent(params: {
+    tenantId: string;
+    eventType: string;
+    entityType: string;
+    entityId: string;
+    payload: unknown;
+  }): Promise<void>;
+  
+  claimNextOutboxEvent(tenantId?: string): Promise<{
+    id: number;
+    tenantId: string;
+    eventType: string;
+    entityType: string;
+    entityId: string;
+    payload: unknown;
+  } | null>;
+  
+  markOutboxPublished(id: number): Promise<void>;
 }
 
 export class DbStorage implements IStorage {
@@ -1347,11 +1439,44 @@ export class DbStorage implements IStorage {
   }
 
   async moveTask(taskId: number, columnId: number, sortOrder: number): Promise<Task | undefined> {
-    const [task] = await db.update(tasks)
+    const task = await db.select().from(tasks).where(eq(tasks.id, taskId)).then(r => r[0]);
+    if (!task) return undefined;
+
+    const [updated] = await db.update(tasks)
       .set({ columnId, sortOrder, updatedAt: new Date() })
       .where(eq(tasks.id, taskId))
       .returning();
-    return task;
+
+    const tenantId = task.tenantId;
+    const projectId = task.projectId;
+
+    if (tenantId && projectId) {
+      try {
+        await this.updateTaskPlacement({
+          tenantId,
+          taskId,
+          projectId,
+          columnId,
+          sortOrder,
+          movedBy: "SYSTEM_COMPAT",
+        });
+      } catch (e: unknown) {
+        if (e instanceof Error && e.message === "TASK_NOT_IN_PROJECT") {
+          await this.addTaskToProject({
+            tenantId,
+            taskId,
+            projectId,
+            columnId,
+            sortOrder,
+            addedBy: "SYSTEM_COMPAT",
+          });
+        } else {
+          throw e;
+        }
+      }
+    }
+
+    return updated;
   }
 
   // Subtasks
@@ -1787,6 +1912,273 @@ export class DbStorage implements IStorage {
       .where(and(eq(sharedItems.id, id), eq(sharedItems.tenantId, tenantId)));
   }
 
+  // Multi-homing + placement (Asana-style)
+  private orderKeyFromSortOrder(n: number): string {
+    return String(n).padStart(10, "0");
+  }
+
+  async addTaskToProject(params: {
+    tenantId: string;
+    taskId: number;
+    projectId: number;
+    columnId?: number | null;
+    sortOrder?: number;
+    orderKey?: string | null;
+    addedBy: string;
+  }): Promise<void> {
+    const sortOrder = params.sortOrder ?? 0;
+    const orderKey = params.orderKey ?? this.orderKeyFromSortOrder(sortOrder);
+
+    await db
+      .insert(taskProjects)
+      .values({
+        tenantId: params.tenantId,
+        taskId: params.taskId,
+        projectId: params.projectId,
+        columnId: params.columnId ?? null,
+        sortOrder,
+        orderKey,
+        addedBy: params.addedBy,
+      })
+      .onConflictDoUpdate({
+        target: [taskProjects.taskId, taskProjects.projectId],
+        set: {
+          columnId: params.columnId ?? null,
+          sortOrder,
+          orderKey,
+        },
+      });
+  }
+
+  async removeTaskFromProject(params: {
+    tenantId: string;
+    taskId: number;
+    projectId: number;
+  }): Promise<void> {
+    await db
+      .delete(taskProjects)
+      .where(
+        and(
+          eq(taskProjects.tenantId, params.tenantId),
+          eq(taskProjects.taskId, params.taskId),
+          eq(taskProjects.projectId, params.projectId)
+        )
+      );
+  }
+
+  async updateTaskPlacement(params: {
+    tenantId: string;
+    taskId: number;
+    projectId: number;
+    columnId: number | null;
+    sortOrder?: number;
+    orderKey?: string | null;
+    movedBy: string;
+  }): Promise<void> {
+    const sortOrder = params.sortOrder ?? 0;
+    const orderKey = params.orderKey ?? this.orderKeyFromSortOrder(sortOrder);
+
+    const updated = await db
+      .update(taskProjects)
+      .set({
+        columnId: params.columnId,
+        sortOrder,
+        orderKey,
+      })
+      .where(
+        and(
+          eq(taskProjects.tenantId, params.tenantId),
+          eq(taskProjects.taskId, params.taskId),
+          eq(taskProjects.projectId, params.projectId)
+        )
+      )
+      .returning({ taskId: taskProjects.taskId });
+
+    if (updated.length === 0) {
+      throw new Error("TASK_NOT_IN_PROJECT");
+    }
+
+    await this.enqueueOutboxEvent({
+      tenantId: params.tenantId,
+      eventType: "task.moved",
+      entityType: "task",
+      entityId: `task:${params.taskId}`,
+      payload: {
+        taskId: params.taskId,
+        projectId: params.projectId,
+        columnId: params.columnId,
+        sortOrder,
+        orderKey,
+        movedBy: params.movedBy,
+      },
+    });
+  }
+
+  async getProjectTaskPlacements(projectId: number, tenantId: string): Promise<Array<{
+    task: Task;
+    projectId: number;
+    columnId: number | null;
+    sortOrder: number;
+    orderKey: string | null;
+  }>> {
+    const rows = await db
+      .select({
+        task: tasks,
+        projectId: taskProjects.projectId,
+        columnId: taskProjects.columnId,
+        sortOrder: taskProjects.sortOrder,
+        orderKey: taskProjects.orderKey,
+      })
+      .from(taskProjects)
+      .innerJoin(tasks, eq(tasks.id, taskProjects.taskId))
+      .where(and(eq(taskProjects.tenantId, tenantId), eq(taskProjects.projectId, projectId)))
+      .orderBy(asc(taskProjects.columnId), asc(taskProjects.orderKey), asc(taskProjects.sortOrder));
+
+    return rows;
+  }
+
+  // Task stories (unified comments + activity)
+  async getTaskStories(taskId: number, tenantId: string): Promise<Array<{
+    id: number;
+    storyType: string;
+    authorId: string | null;
+    createdAt: Date;
+    body: string | null;
+    activityType: string | null;
+    activityPayload: unknown;
+    isEdited: boolean;
+    editedAt: Date | null;
+  }>> {
+    return db
+      .select({
+        id: taskStories.id,
+        storyType: taskStories.storyType,
+        authorId: taskStories.authorId,
+        createdAt: taskStories.createdAt,
+        body: taskStories.body,
+        activityType: taskStories.activityType,
+        activityPayload: taskStories.activityPayload,
+        isEdited: taskStories.isEdited,
+        editedAt: taskStories.editedAt,
+      })
+      .from(taskStories)
+      .where(and(eq(taskStories.tenantId, tenantId), eq(taskStories.taskId, taskId)))
+      .orderBy(asc(taskStories.createdAt));
+  }
+
+  async createTaskStoryComment(params: {
+    tenantId: string;
+    taskId: number;
+    authorId: string;
+    body: string;
+  }): Promise<{ id: number }> {
+    const [row] = await db
+      .insert(taskStories)
+      .values({
+        tenantId: params.tenantId,
+        taskId: params.taskId,
+        storyType: "comment",
+        authorId: params.authorId,
+        body: params.body,
+      })
+      .returning({ id: taskStories.id });
+
+    await this.enqueueOutboxEvent({
+      tenantId: params.tenantId,
+      eventType: "story.created",
+      entityType: "story",
+      entityId: `story:${row.id}`,
+      payload: { storyId: row.id, taskId: params.taskId, authorId: params.authorId },
+    });
+
+    return row;
+  }
+
+  async createTaskStoryActivity(params: {
+    tenantId: string;
+    taskId: number;
+    activityType: string;
+    activityPayload: unknown;
+    actorId?: string | null;
+  }): Promise<{ id: number }> {
+    const [row] = await db
+      .insert(taskStories)
+      .values({
+        tenantId: params.tenantId,
+        taskId: params.taskId,
+        storyType: "activity",
+        authorId: params.actorId ?? null,
+        activityType: params.activityType,
+        activityPayload: params.activityPayload,
+      })
+      .returning({ id: taskStories.id });
+
+    return row;
+  }
+
+  // Event outbox
+  async enqueueOutboxEvent(params: {
+    tenantId: string;
+    eventType: string;
+    entityType: string;
+    entityId: string;
+    payload: unknown;
+  }): Promise<void> {
+    await db.insert(eventOutbox).values({
+      tenantId: params.tenantId,
+      eventType: params.eventType,
+      entityType: params.entityType,
+      entityId: params.entityId,
+      payload: params.payload,
+    });
+  }
+
+  async claimNextOutboxEvent(tenantId?: string): Promise<{
+    id: number;
+    tenantId: string;
+    eventType: string;
+    entityType: string;
+    entityId: string;
+    payload: unknown;
+  } | null> {
+    const whereTenant = tenantId
+      ? sql`AND tenant_id = ${tenantId}`
+      : sql``;
+
+    const result = await db.execute(sql`
+      WITH next_evt AS (
+        SELECT id
+        FROM event_outbox
+        WHERE published_at IS NULL
+        ${whereTenant}
+        ORDER BY created_at ASC
+        FOR UPDATE SKIP LOCKED
+        LIMIT 1
+      )
+      SELECT eo.*
+      FROM event_outbox eo
+      JOIN next_evt ne ON ne.id = eo.id
+    `);
+
+    const rows = (result as { rows?: unknown[] }).rows ?? result;
+
+    if (!rows || (rows as unknown[]).length === 0) return null;
+
+    const evt = (rows as Record<string, unknown>[])[0];
+    return {
+      id: Number(evt.id),
+      tenantId: String(evt.tenant_id),
+      eventType: String(evt.event_type),
+      entityType: String(evt.entity_type),
+      entityId: String(evt.entity_id),
+      payload: evt.payload,
+    };
+  }
+
+  async markOutboxPublished(id: number): Promise<void> {
+    await db.update(eventOutbox).set({ publishedAt: new Date() }).where(eq(eventOutbox.id, id));
+  }
+
   async migrateProjectColumns(): Promise<void> {
     try {
       await db.delete(projectColumns).where(eq(projectColumns.name, "To Do"));
@@ -1823,8 +2215,44 @@ export class DbStorage implements IStorage {
       console.error("[Migration] Error migrating project columns:", error);
     }
   }
+  async migrateTaskPlacements(): Promise<void> {
+    try {
+      const existingPlacements = await db.select().from(taskProjects).limit(1);
+      if (existingPlacements.length > 0) {
+        console.log("[Migration] Task placements already exist, skipping migration");
+        return;
+      }
+
+      const allTasks = await db.select().from(tasks);
+      let migrated = 0;
+      
+      for (const task of allTasks) {
+        if (task.projectId && task.tenantId) {
+          try {
+            await db.insert(taskProjects).values({
+              tenantId: task.tenantId,
+              taskId: task.id,
+              projectId: task.projectId,
+              columnId: task.columnId,
+              sortOrder: task.sortOrder ?? 0,
+              orderKey: String(task.sortOrder ?? 0).padStart(10, "0"),
+              addedBy: task.creatorId,
+            }).onConflictDoNothing();
+            migrated++;
+          } catch (e) {
+            console.error(`[Migration] Failed to migrate task ${task.id}:`, e);
+          }
+        }
+      }
+      
+      console.log(`[Migration] Migrated ${migrated} tasks to task_projects table`);
+    } catch (error) {
+      console.error("[Migration] Error migrating task placements:", error);
+    }
+  }
 }
 
 export const storage = new DbStorage();
 
 storage.migrateProjectColumns();
+storage.migrateTaskPlacements();

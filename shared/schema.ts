@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, serial, boolean, timestamp, integer, index, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, serial, boolean, timestamp, integer, index, jsonb, primaryKey } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -1090,3 +1090,92 @@ export const insertSharedItemSchema = createInsertSchema(sharedItems).omit({
 
 export type SharedItem = typeof sharedItems.$inferSelect;
 export type InsertSharedItem = z.infer<typeof insertSharedItemSchema>;
+
+// =============================================================================
+// ASANA-STYLE MULTI-HOMING + PLACEMENT
+// =============================================================================
+
+/**
+ * task_projects = Asana multi-homing + per-project placement.
+ * A task can belong to multiple projects with per-project placement.
+ * 
+ * Transitional compatibility:
+ * - Keep sortOrder for current UI/logic (int)
+ * - Add orderKey for stable fractional ordering (text)
+ */
+export const taskProjects = pgTable("task_projects", {
+  tenantId: varchar("tenant_id", { length: 64 }).notNull(),
+  taskId: integer("task_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
+  projectId: integer("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  columnId: integer("column_id").references(() => projectColumns.id, { onDelete: "set null" }),
+  sortOrder: integer("sort_order").notNull().default(0),
+  orderKey: text("order_key"),
+  addedBy: varchar("added_by", { length: 128 }).notNull(),
+  addedAt: timestamp("added_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  primaryKey({ columns: [table.taskId, table.projectId] }),
+  index("task_projects_by_project").on(table.tenantId, table.projectId, table.columnId, table.sortOrder),
+  index("task_projects_by_task").on(table.tenantId, table.taskId),
+]);
+
+export type TaskProject = typeof taskProjects.$inferSelect;
+export type InsertTaskProject = typeof taskProjects.$inferInsert;
+
+// =============================================================================
+// TASK STORIES (Unified Comments + Activity Feed)
+// =============================================================================
+
+/**
+ * task_stories = unified stream: comments + immutable activity.
+ * 
+ * storyType:
+ * - "comment": body is required; activity fields null
+ * - "activity": activityType + activityPayload required; body null
+ */
+export const taskStories = pgTable("task_stories", {
+  id: serial("id").primaryKey(),
+  tenantId: varchar("tenant_id", { length: 64 }).notNull(),
+  taskId: integer("task_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
+  storyType: text("story_type").notNull(),
+  authorId: varchar("author_id", { length: 128 }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  body: text("body"),
+  activityType: text("activity_type"),
+  activityPayload: jsonb("activity_payload"),
+  isEdited: boolean("is_edited").notNull().default(false),
+  editedAt: timestamp("edited_at", { withTimezone: true }),
+}, (table) => [
+  index("task_stories_by_task").on(table.tenantId, table.taskId, table.createdAt),
+]);
+
+export type TaskStory = typeof taskStories.$inferSelect;
+export type InsertTaskStory = typeof taskStories.$inferInsert;
+
+export const createTaskStoryCommentSchema = z.object({
+  body: z.string().min(1, "Comment cannot be empty"),
+});
+
+// =============================================================================
+// EVENT OUTBOX (Transactional Side Effects)
+// =============================================================================
+
+/**
+ * event_outbox = transactional outbox for consistent side effects.
+ * Worker claims rows using SKIP LOCKED and marks publishedAt.
+ */
+export const eventOutbox = pgTable("event_outbox", {
+  id: serial("id").primaryKey(),
+  tenantId: varchar("tenant_id", { length: 64 }).notNull(),
+  eventType: text("event_type").notNull(),
+  entityType: text("entity_type").notNull(),
+  entityId: text("entity_id").notNull(),
+  payload: jsonb("payload").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  publishedAt: timestamp("published_at", { withTimezone: true }),
+}, (table) => [
+  index("event_outbox_pending").on(table.publishedAt, table.createdAt),
+  index("event_outbox_tenant_type").on(table.tenantId, table.eventType),
+]);
+
+export type EventOutbox = typeof eventOutbox.$inferSelect;
+export type InsertEventOutbox = typeof eventOutbox.$inferInsert;

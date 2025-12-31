@@ -69,6 +69,20 @@ The server handles both API routes and serves the static frontend in production.
   - Maps Asana sections to project columns
   - Preserves task completion status and due dates
 
+### Asana-Style Multi-Homing System (New)
+- **Multi-Homing**: Tasks can belong to multiple projects simultaneously via `task_projects` table
+- **Placement Tracking**: Per-project column and sort order using `orderKey` (lexicographic) for fractional ordering
+- **Task Stories**: Unified activity feed combining comments and automated activity logs via `task_stories` table
+- **Event Outbox**: Transactional outbox pattern (`event_outbox` table) for reliable side effects
+- **Background Worker**: `outboxWorker.ts` processes events asynchronously, creating activity stories for task movements
+- **API Endpoints**:
+  - `PATCH /api/tasks/:id/placement` - Update task's position in a project
+  - `POST /api/tasks/:id/projects` - Add task to a project (multi-homing)
+  - `DELETE /api/tasks/:taskId/projects/:projectId` - Remove task from a project
+  - `GET /api/tasks/:id/stories` - Get unified activity/comment feed
+  - `POST /api/tasks/:id/comments` - Add a comment (creates story entry)
+  - `GET /api/projects/:projectId/board` - Get placement-aware board data
+
 ### AI Assistant Features
 Powered by OpenAI GPT-4.1-mini via Replit AI Integrations (uses `AI_INTEGRATIONS_OPENAI_API_KEY`):
 - **Daily Briefing**: Morning summary of tasks, meetings, and urgent messages
