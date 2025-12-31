@@ -1,12 +1,22 @@
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { TopBar } from "@/components/top-bar";
-import { Search, Mail, MessageCircle, Users, MessageSquare, PenSquare, Archive, Loader2 } from "lucide-react";
+import { Search, Mail, MessageCircle, Users, MessageSquare, PenSquare, Archive, Loader2, Share2, Check } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SlackChannelConfig } from "@/components/slack-channel-config";
 import { EmailDetailPanel } from "@/components/email-detail-panel";
 import { ComposeEmailModal } from "@/components/compose-email-modal";
 import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 
 interface GmailMessage {
   id: string;
@@ -52,6 +62,8 @@ export default function Inbox() {
   const [selectedEmailId, setSelectedEmailId] = useState<string | null>(null);
   const [isComposing, setIsComposing] = useState(false);
   const [archivingId, setArchivingId] = useState<string | null>(null);
+  const [sharingMessage, setSharingMessage] = useState<UnifiedMessage | null>(null);
+  const [shareNote, setShareNote] = useState("");
   const queryClient = useQueryClient();
 
   const archiveEmailMutation = useMutation({
@@ -106,6 +118,28 @@ export default function Inbox() {
       setArchivingId(null);
     },
     onError: () => setArchivingId(null),
+  });
+
+  const shareItemMutation = useMutation({
+    mutationFn: async (data: { itemType: "email" | "slack"; itemId: string; title: string; preview: string; note?: string }) => {
+      const res = await fetch("/api/shared-items", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to share item");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["shared-items"] });
+      toast.success("Shared with team!");
+      setSharingMessage(null);
+      setShareNote("");
+    },
+    onError: () => {
+      toast.error("Failed to share");
+    },
   });
   
   const { data: gmailMessages = [], isLoading: gmailLoading, isError: gmailError } = useQuery<GmailMessage[]>({
@@ -298,6 +332,12 @@ export default function Inbox() {
                   }
                 }
               };
+
+              const handleShare = (e: React.MouseEvent) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setSharingMessage(message);
+              };
               
               return (
                 <div
@@ -334,6 +374,14 @@ export default function Inbox() {
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-xs text-muted-foreground">{formatTime(message.timestamp)}</span>
+                          <button
+                            onClick={handleShare}
+                            className="p-1.5 rounded-lg hover:bg-blue-100 transition-colors text-muted-foreground hover:text-blue-600"
+                            title="Share with team"
+                            data-testid={`button-share-${message.id}`}
+                          >
+                            <Share2 className="w-4 h-4" />
+                          </button>
                           <button
                             onClick={handleArchive}
                             disabled={isArchiving}
@@ -379,6 +427,66 @@ export default function Inbox() {
       {isComposing && (
         <ComposeEmailModal onClose={() => setIsComposing(false)} />
       )}
+
+      <Dialog open={!!sharingMessage} onOpenChange={(open) => !open && setSharingMessage(null)}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Share2 className="w-5 h-5 text-primary" />
+              Share with Team
+            </DialogTitle>
+            <DialogDescription>
+              Share this {sharingMessage?.type === 'gmail' ? 'email' : 'message'} with your team members.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="p-3 bg-muted/50 rounded-lg">
+              <p className="font-medium text-sm">{sharingMessage?.title}</p>
+              {sharingMessage?.subtitle && (
+                <p className="text-sm text-muted-foreground mt-1">{sharingMessage.subtitle}</p>
+              )}
+              <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{sharingMessage?.preview}</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">Add a note (optional)</label>
+              <Textarea
+                placeholder="Why are you sharing this? Any context for your team..."
+                value={shareNote}
+                onChange={(e) => setShareNote(e.target.value)}
+                className="min-h-[80px]"
+                data-testid="input-share-note"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setSharingMessage(null)} data-testid="button-cancel-share">
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  if (!sharingMessage) return;
+                  const itemId = sharingMessage.id.replace('gmail-', '').replace('slack-', '');
+                  shareItemMutation.mutate({
+                    itemType: sharingMessage.type === 'gmail' ? 'email' : 'slack',
+                    itemId,
+                    title: sharingMessage.subtitle || sharingMessage.title,
+                    preview: sharingMessage.preview,
+                    note: shareNote || undefined,
+                  });
+                }}
+                disabled={shareItemMutation.isPending}
+                data-testid="button-confirm-share"
+              >
+                {shareItemMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                ) : (
+                  <Check className="w-4 h-4 mr-2" />
+                )}
+                Share
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

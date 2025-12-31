@@ -4100,5 +4100,66 @@ export async function registerRoutes(
     }
   });
 
+  // Shared items endpoints (share emails/messages with team)
+  app.post("/api/shared-items", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      const tenantId = req.tenantId;
+      if (!userId || !tenantId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const { itemType, itemId, title, preview, note, metadata } = req.body;
+      if (!itemType || !itemId) {
+        return res.status(400).json({ error: "itemType and itemId are required" });
+      }
+      if (!["email", "slack"].includes(itemType)) {
+        return res.status(400).json({ error: "itemType must be 'email' or 'slack'" });
+      }
+      const item = await storage.createSharedItem({
+        tenantId,
+        sharedByUserId: userId,
+        itemType,
+        itemId,
+        title,
+        preview,
+        note,
+        metadata,
+      });
+      res.status(201).json(item);
+    } catch (error) {
+      console.error("Error creating shared item:", error);
+      res.status(500).json({ error: "Failed to share item" });
+    }
+  });
+
+  app.get("/api/shared-items", isAuthenticated, async (req: any, res) => {
+    try {
+      const tenantId = req.tenantId;
+      if (!tenantId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const items = await storage.getSharedItems(tenantId);
+      res.json(items);
+    } catch (error) {
+      console.error("Error fetching shared items:", error);
+      res.status(500).json({ error: "Failed to fetch shared items" });
+    }
+  });
+
+  app.delete("/api/shared-items/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const tenantId = req.tenantId;
+      const id = parseInt(req.params.id);
+      if (!tenantId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      await storage.deleteSharedItem(id, tenantId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting shared item:", error);
+      res.status(500).json({ error: "Failed to delete shared item" });
+    }
+  });
+
   return httpServer;
 }
