@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { TopBar } from "@/components/top-bar";
-import { ArrowLeft, Plus, MoreVertical, Calendar, User, Clock, Flag, MessageSquare, CheckSquare, RefreshCw, GripVertical, Trash2, Edit, LayoutGrid, List, Search, Filter, X, Users, UserPlus, UserMinus } from "lucide-react";
+import { ArrowLeft, Plus, MoreVertical, Calendar, User, Clock, Flag, MessageSquare, CheckSquare, RefreshCw, GripVertical, Trash2, Edit, LayoutGrid, List, Search, Filter, X, Users, UserPlus, UserMinus, GanttChart, CalendarRange } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "wouter";
@@ -30,7 +30,10 @@ interface Task {
   title: string;
   description: string | null;
   priority: string;
+  startDate: string | null;
   dueDate: string | null;
+  progress: number;
+  isMilestone: boolean;
   assigneeId: string | null;
   isCompleted: boolean;
   isRecurring: boolean;
@@ -200,6 +203,311 @@ function KanbanColumn({ column, tasks, onAddTask, onTaskClick }: {
   );
 }
 
+function GanttView({ 
+  tasks, 
+  columns,
+  onTaskClick, 
+  onUpdateTask,
+  users 
+}: { 
+  tasks: Task[]; 
+  columns: ProjectColumn[];
+  onTaskClick: (task: Task) => void;
+  onUpdateTask: (id: number, data: any) => void;
+  users: User[];
+}) {
+  const today = new Date();
+  const startOfView = new Date(today);
+  startOfView.setDate(today.getDate() - 7);
+  const endOfView = new Date(today);
+  endOfView.setDate(today.getDate() + 60);
+  
+  const totalDays = Math.ceil((endOfView.getTime() - startOfView.getTime()) / (1000 * 60 * 60 * 24));
+  const dayWidth = 30;
+  
+  const weeks: { start: Date; end: Date }[] = [];
+  let currentDate = new Date(startOfView);
+  while (currentDate < endOfView) {
+    const weekStart = new Date(currentDate);
+    const weekEnd = new Date(currentDate);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+    weeks.push({ start: weekStart, end: weekEnd > endOfView ? endOfView : weekEnd });
+    currentDate.setDate(currentDate.getDate() + 7);
+  }
+  
+  const getTaskPosition = (task: Task) => {
+    const taskStart = task.startDate ? new Date(task.startDate) : (task.dueDate ? new Date(task.dueDate) : today);
+    const taskEnd = task.dueDate ? new Date(task.dueDate) : new Date(taskStart.getTime() + 24 * 60 * 60 * 1000);
+    
+    const startOffset = Math.max(0, (taskStart.getTime() - startOfView.getTime()) / (1000 * 60 * 60 * 24));
+    const duration = Math.max(1, (taskEnd.getTime() - taskStart.getTime()) / (1000 * 60 * 60 * 24));
+    
+    return { left: startOffset * dayWidth, width: Math.max(duration * dayWidth, 30) };
+  };
+
+  const getProgressColor = (task: Task, column: ProjectColumn | undefined) => {
+    if (task.isCompleted) return "bg-green-500";
+    if (task.isMilestone) return "bg-purple-500";
+    return column?.color ? `bg-[${column.color}]` : "bg-primary";
+  };
+
+  return (
+    <div className="h-full overflow-auto">
+      <div className="min-w-max">
+        <div className="flex border-b bg-gray-50/80 sticky top-0 z-10">
+          <div className="w-64 p-3 border-r bg-gray-100/80 font-semibold text-sm sticky left-0 z-20">
+            Task Name
+          </div>
+          <div className="flex">
+            {weeks.map((week, i) => (
+              <div key={i} className="border-r" style={{ width: 7 * dayWidth }}>
+                <div className="p-2 text-xs text-center font-medium border-b bg-gray-100/50">
+                  {week.start.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                </div>
+                <div className="flex">
+                  {Array.from({ length: 7 }, (_, j) => {
+                    const date = new Date(week.start);
+                    date.setDate(date.getDate() + j);
+                    const isToday = date.toDateString() === today.toDateString();
+                    const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+                    return (
+                      <div 
+                        key={j} 
+                        className={`text-center text-xs py-1 ${isToday ? 'bg-primary/20 font-bold' : isWeekend ? 'bg-gray-100/50' : ''}`}
+                        style={{ width: dayWidth }}
+                      >
+                        {date.getDate()}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        <div>
+          {tasks.length === 0 ? (
+            <div className="p-8 text-center text-muted-foreground">
+              No tasks to display. Create tasks with start dates and due dates to see them on the Gantt chart.
+            </div>
+          ) : (
+            tasks.map((task) => {
+              const position = getTaskPosition(task);
+              const column = columns.find(c => c.id === task.columnId);
+              const assignee = users.find(u => u.id === task.assigneeId);
+              
+              return (
+                <div key={task.id} className="flex border-b hover:bg-gray-50/50">
+                  <div 
+                    className="w-64 p-3 border-r bg-white/80 sticky left-0 cursor-pointer hover:bg-gray-50"
+                    onClick={() => onTaskClick(task)}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className={`w-3 h-3 rounded-full ${task.isCompleted ? 'bg-green-500' : ''}`}
+                        style={{ backgroundColor: task.isCompleted ? undefined : column?.color || '#6b7280' }}
+                      />
+                      <span className={`text-sm font-medium truncate ${task.isCompleted ? 'line-through text-muted-foreground' : ''}`}>
+                        {task.title}
+                      </span>
+                    </div>
+                    {assignee && (
+                      <div className="text-xs text-muted-foreground mt-1 ml-5">
+                        {assignee.firstName || assignee.email}
+                      </div>
+                    )}
+                  </div>
+                  <div className="relative flex-1" style={{ minWidth: totalDays * dayWidth }}>
+                    {weeks.map((_, weekIndex) => 
+                      Array.from({ length: 7 }, (_, j) => {
+                        const date = new Date(startOfView);
+                        date.setDate(date.getDate() + weekIndex * 7 + j);
+                        const isToday = date.toDateString() === today.toDateString();
+                        const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+                        return (
+                          <div 
+                            key={`${weekIndex}-${j}`}
+                            className={`absolute h-full border-r ${isToday ? 'bg-primary/10' : isWeekend ? 'bg-gray-50/50' : ''}`}
+                            style={{ left: (weekIndex * 7 + j) * dayWidth, width: dayWidth }}
+                          />
+                        );
+                      })
+                    )}
+                    <div
+                      className="absolute top-1/2 -translate-y-1/2 h-6 rounded-full cursor-pointer hover:opacity-80 transition-opacity"
+                      style={{
+                        left: position.left,
+                        width: position.width,
+                        backgroundColor: task.isCompleted ? '#22c55e' : (column?.color || '#FD971E'),
+                      }}
+                      onClick={() => onTaskClick(task)}
+                      title={`${task.title}${task.progress ? ` - ${task.progress}%` : ''}`}
+                    >
+                      {task.isMilestone ? (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-4 h-4 bg-purple-600 rotate-45" />
+                        </div>
+                      ) : task.progress && task.progress > 0 ? (
+                        <div 
+                          className="h-full rounded-full opacity-60"
+                          style={{ width: `${task.progress}%`, backgroundColor: 'rgba(255,255,255,0.4)' }}
+                        />
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TimelineView({ 
+  tasks, 
+  columns,
+  onTaskClick,
+  users 
+}: { 
+  tasks: Task[]; 
+  columns: ProjectColumn[];
+  onTaskClick: (task: Task) => void;
+  users: User[];
+}) {
+  const today = new Date();
+  
+  const groupedByDate: Record<string, Task[]> = {};
+  const upcoming: Task[] = [];
+  const overdue: Task[] = [];
+  const noDate: Task[] = [];
+  
+  tasks.forEach(task => {
+    if (!task.dueDate) {
+      noDate.push(task);
+      return;
+    }
+    
+    const dueDate = new Date(task.dueDate);
+    const diffDays = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 0 && !task.isCompleted) {
+      overdue.push(task);
+    } else {
+      const dateKey = dueDate.toISOString().split('T')[0];
+      if (!groupedByDate[dateKey]) {
+        groupedByDate[dateKey] = [];
+      }
+      groupedByDate[dateKey].push(task);
+    }
+  });
+  
+  const sortedDates = Object.keys(groupedByDate).sort();
+  
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const diffDays = Math.ceil((date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return "Today";
+    if (diffDays === 1) return "Tomorrow";
+    if (diffDays > 0 && diffDays < 7) return date.toLocaleDateString("en-US", { weekday: "long" });
+    return date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+  };
+
+  const TaskItem = ({ task }: { task: Task }) => {
+    const column = columns.find(c => c.id === task.columnId);
+    const assignee = users.find(u => u.id === task.assigneeId);
+    
+    return (
+      <div 
+        className="flex items-center gap-3 p-3 bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer"
+        onClick={() => onTaskClick(task)}
+        data-testid={`timeline-task-${task.id}`}
+      >
+        <div 
+          className={`w-3 h-3 rounded-full flex-shrink-0`}
+          style={{ backgroundColor: task.isCompleted ? '#22c55e' : (column?.color || '#6b7280') }}
+        />
+        <div className="flex-1 min-w-0">
+          <p className={`font-medium text-sm ${task.isCompleted ? 'line-through text-muted-foreground' : ''}`}>
+            {task.title}
+          </p>
+          <div className="flex items-center gap-2 mt-1">
+            {column && (
+              <span className="text-xs text-muted-foreground">{column.name}</span>
+            )}
+            {task.priority && (
+              <span className={`text-xs px-1.5 py-0.5 rounded ${PRIORITY_COLORS[task.priority]}`}>
+                {task.priority}
+              </span>
+            )}
+          </div>
+        </div>
+        {assignee && (
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <User className="w-3 h-3" />
+            <span>{assignee.firstName || assignee.email.split('@')[0]}</span>
+          </div>
+        )}
+        {task.isMilestone && (
+          <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full">
+            Milestone
+          </span>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="h-full overflow-auto space-y-6">
+      {overdue.length > 0 && (
+        <div>
+          <h3 className="text-sm font-semibold text-red-600 mb-3 flex items-center gap-2">
+            <Flag className="w-4 h-4" />
+            Overdue ({overdue.length})
+          </h3>
+          <div className="space-y-2 pl-6">
+            {overdue.map(task => <TaskItem key={task.id} task={task} />)}
+          </div>
+        </div>
+      )}
+      
+      {sortedDates.map(dateStr => (
+        <div key={dateStr}>
+          <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+            <Calendar className="w-4 h-4" />
+            {formatDate(dateStr)}
+            <span className="text-muted-foreground font-normal">({groupedByDate[dateStr].length})</span>
+          </h3>
+          <div className="space-y-2 pl-6">
+            {groupedByDate[dateStr].map(task => <TaskItem key={task.id} task={task} />)}
+          </div>
+        </div>
+      ))}
+      
+      {noDate.length > 0 && (
+        <div>
+          <h3 className="text-sm font-semibold text-gray-500 mb-3 flex items-center gap-2">
+            <Clock className="w-4 h-4" />
+            No Due Date ({noDate.length})
+          </h3>
+          <div className="space-y-2 pl-6">
+            {noDate.map(task => <TaskItem key={task.id} task={task} />)}
+          </div>
+        </div>
+      )}
+      
+      {tasks.length === 0 && (
+        <div className="p-8 text-center text-muted-foreground">
+          No tasks to display. Create tasks with due dates to see them on the timeline.
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ProjectBoard() {
   const params = useParams();
   const projectId = parseInt(params.id as string);
@@ -218,7 +526,7 @@ export default function ProjectBoard() {
   const [newSubtask, setNewSubtask] = useState("");
   const [newComment, setNewComment] = useState("");
   const [activeTask, setActiveTask] = useState<Task | null>(null);
-  const [viewMode, setViewMode] = useState<"board" | "list">("board");
+  const [viewMode, setViewMode] = useState<"board" | "list" | "gantt" | "timeline">("board");
   const [searchQuery, setSearchQuery] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [showCompleted, setShowCompleted] = useState(false);
@@ -599,6 +907,7 @@ export default function ProjectBoard() {
                   onClick={() => setViewMode("board")}
                   className={`p-2 transition-colors ${viewMode === "board" ? "bg-primary text-white" : "hover:bg-gray-100"}`}
                   data-testid="button-view-board"
+                  title="Board View"
                 >
                   <LayoutGrid className="w-4 h-4" />
                 </button>
@@ -606,14 +915,31 @@ export default function ProjectBoard() {
                   onClick={() => setViewMode("list")}
                   className={`p-2 transition-colors ${viewMode === "list" ? "bg-primary text-white" : "hover:bg-gray-100"}`}
                   data-testid="button-view-list"
+                  title="List View"
                 >
                   <List className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode("gantt")}
+                  className={`p-2 transition-colors ${viewMode === "gantt" ? "bg-primary text-white" : "hover:bg-gray-100"}`}
+                  data-testid="button-view-gantt"
+                  title="Gantt Chart"
+                >
+                  <GanttChart className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode("timeline")}
+                  className={`p-2 transition-colors ${viewMode === "timeline" ? "bg-primary text-white" : "hover:bg-gray-100"}`}
+                  data-testid="button-view-timeline"
+                  title="Timeline View"
+                >
+                  <CalendarRange className="w-4 h-4" />
                 </button>
               </div>
             </div>
           </header>
 
-          {viewMode === "board" ? (
+          {viewMode === "board" && (
             <DndContext
               sensors={sensors}
               collisionDetection={closestCorners}
@@ -639,7 +965,9 @@ export default function ProjectBoard() {
                 )}
               </DragOverlay>
             </DndContext>
-          ) : (
+          )}
+
+          {viewMode === "list" && (
             <div className="glass-panel rounded-xl overflow-hidden flex-1">
               <table className="w-full">
                 <thead>
@@ -722,6 +1050,29 @@ export default function ProjectBoard() {
                   )}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {viewMode === "gantt" && (
+            <div className="glass-panel rounded-xl overflow-hidden flex-1 p-6" data-testid="gantt-view">
+              <GanttView 
+                tasks={filteredTasks} 
+                columns={project.columns}
+                onTaskClick={openTaskDetail}
+                onUpdateTask={(id, data) => updateTaskMutation.mutate({ id, data })}
+                users={users}
+              />
+            </div>
+          )}
+
+          {viewMode === "timeline" && (
+            <div className="glass-panel rounded-xl overflow-hidden flex-1 p-6" data-testid="timeline-view">
+              <TimelineView 
+                tasks={filteredTasks} 
+                columns={project.columns}
+                onTaskClick={openTaskDetail}
+                users={users}
+              />
             </div>
           )}
         </div>
