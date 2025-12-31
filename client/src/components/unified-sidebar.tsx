@@ -17,7 +17,9 @@ import {
   Gift,
   BookOpen,
   Webhook,
-  Archive
+  Archive,
+  Bug,
+  Lightbulb
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
@@ -59,6 +61,11 @@ export function UnifiedSidebar() {
     { icon: Settings, label: "Settings", href: "/settings" },
     { icon: Webhook, label: "Webhooks", href: "/webhooks" },
     ...(user?.isAdmin ? [{ icon: Shield, label: "Admin", href: "/admin" }] : []),
+  ];
+
+  const feedbackItems = [
+    { icon: Bug, label: "Report a Bug", href: "mailto:support@uniwork360.com?subject=Bug Report" },
+    { icon: Lightbulb, label: "Request Feature", href: "mailto:support@uniwork360.com?subject=Feature Request" },
   ];
 
   const displayName = user?.firstName 
@@ -118,8 +125,19 @@ export function UnifiedSidebar() {
             </div>
           </Link>
         ))}
+
+        <div className="pt-2 mt-2 border-t border-border/50">
+          {feedbackItems.map((item) => (
+            <a key={item.href} href={item.href} target="_blank" rel="noopener noreferrer">
+              <div className="flex items-center gap-3 px-4 py-2 rounded-xl text-muted-foreground hover:bg-white/50 hover:text-foreground transition-all duration-200 cursor-pointer">
+                <item.icon className="w-4 h-4" />
+                <span className="text-sm font-medium">{item.label}</span>
+              </div>
+            </a>
+          ))}
+        </div>
         
-        <div className="mt-6 pt-6 border-t border-border px-2">
+        <div className="mt-4 pt-4 border-t border-border px-2">
           <div className="flex items-center gap-3 mb-3">
             {user?.profileImageUrl ? (
               <img 
