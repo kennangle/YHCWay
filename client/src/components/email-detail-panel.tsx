@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { X, Reply, Send, ArrowLeft, Loader2, Trash2, Sparkles, RefreshCw } from "lucide-react";
+import { X, Reply, Send, ArrowLeft, Loader2, Trash2, Sparkles, RefreshCw, FileText, ChevronDown, ChevronUp, AlertCircle, CheckCircle2, ListTodo } from "lucide-react";
 import DOMPurify from "dompurify";
 
 interface EmailDetail {
@@ -22,6 +22,13 @@ interface SuggestedReply {
   text: string;
 }
 
+interface EmailSummary {
+  summary: string;
+  keyPoints: string[];
+  actionItems: string[];
+  sentiment: "positive" | "neutral" | "negative" | "urgent";
+}
+
 interface EmailDetailPanelProps {
   messageId: string;
   onClose: () => void;
@@ -33,9 +40,17 @@ const toneLabels: Record<string, { label: string; color: string }> = {
   brief: { label: "Brief", color: "bg-purple-100 text-purple-700" },
 };
 
+const sentimentColors: Record<string, { bg: string; text: string; icon: React.ReactNode }> = {
+  positive: { bg: "bg-green-100", text: "text-green-700", icon: <CheckCircle2 className="w-4 h-4" /> },
+  neutral: { bg: "bg-gray-100", text: "text-gray-700", icon: <FileText className="w-4 h-4" /> },
+  negative: { bg: "bg-red-100", text: "text-red-700", icon: <AlertCircle className="w-4 h-4" /> },
+  urgent: { bg: "bg-orange-100", text: "text-orange-700", icon: <AlertCircle className="w-4 h-4" /> },
+};
+
 export function EmailDetailPanel({ messageId, onClose }: EmailDetailPanelProps) {
   const [isReplying, setIsReplying] = useState(false);
   const [replyBody, setReplyBody] = useState("");
+  const [showSummary, setShowSummary] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: email, isLoading, isError } = useQuery<EmailDetail>({
@@ -61,6 +76,23 @@ export function EmailDetailPanel({ messageId, onClose }: EmailDetailPanelProps) 
     },
     enabled: isReplying && !!email,
     staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+
+  const { data: emailSummary, isLoading: isSummaryLoading, refetch: refetchSummary, isFetching: isSummaryFetching, isError: isSummaryError } = useQuery<EmailSummary>({
+    queryKey: ["email-summary", messageId],
+    queryFn: async () => {
+      const res = await fetch("/api/ai/email-summarize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ messageId }),
+      });
+      if (!res.ok) throw new Error("Failed to summarize email");
+      return res.json();
+    },
+    enabled: showSummary && !!email,
+    staleTime: 10 * 60 * 1000,
     retry: false,
   });
 
@@ -198,6 +230,28 @@ export function EmailDetailPanel({ messageId, onClose }: EmailDetailPanelProps) 
             <button
               type="button"
               onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowSummary(!showSummary);
+              }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                showSummary 
+                  ? 'bg-purple-100 text-purple-700 hover:bg-purple-200' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+              style={{ pointerEvents: 'auto', cursor: 'pointer' }}
+              data-testid="button-summarize"
+            >
+              {isSummaryFetching ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Sparkles className="w-4 h-4" />
+              )}
+              Summarize
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
                 console.log('Reply button clicked!');
                 e.preventDefault();
                 e.stopPropagation();
@@ -216,6 +270,76 @@ export function EmailDetailPanel({ messageId, onClose }: EmailDetailPanelProps) 
         <div className="flex-1 overflow-y-auto">
           <div className="p-6">
             <h2 className="text-xl font-semibold mb-4" data-testid="text-email-subject">{email.subject}</h2>
+            
+            {showSummary && (
+              <div className="mb-6 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl border border-purple-200">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-purple-600" />
+                    <span className="font-medium text-purple-900">AI Summary</span>
+                    {emailSummary && (
+                      <span className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${sentimentColors[emailSummary.sentiment]?.bg} ${sentimentColors[emailSummary.sentiment]?.text}`}>
+                        {sentimentColors[emailSummary.sentiment]?.icon}
+                        {emailSummary.sentiment.charAt(0).toUpperCase() + emailSummary.sentiment.slice(1)}
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => refetchSummary()}
+                    disabled={isSummaryFetching}
+                    className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-800 transition-colors"
+                    data-testid="button-refresh-summary"
+                  >
+                    <RefreshCw className={`w-3 h-3 ${isSummaryFetching ? 'animate-spin' : ''}`} />
+                    Refresh
+                  </button>
+                </div>
+                
+                {isSummaryError ? (
+                  <p className="text-sm text-red-600">Failed to generate summary. Please try again.</p>
+                ) : isSummaryLoading || isSummaryFetching ? (
+                  <div className="flex items-center gap-2 text-sm text-purple-700">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Analyzing email...
+                  </div>
+                ) : emailSummary ? (
+                  <div className="space-y-3">
+                    <p className="text-sm text-gray-700">{emailSummary.summary}</p>
+                    
+                    {emailSummary.keyPoints.length > 0 && (
+                      <div>
+                        <p className="text-xs font-medium text-purple-800 mb-1">Key Points:</p>
+                        <ul className="space-y-1">
+                          {emailSummary.keyPoints.map((point, idx) => (
+                            <li key={idx} className="text-sm text-gray-700 flex items-start gap-2">
+                              <span className="text-purple-500 mt-1">•</span>
+                              {point}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    {emailSummary.actionItems.length > 0 && (
+                      <div className="pt-2 border-t border-purple-200">
+                        <p className="text-xs font-medium text-orange-700 mb-1 flex items-center gap-1">
+                          <ListTodo className="w-3 h-3" />
+                          Action Items:
+                        </p>
+                        <ul className="space-y-1">
+                          {emailSummary.actionItems.map((item, idx) => (
+                            <li key={idx} className="text-sm text-gray-700 flex items-start gap-2">
+                              <span className="text-orange-500 mt-1">→</span>
+                              {item}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                ) : null}
+              </div>
+            )}
             
             <div className="flex items-start gap-4 mb-6">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">

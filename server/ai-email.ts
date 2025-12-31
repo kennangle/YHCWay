@@ -18,6 +18,75 @@ interface SuggestedReply {
   text: string;
 }
 
+interface EmailSummary {
+  summary: string;
+  keyPoints: string[];
+  actionItems: string[];
+  sentiment: "positive" | "neutral" | "negative" | "urgent";
+}
+
+export async function summarizeEmail(email: EmailContext): Promise<EmailSummary> {
+  const plainTextBody = email.body
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 4000);
+
+  const systemPrompt = `You are an email summarization assistant. Analyze the email and provide:
+1. A concise summary (2-3 sentences max)
+2. Key points (up to 5 bullet points)
+3. Action items (things the recipient needs to do, if any)
+4. Overall sentiment (positive, neutral, negative, or urgent)
+
+Respond in JSON format:
+{
+  "summary": "Brief summary of the email",
+  "keyPoints": ["Point 1", "Point 2"],
+  "actionItems": ["Action 1", "Action 2"],
+  "sentiment": "positive|neutral|negative|urgent"
+}
+
+If there are no action items, return an empty array.
+Keep the summary and key points concise and actionable.`;
+
+  const userPrompt = `Summarize this email:
+
+From: ${email.from}
+Subject: ${email.subject}
+Date: ${email.date || "Unknown"}
+
+Content:
+${plainTextBody}`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4.1-mini",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      response_format: { type: "json_object" },
+      max_completion_tokens: 1024,
+    });
+
+    const content = response.choices[0]?.message?.content || "{}";
+    const parsed = JSON.parse(content);
+    
+    return {
+      summary: parsed.summary || "Unable to summarize email.",
+      keyPoints: Array.isArray(parsed.keyPoints) ? parsed.keyPoints : [],
+      actionItems: Array.isArray(parsed.actionItems) ? parsed.actionItems : [],
+      sentiment: ["positive", "neutral", "negative", "urgent"].includes(parsed.sentiment) 
+        ? parsed.sentiment 
+        : "neutral",
+    };
+  } catch (error) {
+    console.error("Error summarizing email:", error);
+    throw error;
+  }
+}
+
 export async function generateEmailReplySuggestions(
   email: EmailContext
 ): Promise<SuggestedReply[]> {
