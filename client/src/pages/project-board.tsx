@@ -859,7 +859,7 @@ export default function ProjectBoard() {
             </div>
 
             <div className="flex flex-wrap gap-2 items-center">
-              <div className="relative flex-1 min-w-[200px] max-w-xs">
+              <div className="relative min-w-[150px] max-w-xs">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   placeholder="Search tasks..."
@@ -902,7 +902,7 @@ export default function ProjectBoard() {
                 {showCompleted ? "Hide Done" : "Show Done"}
               </Button>
 
-              <div className="flex border rounded-lg bg-white/80 overflow-hidden ml-auto">
+              <div className="flex border rounded-lg bg-white/80 overflow-hidden flex-shrink-0">
                 <button
                   onClick={() => setViewMode("board")}
                   className={`p-2 transition-colors ${viewMode === "board" ? "bg-primary text-white" : "hover:bg-gray-100"}`}
