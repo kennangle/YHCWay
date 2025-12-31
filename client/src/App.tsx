@@ -78,6 +78,7 @@ import Webhooks from "@/pages/webhooks";
 import SetupGuide from "@/pages/setup-guide";
 import PendingApproval from "@/pages/pending-approval";
 import ArchivePage from "@/pages/archive";
+import { FloatingAIButton } from "@/components/floating-ai-button";
 
 function ApprovalGuard({ children }: { children: ReactNode }) {
   const { user } = useAuth();
@@ -121,6 +122,7 @@ function Router() {
   return (
     <ApprovalGuard>
       <CommandPalette open={commandPaletteOpen} onOpenChange={setCommandPaletteOpen} />
+      <FloatingAIButton />
       <Switch>
         <Route path="/pending-approval" component={PendingApproval} />
         <Route path="/" component={Dashboard} />
