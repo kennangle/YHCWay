@@ -1784,6 +1784,45 @@ export class DbStorage implements IStorage {
     await db.delete(sharedItems)
       .where(and(eq(sharedItems.id, id), eq(sharedItems.tenantId, tenantId)));
   }
+
+  async migrateProjectColumns(): Promise<void> {
+    try {
+      await db.delete(projectColumns).where(eq(projectColumns.name, "To Do"));
+      console.log("[Migration] Removed 'To Do' columns from all projects");
+      
+      const allProjects = await db.select().from(projects);
+      for (const project of allProjects) {
+        const existingNotes = await db.select().from(projectColumns)
+          .where(and(
+            eq(projectColumns.projectId, project.id),
+            eq(projectColumns.name, "Notes")
+          ));
+        
+        if (existingNotes.length === 0) {
+          const doneColumn = await db.select().from(projectColumns)
+            .where(and(
+              eq(projectColumns.projectId, project.id),
+              eq(projectColumns.name, "Done")
+            ));
+          
+          const notesOrder = doneColumn.length > 0 ? doneColumn[0].sortOrder + 1 : 99;
+          
+          await db.insert(projectColumns).values({
+            projectId: project.id,
+            name: "Notes",
+            color: "#8b5cf6",
+            sortOrder: notesOrder
+          });
+          console.log(`[Migration] Added 'Notes' column to project ${project.id}`);
+        }
+      }
+      console.log("[Migration] Project columns migration complete");
+    } catch (error) {
+      console.error("[Migration] Error migrating project columns:", error);
+    }
+  }
 }
 
 export const storage = new DbStorage();
+
+storage.migrateProjectColumns();
