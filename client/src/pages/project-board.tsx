@@ -727,23 +727,35 @@ export default function ProjectBoard() {
 
   const createSubtaskMutation = useMutation({
     mutationFn: async (data: { taskId: number; title: string }) => {
+      console.log("[Subtask] Creating subtask:", data);
       const res = await fetch("/api/subtasks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify(data),
       });
-      if (!res.ok) throw new Error("Failed to create subtask");
-      return res.json();
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("[Subtask] Creation failed:", res.status, errorText);
+        throw new Error("Failed to create subtask");
+      }
+      const result = await res.json();
+      console.log("[Subtask] Created successfully:", result);
+      return result;
     },
     onSuccess: async () => {
+      console.log("[Subtask] onSuccess - refetching task data");
       refetch();
       setNewSubtask("");
       if (selectedTask) {
         const res = await fetch(`/api/tasks/${selectedTask.id}`, { credentials: "include" });
         const fullTask = await res.json();
+        console.log("[Subtask] Refetched task with subtasks:", fullTask.subtasks);
         setSelectedTask(fullTask);
       }
+    },
+    onError: (error) => {
+      console.error("[Subtask] Mutation error:", error);
     },
   });
 

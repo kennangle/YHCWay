@@ -3412,14 +3412,18 @@ export async function registerRoutes(
 
   app.post("/api/subtasks", isAuthenticated, async (req: any, res) => {
     try {
+      console.log("[Subtask] Creating subtask with data:", req.body);
       const validatedData = createSubtaskSchema.parse(req.body);
+      console.log("[Subtask] Validated data:", validatedData);
       const subtask = await storage.createSubtask(validatedData);
+      console.log("[Subtask] Created subtask:", subtask);
       res.status(201).json(subtask);
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.error("[Subtask] Validation error:", error.errors);
         res.status(400).json({ error: error.errors });
       } else {
-        console.error("Error creating subtask:", error);
+        console.error("[Subtask] Error creating subtask:", error);
         res.status(500).json({ error: "Failed to create subtask" });
       }
     }
