@@ -155,6 +155,12 @@ function TaskCard({ task, onClick }: { task: Task; onClick: () => void }) {
                 Recurring
               </span>
             )}
+            {(task.subtaskCount ?? 0) > 0 && (
+              <span className="text-[10px] flex items-center gap-1 text-muted-foreground">
+                <CheckSquare className="w-3 h-3" />
+                {task.completedSubtaskCount ?? 0}/{task.subtaskCount}
+              </span>
+            )}
           </div>
         </div>
       </div>
