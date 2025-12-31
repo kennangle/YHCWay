@@ -58,6 +58,8 @@ import {
   type InsertArchivedSlackMessage,
   type FeedbackEntry,
   type InsertFeedbackEntry,
+  type SharedItem,
+  type InsertSharedItem,
   users,
   services,
   feedItems,
@@ -93,7 +95,8 @@ import {
   webhookDeliveries,
   archivedEmails,
   archivedSlackMessages,
-  feedbackEntries
+  feedbackEntries,
+  sharedItems
 } from "@shared/schema";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq, desc, and, lt, isNull, sql, inArray, gte, lte, or } from "drizzle-orm";
@@ -306,6 +309,11 @@ export interface IStorage {
   createFeedbackEntry(data: InsertFeedbackEntry): Promise<FeedbackEntry>;
   getFeedbackEntriesForTenant(tenantId: string): Promise<(FeedbackEntry & { user: User })[]>;
   updateFeedbackStatus(id: number, status: string): Promise<FeedbackEntry | undefined>;
+  
+  // Shared items (share emails/messages with team)
+  createSharedItem(data: InsertSharedItem): Promise<SharedItem>;
+  getSharedItems(tenantId: string): Promise<(SharedItem & { sharedBy: User })[]>;
+  deleteSharedItem(id: number, tenantId: string): Promise<void>;
 }
 
 export class DbStorage implements IStorage {
@@ -1749,6 +1757,32 @@ export class DbStorage implements IStorage {
       .where(eq(feedbackEntries.id, id))
       .returning();
     return updated;
+  }
+
+  // Shared items (share emails/messages with team)
+  async createSharedItem(data: InsertSharedItem): Promise<SharedItem> {
+    const [item] = await db.insert(sharedItems).values({
+      ...data,
+      itemType: data.itemType as "email" | "slack"
+    }).returning();
+    return item;
+  }
+
+  async getSharedItems(tenantId: string): Promise<(SharedItem & { sharedBy: User })[]> {
+    const items = await db.select().from(sharedItems)
+      .leftJoin(users, eq(sharedItems.sharedByUserId, users.id))
+      .where(eq(sharedItems.tenantId, tenantId))
+      .orderBy(desc(sharedItems.sharedAt));
+    
+    return items.map(i => ({
+      ...i.shared_items,
+      sharedBy: i.users!
+    }));
+  }
+
+  async deleteSharedItem(id: number, tenantId: string): Promise<void> {
+    await db.delete(sharedItems)
+      .where(and(eq(sharedItems.id, id), eq(sharedItems.tenantId, tenantId)));
   }
 }
 

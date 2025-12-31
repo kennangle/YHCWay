@@ -1025,3 +1025,36 @@ export const insertFeedbackEntrySchema = createInsertSchema(feedbackEntries).omi
 
 export type FeedbackEntry = typeof feedbackEntries.$inferSelect;
 export type InsertFeedbackEntry = z.infer<typeof insertFeedbackEntrySchema>;
+
+// =============================================================================
+// SHARED ITEMS (Share emails/messages with team)
+// =============================================================================
+
+export const SharedItemType = {
+  EMAIL: "email",
+  SLACK: "slack",
+} as const;
+
+export const sharedItems = pgTable("shared_items", {
+  id: serial("id").primaryKey(),
+  tenantId: varchar("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  sharedByUserId: varchar("shared_by_user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  itemType: varchar("item_type").notNull().$type<"email" | "slack">(),
+  itemId: varchar("item_id").notNull(),
+  title: varchar("title"),
+  preview: text("preview"),
+  note: text("note"),
+  metadata: jsonb("metadata"),
+  sharedAt: timestamp("shared_at").defaultNow(),
+}, (table) => [
+  index("idx_shared_item_tenant").on(table.tenantId),
+  index("idx_shared_item_type").on(table.itemType),
+]);
+
+export const insertSharedItemSchema = createInsertSchema(sharedItems).omit({
+  id: true,
+  sharedAt: true,
+});
+
+export type SharedItem = typeof sharedItems.$inferSelect;
+export type InsertSharedItem = z.infer<typeof insertSharedItemSchema>;
