@@ -525,6 +525,8 @@ export default function ProjectBoard() {
   });
   const [newSubtask, setNewSubtask] = useState("");
   const [newComment, setNewComment] = useState("");
+  const [editingDescription, setEditingDescription] = useState(false);
+  const [editedDescription, setEditedDescription] = useState("");
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [viewMode, setViewMode] = useState<"board" | "list" | "gantt" | "timeline">("board");
   const [searchQuery, setSearchQuery] = useState("");
@@ -671,9 +673,14 @@ export default function ProjectBoard() {
       if (!res.ok) throw new Error("Failed to create subtask");
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       refetch();
       setNewSubtask("");
+      if (selectedTask) {
+        const res = await fetch(`/api/tasks/${selectedTask.id}`, { credentials: "include" });
+        const fullTask = await res.json();
+        setSelectedTask(fullTask);
+      }
     },
   });
 
@@ -700,9 +707,14 @@ export default function ProjectBoard() {
       if (!res.ok) throw new Error("Failed to create comment");
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       refetch();
       setNewComment("");
+      if (selectedTask) {
+        const res = await fetch(`/api/tasks/${selectedTask.id}`, { credentials: "include" });
+        const fullTask = await res.json();
+        setSelectedTask(fullTask);
+      }
     },
   });
 
@@ -780,6 +792,19 @@ export default function ProjectBoard() {
     const res = await fetch(`/api/tasks/${task.id}`, { credentials: "include" });
     const fullTask = await res.json();
     setSelectedTask(fullTask);
+    setEditedDescription(fullTask.description || "");
+    setEditingDescription(false);
+  };
+
+  const handleSaveDescription = () => {
+    if (selectedTask) {
+      updateTaskMutation.mutate({
+        id: selectedTask.id,
+        data: { description: editedDescription }
+      });
+      setSelectedTask({ ...selectedTask, description: editedDescription });
+      setEditingDescription(false);
+    }
   };
 
   const filteredTasks = useMemo(() => {
@@ -1205,8 +1230,49 @@ export default function ProjectBoard() {
               <div className="space-y-6 py-4">
                 {/* Description */}
                 <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Description</Label>
-                  <p className="mt-1 text-sm">{selectedTask.description || "No description"}</p>
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-medium text-muted-foreground">Description</Label>
+                    {!editingDescription && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => setEditingDescription(true)}
+                        data-testid="button-edit-description"
+                      >
+                        <Edit className="w-3 h-3 mr-1" />
+                        Edit
+                      </Button>
+                    )}
+                  </div>
+                  {editingDescription ? (
+                    <div className="mt-2 space-y-2">
+                      <Textarea
+                        value={editedDescription}
+                        onChange={(e) => setEditedDescription(e.target.value)}
+                        placeholder="Add a description..."
+                        className="min-h-[80px]"
+                        data-testid="textarea-edit-description"
+                      />
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={handleSaveDescription} data-testid="button-save-description">
+                          Save
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={() => {
+                            setEditingDescription(false);
+                            setEditedDescription(selectedTask.description || "");
+                          }}
+                          data-testid="button-cancel-description"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="mt-1 text-sm">{selectedTask.description || "No description - click Edit to add one"}</p>
+                  )}
                 </div>
 
                 {/* Meta info */}
