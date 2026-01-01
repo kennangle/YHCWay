@@ -3573,9 +3573,9 @@ export async function registerRoutes(
   // PROJECT BOARD ROUTE (Placement-aware)
   // =============================================================================
 
-  app.get("/api/projects/:projectId/board", isAuthenticated, requireTenant, async (req: any, res) => {
+  app.get("/api/projects/:projectId/board", isAuthenticated, async (req: any, res) => {
     try {
-      const tenantId = req.tenantId as string;
+      const tenantId = req.tenantId as string | null;
       const projectId = parseInt(req.params.projectId);
 
       const columns = await storage.getProjectColumns(projectId);

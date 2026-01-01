@@ -351,7 +351,7 @@ export interface IStorage {
     movedBy: string;
   }): Promise<void>;
   
-  getProjectTaskPlacements(projectId: number, tenantId: string): Promise<Array<{
+  getProjectTaskPlacements(projectId: number, tenantId: string | null): Promise<Array<{
     task: Task;
     projectId: number;
     columnId: number | null;
@@ -360,7 +360,7 @@ export interface IStorage {
   }>>;
   
   // Task stories (unified comments + activity)
-  getTaskStories(taskId: number, tenantId: string): Promise<Array<{
+  getTaskStories(taskId: number, tenantId: string | null): Promise<Array<{
     id: number;
     storyType: string;
     authorId: string | null;
@@ -2014,13 +2014,17 @@ export class DbStorage implements IStorage {
     });
   }
 
-  async getProjectTaskPlacements(projectId: number, tenantId: string): Promise<Array<{
+  async getProjectTaskPlacements(projectId: number, tenantId: string | null): Promise<Array<{
     task: Task;
     projectId: number;
     columnId: number | null;
     sortOrder: number;
     orderKey: string | null;
   }>> {
+    const whereConditions = tenantId 
+      ? and(eq(taskProjects.tenantId, tenantId), eq(taskProjects.projectId, projectId))
+      : eq(taskProjects.projectId, projectId);
+      
     const rows = await db
       .select({
         task: tasks,
@@ -2031,7 +2035,7 @@ export class DbStorage implements IStorage {
       })
       .from(taskProjects)
       .innerJoin(tasks, eq(tasks.id, taskProjects.taskId))
-      .where(and(eq(taskProjects.tenantId, tenantId), eq(taskProjects.projectId, projectId)))
+      .where(whereConditions)
       .orderBy(asc(taskProjects.columnId), asc(taskProjects.orderKey), asc(taskProjects.sortOrder));
 
     return rows;
