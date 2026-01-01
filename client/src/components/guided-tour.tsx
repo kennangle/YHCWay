@@ -113,6 +113,7 @@ export function useGuidedTour() {
       ],
       onDestroyStarted: () => {
         localStorage.setItem('yhc-tour-completed', 'true');
+        driverObj.destroy();
       },
     });
 
