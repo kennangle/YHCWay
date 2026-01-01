@@ -1377,7 +1377,7 @@ export default function Settings() {
   );
 
   const renderMainMenu = () => (
-    <div className="max-w-2xl space-y-4">
+    <div className="max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-4">
       {settingsSections.map((section) => (
         <button
           key={section.id}
@@ -1385,14 +1385,14 @@ export default function Settings() {
           className="w-full glass-card p-5 rounded-2xl flex items-center gap-4 text-left hover:bg-white/60 transition-all"
           data-testid={`button-settings-${section.id}`}
         >
-          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
             <section.icon className="w-6 h-6" />
           </div>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-foreground">{section.title}</h3>
-            <p className="text-sm text-muted-foreground">{section.description}</p>
+            <p className="text-sm text-muted-foreground truncate">{section.description}</p>
           </div>
-          <div className="text-muted-foreground">
+          <div className="text-muted-foreground shrink-0">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
