@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Link } from "wouter";
 import { useNotificationSound } from "@/hooks/useNotificationSound";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DashboardWidgetConfig, getDefaultWidgets, WidgetConfig, WidgetId } from "@/components/dashboard-widget-config";
 import { TimeTrackerWidget } from "@/components/time-tracker-widget";
 import { AIAssistantPanel } from "@/components/ai-assistant-panel";
@@ -17,6 +18,7 @@ import { Brain } from "lucide-react";
 import { toast } from "sonner";
 
 type FilterType = "all" | "mentions" | "unread";
+type ServiceFilter = "all" | "gmail" | "slack" | "zoom" | "calendar" | "intro-offer";
 
 interface UnifiedActivityItem {
   id: string;
@@ -108,6 +110,7 @@ interface SlackMessage {
 export default function Dashboard() {
   const { user } = useAuth();
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
+  const [serviceFilter, setServiceFilter] = useState<ServiceFilter>("all");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -600,8 +603,20 @@ export default function Dashboard() {
     if (activeFilter === "mentions") items = items.filter(item => item.hasMention);
     if (activeFilter === "unread") items = items.filter(item => item.isUnread);
     
+    if (serviceFilter !== "all") {
+      items = items.filter(item => item.type === serviceFilter);
+    }
+    
     return items;
-  }, [unifiedFeed, activeFilter, searchQuery, getItemSearchText]);
+  }, [unifiedFeed, activeFilter, serviceFilter, searchQuery, getItemSearchText]);
+
+  const serviceFilterOptions = [
+    { value: "all", label: "All Services", icon: null },
+    { value: "gmail", label: "Gmail", count: gmailMessages.length },
+    { value: "slack", label: "Slack", count: slackMessages.length },
+    { value: "zoom", label: "Zoom", count: zoomMeetings.length },
+    { value: "intro-offer", label: "Intro Offers", count: introOffers.length },
+  ] as const;
 
   return (
     <div className="min-h-screen bg-background text-foreground flex font-sans">
@@ -1031,9 +1046,21 @@ export default function Dashboard() {
               </Link>
             </div>
 
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
               <h2 className="font-display font-semibold text-xl">Recent Activity</h2>
-              <div className="flex gap-2 text-sm">
+              <div className="flex gap-2 text-sm items-center flex-wrap">
+                <Select value={serviceFilter} onValueChange={(v) => setServiceFilter(v as ServiceFilter)}>
+                  <SelectTrigger className="w-[140px] h-8 text-xs bg-white/50" data-testid="select-service-filter">
+                    <SelectValue placeholder="All Services" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {serviceFilterOptions.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label} {opt.count !== undefined && opt.count > 0 && `(${opt.count})`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <button 
                   onClick={() => setActiveFilter("all")}
                   className={`px-3 py-1.5 rounded-full transition-colors ${activeFilter === "all" ? "bg-white shadow-sm text-foreground font-medium" : "text-muted-foreground hover:bg-white/50"}`}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { 
   Brain, 
@@ -18,9 +18,12 @@ import {
   Send,
   Copy,
   X,
-  Users
+  Users,
+  Link2Off
 } from "lucide-react";
 import { toast } from "sonner";
+
+const AI_TAB_STORAGE_KEY = "yhc-ai-assistant-tab";
 
 interface DailyBriefing {
   summary: string;
@@ -72,8 +75,13 @@ interface MeetingPrepResult {
   summary: string;
 }
 
+type TabId = "briefing" | "search" | "draft" | "calendar" | "tasks" | "extract" | "meeting-prep";
+
 export function AIAssistantPanel({ onClose }: { onClose?: () => void }) {
-  const [activeTab, setActiveTab] = useState<"briefing" | "search" | "draft" | "calendar" | "tasks" | "extract" | "meeting-prep">("briefing");
+  const [activeTab, setActiveTab] = useState<TabId>(() => {
+    const saved = localStorage.getItem(AI_TAB_STORAGE_KEY);
+    return (saved as TabId) || "briefing";
+  });
   const [searchQuery, setSearchQuery] = useState("");
   const [emailPrompt, setEmailPrompt] = useState("");
   const [extractContent, setExtractContent] = useState("");
@@ -85,6 +93,10 @@ export function AIAssistantPanel({ onClose }: { onClose?: () => void }) {
     messages: true,
     recommendations: true,
   });
+
+  useEffect(() => {
+    localStorage.setItem(AI_TAB_STORAGE_KEY, activeTab);
+  }, [activeTab]);
 
   const { data: briefing, isLoading: briefingLoading, refetch: refetchBriefing } = useQuery<DailyBriefing>({
     queryKey: ["ai-daily-briefing"],
@@ -268,8 +280,16 @@ export function AIAssistantPanel({ onClose }: { onClose?: () => void }) {
               </div>
             ) : briefing ? (
               <div className="space-y-4">
-                <div className="p-4 bg-gradient-to-r from-primary/10 to-blue-50 rounded-xl">
-                  <p className="text-gray-800" data-testid="text-briefing-summary">{briefing.summary}</p>
+                <div className="p-4 bg-gradient-to-r from-primary/10 to-blue-50 rounded-xl relative group">
+                  <p className="text-gray-800 pr-8" data-testid="text-briefing-summary">{briefing.summary}</p>
+                  <button 
+                    onClick={() => copyToClipboard(briefing.summary)}
+                    className="absolute top-2 right-2 p-1.5 hover:bg-white/50 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Copy summary"
+                    data-testid="button-copy-briefing"
+                  >
+                    <Copy className="w-4 h-4 text-gray-500" />
+                  </button>
                 </div>
 
                 <CollapsibleSection
@@ -373,8 +393,16 @@ export function AIAssistantPanel({ onClose }: { onClose?: () => void }) {
 
             {searchMutation.data && (
               <div className="space-y-4">
-                <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-gray-800" data-testid="text-search-answer">{searchMutation.data.answer}</p>
+                <div className="p-4 bg-gray-50 rounded-xl relative group">
+                  <p className="text-gray-800 pr-8" data-testid="text-search-answer">{searchMutation.data.answer}</p>
+                  <button 
+                    onClick={() => copyToClipboard(searchMutation.data!.answer)}
+                    className="absolute top-2 right-2 p-1.5 hover:bg-gray-200 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Copy answer"
+                    data-testid="button-copy-search"
+                  >
+                    <Copy className="w-4 h-4 text-gray-500" />
+                  </button>
                 </div>
 
                 {searchMutation.data.sources.length > 0 && (
@@ -411,6 +439,12 @@ export function AIAssistantPanel({ onClose }: { onClose?: () => void }) {
 
         {activeTab === "draft" && (
           <div className="space-y-4">
+            <div className="p-3 bg-blue-50 rounded-lg flex items-start gap-2 text-sm">
+              <Mail className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+              <p className="text-blue-800">
+                Tip: Connect your Gmail account on the <a href="/connect" className="underline font-medium">Connect page</a> to send drafts directly.
+              </p>
+            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Describe the email you want to write

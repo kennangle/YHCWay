@@ -1,7 +1,8 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Calendar, CheckCircle2, Circle, GripVertical, User } from "lucide-react";
+import { Calendar, CheckCircle2, Circle, GripVertical, User, Layers } from "lucide-react";
 import type { TaskLite } from "../types";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface TaskCardProps {
   task: TaskLite;
@@ -113,6 +114,22 @@ export function TaskCard({ task, onClick, isSelected }: TaskCardProps) {
                 <span className="text-[10px] text-gray-500">
                   {task.completedSubtaskCount ?? 0}/{task.subtaskCount} subtasks
                 </span>
+              )}
+
+              {(task.projectCount ?? 0) > 1 && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="text-[10px] flex items-center gap-0.5 text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded-full">
+                        <Layers className="w-3 h-3" />
+                        {task.projectCount}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>In {task.projectCount} projects</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
             </div>
           </div>

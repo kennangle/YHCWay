@@ -19,11 +19,13 @@ export type TaskLite = {
   description?: string | null;
   isCompleted: boolean;
   assigneeId?: string | null;
+  assigneeName?: string | null;
   dueDate?: string | null;
   priority: string;
   subtaskCount?: number;
   completedSubtaskCount?: number;
   placement: Placement;
+  projectCount?: number;
 };
 
 export type ProjectBoardResponse = {
