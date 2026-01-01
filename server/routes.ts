@@ -3275,6 +3275,18 @@ export async function registerRoutes(
         recurrenceEndDate: validatedData.recurrenceEndDate ? new Date(validatedData.recurrenceEndDate) : undefined,
       });
       
+      // Add task to project with placement (for board view)
+      if (validatedData.projectId && tenantId) {
+        await storage.addTaskToProject({
+          tenantId,
+          taskId: task.id,
+          projectId: validatedData.projectId,
+          columnId: validatedData.columnId ?? null,
+          sortOrder: 0,
+          addedBy: userId,
+        });
+      }
+      
       res.status(201).json(task);
     } catch (error) {
       if (error instanceof z.ZodError) {
