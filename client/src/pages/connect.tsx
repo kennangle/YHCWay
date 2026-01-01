@@ -464,8 +464,13 @@ export default function Connect() {
     onSuccess: (data) => {
       console.log("[Perkville] onSuccess called with data:", data);
       if (data.authUrl) {
-        console.log("[Perkville] Redirecting to:", data.authUrl);
-        window.location.href = data.authUrl;
+        console.log("[Perkville] Opening auth URL:", data.authUrl);
+        // Use window.open as fallback in case location.href is blocked
+        const opened = window.open(data.authUrl, "_self");
+        if (!opened) {
+          console.log("[Perkville] window.open failed, trying location.assign");
+          window.location.assign(data.authUrl);
+        }
       } else {
         console.log("[Perkville] No authUrl in response");
         toast({
