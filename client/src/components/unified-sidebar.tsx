@@ -51,7 +51,6 @@ export function UnifiedSidebar() {
   ];
 
   const bottomItems = [
-    { icon: BookOpen, label: "Setup Guide", href: "/setup-guide" },
     { icon: Mail, label: "Email Builder", href: "/email-builder" },
     ...(user?.isAdmin ? [{ icon: FileText, label: "Typeform", href: "/typeform" }] : []),
     { icon: PlusCircle, label: "Connect App", href: "/connect" },
@@ -59,10 +58,20 @@ export function UnifiedSidebar() {
     ...(user?.isAdmin ? [{ icon: Shield, label: "Admin", href: "/admin" }] : []),
   ];
 
+  const getInitials = () => {
+    if (user?.firstName && user?.lastName) {
+      return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
+    }
+    if (user?.firstName) {
+      return user.firstName.slice(0, 2).toUpperCase();
+    }
+    if (user?.email) {
+      return user.email.slice(0, 2).toUpperCase();
+    }
+    return 'U';
+  };
 
-  const displayName = user?.firstName 
-    ? `${user.firstName}${user.lastName ? ` ${user.lastName}` : ''}`
-    : user?.email?.split('@')[0] || 'User';
+  const initials = getInitials();
 
   const mobileNavItems = [
     { icon: LayoutDashboard, label: "Overview", href: "/" },
@@ -120,19 +129,24 @@ export function UnifiedSidebar() {
 
         <div className="mt-4 pt-4 border-t border-border px-2">
           <div className="flex items-center gap-3 mb-3">
+            <Link href="/setup-guide">
+              <div className="w-8 h-8 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer" title="Setup Guide">
+                <BookOpen className="w-4 h-4" />
+              </div>
+            </Link>
             {user?.profileImageUrl ? (
               <img 
                 src={user.profileImageUrl} 
-                alt={displayName}
+                alt={initials}
                 className="w-8 h-8 rounded-full ring-2 ring-white object-cover"
               />
             ) : (
               <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-400 to-blue-500 ring-2 ring-white flex items-center justify-center text-white text-sm font-semibold">
-                {displayName[0]?.toUpperCase()}
+                {initials}
               </div>
             )}
             <div className="flex flex-col flex-1 min-w-0">
-              <span className="text-sm font-semibold truncate">{displayName}</span>
+              <span className="text-sm font-semibold truncate">{initials}</span>
               <span className="text-xs text-muted-foreground truncate">{user?.email}</span>
             </div>
           </div>
