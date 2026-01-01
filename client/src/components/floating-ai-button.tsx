@@ -15,7 +15,6 @@ export function FloatingAIButton() {
         title="AI Assistant"
       >
         <Brain className="w-7 h-7 group-hover:animate-pulse" />
-        <span className="absolute -top-1 -right-1 w-4 h-4 bg-purple-500 rounded-full animate-pulse" />
       </button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
