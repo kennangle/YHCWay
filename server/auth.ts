@@ -193,9 +193,15 @@ export async function setupAuth(app: Express) {
         isAdmin,
       });
 
-      req.login({ id: user.id, email: user.email }, (err) => {
+      req.login({ id: user.id, email: user.email }, async (err) => {
         if (err) {
           return res.status(500).json({ message: "Login failed after registration" });
+        }
+        // Record first login timestamp
+        try {
+          await storage.recordUserLogin(user.id);
+        } catch (e) {
+          console.error("Error recording login:", e);
         }
         res.json({ message: "Registration successful", user: { id: user.id, email: user.email } });
       });
@@ -206,16 +212,22 @@ export async function setupAuth(app: Express) {
   });
 
   app.post("/api/auth/login", (req, res, next) => {
-    passport.authenticate("local", (err: any, user: Express.User | false, info: { message: string }) => {
+    passport.authenticate("local", async (err: any, user: Express.User | false, info: { message: string }) => {
       if (err) {
         return res.status(500).json({ message: "Login failed" });
       }
       if (!user) {
         return res.status(401).json({ message: info?.message || "Invalid credentials" });
       }
-      req.login(user, (loginErr) => {
+      req.login(user, async (loginErr) => {
         if (loginErr) {
           return res.status(500).json({ message: "Login failed" });
+        }
+        // Record login timestamp
+        try {
+          await storage.recordUserLogin((user as any).id);
+        } catch (e) {
+          console.error("Error recording login:", e);
         }
         req.session.save((saveErr) => {
           if (saveErr) {
@@ -309,7 +321,15 @@ export async function setupAuth(app: Express) {
     app.get(
       "/api/auth/google/callback",
       passport.authenticate("google", { failureRedirect: "/login" }),
-      (req, res) => {
+      async (req, res) => {
+        // Record login timestamp for Google OAuth users
+        if (req.user && (req.user as any).id) {
+          try {
+            await storage.recordUserLogin((req.user as any).id);
+          } catch (e) {
+            console.error("Error recording Google login:", e);
+          }
+        }
         res.redirect("/dashboard");
       }
     );
