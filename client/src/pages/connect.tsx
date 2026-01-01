@@ -449,19 +449,35 @@ export default function Connect() {
 
   const perkvilleConnectMutation = useMutation({
     mutationFn: async () => {
+      console.log("[Perkville] Starting connect...");
       const res = await fetch("/api/perkville/connect", { credentials: "include" });
+      console.log("[Perkville] Response status:", res.status);
       if (!res.ok) {
         const error = await res.json();
+        console.log("[Perkville] Error response:", error);
         throw new Error(error.error || "Failed to initiate Perkville connection");
       }
-      return res.json();
+      const data = await res.json();
+      console.log("[Perkville] Success response:", data);
+      return data;
     },
     onSuccess: (data) => {
+      console.log("[Perkville] onSuccess called with data:", data);
       if (data.authUrl) {
+        console.log("[Perkville] Redirecting to:", data.authUrl);
         window.location.href = data.authUrl;
+      } else {
+        console.log("[Perkville] No authUrl in response");
+        toast({
+          title: "Connection failed",
+          description: "No authorization URL received",
+          variant: "destructive",
+        });
+        setConnectingApp(null);
       }
     },
     onError: (error: Error) => {
+      console.log("[Perkville] onError called:", error.message);
       toast({
         title: "Connection failed",
         description: error.message,
