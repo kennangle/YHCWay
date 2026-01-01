@@ -3276,9 +3276,9 @@ export async function registerRoutes(
       });
       
       // Add task to project with placement (for board view)
-      if (validatedData.projectId && tenantId) {
+      if (validatedData.projectId) {
         await storage.addTaskToProject({
-          tenantId,
+          tenantId: tenantId || "default",
           taskId: task.id,
           projectId: validatedData.projectId,
           columnId: validatedData.columnId ?? null,
