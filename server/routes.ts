@@ -2213,11 +2213,13 @@ export async function registerRoutes(
   app.get("/api/perkville/connect", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims?.sub || req.user.id;
+      console.log("[Perkville] Connect initiated for user:", userId);
       if (!userId) {
         return res.status(401).json({ error: "Unauthorized" });
       }
       
       if (!isPerkvilleConfigured()) {
+        console.error("[Perkville] OAuth not configured - missing client ID or secret");
         return res.status(500).json({ error: "Perkville OAuth not configured" });
       }
       
@@ -2233,23 +2235,32 @@ export async function registerRoutes(
       const host = req.get('host') || 'localhost:5000';
       const redirectUri = `${req.protocol}://${host}/api/perkville/callback`;
       const authUrl = getPerkvilleAuthUrl(redirectUri, stateToken);
+      console.log("[Perkville] Auth URL generated, redirectUri:", redirectUri);
       
       res.json({ authUrl });
     } catch (error: any) {
-      console.error("Error generating Perkville auth URL:", error);
+      console.error("[Perkville] Error generating auth URL:", error);
       res.status(500).json({ error: error?.message || "Failed to initiate Perkville connection" });
     }
   });
 
   app.get("/api/perkville/callback", async (req: any, res) => {
     try {
-      const { code, state } = req.query;
+      const { code, state, error: oauthError, error_description } = req.query;
+      console.log("[Perkville] Callback received:", { code: !!code, state: !!state, oauthError, error_description });
+      
+      if (oauthError) {
+        console.error("[Perkville] OAuth error from provider:", oauthError, error_description);
+        return res.redirect('/connect?error=perkville_auth_failed');
+      }
       
       if (!code || !state || typeof code !== 'string' || typeof state !== 'string') {
+        console.error("[Perkville] Missing code or state:", { code: !!code, state: !!state });
         return res.redirect('/connect?error=invalid_callback');
       }
       
       const storedState = req.session?.perkvilleOAuthState;
+      console.log("[Perkville] Stored state check:", { hasStoredState: !!storedState, statesMatch: storedState?.state === state });
       if (!storedState || storedState.state !== state) {
         console.error("Perkville OAuth: Invalid state parameter");
         return res.redirect('/connect?error=perkville_auth_failed');
