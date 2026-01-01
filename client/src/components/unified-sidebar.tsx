@@ -11,7 +11,6 @@ import {
   Settings, 
   PlusCircle,
   Command,
-  LogOut,
   Shield,
   Mail,
   Gift,
@@ -25,7 +24,6 @@ import {
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
-import { queryClient } from "@/lib/queryClient";
 
 interface NavItem {
   icon: any;
@@ -44,7 +42,7 @@ interface NavGroup {
 }
 
 export function UnifiedSidebar() {
-  const [location, setLocation] = useLocation();
+  const [location] = useLocation();
   const { user } = useAuth();
   
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>(() => {
@@ -66,18 +64,6 @@ export function UnifiedSidebar() {
       ...prev,
       [groupId]: !prev[groupId]
     }));
-  };
-
-  const handleLogout = async () => {
-    try {
-      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
-      queryClient.setQueryData(["/api/auth/user"], null);
-      queryClient.removeQueries({ queryKey: ["/api/auth/user"] });
-      setLocation("/");
-      window.location.href = "/";
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
   };
 
   const navGroups: NavGroup[] = [
@@ -241,14 +227,6 @@ export function UnifiedSidebar() {
               </div>
             </div>
             
-            <button 
-              onClick={handleLogout}
-              className="flex items-center gap-3 px-4 py-2 rounded-xl text-muted-foreground hover:bg-red-50 hover:text-red-600 transition-all duration-200 cursor-pointer w-full"
-              data-testid="button-logout"
-            >
-              <LogOut className="w-4 h-4" />
-              <span className="text-sm font-medium">Log out</span>
-            </button>
           </div>
         </div>
       </div>
