@@ -113,10 +113,14 @@ export function UnifiedSidebar() {
       return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
     }
     if (user?.firstName) {
-      return user.firstName.slice(0, 2).toUpperCase();
+      const parts = user.firstName.trim().split(/\s+/);
+      if (parts.length >= 2) {
+        return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+      }
+      return user.firstName[0].toUpperCase();
     }
     if (user?.email) {
-      return user.email.slice(0, 2).toUpperCase();
+      return user.email[0].toUpperCase();
     }
     return 'U';
   };
