@@ -3190,7 +3190,7 @@ export async function registerRoutes(
           columnId = columnMap.values().next().value;
         }
         
-        await storage.createTask({
+        const task = await storage.createTask({
           projectId: project.id,
           columnId: columnId || null,
           title: asanaTask.name,
@@ -3201,6 +3201,17 @@ export async function registerRoutes(
           creatorId: userId,
           tenantId,
         });
+        
+        // Add task to project with placement (for board view)
+        await storage.addTaskToProject({
+          tenantId: tenantId || "default",
+          taskId: task.id,
+          projectId: project.id,
+          columnId: columnId || null,
+          sortOrder: tasksImported,
+          addedBy: userId,
+        });
+        
         tasksImported++;
       }
       
