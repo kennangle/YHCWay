@@ -21,6 +21,7 @@ import { broadcastToUsers, generateWsAuthToken } from "./websocket";
 import { getIntroOffers, getIntroOfferSummary, updateIntroOffer, getStudents, isMindbodyAnalyticsConfigured } from "./mindbodyAnalytics";
 import { generateEmailReplySuggestions, summarizeEmail } from "./ai-email";
 import { extractTasksFromContent, generateDailyBriefing, generateMeetingPrep, smartSearch, draftEmail, analyzeCalendar, prioritizeTasks } from "./ai-assistant";
+import { isQrTigerConfigured, createDynamicQRCode, createStaticQRCode, listQRCodes, getQRCodeAnalytics, deleteQRCode } from "./qr-tiger";
 
 const isAdmin: RequestHandler = async (req: any, res, next) => {
   try {
@@ -4446,6 +4447,98 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error deleting shared item:", error);
       res.status(500).json({ error: "Failed to delete shared item" });
+    }
+  });
+
+  // =============================================================================
+  // QR TIGER ROUTES
+  // =============================================================================
+
+  app.get("/api/qr-tiger/status", isAuthenticated, async (req: any, res) => {
+    try {
+      res.json({ connected: isQrTigerConfigured() });
+    } catch (error) {
+      console.error("Error checking QR Tiger status:", error);
+      res.status(500).json({ error: "Failed to check QR Tiger status" });
+    }
+  });
+
+  app.get("/api/qr-tiger/codes", isAuthenticated, async (req: any, res) => {
+    try {
+      if (!isQrTigerConfigured()) {
+        return res.status(400).json({ error: "QR Tiger not configured" });
+      }
+      const codes = await listQRCodes();
+      res.json(codes);
+    } catch (error) {
+      console.error("Error listing QR codes:", error);
+      res.status(500).json({ error: "Failed to list QR codes" });
+    }
+  });
+
+  app.post("/api/qr-tiger/codes", isAuthenticated, async (req: any, res) => {
+    try {
+      if (!isQrTigerConfigured()) {
+        return res.status(400).json({ error: "QR Tiger not configured" });
+      }
+      const { name, destinationUrl, category, isDynamic, size, colorDark, backgroundColor, logoUrl } = req.body;
+      
+      if (!name || !destinationUrl) {
+        return res.status(400).json({ error: "name and destinationUrl are required" });
+      }
+
+      const params = {
+        name,
+        destinationUrl,
+        category: category || "general",
+        size,
+        colorDark,
+        backgroundColor,
+        logoUrl,
+      };
+
+      const result = isDynamic 
+        ? await createDynamicQRCode(params)
+        : await createStaticQRCode(params);
+      
+      res.status(201).json(result);
+    } catch (error) {
+      console.error("Error creating QR code:", error);
+      res.status(500).json({ error: "Failed to create QR code" });
+    }
+  });
+
+  app.get("/api/qr-tiger/codes/:id/analytics", isAuthenticated, async (req: any, res) => {
+    try {
+      if (!isQrTigerConfigured()) {
+        return res.status(400).json({ error: "QR Tiger not configured" });
+      }
+      const { id } = req.params;
+      const { startDate, endDate } = req.query;
+      
+      const analytics = await getQRCodeAnalytics(
+        id,
+        startDate ? parseInt(startDate as string) : undefined,
+        endDate ? parseInt(endDate as string) : undefined
+      );
+      res.json(analytics);
+    } catch (error) {
+      console.error("Error fetching QR code analytics:", error);
+      res.status(500).json({ error: "Failed to fetch analytics" });
+    }
+  });
+
+  app.delete("/api/qr-tiger/codes/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      if (!isQrTigerConfigured()) {
+        return res.status(400).json({ error: "QR Tiger not configured" });
+      }
+      const { id } = req.params;
+      await deleteQRCode(id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting QR code:", error);
+      res.status(500).json({ error: "Failed to delete QR code" });
     }
   });
 

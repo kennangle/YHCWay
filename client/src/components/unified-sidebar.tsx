@@ -16,7 +16,8 @@ import {
   Gift,
   BookOpen,
   Webhook,
-  Archive
+  Archive,
+  QrCode
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
@@ -47,6 +48,7 @@ export function UnifiedSidebar() {
     { icon: FolderKanban, label: "Projects", href: "/projects" },
     { icon: ListTodo, label: "Tasks", href: "/tasks" },
     { icon: Gift, label: "Intro Offers", href: "/intro-offers" },
+    { icon: QrCode, label: "QR Codes", href: "/qr-codes" },
     { icon: Archive, label: "Archive", href: "/archive" },
   ];
 

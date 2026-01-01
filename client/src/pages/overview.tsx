@@ -9,6 +9,7 @@ import {
   Video, 
   CheckSquare, 
   Gift,
+  QrCode,
   ArrowRight,
   CheckCircle,
   XCircle,
@@ -75,6 +76,15 @@ const appCards = [
     color: "#FD971E",
     href: "/projects",
     serviceName: null
+  },
+  {
+    id: "qr-tiger",
+    name: "QR Tiger",
+    description: "Create and track QR codes for events",
+    icon: QrCode,
+    color: "#6366F1",
+    href: "/qr-codes",
+    serviceName: "QR Tiger"
   }
 ];
 
@@ -88,9 +98,24 @@ export default function Overview() {
     },
   });
 
+  const { data: qrTigerStatus, isLoading: qrTigerLoading } = useQuery<{ connected: boolean }>({
+    queryKey: ["/api/qr-tiger/status"],
+    queryFn: async () => {
+      const res = await fetch("/api/qr-tiger/status", { credentials: "include" });
+      if (!res.ok) return { connected: false };
+      return res.json();
+    },
+  });
+
   const isServiceConnected = (serviceName: string | null) => {
     if (serviceName === null) return true;
+    if (serviceName === "QR Tiger") return qrTigerStatus?.connected ?? false;
     return services?.find(s => s.name === serviceName)?.connected ?? false;
+  };
+
+  const isServiceLoading = (serviceName: string | null) => {
+    if (serviceName === "QR Tiger") return qrTigerLoading;
+    return isLoading;
   };
 
   return (
@@ -131,7 +156,7 @@ export default function Overview() {
                           <Icon className="w-6 h-6 text-white" />
                         </div>
                         
-                        {isLoading ? (
+                        {isServiceLoading(app.serviceName) ? (
                           <Loader2 className="w-5 h-5 text-muted-foreground animate-spin" />
                         ) : connected ? (
                           <div className="flex items-center gap-1.5 text-green-600">

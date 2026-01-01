@@ -80,6 +80,7 @@ import Webhooks from "@/pages/webhooks";
 import SetupGuide from "@/pages/setup-guide";
 import PendingApproval from "@/pages/pending-approval";
 import ArchivePage from "@/pages/archive";
+import QRCodes from "@/pages/qr-codes";
 import { FloatingAIButton } from "@/components/floating-ai-button";
 
 function ApprovalGuard({ children }: { children: ReactNode }) {
@@ -145,6 +146,7 @@ function Router() {
         <Route path="/webhooks" component={Webhooks} />
         <Route path="/archive" component={ArchivePage} />
         <Route path="/setup-guide" component={SetupGuide} />
+        <Route path="/qr-codes" component={QRCodes} />
         <Route path="/login">{() => <Redirect to="/dashboard" />}</Route>
         <Route path="/register">{() => <Redirect to="/dashboard" />}</Route>
         <Route component={NotFound} />
