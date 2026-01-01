@@ -38,6 +38,7 @@ export default function Admin() {
   const [showAddFeed, setShowAddFeed] = useState(false);
   const [showAddUser, setShowAddUser] = useState(false);
   const [resetPasswordUser, setResetPasswordUser] = useState<User | null>(null);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
   const [editingTemplate, setEditingTemplate] = useState<EmailTemplateType | null>(null);
   const [templateSubject, setTemplateSubject] = useState("");
   const [templateContent, setTemplateContent] = useState("");
@@ -126,6 +127,20 @@ export default function Admin() {
     },
     onError: () => {
       toast({ title: "Error", description: "Failed to reset password.", variant: "destructive" });
+    },
+  });
+
+  const updateUserProfileMutation = useMutation({
+    mutationFn: async ({ id, firstName, lastName }: { id: string; firstName: string; lastName: string }) => {
+      return apiRequest("PATCH", `/api/admin/users/${id}/profile`, { firstName, lastName });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      toast({ title: "Profile updated", description: "User name has been updated successfully." });
+      setEditingUser(null);
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to update user profile.", variant: "destructive" });
     },
   });
 
@@ -422,6 +437,14 @@ export default function Admin() {
                       <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded-full font-medium">Admin</span>
                     )}
                     <button
+                      onClick={() => setEditingUser(u)}
+                      className="p-2 hover:bg-blue-50 text-blue-500 rounded-lg transition-all"
+                      title="Edit user"
+                      data-testid={`button-edit-user-${u.id}`}
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
                       onClick={() => setResetPasswordUser(u)}
                       className="p-2 hover:bg-amber-50 text-amber-500 rounded-lg transition-all"
                       title="Reset password"
@@ -644,6 +667,15 @@ export default function Admin() {
             onClose={() => setShowAddUser(false)}
             onSave={(data) => createUserMutation.mutate(data)}
             isLoading={createUserMutation.isPending}
+          />
+        )}
+
+        {editingUser && (
+          <EditUserModal
+            user={editingUser}
+            onClose={() => setEditingUser(null)}
+            onSave={(firstName, lastName) => updateUserProfileMutation.mutate({ id: editingUser.id, firstName, lastName })}
+            isLoading={updateUserProfileMutation.isPending}
           />
         )}
         </div>
@@ -1176,6 +1208,79 @@ function UserModal({
               data-testid="button-create-user"
             >
               {isLoading ? "Creating..." : "Create User"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function EditUserModal({
+  user,
+  onClose,
+  onSave,
+  isLoading,
+}: {
+  user: User;
+  onClose: () => void;
+  onSave: (firstName: string, lastName: string) => void;
+  isLoading: boolean;
+}) {
+  const [firstName, setFirstName] = useState(user.firstName || "");
+  const [lastName, setLastName] = useState(user.lastName || "");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave(firstName, lastName);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" data-testid="modal-edit-user">
+      <div className="bg-white rounded-2xl p-6 w-full max-w-md">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-lg">Edit User</h3>
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <p className="text-sm text-muted-foreground mb-4">{user.email}</p>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">First Name</label>
+              <input
+                type="text"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                className="w-full px-3 py-2 border rounded-lg"
+                placeholder="John"
+                data-testid="input-edit-firstname"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Last Name</label>
+              <input
+                type="text"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                className="w-full px-3 py-2 border rounded-lg"
+                placeholder="Doe"
+                data-testid="input-edit-lastname"
+              />
+            </div>
+          </div>
+          <div className="flex gap-2 justify-end">
+            <button type="button" onClick={onClose} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+              Cancel
+            </button>
+            <button 
+              type="submit" 
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg disabled:opacity-50" 
+              disabled={isLoading}
+              data-testid="button-save-user"
+            >
+              {isLoading ? "Saving..." : "Save Changes"}
             </button>
           </div>
         </form>

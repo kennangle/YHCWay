@@ -891,6 +891,23 @@ export async function registerRoutes(
     }
   });
 
+  app.patch("/api/admin/users/:id/profile", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { firstName, lastName } = req.body;
+      if (typeof firstName !== 'string' || typeof lastName !== 'string') {
+        return res.status(400).json({ error: "First name and last name are required" });
+      }
+      const updatedUser = await storage.updateUserProfile(req.params.id, firstName, lastName);
+      if (!updatedUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating user profile:", error);
+      res.status(500).json({ error: "Failed to update user profile" });
+    }
+  });
+
   app.post("/api/admin/users/:id/reset-password", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const { password } = req.body;
