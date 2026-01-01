@@ -2885,7 +2885,19 @@ export async function registerRoutes(
       const userId = req.user.claims?.sub || req.user.id;
       const tenantId = req.tenantId;
       const projects = await storage.getUserProjects(userId, tenantId);
-      res.json(projects);
+      
+      // Get task stats for all projects from task_projects table
+      const projectIds = projects.map(p => p.id);
+      const stats = await storage.getProjectTaskStats(projectIds);
+      
+      // Merge stats into projects
+      const projectsWithStats = projects.map(p => ({
+        ...p,
+        taskCount: stats[p.id]?.total ?? 0,
+        completedCount: stats[p.id]?.completed ?? 0,
+      }));
+      
+      res.json(projectsWithStats);
     } catch (error) {
       console.error("Error fetching projects:", error);
       res.status(500).json({ error: "Failed to fetch projects" });

@@ -47,6 +47,8 @@ interface Project {
   isArchived: boolean;
   createdAt: string;
   updatedAt: string;
+  taskCount?: number;
+  completedCount?: number;
 }
 
 interface ProjectWithStats extends Project {
@@ -165,8 +167,12 @@ export default function Projects() {
   };
 
   const projectsWithStats: ProjectWithStats[] = projects.map(project => {
+    // Use API-provided stats (from task_projects table) or fallback to 0
+    const taskCount = project.taskCount ?? 0;
+    const completedCount = project.completedCount ?? 0;
+    
+    // Compute overdue count from tasks matching this project
     const projectTasks = allTasks.filter(t => t.projectId === project.id);
-    const completedCount = projectTasks.filter(t => t.isCompleted).length;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const overdueCount = projectTasks.filter(t => {
@@ -180,7 +186,7 @@ export default function Projects() {
     
     return {
       ...project,
-      taskCount: projectTasks.length,
+      taskCount,
       completedCount,
       overdueCount,
       recentTasks,

@@ -255,6 +255,9 @@ export interface IStorage {
   addProjectMember(projectId: number, userId: string, role?: string): Promise<ProjectMember>;
   removeProjectMember(projectId: number, userId: string): Promise<void>;
   
+  // Project stats (multi-homing aware)
+  getProjectTaskStats(projectIds: number[]): Promise<Record<number, { total: number; completed: number }>>;
+  
   // Tasks
   createTask(data: InsertTask): Promise<Task>;
   getTask(id: number): Promise<Task | undefined>;
@@ -1368,6 +1371,34 @@ export class DbStorage implements IStorage {
         eq(projectMembers.projectId, projectId),
         eq(projectMembers.userId, userId)
       ));
+  }
+  
+  async getProjectTaskStats(projectIds: number[]): Promise<Record<number, { total: number; completed: number }>> {
+    if (projectIds.length === 0) return {};
+    
+    const result: Record<number, { total: number; completed: number }> = {};
+    for (const projectId of projectIds) {
+      result[projectId] = { total: 0, completed: 0 };
+    }
+    
+    const placements = await db.select({
+      projectId: taskProjects.projectId,
+      isCompleted: tasks.isCompleted,
+    })
+    .from(taskProjects)
+    .innerJoin(tasks, eq(taskProjects.taskId, tasks.id))
+    .where(inArray(taskProjects.projectId, projectIds));
+    
+    for (const p of placements) {
+      if (result[p.projectId]) {
+        result[p.projectId].total++;
+        if (p.isCompleted) {
+          result[p.projectId].completed++;
+        }
+      }
+    }
+    
+    return result;
   }
 
   // Tasks
