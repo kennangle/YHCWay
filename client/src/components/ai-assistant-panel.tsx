@@ -17,7 +17,8 @@ import {
   CheckCircle2,
   Send,
   Copy,
-  X
+  X,
+  Users
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -60,12 +61,24 @@ interface ExtractedTask {
   source: string;
 }
 
+interface MeetingPrepResult {
+  meetingTitle: string;
+  meetingTime: string;
+  attendees: string[];
+  relatedEmails: { subject: string; snippet: string }[];
+  relatedTasks: { title: string; status: string }[];
+  relatedSlackMessages: { channel: string; message: string }[];
+  suggestedTalkingPoints: string[];
+  summary: string;
+}
+
 export function AIAssistantPanel({ onClose }: { onClose?: () => void }) {
-  const [activeTab, setActiveTab] = useState<"briefing" | "search" | "draft" | "calendar" | "tasks" | "extract">("briefing");
+  const [activeTab, setActiveTab] = useState<"briefing" | "search" | "draft" | "calendar" | "tasks" | "extract" | "meeting-prep">("briefing");
   const [searchQuery, setSearchQuery] = useState("");
   const [emailPrompt, setEmailPrompt] = useState("");
   const [extractContent, setExtractContent] = useState("");
   const [extractSource, setExtractSource] = useState<"email" | "slack" | "meeting_notes">("email");
+  const [selectedMeetingId, setSelectedMeetingId] = useState<string>("");
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     tasks: true,
     meetings: true,
@@ -123,6 +136,19 @@ export function AIAssistantPanel({ onClose }: { onClose?: () => void }) {
     },
   });
 
+  const meetingPrepMutation = useMutation<MeetingPrepResult, Error, string>({
+    mutationFn: async (meetingId: string) => {
+      const res = await fetch("/api/ai/meeting-prep", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ meetingId }),
+      });
+      if (!res.ok) throw new Error("Meeting prep failed");
+      return res.json();
+    },
+  });
+
   const { data: calendarInsights, isLoading: calendarLoading, refetch: refetchCalendar } = useQuery<CalendarInsight>({
     queryKey: ["ai-calendar-insights"],
     queryFn: async () => {
@@ -172,11 +198,18 @@ export function AIAssistantPanel({ onClose }: { onClose?: () => void }) {
     }
   };
 
+  const handleMeetingPrep = () => {
+    if (selectedMeetingId.trim()) {
+      meetingPrepMutation.mutate(selectedMeetingId);
+    }
+  };
+
   const tabs = [
     { id: "briefing", label: "Daily Briefing", icon: Sparkles },
     { id: "search", label: "Smart Search", icon: Search },
     { id: "draft", label: "Draft Email", icon: Mail },
-    { id: "calendar", label: "Calendar Insights", icon: Calendar },
+    { id: "meeting-prep", label: "Meeting Prep", icon: Users },
+    { id: "calendar", label: "Calendar", icon: Calendar },
     { id: "tasks", label: "Task Priority", icon: TrendingUp },
     { id: "extract", label: "Extract Tasks", icon: ListTodo },
   ];
@@ -639,6 +672,138 @@ export function AIAssistantPanel({ onClose }: { onClose?: () => void }) {
             ) : extractMutation.data?.tasks.length === 0 ? (
               <p className="text-gray-500 text-center py-4">No actionable tasks found in this content</p>
             ) : null}
+          </div>
+        )}
+
+        {activeTab === "meeting-prep" && (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Enter Meeting ID or Title
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={selectedMeetingId}
+                  onChange={(e) => setSelectedMeetingId(e.target.value)}
+                  placeholder="Meeting ID or title..."
+                  className="flex-1 px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  onKeyDown={(e) => e.key === "Enter" && handleMeetingPrep()}
+                  data-testid="input-meeting-id"
+                />
+                <button
+                  onClick={handleMeetingPrep}
+                  disabled={meetingPrepMutation.isPending || !selectedMeetingId.trim()}
+                  className="flex items-center gap-2 px-4 py-3 bg-primary text-white rounded-xl hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                  data-testid="button-meeting-prep"
+                >
+                  {meetingPrepMutation.isPending ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <Users className="w-5 h-5" />
+                  )}
+                  Prepare
+                </button>
+              </div>
+            </div>
+
+            {meetingPrepMutation.data && (
+              <div className="space-y-4">
+                <div className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl">
+                  <h4 className="font-semibold text-lg text-gray-800 mb-1">{meetingPrepMutation.data.meetingTitle}</h4>
+                  <p className="text-sm text-gray-600 flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    {meetingPrepMutation.data.meetingTime}
+                  </p>
+                  {meetingPrepMutation.data.attendees.length > 0 && (
+                    <p className="text-sm text-gray-600 flex items-center gap-2 mt-1">
+                      <Users className="w-4 h-4" />
+                      {meetingPrepMutation.data.attendees.join(", ")}
+                    </p>
+                  )}
+                </div>
+
+                <div className="p-4 bg-white border rounded-xl">
+                  <h4 className="font-medium text-gray-700 mb-2">Summary</h4>
+                  <p className="text-sm text-gray-600">{meetingPrepMutation.data.summary}</p>
+                </div>
+
+                {meetingPrepMutation.data.suggestedTalkingPoints.length > 0 && (
+                  <div className="p-4 bg-green-50 rounded-xl">
+                    <h4 className="font-medium text-green-800 mb-2 flex items-center gap-2">
+                      <Sparkles className="w-4 h-4" />
+                      Suggested Talking Points
+                    </h4>
+                    <ul className="space-y-2">
+                      {meetingPrepMutation.data.suggestedTalkingPoints.map((point, i) => (
+                        <li key={i} className="text-sm text-green-700 flex items-start gap-2">
+                          <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                          {point}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {meetingPrepMutation.data.relatedEmails.length > 0 && (
+                  <div className="p-4 bg-blue-50 rounded-xl">
+                    <h4 className="font-medium text-blue-800 mb-2 flex items-center gap-2">
+                      <Mail className="w-4 h-4" />
+                      Related Emails ({meetingPrepMutation.data.relatedEmails.length})
+                    </h4>
+                    <ul className="space-y-2">
+                      {meetingPrepMutation.data.relatedEmails.map((email, i) => (
+                        <li key={i} className="text-sm text-blue-700">
+                          <span className="font-medium">{email.subject}</span>
+                          <p className="text-blue-600 text-xs">{email.snippet}</p>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {meetingPrepMutation.data.relatedTasks.length > 0 && (
+                  <div className="p-4 bg-orange-50 rounded-xl">
+                    <h4 className="font-medium text-orange-800 mb-2 flex items-center gap-2">
+                      <ListTodo className="w-4 h-4" />
+                      Related Tasks ({meetingPrepMutation.data.relatedTasks.length})
+                    </h4>
+                    <ul className="space-y-2">
+                      {meetingPrepMutation.data.relatedTasks.map((task, i) => (
+                        <li key={i} className="text-sm text-orange-700 flex items-center justify-between">
+                          <span>{task.title}</span>
+                          <span className="text-xs bg-orange-100 px-2 py-0.5 rounded">{task.status}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {meetingPrepMutation.data.relatedSlackMessages.length > 0 && (
+                  <div className="p-4 bg-purple-50 rounded-xl">
+                    <h4 className="font-medium text-purple-800 mb-2">
+                      Related Slack Messages ({meetingPrepMutation.data.relatedSlackMessages.length})
+                    </h4>
+                    <ul className="space-y-2">
+                      {meetingPrepMutation.data.relatedSlackMessages.map((msg, i) => (
+                        <li key={i} className="text-sm text-purple-700">
+                          <span className="font-medium">#{msg.channel}</span>
+                          <p className="text-purple-600 text-xs">{msg.message}</p>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {!meetingPrepMutation.data && !meetingPrepMutation.isPending && (
+              <div className="text-center py-8 text-gray-500">
+                <Users className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                <p>Enter a meeting ID or title to get AI-powered preparation</p>
+                <p className="text-sm mt-1">Includes related emails, tasks, and Slack messages</p>
+              </div>
+            )}
           </div>
         )}
       </div>
