@@ -69,6 +69,7 @@ import Chat from "@/pages/chat";
 import Tasks from "@/pages/tasks";
 import Projects from "@/pages/projects";
 import ProjectBoard from "@/pages/project-board";
+import ProjectV2 from "@/pages/project-v2";
 import Typeform from "@/pages/typeform";
 import ForgotPassword from "@/pages/forgot-password";
 import ResetPassword from "@/pages/reset-password";
@@ -131,7 +132,8 @@ function Router() {
         <Route path="/calendar" component={Calendar} />
         <Route path="/tasks" component={Tasks} />
         <Route path="/projects" component={Projects} />
-        <Route path="/projects/:id" component={ProjectBoard} />
+        <Route path="/projects/:id" component={ProjectV2} />
+        <Route path="/projects-old/:id" component={ProjectBoard} />
         <Route path="/typeform" component={Typeform} />
         <Route path="/chat" component={Chat} />
         <Route path="/connect" component={Connect} />
