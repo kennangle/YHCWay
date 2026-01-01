@@ -82,6 +82,7 @@ import PendingApproval from "@/pages/pending-approval";
 import ArchivePage from "@/pages/archive";
 import QRCodes from "@/pages/qr-codes";
 import { FloatingAIButton } from "@/components/floating-ai-button";
+import { GuidedTour } from "@/components/guided-tour";
 
 function ApprovalGuard({ children }: { children: ReactNode }) {
   const { user } = useAuth();
@@ -126,6 +127,7 @@ function Router() {
     <ApprovalGuard>
       <CommandPalette open={commandPaletteOpen} onOpenChange={setCommandPaletteOpen} />
       <FloatingAIButton />
+      <GuidedTour autoStart />
       <Switch>
         <Route path="/pending-approval" component={PendingApproval} />
         <Route path="/" component={Overview} />

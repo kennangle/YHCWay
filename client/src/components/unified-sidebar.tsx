@@ -40,24 +40,24 @@ export function UnifiedSidebar() {
   };
 
   const navItems = [
-    { icon: LayoutDashboard, label: "Overview", href: "/" },
-    { icon: Inbox, label: "Dashboard", href: "/dashboard" },
-    { icon: Mail, label: "Unified Inbox", href: "/inbox" },
-    { icon: MessageCircle, label: "Chat", href: "/chat" },
-    { icon: CalendarIcon, label: "Calendar", href: "/calendar" },
-    { icon: FolderKanban, label: "Projects", href: "/projects" },
-    { icon: ListTodo, label: "Tasks", href: "/tasks" },
-    { icon: Gift, label: "Intro Offers", href: "/intro-offers" },
-    { icon: QrCode, label: "QR Codes", href: "/qr-codes" },
-    { icon: Archive, label: "Archive", href: "/archive" },
+    { icon: LayoutDashboard, label: "Overview", href: "/", tourId: "nav-overview" },
+    { icon: Inbox, label: "Dashboard", href: "/dashboard", tourId: "nav-dashboard" },
+    { icon: Mail, label: "Unified Inbox", href: "/inbox", tourId: "nav-inbox" },
+    { icon: MessageCircle, label: "Chat", href: "/chat", tourId: "nav-chat" },
+    { icon: CalendarIcon, label: "Calendar", href: "/calendar", tourId: "nav-calendar" },
+    { icon: FolderKanban, label: "Projects", href: "/projects", tourId: "nav-projects" },
+    { icon: ListTodo, label: "Tasks", href: "/tasks", tourId: "nav-tasks" },
+    { icon: Gift, label: "Intro Offers", href: "/intro-offers", tourId: "nav-intro-offers" },
+    { icon: QrCode, label: "QR Codes", href: "/qr-codes", tourId: "nav-qr-codes" },
+    { icon: Archive, label: "Archive", href: "/archive", tourId: "nav-archive" },
   ];
 
   const bottomItems = [
-    { icon: Mail, label: "Email Builder", href: "/email-builder" },
-    ...(user?.isAdmin ? [{ icon: FileText, label: "Typeform", href: "/typeform" }] : []),
-    { icon: PlusCircle, label: "Connect App", href: "/connect" },
-    { icon: Settings, label: "Settings", href: "/settings" },
-    ...(user?.isAdmin ? [{ icon: Shield, label: "Admin", href: "/admin" }] : []),
+    { icon: Mail, label: "Email Builder", href: "/email-builder", tourId: "nav-email-builder" },
+    ...(user?.isAdmin ? [{ icon: FileText, label: "Typeform", href: "/typeform", tourId: "nav-typeform" }] : []),
+    { icon: PlusCircle, label: "Connect App", href: "/connect", tourId: "nav-connect" },
+    { icon: Settings, label: "Settings", href: "/settings", tourId: "nav-settings" },
+    ...(user?.isAdmin ? [{ icon: Shield, label: "Admin", href: "/admin", tourId: "nav-admin" }] : []),
   ];
 
   const getInitials = () => {
@@ -88,7 +88,7 @@ export function UnifiedSidebar() {
     <>
       {/* Desktop Sidebar */}
       <div className="hidden md:flex w-64 h-screen glass-panel flex-col border-r border-white/20 fixed left-0 top-0 z-50">
-        <div className="p-6 flex items-center gap-3">
+        <div className="p-6 flex items-center gap-3" data-tour="sidebar-logo">
           <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/30">
             <Command className="w-4 h-4" />
           </div>
@@ -105,12 +105,15 @@ export function UnifiedSidebar() {
           const isActive = location === item.href;
           return (
             <Link key={item.href} href={item.href}>
-              <div className={cn(
-                "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group cursor-pointer",
-                isActive 
-                  ? "bg-primary text-primary-foreground shadow-md shadow-primary/20" 
-                  : "text-muted-foreground hover:bg-white/50 hover:text-foreground"
-              )}>
+              <div 
+                className={cn(
+                  "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group cursor-pointer",
+                  isActive 
+                    ? "bg-primary text-primary-foreground shadow-md shadow-primary/20" 
+                    : "text-muted-foreground hover:bg-white/50 hover:text-foreground"
+                )}
+                data-tour={item.tourId}
+              >
                 <item.icon className={cn("w-5 h-5", isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-foreground")} />
                 <span className="font-medium">{item.label}</span>
               </div>
@@ -122,7 +125,10 @@ export function UnifiedSidebar() {
       <div className="p-4 space-y-2 mt-auto">
         {bottomItems.map((item) => (
           <Link key={item.href} href={item.href}>
-            <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-muted-foreground hover:bg-white/50 hover:text-foreground transition-all duration-200 cursor-pointer">
+            <div 
+              className="flex items-center gap-3 px-4 py-3 rounded-xl text-muted-foreground hover:bg-white/50 hover:text-foreground transition-all duration-200 cursor-pointer"
+              data-tour={item.tourId}
+            >
               <item.icon className="w-5 h-5" />
               <span className="font-medium">{item.label}</span>
             </div>

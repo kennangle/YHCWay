@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Moon, Sun, LogOut, Bug, Lightbulb, Send } from "lucide-react";
+import { Moon, Sun, LogOut, Bug, Lightbulb, Send, HelpCircle } from "lucide-react";
+import { useGuidedTour } from "@/components/guided-tour";
 import { useTheme } from "@/App";
 import { useAuth } from "@/hooks/useAuth";
 import { queryClient } from "@/lib/queryClient";
@@ -28,6 +29,7 @@ export function TopBar() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { startTour } = useGuidedTour();
   const [feedbackType, setFeedbackType] = useState<"bug" | "feature" | null>(null);
   const [feedbackTitle, setFeedbackTitle] = useState("");
   const [feedbackDescription, setFeedbackDescription] = useState("");
@@ -99,6 +101,23 @@ export function TopBar() {
               {user.firstName || user.email?.split('@')[0]}
             </span>
           )}
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 text-muted-foreground hover:text-primary"
+                onClick={startTour}
+                data-testid="button-start-tour"
+              >
+                <HelpCircle className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Take a Tour</p>
+            </TooltipContent>
+          </Tooltip>
 
           <Tooltip>
             <TooltipTrigger asChild>
