@@ -86,11 +86,12 @@ export async function setupAuth(app: Express) {
     tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers,
     verified: passport.AuthenticateCallback
   ) => {
-    const user = {};
+    const user: Express.User = {} as Express.User;
     updateUserSession(user, tokens);
-    await upsertUser(tokens.claims());
+    const claims = tokens.claims();
+    await upsertUser(claims);
     // Record login timestamp
-    const userId = tokens.claims()["sub"];
+    const userId = claims["sub"];
     if (userId) {
       await storage.recordUserLogin(userId);
     }
