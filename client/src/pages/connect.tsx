@@ -1,7 +1,7 @@
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { TopBar } from "@/components/top-bar";
 import { AppleCalendarConnect } from "@/components/apple-calendar-connect";
-import { Search, MessageCircle, Mail, Calendar, Video, CheckSquare, FileText, Clock, X, Gift } from "lucide-react";
+import { Search, MessageCircle, Mail, Calendar, Video, CheckSquare, FileText, Clock, X, Gift, QrCode } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
@@ -14,7 +14,7 @@ interface AppIntegration {
   description: string;
   icon: React.ReactNode;
   colorClass: string;
-  category: "productivity" | "calendar" | "communication" | "forms" | "rewards";
+  category: "productivity" | "calendar" | "communication" | "forms" | "rewards" | "marketing";
   connectType: "configured" | "api-key" | "special" | "oauth";
   apiKeyLabel?: string;
   apiKeyHelp?: string;
@@ -97,6 +97,17 @@ const availableApps: AppIntegration[] = [
     colorClass: "bg-[#7B61FF] text-white",
     category: "rewards",
     connectType: "oauth",
+  },
+  {
+    id: "qr-tiger",
+    name: "QR Tiger",
+    description: "Create and track dynamic QR codes",
+    icon: <QrCode className="w-6 h-6" />,
+    colorClass: "bg-[#FF6B35] text-white",
+    category: "marketing",
+    connectType: "api-key",
+    apiKeyLabel: "API Key",
+    apiKeyHelp: "Get your API key from QR Tiger Settings > Plan section",
   },
 ];
 

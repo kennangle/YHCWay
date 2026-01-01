@@ -13,6 +13,7 @@ import { getQueryFn } from "@/lib/queryClient";
 import { toast } from "sonner";
 
 interface QRCodeData {
+  id: number;
   qrCodeId: string;
   qrName: string;
   qrType: string;
@@ -93,7 +94,7 @@ export default function QRCodesPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async (id: number) => {
       const res = await fetch(`/api/qr-tiger/codes/${id}`, {
         method: "DELETE",
         credentials: "include",
@@ -159,7 +160,15 @@ export default function QRCodesPage() {
             <div className="glass-panel p-8 rounded-xl text-center">
               <QrCode className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
               <h2 className="text-lg font-semibold mb-2">QR Tiger Not Connected</h2>
-              <p className="text-muted-foreground">Please add your QR Tiger API key in the settings to use this feature.</p>
+              <p className="text-muted-foreground mb-4">Connect your QR Tiger account to create and track QR codes.</p>
+              <a 
+                href="/connect" 
+                className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors"
+                data-testid="link-connect-qrtiger"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Go to Connect Apps
+              </a>
             </div>
           </div>
         </main>
@@ -286,14 +295,36 @@ export default function QRCodesPage() {
               {isLoading ? (
                 <div className="text-center py-12 text-muted-foreground">Loading QR codes...</div>
               ) : qrCodes.length === 0 ? (
-                <div className="glass-panel p-8 rounded-xl text-center">
-                  <QrCode className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <h2 className="text-lg font-semibold mb-2">No QR Codes Yet</h2>
-                  <p className="text-muted-foreground mb-4">Create your first QR code to start tracking scans.</p>
-                  <Button onClick={() => setIsCreateOpen(true)} data-testid="button-create-first-qr">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Create QR Code
-                  </Button>
+                <div className="space-y-4">
+                  <div className="glass-panel p-8 rounded-xl text-center">
+                    <QrCode className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <h2 className="text-lg font-semibold mb-2">Create New QR Codes</h2>
+                    <p className="text-muted-foreground mb-4">Create and track new QR codes for your campaigns.</p>
+                    <Button onClick={() => setIsCreateOpen(true)} data-testid="button-create-first-qr">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create QR Code
+                    </Button>
+                  </div>
+                  <div className="glass-panel p-4 rounded-xl bg-amber-50/50 border border-amber-200/50">
+                    <div className="flex items-start gap-3">
+                      <ExternalLink className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm text-amber-800 font-medium">View Existing QR Codes</p>
+                        <p className="text-sm text-amber-700 mt-1">
+                          Your existing QR codes (21 active) can be viewed and managed directly in the{" "}
+                          <a 
+                            href="https://app.qrcode-tiger.com/?type=dashboard" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="underline font-medium hover:text-amber-900"
+                          >
+                            QR Tiger Dashboard
+                          </a>
+                          . New codes created here will also appear there.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -349,7 +380,7 @@ export default function QRCodesPage() {
                           variant="ghost"
                           size="sm"
                           className="text-red-600 hover:text-red-700 hover:bg-red-50 ml-auto"
-                          onClick={() => deleteMutation.mutate(qr.qrCodeId)}
+                          onClick={() => deleteMutation.mutate(qr.id)}
                           data-testid={`button-delete-${qr.qrCodeId}`}
                         >
                           <Trash2 className="w-4 h-4" />

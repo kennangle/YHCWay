@@ -1179,3 +1179,31 @@ export const eventOutbox = pgTable("event_outbox", {
 
 export type EventOutbox = typeof eventOutbox.$inferSelect;
 export type InsertEventOutbox = typeof eventOutbox.$inferInsert;
+
+// =============================================================================
+// QR CODES (Local persistence for QR Tiger integration)
+// =============================================================================
+
+export const qrCodes = pgTable("qr_codes", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull(),
+  qrCodeId: varchar("qr_code_id").notNull(),
+  qrName: varchar("qr_name").notNull(),
+  qrType: varchar("qr_type").notNull().default("dynamic"),
+  destinationUrl: text("destination_url").notNull(),
+  shortUrl: text("short_url"),
+  qrImageUrl: text("qr_image_url"),
+  category: varchar("category").default("general"),
+  scans: integer("scans").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("qr_codes_user").on(table.userId),
+]);
+
+export type QrCode = typeof qrCodes.$inferSelect;
+export type InsertQrCode = typeof qrCodes.$inferInsert;
+
+export const insertQrCodeSchema = createInsertSchema(qrCodes).omit({
+  id: true,
+  createdAt: true,
+});

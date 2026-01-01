@@ -1,8 +1,12 @@
 const QR_TIGER_API_KEY = process.env.QR_TIGER_API_KEY;
-const QR_TIGER_BASE_URL = "https://qrcode-tiger.com/api/qr";
+const QR_TIGER_BASE_URL = "https://api.qrtiger.com";
 
 export function isQrTigerConfigured(): boolean {
   return !!QR_TIGER_API_KEY;
+}
+
+export function getQrTigerApiKey(): string | undefined {
+  return QR_TIGER_API_KEY;
 }
 
 interface CreateQRCodeParams {
@@ -18,6 +22,8 @@ interface CreateQRCodeParams {
 interface QRCodeResponse {
   data: string;
   url: string;
+  qrId?: string;
+  id?: string;
 }
 
 export async function createDynamicQRCode(params: CreateQRCodeParams): Promise<QRCodeResponse> {
@@ -25,7 +31,7 @@ export async function createDynamicQRCode(params: CreateQRCodeParams): Promise<Q
     throw new Error("QR Tiger API key not configured");
   }
 
-  const response = await fetch(`${QR_TIGER_BASE_URL}/dynamic`, {
+  const response = await fetch(`${QR_TIGER_BASE_URL}/qr/dynamic`, {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${QR_TIGER_API_KEY}`,
@@ -43,10 +49,39 @@ export async function createDynamicQRCode(params: CreateQRCodeParams): Promise<Q
 
   if (!response.ok) {
     const errorText = await response.text();
+    console.error(`QR Tiger API error creating dynamic QR: ${response.status} - ${errorText}`);
     throw new Error(`QR Tiger API error: ${response.status} - ${errorText}`);
   }
 
-  return response.json();
+  const result = await response.json();
+  console.log("[QR Tiger] Create dynamic response:", JSON.stringify(result));
+  
+  const extractId = (obj: any): string | undefined => {
+    if (!obj) return undefined;
+    const id = obj.qrId || obj.qr_id || obj.id || obj.dynamicQrId || obj.dynamicQrCodeId ||
+               obj.qrCodeId || obj.qr_code_id || obj.qrcode_id;
+    if (id) return String(id);
+    if (obj.data && typeof obj.data === 'object') {
+      const nestedId = obj.data.qrId || obj.data.qr_id || obj.data.id || 
+                       obj.data.dynamicQrId || obj.data.dynamicQrCodeId ||
+                       obj.data.qrCodeId || obj.data.qr_code_id;
+      if (nestedId) return String(nestedId);
+    }
+    if (obj.qr && typeof obj.qr === 'object') {
+      const nestedId = obj.qr.id || obj.qr.qrId || obj.qr.qr_id;
+      if (nestedId) return String(nestedId);
+    }
+    return undefined;
+  };
+  
+  const qrId = extractId(result);
+  
+  return {
+    data: typeof result.data === 'string' ? result.data : (result.qr || result.qrImage || ""),
+    url: result.url || result.shortUrl || result.short_url || (result.data?.url) || "",
+    qrId: qrId,
+    id: qrId,
+  };
 }
 
 export async function createStaticQRCode(params: CreateQRCodeParams): Promise<QRCodeResponse> {
@@ -54,7 +89,7 @@ export async function createStaticQRCode(params: CreateQRCodeParams): Promise<QR
     throw new Error("QR Tiger API key not configured");
   }
 
-  const response = await fetch(`${QR_TIGER_BASE_URL}/static`, {
+  const response = await fetch(`${QR_TIGER_BASE_URL}/qr/static`, {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${QR_TIGER_API_KEY}`,
@@ -72,10 +107,39 @@ export async function createStaticQRCode(params: CreateQRCodeParams): Promise<QR
 
   if (!response.ok) {
     const errorText = await response.text();
+    console.error(`QR Tiger API error creating static QR: ${response.status} - ${errorText}`);
     throw new Error(`QR Tiger API error: ${response.status} - ${errorText}`);
   }
 
-  return response.json();
+  const result = await response.json();
+  console.log("[QR Tiger] Create static response:", JSON.stringify(result));
+  
+  const extractId = (obj: any): string | undefined => {
+    if (!obj) return undefined;
+    const id = obj.qrId || obj.qr_id || obj.id || obj.staticQrId || obj.staticQrCodeId ||
+               obj.qrCodeId || obj.qr_code_id || obj.qrcode_id;
+    if (id) return String(id);
+    if (obj.data && typeof obj.data === 'object') {
+      const nestedId = obj.data.qrId || obj.data.qr_id || obj.data.id || 
+                       obj.data.staticQrId || obj.data.staticQrCodeId ||
+                       obj.data.qrCodeId || obj.data.qr_code_id;
+      if (nestedId) return String(nestedId);
+    }
+    if (obj.qr && typeof obj.qr === 'object') {
+      const nestedId = obj.qr.id || obj.qr.qrId || obj.qr.qr_id;
+      if (nestedId) return String(nestedId);
+    }
+    return undefined;
+  };
+  
+  const qrId = extractId(result);
+  
+  return {
+    data: typeof result.data === 'string' ? result.data : (result.qr || result.qrImage || ""),
+    url: result.url || result.shortUrl || result.short_url || (result.data?.url) || "",
+    qrId: qrId,
+    id: qrId,
+  };
 }
 
 interface QRCodeData {
@@ -93,21 +157,12 @@ export async function listQRCodes(): Promise<QRCodeData[]> {
     throw new Error("QR Tiger API key not configured");
   }
 
-  const response = await fetch("https://qrcode-tiger.com/api/user/qr", {
-    method: "GET",
-    headers: {
-      "Authorization": `Bearer ${QR_TIGER_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`QR Tiger API error: ${response.status} - ${errorText}`);
-  }
-
-  const data = await response.json();
-  return data.qrCodes || data.data || [];
+  // Note: QR Tiger's public API does not support listing existing QR codes.
+  // Users can view their existing codes (21 active) in the QR Tiger dashboard.
+  // New codes created through this app are tracked locally and will also appear
+  // in the QR Tiger dashboard.
+  // See: https://app.qrcode-tiger.com/?type=dashboard
+  return [];
 }
 
 interface ScanData {
@@ -128,23 +183,38 @@ export async function getQRCodeAnalytics(qrCodeId: string, startDate?: number, e
   if (startDate) params.append("startDate", startDate.toString());
   if (endDate) params.append("endDate", endDate.toString());
 
-  const url = `https://qrcode-tiger.com/api/data/${qrCodeId}${params.toString() ? `?${params.toString()}` : ""}`;
+  const url = `${QR_TIGER_BASE_URL}/data/${qrCodeId}${params.toString() ? `?${params.toString()}` : ""}`;
   
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Authorization": `Bearer ${QR_TIGER_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-  });
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${QR_TIGER_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+    });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`QR Tiger API error: ${response.status} - ${errorText}`);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`QR Tiger analytics error: ${response.status} - ${errorText}`);
+      return [];
+    }
+
+    const data = await response.json();
+    const scans = data.scans || data.data || data.graph || [];
+    
+    return Array.isArray(scans) ? scans.map((item: any) => ({
+      date: item.date || item.timestamp || new Date().toISOString(),
+      country: item.country || item.location?.country || "Unknown",
+      city: item.city || item.location?.city || "Unknown",
+      device: item.device || item.deviceType || "Unknown",
+      os: item.os || item.operatingSystem || "Unknown",
+      totalScans: item.totalScans || item.scans || item.count || 1,
+    })) : [];
+  } catch (error) {
+    console.error("Error fetching QR Tiger analytics:", error);
+    return [];
   }
-
-  const data = await response.json();
-  return data.scans || data.data || [];
 }
 
 export async function deleteQRCode(qrCodeId: string): Promise<void> {
@@ -152,7 +222,7 @@ export async function deleteQRCode(qrCodeId: string): Promise<void> {
     throw new Error("QR Tiger API key not configured");
   }
 
-  const response = await fetch(`https://qrcode-tiger.com/api/qr/${qrCodeId}`, {
+  const response = await fetch(`${QR_TIGER_BASE_URL}/qr/${qrCodeId}`, {
     method: "DELETE",
     headers: {
       "Authorization": `Bearer ${QR_TIGER_API_KEY}`,
@@ -162,6 +232,7 @@ export async function deleteQRCode(qrCodeId: string): Promise<void> {
 
   if (!response.ok) {
     const errorText = await response.text();
+    console.error(`QR Tiger delete error: ${response.status} - ${errorText}`);
     throw new Error(`QR Tiger API error: ${response.status} - ${errorText}`);
   }
 }

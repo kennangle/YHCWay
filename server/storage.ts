@@ -66,6 +66,8 @@ import {
   type InsertTaskStory,
   type EventOutbox,
   type InsertEventOutbox,
+  type QrCode,
+  type InsertQrCode,
   users,
   services,
   feedItems,
@@ -105,7 +107,8 @@ import {
   sharedItems,
   taskProjects,
   taskStories,
-  eventOutbox
+  eventOutbox,
+  qrCodes
 } from "@shared/schema";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq, desc, and, lt, isNull, sql, inArray, gte, lte, or, asc } from "drizzle-orm";
@@ -410,6 +413,11 @@ export interface IStorage {
   } | null>;
   
   markOutboxPublished(id: number): Promise<void>;
+  
+  // QR codes
+  createQrCode(data: InsertQrCode): Promise<QrCode>;
+  getUserQrCodes(userId: string): Promise<QrCode[]>;
+  deleteQrCode(id: number): Promise<void>;
 }
 
 export class DbStorage implements IStorage {
@@ -2270,6 +2278,20 @@ export class DbStorage implements IStorage {
 
   async markOutboxPublished(id: number): Promise<void> {
     await db.update(eventOutbox).set({ publishedAt: new Date() }).where(eq(eventOutbox.id, id));
+  }
+
+  // QR codes
+  async createQrCode(data: InsertQrCode): Promise<QrCode> {
+    const [qrCode] = await db.insert(qrCodes).values(data).returning();
+    return qrCode;
+  }
+
+  async getUserQrCodes(userId: string): Promise<QrCode[]> {
+    return await db.select().from(qrCodes).where(eq(qrCodes.userId, userId)).orderBy(desc(qrCodes.createdAt));
+  }
+
+  async deleteQrCode(id: number): Promise<void> {
+    await db.delete(qrCodes).where(eq(qrCodes.id, id));
   }
 
   async migrateProjectColumns(): Promise<void> {

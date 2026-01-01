@@ -2520,6 +2520,7 @@ export async function registerRoutes(
         calendly: isEnabled('calendly', !!calendlyKey),
         typeform: isEnabled('typeform', !!typeformKey),
         perkville: isEnabled('perkville', perkvilleConnected),
+        "qr-tiger": isQrTigerConfigured(),
       });
     } catch (error) {
       console.error("Error checking integration status:", error);
@@ -2533,6 +2534,7 @@ export async function registerRoutes(
         calendly: false,
         typeform: false,
         perkville: false,
+        "qr-tiger": false,
       });
     }
   });
@@ -4676,8 +4678,18 @@ export async function registerRoutes(
       if (!isQrTigerConfigured()) {
         return res.status(400).json({ error: "QR Tiger not configured" });
       }
-      const codes = await listQRCodes();
-      res.json(codes);
+      const userId = req.user.claims.sub || req.user.id;
+      const codes = await storage.getUserQrCodes(userId);
+      res.json(codes.map(code => ({
+        id: code.id,
+        qrCodeId: code.qrCodeId,
+        qrName: code.qrName,
+        qrType: code.qrType,
+        shortURL: code.shortUrl || "",
+        qrImageUrl: code.qrImageUrl || "",
+        scans: code.scans || 0,
+        createdAt: code.createdAt?.toISOString() || new Date().toISOString(),
+      })));
     } catch (error) {
       console.error("Error listing QR codes:", error);
       res.status(500).json({ error: "Failed to list QR codes" });
@@ -4690,6 +4702,7 @@ export async function registerRoutes(
         return res.status(400).json({ error: "QR Tiger not configured" });
       }
       const { name, destinationUrl, category, isDynamic, size, colorDark, backgroundColor, logoUrl } = req.body;
+      const userId = req.user.claims.sub || req.user.id;
       
       if (!name || !destinationUrl) {
         return res.status(400).json({ error: "name and destinationUrl are required" });
@@ -4709,7 +4722,28 @@ export async function registerRoutes(
         ? await createDynamicQRCode(params)
         : await createStaticQRCode(params);
       
-      res.status(201).json(result);
+      const qrCodeId = result.qrId || result.id || `qr_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+      const savedCode = await storage.createQrCode({
+        userId,
+        qrCodeId,
+        qrName: name,
+        qrType: isDynamic ? "dynamic" : "static",
+        destinationUrl,
+        shortUrl: result.url || null,
+        qrImageUrl: result.data || null,
+        category: category || "general",
+        scans: 0,
+      });
+      
+      res.status(201).json({
+        id: savedCode.id,
+        qrCodeId,
+        qrName: name,
+        qrType: isDynamic ? "dynamic" : "static",
+        shortURL: result.url || "",
+        qrImageUrl: result.data || "",
+        scans: 0,
+      });
     } catch (error) {
       console.error("Error creating QR code:", error);
       res.status(500).json({ error: "Failed to create QR code" });
@@ -4742,7 +4776,11 @@ export async function registerRoutes(
         return res.status(400).json({ error: "QR Tiger not configured" });
       }
       const { id } = req.params;
-      await deleteQRCode(id);
+      const numericId = parseInt(id, 10);
+      if (isNaN(numericId)) {
+        return res.status(400).json({ error: "Invalid QR code ID" });
+      }
+      await storage.deleteQrCode(numericId);
       res.status(204).send();
     } catch (error) {
       console.error("Error deleting QR code:", error);
