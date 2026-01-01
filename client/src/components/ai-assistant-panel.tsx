@@ -228,19 +228,19 @@ export function AIAssistantPanel({ onClose }: { onClose?: () => void }) {
         )}
       </div>
 
-      <div className="flex border-b overflow-x-auto">
+      <div className="flex border-b flex-wrap">
         {tabs.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
-            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium whitespace-nowrap transition-colors ${
               activeTab === tab.id 
                 ? "text-primary border-b-2 border-primary bg-primary/5" 
                 : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
             }`}
             data-testid={`tab-ai-${tab.id}`}
           >
-            <tab.icon className="w-4 h-4" />
+            <tab.icon className="w-3.5 h-3.5" />
             {tab.label}
           </button>
         ))}
