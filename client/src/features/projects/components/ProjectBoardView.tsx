@@ -50,10 +50,17 @@ export function ProjectBoardView({
       toColumnId = parseInt(overId.replace("column-", ""));
     } else if (overId.startsWith("task-")) {
       overTaskId = parseInt(overId.replace("task-", ""));
-      for (const [colKey, tasks] of Object.entries(tasksByColumn)) {
-        if (tasks.some((t) => t.id === overTaskId)) {
-          toColumnId = colKey === "null" ? null : parseInt(colKey);
-          break;
+      const overData = over.data.current;
+      if (overData?.type === "task" && overData.task) {
+        const taskPlacement = overData.task.placement;
+        toColumnId = taskPlacement?.columnId ?? null;
+      }
+      if (toColumnId === null) {
+        for (const [colKey, tasks] of Object.entries(tasksByColumn)) {
+          if (tasks.some((t) => t.id === overTaskId)) {
+            toColumnId = colKey === "null" ? null : parseInt(colKey);
+            break;
+          }
         }
       }
     }

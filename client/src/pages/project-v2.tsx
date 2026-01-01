@@ -30,24 +30,24 @@ export default function ProjectPageV2() {
   const { data: project, isLoading: projectLoading } = useProject(projectId);
 
   const handleSelectTask = (taskId: number) => {
-    const params = new URLSearchParams(searchString);
-    params.set("task", String(taskId));
-    setLocation(`/projects/${projectId}?${params.toString()}`);
+    const freshParams = new URLSearchParams(window.location.search);
+    freshParams.set("task", String(taskId));
+    setLocation(`/projects/${projectId}?${freshParams.toString()}`);
     setSelectedTaskId(taskId);
   };
 
   const handleClosePane = () => {
-    const params = new URLSearchParams(searchString);
-    params.delete("task");
-    const newSearch = params.toString();
+    const freshParams = new URLSearchParams(window.location.search);
+    freshParams.delete("task");
+    const newSearch = freshParams.toString();
     setLocation(`/projects/${projectId}${newSearch ? `?${newSearch}` : ""}`);
     setSelectedTaskId(null);
   };
 
   const handleViewModeChange = (mode: "board" | "list") => {
-    const params = new URLSearchParams(searchString);
-    params.set("view", mode);
-    setLocation(`/projects/${projectId}?${params.toString()}`);
+    const freshParams = new URLSearchParams(window.location.search);
+    freshParams.set("view", mode);
+    setLocation(`/projects/${projectId}?${freshParams.toString()}`);
   };
 
   if (projectLoading || boardLoading) {
