@@ -17,7 +17,6 @@ import {
   CheckCircle2,
   Send,
   Copy,
-  X,
   Users,
   Link2Off
 } from "lucide-react";
@@ -77,7 +76,7 @@ interface MeetingPrepResult {
 
 type TabId = "briefing" | "search" | "draft" | "calendar" | "tasks" | "extract" | "meeting-prep";
 
-export function AIAssistantPanel({ onClose }: { onClose?: () => void }) {
+export function AIAssistantPanel() {
   const [activeTab, setActiveTab] = useState<TabId>(() => {
     const saved = localStorage.getItem(AI_TAB_STORAGE_KEY);
     return (saved as TabId) || "briefing";
@@ -233,11 +232,6 @@ export function AIAssistantPanel({ onClose }: { onClose?: () => void }) {
           <Brain className="w-6 h-6 text-primary" />
           <h2 className="text-lg font-semibold">AI Assistant</h2>
         </div>
-        {onClose && (
-          <button onClick={onClose} className="p-2 hover:bg-white/50 rounded-lg">
-            <X className="w-5 h-5" />
-          </button>
-        )}
       </div>
 
       <div className="flex border-b flex-wrap">

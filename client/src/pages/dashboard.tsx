@@ -1180,7 +1180,7 @@ export default function Dashboard() {
             onClick={() => setAiPanelOpen(false)}
           />
           <div className="relative w-full max-w-xl h-full animate-in slide-in-from-right duration-300">
-            <AIAssistantPanel onClose={() => setAiPanelOpen(false)} />
+            <AIAssistantPanel />
           </div>
         </div>
       )}
