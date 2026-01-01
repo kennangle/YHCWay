@@ -56,29 +56,49 @@ export async function createDynamicQRCode(params: CreateQRCodeParams): Promise<Q
   const result = await response.json();
   console.log("[QR Tiger] Create dynamic response:", JSON.stringify(result));
   
+  const extractIdFromUrl = (url: string): string | undefined => {
+    if (!url) return undefined;
+    const match = url.match(/(\d+)\.(png|svg|jpg|jpeg|webp)$/i);
+    if (match) return match[1];
+    const numericMatch = url.match(/^(\d+)$/);
+    if (numericMatch) return numericMatch[1];
+    return undefined;
+  };
+  
   const extractId = (obj: any): string | undefined => {
     if (!obj) return undefined;
     const id = obj.qrId || obj.qr_id || obj.id || obj.dynamicQrId || obj.dynamicQrCodeId ||
-               obj.qrCodeId || obj.qr_code_id || obj.qrcode_id;
+               obj.dynamic_qr_id || obj.qrCodeId || obj.qr_code_id || obj.qrcode_id;
     if (id) return String(id);
-    if (obj.data && typeof obj.data === 'object') {
-      const nestedId = obj.data.qrId || obj.data.qr_id || obj.data.id || 
-                       obj.data.dynamicQrId || obj.data.dynamicQrCodeId ||
-                       obj.data.qrCodeId || obj.data.qr_code_id;
+    if (obj.data) {
+      if (typeof obj.data === 'object') {
+        const nestedId = obj.data.qrId || obj.data.qr_id || obj.data.id || 
+                         obj.data.dynamicQrId || obj.data.dynamicQrCodeId ||
+                         obj.data.dynamic_qr_id || obj.data.qrCodeId || obj.data.qr_code_id;
+        if (nestedId) return String(nestedId);
+      }
+    }
+    if (obj.dynamic_qr && typeof obj.dynamic_qr === 'object') {
+      const nestedId = obj.dynamic_qr.id || obj.dynamic_qr.qrId;
       if (nestedId) return String(nestedId);
     }
     if (obj.qr && typeof obj.qr === 'object') {
       const nestedId = obj.qr.id || obj.qr.qrId || obj.qr.qr_id;
       if (nestedId) return String(nestedId);
     }
+    if (obj.url && typeof obj.url === 'string') {
+      const urlId = extractIdFromUrl(obj.url);
+      if (urlId) return urlId;
+    }
     return undefined;
   };
   
   const qrId = extractId(result);
+  console.log("[QR Tiger] Extracted qrId:", qrId);
   
   return {
     data: typeof result.data === 'string' ? result.data : (result.qr || result.qrImage || ""),
-    url: result.url || result.shortUrl || result.short_url || (result.data?.url) || "",
+    url: result.url || result.shortUrl || result.short_url || (typeof result.data === 'object' ? result.data?.url : undefined) || "",
     qrId: qrId,
     id: qrId,
   };
@@ -114,29 +134,49 @@ export async function createStaticQRCode(params: CreateQRCodeParams): Promise<QR
   const result = await response.json();
   console.log("[QR Tiger] Create static response:", JSON.stringify(result));
   
+  const extractIdFromUrl = (url: string): string | undefined => {
+    if (!url) return undefined;
+    const match = url.match(/(\d+)\.(png|svg|jpg|jpeg|webp)$/i);
+    if (match) return match[1];
+    const numericMatch = url.match(/^(\d+)$/);
+    if (numericMatch) return numericMatch[1];
+    return undefined;
+  };
+  
   const extractId = (obj: any): string | undefined => {
     if (!obj) return undefined;
     const id = obj.qrId || obj.qr_id || obj.id || obj.staticQrId || obj.staticQrCodeId ||
-               obj.qrCodeId || obj.qr_code_id || obj.qrcode_id;
+               obj.static_qr_id || obj.qrCodeId || obj.qr_code_id || obj.qrcode_id;
     if (id) return String(id);
-    if (obj.data && typeof obj.data === 'object') {
-      const nestedId = obj.data.qrId || obj.data.qr_id || obj.data.id || 
-                       obj.data.staticQrId || obj.data.staticQrCodeId ||
-                       obj.data.qrCodeId || obj.data.qr_code_id;
+    if (obj.data) {
+      if (typeof obj.data === 'object') {
+        const nestedId = obj.data.qrId || obj.data.qr_id || obj.data.id || 
+                         obj.data.staticQrId || obj.data.staticQrCodeId ||
+                         obj.data.static_qr_id || obj.data.qrCodeId || obj.data.qr_code_id;
+        if (nestedId) return String(nestedId);
+      }
+    }
+    if (obj.static_qr && typeof obj.static_qr === 'object') {
+      const nestedId = obj.static_qr.id || obj.static_qr.qrId;
       if (nestedId) return String(nestedId);
     }
     if (obj.qr && typeof obj.qr === 'object') {
       const nestedId = obj.qr.id || obj.qr.qrId || obj.qr.qr_id;
       if (nestedId) return String(nestedId);
     }
+    if (obj.url && typeof obj.url === 'string') {
+      const urlId = extractIdFromUrl(obj.url);
+      if (urlId) return urlId;
+    }
     return undefined;
   };
   
   const qrId = extractId(result);
+  console.log("[QR Tiger] Extracted qrId:", qrId);
   
   return {
     data: typeof result.data === 'string' ? result.data : (result.qr || result.qrImage || ""),
-    url: result.url || result.shortUrl || result.short_url || (result.data?.url) || "",
+    url: result.url || result.shortUrl || result.short_url || (typeof result.data === 'object' ? result.data?.url : undefined) || "",
     qrId: qrId,
     id: qrId,
   };

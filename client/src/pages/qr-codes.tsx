@@ -58,10 +58,12 @@ export default function QRCodesPage() {
     enabled: status?.connected,
   });
 
+  const hasValidQrId = selectedQR?.qrCodeId && !selectedQR.qrCodeId.startsWith("qr_");
+  
   const { data: analytics = [], isLoading: analyticsLoading } = useQuery<ScanData[]>({
     queryKey: [`/api/qr-tiger/codes/${selectedQR?.qrCodeId}/analytics`],
     queryFn: getQueryFn({ on401: "throw" }),
-    enabled: !!selectedQR?.qrCodeId,
+    enabled: !!hasValidQrId,
   });
 
   const createMutation = useMutation({
@@ -405,7 +407,22 @@ export default function QRCodesPage() {
                         View All
                       </Button>
                     </div>
-                    {analyticsLoading ? (
+                    {selectedQR.qrCodeId.startsWith("qr_") ? (
+                      <div className="text-center py-8">
+                        <p className="text-muted-foreground mb-2">Analytics are not available for this QR code.</p>
+                        <p className="text-sm text-muted-foreground">
+                          View detailed analytics in the{" "}
+                          <a 
+                            href="https://app.qrcode-tiger.com/?type=dashboard" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-primary underline hover:text-primary/80"
+                          >
+                            QR Tiger Dashboard
+                          </a>
+                        </p>
+                      </div>
+                    ) : analyticsLoading ? (
                       <div className="text-center py-8 text-muted-foreground">Loading analytics...</div>
                     ) : analytics.length === 0 ? (
                       <div className="text-center py-8 text-muted-foreground">No scan data available yet.</div>
