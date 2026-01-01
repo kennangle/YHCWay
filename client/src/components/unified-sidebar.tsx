@@ -40,7 +40,8 @@ export function UnifiedSidebar() {
 
   const navItems = [
     { icon: LayoutDashboard, label: "Overview", href: "/" },
-    { icon: Inbox, label: "Unified Inbox", href: "/inbox" },
+    { icon: Inbox, label: "Dashboard", href: "/dashboard" },
+    { icon: Mail, label: "Unified Inbox", href: "/inbox" },
     { icon: MessageCircle, label: "Chat", href: "/chat" },
     { icon: CalendarIcon, label: "Calendar", href: "/calendar" },
     { icon: FolderKanban, label: "Projects", href: "/projects" },
@@ -64,8 +65,8 @@ export function UnifiedSidebar() {
     : user?.email?.split('@')[0] || 'User';
 
   const mobileNavItems = [
-    { icon: LayoutDashboard, label: "Home", href: "/" },
-    { icon: Inbox, label: "Inbox", href: "/inbox" },
+    { icon: LayoutDashboard, label: "Overview", href: "/" },
+    { icon: Inbox, label: "Dashboard", href: "/dashboard" },
     { icon: CalendarIcon, label: "Calendar", href: "/calendar" },
     { icon: FolderKanban, label: "Projects", href: "/projects" },
     { icon: ListTodo, label: "Tasks", href: "/tasks" },

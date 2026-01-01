@@ -57,6 +57,7 @@ function ThemeProvider({ children }: { children: ReactNode }) {
 
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
+import Overview from "@/pages/overview";
 import Connect from "@/pages/connect";
 import Settings from "@/pages/settings";
 import Landing from "@/pages/landing";
@@ -126,7 +127,7 @@ function Router() {
       <FloatingAIButton />
       <Switch>
         <Route path="/pending-approval" component={PendingApproval} />
-        <Route path="/" component={Dashboard} />
+        <Route path="/" component={Overview} />
         <Route path="/dashboard" component={Dashboard} />
         <Route path="/inbox" component={Inbox} />
         <Route path="/calendar" component={Calendar} />
