@@ -2037,6 +2037,54 @@ export class DbStorage implements IStorage {
     return rows;
   }
 
+  async getTaskProjects(taskId: number, tenantId: string): Promise<Array<{
+    projectId: number;
+    projectName: string;
+    columnId: number | null;
+    columnName: string | null;
+    sortOrder: number;
+  }>> {
+    const rows = await db
+      .select({
+        projectId: taskProjects.projectId,
+        projectName: projects.name,
+        columnId: taskProjects.columnId,
+        sortOrder: taskProjects.sortOrder,
+      })
+      .from(taskProjects)
+      .innerJoin(projects, eq(projects.id, taskProjects.projectId))
+      .where(and(eq(taskProjects.tenantId, tenantId), eq(taskProjects.taskId, taskId)));
+
+    const result: Array<{
+      projectId: number;
+      projectName: string;
+      columnId: number | null;
+      columnName: string | null;
+      sortOrder: number;
+    }> = [];
+
+    for (const row of rows) {
+      let columnName: string | null = null;
+      if (row.columnId) {
+        const col = await db
+          .select({ name: projectColumns.name })
+          .from(projectColumns)
+          .where(eq(projectColumns.id, row.columnId))
+          .limit(1);
+        columnName = col[0]?.name ?? null;
+      }
+      result.push({
+        projectId: row.projectId,
+        projectName: row.projectName,
+        columnId: row.columnId,
+        columnName,
+        sortOrder: row.sortOrder,
+      });
+    }
+
+    return result;
+  }
+
   // Task stories (unified comments + activity)
   async getTaskStories(taskId: number, tenantId: string): Promise<Array<{
     id: number;

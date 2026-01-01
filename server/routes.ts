@@ -3470,6 +3470,20 @@ export async function registerRoutes(
     }
   });
 
+  // Get projects a task belongs to (multi-homing)
+  app.get("/api/tasks/:id/projects", isAuthenticated, requireTenant, async (req: any, res) => {
+    try {
+      const tenantId = req.tenantId as string;
+      const taskId = parseInt(req.params.id);
+
+      const taskProjects = await storage.getTaskProjects(taskId, tenantId);
+      res.json(taskProjects);
+    } catch (error) {
+      console.error("Error fetching task projects:", error);
+      res.status(500).json({ error: "Failed to fetch task projects" });
+    }
+  });
+
   // Remove task from project
   app.delete("/api/tasks/:taskId/projects/:projectId", isAuthenticated, requireTenant, async (req: any, res) => {
     try {
@@ -3499,8 +3513,30 @@ export async function registerRoutes(
       const tenantId = req.tenantId as string;
       const taskId = parseInt(req.params.id);
 
-      const stories = await storage.getTaskStories(taskId, tenantId);
-      res.json({ stories });
+      const rawStories = await storage.getTaskStories(taskId, tenantId);
+      
+      const storiesWithCreator = await Promise.all(
+        rawStories.map(async (story) => {
+          let creator = null;
+          if (story.authorId) {
+            const user = await storage.getUser(story.authorId);
+            creator = user ? { firstName: user.firstName, lastName: user.lastName, email: user.email } : null;
+          }
+          return {
+            id: story.id,
+            taskId,
+            storyType: story.storyType,
+            content: story.body || "",
+            activityType: story.activityType,
+            metadata: story.activityPayload,
+            createdBy: story.authorId,
+            createdAt: story.createdAt,
+            creator,
+          };
+        })
+      );
+      
+      res.json(storiesWithCreator);
     } catch (error) {
       console.error("Error fetching task stories:", error);
       res.status(500).json({ error: "Failed to fetch task stories" });
@@ -3512,17 +3548,18 @@ export async function registerRoutes(
       const userId = req.user?.id || req.user?.claims?.sub;
       const tenantId = req.tenantId as string;
       const taskId = parseInt(req.params.id);
-      const { body } = req.body ?? {};
+      const { content, body } = req.body ?? {};
+      const commentBody = content || body;
       
-      if (!body) {
-        return res.status(400).json({ error: "BODY_REQUIRED" });
+      if (!commentBody) {
+        return res.status(400).json({ error: "CONTENT_REQUIRED" });
       }
 
       const created = await storage.createTaskStoryComment({
         tenantId,
         taskId,
         authorId: userId,
-        body: String(body),
+        body: String(commentBody),
       });
 
       res.status(201).json(created);

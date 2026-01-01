@@ -62,6 +62,26 @@ interface TaskComment {
   author: { firstName: string; lastName: string; email: string };
 }
 
+interface TaskStory {
+  id: number;
+  taskId: number;
+  storyType: "comment" | "activity";
+  content: string;
+  activityType: string | null;
+  metadata: any | null;
+  createdBy: string | null;
+  createdAt: string;
+  creator?: { firstName: string | null; lastName: string | null; email: string } | null;
+}
+
+interface TaskProject {
+  projectId: number;
+  projectName: string;
+  columnId: number | null;
+  columnName: string | null;
+  sortOrder: number;
+}
+
 interface Project {
   id: number;
   name: string;
@@ -875,13 +895,35 @@ export default function ProjectBoard() {
     toggleSubtaskMutation.mutate(subtaskId);
   }, [toggleSubtaskMutation]);
 
+  const { data: taskStories = [], refetch: refetchStories } = useQuery<TaskStory[]>({
+    queryKey: ["task-stories", selectedTask?.id],
+    queryFn: async () => {
+      if (!selectedTask) return [];
+      const res = await fetch(`/api/tasks/${selectedTask.id}/stories`, { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!selectedTask,
+  });
+
+  const { data: taskProjects = [], refetch: refetchTaskProjects } = useQuery<TaskProject[]>({
+    queryKey: ["task-projects", selectedTask?.id],
+    queryFn: async () => {
+      if (!selectedTask) return [];
+      const res = await fetch(`/api/tasks/${selectedTask.id}/projects`, { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!selectedTask,
+  });
+
   const createCommentMutation = useMutation({
     mutationFn: async (data: { taskId: number; content: string }) => {
-      const res = await fetch("/api/comments", {
+      const res = await fetch(`/api/tasks/${data.taskId}/comments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(data),
+        body: JSON.stringify({ content: data.content }),
       });
       if (!res.ok) throw new Error("Failed to create comment");
       return res.json();
@@ -889,11 +931,7 @@ export default function ProjectBoard() {
     onSuccess: async () => {
       refetch();
       setNewComment("");
-      if (selectedTask) {
-        const res = await fetch(`/api/tasks/${selectedTask.id}`, { credentials: "include" });
-        const fullTask = await res.json();
-        setSelectedTask(fullTask);
-      }
+      refetchStories();
     },
   });
 
@@ -1576,27 +1614,69 @@ export default function ProjectBoard() {
                   </div>
                 </div>
 
-                {/* Comments */}
+                {/* Projects (Multi-homing) */}
+                {taskProjects.length > 1 && (
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                      <LayoutGrid className="w-4 h-4" />
+                      Also in Projects ({taskProjects.length})
+                    </Label>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {taskProjects.map((tp) => (
+                        <div 
+                          key={tp.projectId}
+                          className={`text-xs px-2 py-1 rounded-full ${
+                            tp.projectId === projectId 
+                              ? "bg-primary/20 text-primary font-medium" 
+                              : "bg-gray-100 text-gray-600"
+                          }`}
+                          data-testid={`badge-project-${tp.projectId}`}
+                        >
+                          {tp.projectName}
+                          {tp.columnName && <span className="ml-1 opacity-70">({tp.columnName})</span>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Activity & Comments */}
                 <div>
                   <Label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                     <MessageSquare className="w-4 h-4" />
-                    Comments ({selectedTask.comments?.length || 0})
+                    Activity ({taskStories.length})
                   </Label>
-                  <div className="mt-2 space-y-3">
-                    {selectedTask.comments?.map((comment) => (
-                      <div key={comment.id} className="p-3 rounded-lg bg-gray-50">
+                  <div className="mt-2 space-y-3 max-h-80 overflow-y-auto">
+                    {taskStories.map((story) => (
+                      <div 
+                        key={story.id} 
+                        className={`p-3 rounded-lg ${
+                          story.storyType === "comment" ? "bg-gray-50" : "bg-blue-50/50"
+                        }`}
+                        data-testid={`story-${story.id}`}
+                      >
                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-medium text-sm">
-                            {comment.author.firstName || comment.author.email}
+                            {story.creator?.firstName || story.creator?.email || "System"}
                           </span>
                           <span className="text-xs text-muted-foreground">
-                            {new Date(comment.createdAt).toLocaleString()}
+                            {new Date(story.createdAt).toLocaleString()}
                           </span>
+                          {story.storyType === "activity" && (
+                            <span className="text-[10px] px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded-full">
+                              Activity
+                            </span>
+                          )}
                         </div>
-                        <p className="text-sm">{comment.content}</p>
+                        <p className="text-sm">{story.content}</p>
                       </div>
                     ))}
-                    <div className="flex gap-2">
+                    {taskStories.length === 0 && (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        No activity yet. Add a comment to get started.
+                      </p>
+                    )}
+                    <div className="flex gap-2 pt-2 sticky bottom-0 bg-white">
                       <Input
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
