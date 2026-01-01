@@ -241,6 +241,64 @@ Customize UniWork to work the way you prefer.
 - **Notifications** - Choose what alerts you receive
 - **Appearance** - Switch between light and dark themes
 - **Connected Services** - View and manage your integrations
+- **Organization** - Manage your team and organization settings
+
+---
+
+## Organization (Teams)
+
+Organizations allow you to collaborate with your team. When you create an organization, you become the owner and can invite team members to share projects, tasks, and data.
+
+### Creating an Organization
+
+1. Go to **Settings** in the sidebar
+2. Click **Organization**
+3. Click **Create Organization**
+4. Enter your organization name (e.g., "Yoga Health Center")
+5. The URL slug will be auto-generated (you can customize it)
+6. Click **Create Organization**
+
+You'll now see your organization details including:
+- **Organization ID** (Tenant ID) - A unique identifier for your organization
+- **Plan** - Your current subscription level
+- **Created Date** - When the organization was created
+
+### Viewing Your Organization ID
+
+Your Organization ID (also called Tenant ID) is displayed in Settings > Organization. You can click the copy button next to it to copy it to your clipboard.
+
+The Organization ID is used to:
+- Scope all your data (projects, tasks, team members)
+- Identify your organization when using the API
+- Share access with external integrations
+
+### Inviting Team Members
+
+Only organization owners and admins can invite new members:
+
+1. Go to **Settings > Organization**
+2. Click **Invite** in the Team Members section
+3. Enter the team member's email address
+4. Choose their role:
+   - **Member** - Can view and work on shared projects
+   - **Admin** - Can also invite new members and manage settings
+5. Click **Send Invitation**
+
+The invited person will receive an email with a link to join your organization.
+
+### Team Member Roles
+
+- **Owner** - Full control over the organization (cannot be removed)
+- **Admin** - Can invite members, manage settings, and access all features
+- **Member** - Can work on projects and tasks within the organization
+- **Guest** - Limited access (view only)
+
+### Data Isolation
+
+All data within an organization is isolated and secure:
+- Projects and tasks are only visible to organization members
+- Each organization has its own settings and configurations
+- Removing a member revokes their access to all organization data
 
 ---
 

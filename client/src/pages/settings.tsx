@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTheme } from "@/App";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { TopBar } from "@/components/top-bar";
-import { User, Bell, Shield, Palette, HelpCircle, ChevronLeft, Check, Globe, Mail, MessageSquare, Calendar, Video, CheckSquare, MessageCircle, Volume2, Moon, Sun, ExternalLink, Trash2, Download, Eye, EyeOff, FileText, Plus, Pencil, Webhook, Bug, Play, CheckCircle, XCircle, Clock, RefreshCw, Edit2, Lightbulb } from "lucide-react";
+import { User, Bell, Shield, Palette, HelpCircle, ChevronLeft, Check, Globe, Mail, MessageSquare, Calendar, Video, CheckSquare, MessageCircle, Volume2, Moon, Sun, ExternalLink, Trash2, Download, Eye, EyeOff, FileText, Plus, Pencil, Webhook, Bug, Play, CheckCircle, XCircle, Clock, RefreshCw, Edit2, Lightbulb, Building, Copy, Users, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -123,7 +123,7 @@ const playNotificationSound = (soundType: string) => {
   oscillator.stop(audioContext.currentTime + 0.5);
 };
 
-type SettingsSection = "main" | "account" | "notifications" | "privacy" | "appearance" | "language" | "help" | "templates" | "webhooks" | "feedback";
+type SettingsSection = "main" | "account" | "notifications" | "privacy" | "appearance" | "language" | "help" | "templates" | "webhooks" | "feedback" | "organization";
 
 interface TaskTemplate {
   id: number;
@@ -892,6 +892,338 @@ function FeedbackSectionContent({ renderBackButton }: { renderBackButton: () => 
   );
 }
 
+interface TenantData {
+  id: string;
+  name: string;
+  slug: string;
+  plan: string;
+  role: string;
+  maxUsers: number;
+  createdAt: string;
+}
+
+interface TenantUser {
+  userId: string;
+  role: string;
+  joinedAt: string;
+  user: {
+    id: string;
+    email: string;
+    firstName?: string;
+    lastName?: string;
+  };
+}
+
+function OrganizationSectionContent({ renderBackButton }: { renderBackButton: () => React.ReactNode }) {
+  const queryClient = useQueryClient();
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [newOrgName, setNewOrgName] = useState("");
+  const [newOrgSlug, setNewOrgSlug] = useState("");
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState("member");
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const { data: tenants, isLoading } = useQuery<TenantData[]>({
+    queryKey: ["/api/tenants"],
+    queryFn: async () => {
+      const res = await fetch("/api/tenants", { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+
+  const { data: tenantUsers, refetch: refetchUsers } = useQuery<TenantUser[]>({
+    queryKey: ["/api/tenants/users", tenants?.[0]?.id],
+    queryFn: async () => {
+      if (!tenants?.[0]?.id) return [];
+      const res = await fetch(`/api/tenants/${tenants[0].id}/users`, { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!tenants?.[0]?.id,
+  });
+
+  const createTenantMutation = useMutation({
+    mutationFn: async (data: { name: string; slug: string }) => {
+      const res = await fetch("/api/tenants", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to create organization");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast.success("Organization created!");
+      queryClient.invalidateQueries({ queryKey: ["/api/tenants"] });
+      setShowCreateDialog(false);
+      setNewOrgName("");
+      setNewOrgSlug("");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const inviteMutation = useMutation({
+    mutationFn: async (data: { email: string; role: string }) => {
+      if (!tenants?.[0]?.id) throw new Error("No organization selected");
+      const res = await fetch(`/api/tenants/${tenants[0].id}/invite`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to send invitation");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast.success("Invitation sent!");
+      queryClient.invalidateQueries({ queryKey: ["/api/tenants/users", tenants?.[0]?.id] });
+      setShowInviteDialog(false);
+      setInviteEmail("");
+      setInviteRole("member");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(text);
+    toast.success("Copied to clipboard!");
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const generateSlug = (name: string) => {
+    return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  };
+
+  const currentTenant = tenants?.[0];
+
+  return (
+    <div className="max-w-2xl">
+      {renderBackButton()}
+      
+      <h2 className="text-2xl font-bold mb-6">Organization</h2>
+
+      {isLoading ? (
+        <div className="glass-card p-8 rounded-2xl text-center">
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      ) : !currentTenant ? (
+        <div className="space-y-6">
+          <div className="glass-card p-8 rounded-2xl text-center">
+            <Building className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+            <h3 className="text-lg font-semibold mb-2">No Organization</h3>
+            <p className="text-muted-foreground mb-6">
+              Create an organization to collaborate with your team. Organizations allow you to share projects, tasks, and data with team members.
+            </p>
+            <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+              <DialogTrigger asChild>
+                <Button data-testid="button-create-org">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Organization
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Create Organization</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 pt-4">
+                  <div>
+                    <Label htmlFor="org-name">Organization Name</Label>
+                    <Input
+                      id="org-name"
+                      value={newOrgName}
+                      onChange={(e) => {
+                        setNewOrgName(e.target.value);
+                        setNewOrgSlug(generateSlug(e.target.value));
+                      }}
+                      placeholder="My Company"
+                      data-testid="input-org-name"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="org-slug">URL Slug</Label>
+                    <Input
+                      id="org-slug"
+                      value={newOrgSlug}
+                      onChange={(e) => setNewOrgSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                      placeholder="my-company"
+                      data-testid="input-org-slug"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Only lowercase letters, numbers, and hyphens
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => createTenantMutation.mutate({ name: newOrgName, slug: newOrgSlug })}
+                    disabled={!newOrgName || !newOrgSlug || createTenantMutation.isPending}
+                    className="w-full"
+                    data-testid="button-submit-create-org"
+                  >
+                    {createTenantMutation.isPending ? "Creating..." : "Create Organization"}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          <div className="glass-card p-6 rounded-2xl">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                <Building className="w-6 h-6" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold">{currentTenant.name}</h3>
+                <p className="text-sm text-muted-foreground">/{currentTenant.slug}</p>
+              </div>
+              <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium capitalize">
+                {currentTenant.role}
+              </span>
+            </div>
+
+            <div className="space-y-3 pt-4 border-t border-white/10">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Organization ID</span>
+                <div className="flex items-center gap-2">
+                  <code className="px-2 py-1 bg-black/5 rounded text-xs font-mono">{currentTenant.id}</code>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => copyToClipboard(currentTenant.id)}
+                    data-testid="button-copy-tenant-id"
+                  >
+                    {copiedId === currentTenant.id ? (
+                      <Check className="w-4 h-4 text-green-500" />
+                    ) : (
+                      <Copy className="w-4 h-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Plan</span>
+                <span className="text-sm font-medium capitalize">{currentTenant.plan || "Free"}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Created</span>
+                <span className="text-sm">{new Date(currentTenant.createdAt).toLocaleDateString()}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="glass-card p-6 rounded-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <Users className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold">Team Members</h3>
+              </div>
+              {(currentTenant.role === "owner" || currentTenant.role === "admin") && (
+                <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
+                  <DialogTrigger asChild>
+                    <Button size="sm" data-testid="button-invite-member">
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Invite
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Invite Team Member</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 pt-4">
+                      <div>
+                        <Label htmlFor="invite-email">Email Address</Label>
+                        <Input
+                          id="invite-email"
+                          type="email"
+                          value={inviteEmail}
+                          onChange={(e) => setInviteEmail(e.target.value)}
+                          placeholder="colleague@company.com"
+                          data-testid="input-invite-email"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="invite-role">Role</Label>
+                        <Select value={inviteRole} onValueChange={setInviteRole}>
+                          <SelectTrigger data-testid="select-invite-role">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="member">Member</SelectItem>
+                            <SelectItem value="admin">Admin</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <Button
+                        onClick={() => inviteMutation.mutate({ email: inviteEmail, role: inviteRole })}
+                        disabled={!inviteEmail || inviteMutation.isPending}
+                        className="w-full"
+                        data-testid="button-submit-invite"
+                      >
+                        {inviteMutation.isPending ? "Sending..." : "Send Invitation"}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              )}
+            </div>
+
+            {tenantUsers && tenantUsers.length > 0 ? (
+              <div className="space-y-3">
+                {tenantUsers.map((member) => (
+                  <div key={member.userId} className="flex items-center justify-between py-2 border-b border-white/10 last:border-0">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-sm font-medium">
+                        {(member.user.firstName?.[0] || member.user.email[0]).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">
+                          {member.user.firstName ? `${member.user.firstName} ${member.user.lastName || ''}`.trim() : member.user.email}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{member.user.email}</p>
+                      </div>
+                    </div>
+                    <span className="px-2 py-1 bg-black/5 rounded text-xs capitalize">{member.role}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-4">No team members yet</p>
+            )}
+          </div>
+
+          <div className="glass-card p-6 rounded-2xl">
+            <h3 className="font-semibold mb-3 flex items-center gap-2">
+              <Lightbulb className="w-5 h-5 text-yellow-500" />
+              Using Tenant ID
+            </h3>
+            <p className="text-sm text-muted-foreground mb-3">
+              The Organization ID (Tenant ID) is used to scope your data. When working with the API or sharing access, you may need this ID.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              All projects, tasks, and team data are isolated to your organization for security and privacy.
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Settings() {
   const [activeSection, setActiveSection] = useState<SettingsSection>("main");
   const [mounted, setMounted] = useState(false);
@@ -1017,6 +1349,12 @@ export default function Settings() {
       icon: Bug,
       title: "Feedback",
       description: "View bug reports and feature requests",
+    },
+    {
+      id: "organization" as const,
+      icon: Building,
+      title: "Organization",
+      description: "Manage your team and organization settings",
     },
     {
       id: "help" as const,
@@ -1831,6 +2169,8 @@ Your online status can be toggled in Privacy settings. When hidden, others won't
         return renderWebhooksSection();
       case "feedback":
         return renderFeedbackSection();
+      case "organization":
+        return <OrganizationSectionContent renderBackButton={renderBackButton} />;
       case "help":
         return renderHelpSection();
       default:

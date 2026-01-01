@@ -162,13 +162,16 @@ export async function registerRoutes(
       
       const users = await storage.getTenantUsers(tenantId);
       res.json(users.map(u => ({
-        id: u.user.id,
-        email: u.user.email,
-        firstName: u.user.firstName,
-        lastName: u.user.lastName,
-        profileImageUrl: u.user.profileImageUrl,
+        userId: u.userId,
         role: u.role,
         joinedAt: u.joinedAt,
+        user: {
+          id: u.user.id,
+          email: u.user.email,
+          firstName: u.user.firstName,
+          lastName: u.user.lastName,
+          profileImageUrl: u.user.profileImageUrl,
+        },
       })));
     } catch (error) {
       console.error("Error fetching tenant users:", error);
