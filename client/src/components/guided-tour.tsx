@@ -21,6 +21,7 @@ export function useGuidedTour() {
       nextBtnText: 'Next →',
       prevBtnText: '← Back',
       doneBtnText: 'Get Started!',
+      showButtons: ['next', 'previous', 'close'],
       steps: [
         {
           element: '[data-tour="sidebar-logo"]',
