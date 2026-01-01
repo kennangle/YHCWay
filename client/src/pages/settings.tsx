@@ -997,6 +997,54 @@ function OrganizationSectionContent({ renderBackButton }: { renderBackButton: ()
     },
   });
 
+  const currentTenant = tenants?.[0];
+
+  const updateRoleMutation = useMutation({
+    mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
+      if (!currentTenant?.id) throw new Error("No organization selected");
+      const res = await fetch(`/api/tenants/${currentTenant.id}/users/${userId}/role`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role }),
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to update role");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast.success("Role updated!");
+      queryClient.invalidateQueries({ queryKey: ["/api/tenants/users", currentTenant?.id] });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const removeMemberMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      if (!currentTenant?.id) throw new Error("No organization selected");
+      const res = await fetch(`/api/tenants/${currentTenant.id}/users/${userId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to remove member");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast.success("Member removed!");
+      queryClient.invalidateQueries({ queryKey: ["/api/tenants/users", currentTenant?.id] });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     setCopiedId(text);
@@ -1007,8 +1055,6 @@ function OrganizationSectionContent({ renderBackButton }: { renderBackButton: ()
   const generateSlug = (name: string) => {
     return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
   };
-
-  const currentTenant = tenants?.[0];
 
   return (
     <div className="max-w-2xl">
@@ -1197,7 +1243,40 @@ function OrganizationSectionContent({ renderBackButton }: { renderBackButton: ()
                         <p className="text-xs text-muted-foreground">{member.user.email}</p>
                       </div>
                     </div>
-                    <span className="px-2 py-1 bg-black/5 rounded text-xs capitalize">{member.role}</span>
+                    <div className="flex items-center gap-2">
+                      {currentTenant.role === "owner" && member.role !== "owner" ? (
+                        <Select
+                          value={member.role}
+                          onValueChange={(newRole) => updateRoleMutation.mutate({ userId: member.userId, role: newRole })}
+                        >
+                          <SelectTrigger className="w-24 h-7 text-xs" data-testid={`select-role-${member.userId}`}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="admin">Admin</SelectItem>
+                            <SelectItem value="member">Member</SelectItem>
+                            <SelectItem value="guest">Guest</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <span className="px-2 py-1 bg-black/5 rounded text-xs capitalize">{member.role}</span>
+                      )}
+                      {(currentTenant.role === "owner" || currentTenant.role === "admin") && member.role !== "owner" && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                          onClick={() => {
+                            if (confirm(`Remove ${member.user.email} from the organization?`)) {
+                              removeMemberMutation.mutate(member.userId);
+                            }
+                          }}
+                          data-testid={`button-remove-member-${member.userId}`}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

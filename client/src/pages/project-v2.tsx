@@ -216,8 +216,10 @@ export default function ProjectPageV2() {
         <TopBar />
 
         <ProjectHeader
+          projectId={projectId}
           projectName={project.name}
           projectColor={project.color}
+          tenantId={project.tenantId}
           viewMode={viewMode}
           onViewModeChange={handleViewModeChange}
           onRefresh={() => refetch()}

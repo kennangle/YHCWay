@@ -6,5 +6,5 @@ export const projectsApi = {
     http.get<ProjectBoardResponse>(`/api/projects/${projectId}/board`),
   
   get: (projectId: number) =>
-    http.get<{ id: number; name: string; description: string | null; color: string }>(`/api/projects/${projectId}`),
+    http.get<{ id: number; name: string; description: string | null; color: string; tenantId?: string | null }>(`/api/projects/${projectId}`),
 };
