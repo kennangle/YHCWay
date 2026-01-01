@@ -19,7 +19,7 @@ export function FloatingAIButton() {
       </button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="max-w-4xl w-[95vw] h-[85vh] p-0 overflow-hidden">
+        <DialogContent className="max-w-6xl w-[95vw] h-[85vh] p-0 overflow-hidden">
           <AIAssistantPanel onClose={() => setIsOpen(false)} />
         </DialogContent>
       </Dialog>
