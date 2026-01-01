@@ -103,7 +103,18 @@ export function useUpdateTask() {
   const qc = useQueryClient();
   
   return useMutation({
-    mutationFn: ({ taskId, data }: { taskId: number; data: Partial<{ title: string; description: string; isCompleted: boolean; priority: string; dueDate: string; assigneeId: string }> }) =>
+    mutationFn: ({ taskId, data }: { taskId: number; data: Partial<{ 
+      title: string; 
+      description: string; 
+      isCompleted: boolean; 
+      priority: string; 
+      dueDate: string; 
+      assigneeId: string;
+      isRecurring: boolean;
+      recurrencePattern: string | null;
+      recurrenceInterval: number;
+      recurrenceEndDate: string | null;
+    }> }) =>
       tasksApi.update(taskId, data),
     onSuccess: (_, { taskId }) => {
       qc.invalidateQueries({ queryKey: taskKeys.detail(taskId) });

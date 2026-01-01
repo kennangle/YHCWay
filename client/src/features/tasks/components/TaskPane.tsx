@@ -1,9 +1,17 @@
-import { X, CheckCircle2, Circle, Calendar, User, Flag, FolderOpen } from "lucide-react";
+import { X, CheckCircle2, Circle, Calendar, User, Flag, FolderOpen, Repeat, ChevronDown } from "lucide-react";
 import { useTask, useTaskProjects, useUpdateTask } from "../hooks";
 import { StoriesFeed } from "./StoriesFeed";
 import { CommentComposer } from "./CommentComposer";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+
+const RECURRENCE_OPTIONS = [
+  { value: "daily", label: "Daily" },
+  { value: "weekly", label: "Weekly" },
+  { value: "biweekly", label: "Bi-weekly" },
+  { value: "monthly", label: "Monthly" },
+] as const;
 
 interface TaskPaneProps {
   taskId: number;
@@ -101,6 +109,45 @@ export function TaskPane({ taskId, onClose }: TaskPaneProps) {
               <Flag className={`w-4 h-4 ${priorityInfo.color}`} />
               <span className={priorityInfo.color}>{priorityInfo.label}</span>
             </div>
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <button 
+                  className="flex items-center gap-2 text-gray-500 hover:text-gray-700"
+                  data-testid="button-recurrence"
+                >
+                  <Repeat className={`w-4 h-4 ${task.isRecurring ? "text-purple-500" : ""}`} />
+                  <span className={task.isRecurring ? "text-purple-500" : ""}>
+                    {task.isRecurring 
+                      ? RECURRENCE_OPTIONS.find(o => o.value === task.recurrencePattern)?.label || "Recurring"
+                      : "Not recurring"}
+                  </span>
+                  <ChevronDown className="w-3 h-3" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-56 p-2" align="start">
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-gray-500 px-2">Repeat Task</p>
+                  <button
+                    className={`w-full text-left px-2 py-1.5 text-sm rounded hover:bg-gray-100 ${!task.isRecurring ? "bg-gray-100 font-medium" : ""}`}
+                    onClick={() => updateTask.mutate({ taskId, data: { isRecurring: false, recurrencePattern: null } })}
+                    data-testid="option-no-recurrence"
+                  >
+                    No recurrence
+                  </button>
+                  {RECURRENCE_OPTIONS.map(opt => (
+                    <button
+                      key={opt.value}
+                      className={`w-full text-left px-2 py-1.5 text-sm rounded hover:bg-gray-100 ${task.isRecurring && task.recurrencePattern === opt.value ? "bg-purple-100 text-purple-700 font-medium" : ""}`}
+                      onClick={() => updateTask.mutate({ taskId, data: { isRecurring: true, recurrencePattern: opt.value } })}
+                      data-testid={`option-recurrence-${opt.value}`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
 
             {taskProjects.length > 0 && (
               <div className="flex items-center gap-2 text-gray-500">

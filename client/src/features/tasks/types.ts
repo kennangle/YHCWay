@@ -10,6 +10,10 @@ export type Task = {
   columnId: number | null;
   sortOrder: number;
   subtasks?: TaskSubtask[];
+  isRecurring?: boolean;
+  recurrencePattern?: string | null;
+  recurrenceInterval?: number;
+  recurrenceEndDate?: string | null;
 };
 
 export type TaskSubtask = {
