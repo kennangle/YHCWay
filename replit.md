@@ -103,8 +103,12 @@ All AI features are user-scoped for security (data isolation per user). Note: Ca
 - **Asana**: OAuth for project/task data import (one-time migration, not ongoing sync)
 - **Mindbody Analytics**: External API integration via Bearer token for intro offer tracking
   - Dedicated `/intro-offers` page for viewing and managing intro offers
-  - Intro offers also appear in the dashboard unified feed
-  - Requires `MINDBODY_API_KEY` environment variable
+- **Perkville**: OAuth integration for loyalty rewards program
+  - Per-user OAuth authentication with secure state handling (CSRF-protected)
+  - Dedicated `/rewards` page for viewing points, available rewards, and activity history
+  - API endpoints: connect, callback, disconnect, status, me, points, rewards, activity
+  - Server-side normalization of Perkville API responses
+  - Requires `PERKVILLE_CLIENT_ID` and `PERKVILLE_CLIENT_SECRET` environment variables
 
 ### Authentication & Authorization
 - **Method**: Replit Auth (OpenID Connect)

@@ -109,11 +109,9 @@ export default function Rewards() {
               <p className="text-muted-foreground mb-6">
                 Connect your Perkville account to view your loyalty points and available rewards.
               </p>
-              <Link href="/connect">
-                <a className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors" data-testid="link-connect-perkville">
-                  <ExternalLink className="w-4 h-4" />
-                  Go to Connect Apps
-                </a>
+              <Link href="/connect" className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors" data-testid="link-connect-perkville">
+                <ExternalLink className="w-4 h-4" />
+                Go to Connect Apps
               </Link>
             </div>
           ) : (
