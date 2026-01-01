@@ -92,6 +92,14 @@ The main section shows recent activity from all your connected services:
 
 Each item shows when it happened and lets you quickly see what needs your attention.
 
+### Filtering the Feed
+
+Use the filters above the feed to narrow down what you see:
+- **All/Mentions/Unread** - Filter by message status
+- **Service Dropdown** - Filter by source (Gmail, Slack, Zoom, Intro Offers)
+
+The service dropdown shows counts for each source so you can see at a glance where your activity is coming from.
+
 ### Today's Schedule
 
 On the right side, you'll see your upcoming events for the day, pulled from all your connected calendars.
@@ -301,6 +309,35 @@ Click any task to open it and:
 - Add subtasks for breaking down work
 - Leave comments for discussion
 - Set priority (Low, Medium, High, Urgent)
+- **Set as recurring** (daily, weekly, bi-weekly, or monthly)
+
+### Recurring Tasks
+
+For tasks that repeat regularly:
+1. Open any task
+2. Click the **Repeat** button (shows "Not recurring" by default)
+3. Choose your pattern:
+   - **Daily** - Task repeats every day
+   - **Weekly** - Task repeats every week
+   - **Bi-weekly** - Task repeats every two weeks
+   - **Monthly** - Task repeats every month
+4. The task will show a purple recurring indicator
+
+### Multi-Project Tasks
+
+Tasks can belong to multiple projects simultaneously:
+- When a task appears in multiple projects, it shows a purple badge with the project count
+- Click the task to see all projects it belongs to
+- Changes to the task (completion, details) sync across all projects
+
+### Task Filtering
+
+Filter tasks to focus on what matters:
+1. Click the **Filter** button at the top of your project board
+2. Filter by:
+   - **Priority** - Show only High/Urgent tasks
+   - **Due Date** - Show tasks due within a date range
+3. Active filters are highlighted
 
 ### Custom Columns
 
@@ -421,6 +458,13 @@ Press **G** followed by a letter to navigate:
 - **G + S** - Go to Settings
 - **G + H** - Go to Chat
 
+### Project Board Shortcuts
+
+When viewing a project board:
+- **Arrow Keys** - Navigate between tasks
+- **Enter** - Open the selected task
+- **Escape** - Close the task detail pane
+
 ### Other Shortcuts
 
 - **Escape** - Cancel current action or close dialogs
@@ -537,6 +581,62 @@ Zoom meetings include a **Join** button for quick access to your video calls dir
 
 ---
 
+## AI Assistant
+
+UniWork includes a powerful AI Assistant to help you work smarter. Access it by clicking the **brain icon** in the bottom-right corner of your screen.
+
+### Available Features
+
+**Daily Briefing**
+Get a personalized morning summary including:
+- Your tasks for the day
+- Upcoming meetings
+- Urgent messages that need attention
+
+**Smart Search**
+Search across all your connected services using natural language:
+- "Find emails about the budget proposal"
+- "What meetings do I have this week?"
+- "Show me tasks assigned to me"
+
+**Email Drafting**
+Compose professional emails quickly:
+1. Describe what you want to say
+2. The AI generates a draft
+3. Click **Copy** to use it in your email client
+
+**Task Generation**
+Extract actionable tasks from content:
+- Paste an email or meeting notes
+- The AI identifies action items
+- Create tasks directly from the suggestions
+
+**Meeting Prep**
+Get ready for meetings:
+1. Select an upcoming meeting
+2. Get a summary of related emails, tasks, and Slack discussions
+3. Walk into every meeting prepared
+
+**Calendar Optimization**
+Analyze your schedule:
+- Identify overloaded days
+- Find opportunities for focus time
+- Get suggestions for better time management
+
+**Task Prioritization**
+Get AI-powered task rankings:
+- Based on urgency and importance
+- Considers due dates and dependencies
+- Helps you focus on what matters most
+
+### Tips for the AI Assistant
+
+- **Copy buttons** - Click the copy icon next to any AI-generated content to copy it to your clipboard
+- **Tab memory** - Your last-used tab is remembered between sessions
+- **Service connection** - If a service isn't connected, the AI will show a helpful message explaining what's needed
+
+---
+
 ## Tips for Success
 
 1. **Connect everything** - The more services you connect, the more useful UniWork becomes
@@ -549,6 +649,8 @@ Zoom meetings include a **Join** button for quick access to your video calls dir
 8. **Use the Command Palette** - Press Cmd + K for quick access to anything
 9. **Create templates** - Save time on repetitive tasks with templates
 10. **Track your time** - Use the time tracker to understand where your time goes
+11. **Use the AI Assistant** - Click the brain icon to get daily briefings, draft emails, and prioritize tasks
+12. **Set recurring tasks** - Use the repeat feature for tasks you do regularly
 
 ---
 

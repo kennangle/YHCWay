@@ -108,6 +108,10 @@ Your home screen shows:
 - **Upcoming Events** - Your next calendar events and meetings
 - **Service Cards** - Quick status of all connected services
 
+**Filtering the Feed:**
+- Use the **All/Mentions/Unread** buttons to filter by status
+- Use the **Service dropdown** to filter by source (Gmail, Slack, Zoom, Intro Offers)
+
 ### Unified Inbox
 Access all your messages in one place:
 - Gmail emails (red accent)
@@ -140,9 +144,37 @@ Manage your work with a powerful project management system:
 - Mark milestones for key dates
 - Add subtasks and comments
 - Assign to team members
+- **Recurring Tasks** - Set tasks to repeat daily, weekly, bi-weekly, or monthly
+- **Multi-Project Support** - Tasks can belong to multiple projects (shown with a purple badge)
+
+**Keyboard Shortcuts (Board View):**
+- **Arrow Keys** - Navigate between tasks
+- **Enter** - Open selected task
+- **Escape** - Close task detail pane
+
+**Task Filters:**
+Click the filter button to narrow down tasks by:
+- Priority (Low, Medium, High, Urgent)
+- Due date range
 
 **Importing from Asana:**
 Click "Import from Asana" to bring in your existing projects. Sections become columns and tasks are imported automatically.
+
+### AI Assistant
+Access the AI Assistant by clicking the brain icon in the bottom-right corner:
+
+**Available Features:**
+- **Daily Briefing** - Get a morning summary of your tasks, meetings, and messages
+- **Smart Search** - Search across emails, tasks, calendar, and Slack using natural language
+- **Email Drafting** - Compose professional emails from simple prompts
+- **Task Generation** - Extract actionable tasks from emails or meeting notes
+- **Meeting Prep** - Get context before meetings (related emails, tasks, Slack discussions)
+- **Calendar Optimization** - Identify overloaded days and find focus time
+- **Task Prioritization** - AI-powered ranking of tasks by urgency
+
+**Tips:**
+- Click any copy button to copy AI-generated content to your clipboard
+- Your last-used tab is remembered between sessions
 
 ---
 
