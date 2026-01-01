@@ -1,7 +1,7 @@
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { TopBar } from "@/components/top-bar";
 import { AppleCalendarConnect } from "@/components/apple-calendar-connect";
-import { Search, MessageCircle, Mail, Calendar, Video, CheckSquare, FileText, Clock, X } from "lucide-react";
+import { Search, MessageCircle, Mail, Calendar, Video, CheckSquare, FileText, Clock, X, Gift } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
@@ -14,7 +14,7 @@ interface AppIntegration {
   description: string;
   icon: React.ReactNode;
   colorClass: string;
-  category: "productivity" | "calendar" | "communication" | "forms";
+  category: "productivity" | "calendar" | "communication" | "forms" | "rewards";
   connectType: "configured" | "api-key" | "special" | "oauth";
   apiKeyLabel?: string;
   apiKeyHelp?: string;
@@ -88,6 +88,15 @@ const availableApps: AppIntegration[] = [
     connectType: "api-key",
     apiKeyLabel: "Personal Access Token",
     apiKeyHelp: "Get your token from Typeform Account Settings > Personal tokens",
+  },
+  {
+    id: "perkville",
+    name: "Perkville",
+    description: "Connect your loyalty and rewards program",
+    icon: <Gift className="w-6 h-6" />,
+    colorClass: "bg-[#7B61FF] text-white",
+    category: "rewards",
+    connectType: "oauth",
   },
 ];
 
@@ -427,6 +436,58 @@ export default function Connect() {
     },
   });
 
+  const perkvilleConnectMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/perkville/connect", { credentials: "include" });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to initiate Perkville connection");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      if (data.authUrl) {
+        window.location.href = data.authUrl;
+      }
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Connection failed",
+        description: error.message,
+        variant: "destructive",
+      });
+      setConnectingApp(null);
+    },
+  });
+
+  const perkvilleDisconnectMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/perkville/disconnect", {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to disconnect Perkville");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Disconnected",
+        description: "Perkville has been disconnected.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["connection-status"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const apiKeyDisconnectMutation = useMutation({
     mutationFn: async (integrationName: string) => {
       const res = await fetch(`/api/integrations/${integrationName}/disconnect`, {
@@ -470,6 +531,8 @@ export default function Connect() {
         slackConnectMutation.mutate();
       } else if (appId === "asana") {
         asanaConnectMutation.mutate();
+      } else if (appId === "perkville") {
+        perkvilleConnectMutation.mutate();
       }
     } else if (app.connectType === "configured") {
       toast({
@@ -498,6 +561,8 @@ export default function Connect() {
       slackDisconnectMutation.mutate();
     } else if (appId === "asana") {
       asanaDisconnectMutation.mutate();
+    } else if (appId === "perkville") {
+      perkvilleDisconnectMutation.mutate();
     } else {
       // Use generic disconnect for api-key and configured (system-level) integrations
       apiKeyDisconnectMutation.mutate(appId);
@@ -531,6 +596,13 @@ export default function Connect() {
       });
       queryClient.invalidateQueries({ queryKey: ["connection-status"] });
       window.history.replaceState({}, '', '/connect');
+    } else if (success === 'perkville') {
+      toast({
+        title: "Perkville Connected!",
+        description: "Your Perkville rewards account has been connected successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["connection-status"] });
+      window.history.replaceState({}, '', '/connect');
     } else if (error) {
       let errorMessage = "An error occurred during connection.";
       if (error === 'gmail_connection_failed') {
@@ -543,6 +615,10 @@ export default function Connect() {
         errorMessage = "Failed to connect Asana. Please try again.";
       } else if (error === 'asana_not_configured') {
         errorMessage = "Asana OAuth is not configured. Please contact your administrator.";
+      } else if (error === 'perkville_connection_failed' || error === 'perkville_auth_failed') {
+        errorMessage = "Failed to connect Perkville. Please try again.";
+      } else if (error === 'perkville_not_configured') {
+        errorMessage = "Perkville OAuth is not configured. Please contact your administrator.";
       }
       toast({
         title: "Connection Failed",

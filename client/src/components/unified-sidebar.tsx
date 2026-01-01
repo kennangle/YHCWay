@@ -20,7 +20,8 @@ import {
   ChevronDown,
   ChevronRight,
   Zap,
-  Wrench
+  Wrench,
+  Star
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
@@ -91,6 +92,7 @@ export function UnifiedSidebar() {
         { icon: Gift, label: "Intro Offers", href: "/intro-offers", tourId: "nav-intro-offers" },
         { icon: QrCode, label: "QR Codes", href: "/qr-codes", tourId: "nav-qr-codes" },
         { icon: Mail, label: "Email Builder", href: "/email-builder", tourId: "nav-email-builder" },
+        { icon: Star, label: "Rewards", href: "/rewards", tourId: "nav-rewards" },
       ],
     },
     {

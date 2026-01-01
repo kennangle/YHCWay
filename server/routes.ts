@@ -22,6 +22,7 @@ import { getIntroOffers, getIntroOfferSummary, updateIntroOffer, getStudents, is
 import { generateEmailReplySuggestions, summarizeEmail } from "./ai-email";
 import { extractTasksFromContent, generateDailyBriefing, generateMeetingPrep, smartSearch, draftEmail, analyzeCalendar, prioritizeTasks } from "./ai-assistant";
 import { isQrTigerConfigured, createDynamicQRCode, createStaticQRCode, listQRCodes, getQRCodeAnalytics, deleteQRCode } from "./qr-tiger";
+import { isPerkvilleConfigured, getPerkvilleAuthUrl, exchangePerkvilleCode, isUserPerkvilleConnected, getPerkvilleCustomerInfo, getPerkvillePoints, getPerkvilleRewards, getPerkvilleActivity, disconnectPerkville } from "./perkville";
 
 const isAdmin: RequestHandler = async (req: any, res, next) => {
   try {
@@ -2208,6 +2209,192 @@ export async function registerRoutes(
     }
   });
 
+  // Perkville OAuth - per-user authentication with secure state handling
+  app.get("/api/perkville/connect", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      if (!isPerkvilleConfigured()) {
+        return res.status(500).json({ error: "Perkville OAuth not configured" });
+      }
+      
+      const crypto = await import('crypto');
+      const stateToken = crypto.randomBytes(32).toString('hex');
+      
+      req.session.perkvilleOAuthState = {
+        state: stateToken,
+        userId: userId,
+        createdAt: Date.now()
+      };
+      
+      const host = req.get('host') || 'localhost:5000';
+      const redirectUri = `${req.protocol}://${host}/api/perkville/callback`;
+      const authUrl = getPerkvilleAuthUrl(redirectUri, stateToken);
+      
+      res.json({ authUrl });
+    } catch (error: any) {
+      console.error("Error generating Perkville auth URL:", error);
+      res.status(500).json({ error: error?.message || "Failed to initiate Perkville connection" });
+    }
+  });
+
+  app.get("/api/perkville/callback", async (req: any, res) => {
+    try {
+      const { code, state } = req.query;
+      
+      if (!code || !state || typeof code !== 'string' || typeof state !== 'string') {
+        return res.redirect('/connect?error=invalid_callback');
+      }
+      
+      const storedState = req.session?.perkvilleOAuthState;
+      if (!storedState || storedState.state !== state) {
+        console.error("Perkville OAuth: Invalid state parameter");
+        return res.redirect('/connect?error=perkville_auth_failed');
+      }
+      
+      const stateAge = Date.now() - storedState.createdAt;
+      if (stateAge > 600000) {
+        console.error("Perkville OAuth: State token expired");
+        delete req.session.perkvilleOAuthState;
+        return res.redirect('/connect?error=perkville_auth_failed');
+      }
+      
+      const userId = storedState.userId;
+      delete req.session.perkvilleOAuthState;
+      
+      const host = req.get('host') || 'localhost:5000';
+      const redirectUri = `${req.protocol}://${host}/api/perkville/callback`;
+      
+      const tokenData = await exchangePerkvilleCode(code, redirectUri);
+      
+      if (!tokenData.access_token) {
+        return res.redirect('/connect?error=perkville_missing_token');
+      }
+      
+      await storage.upsertOAuthAccount({
+        userId,
+        provider: 'perkville',
+        providerAccountId: userId,
+        accessToken: tokenData.access_token,
+        tokenType: tokenData.token_type,
+        scope: tokenData.scope || null,
+      });
+      
+      await storage.enableIntegration(userId, 'perkville');
+      
+      res.redirect('/connect?success=perkville');
+    } catch (error: any) {
+      console.error("Error in Perkville OAuth callback:", error);
+      res.redirect('/connect?error=perkville_connection_failed');
+    }
+  });
+
+  app.post("/api/perkville/disconnect", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      await disconnectPerkville(userId);
+      await storage.disableIntegration(userId, 'perkville');
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error disconnecting Perkville:", error);
+      res.status(500).json({ error: error?.message || "Failed to disconnect Perkville" });
+    }
+  });
+
+  app.get("/api/perkville/status", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      if (!userId) {
+        return res.json({ connected: false, configured: isPerkvilleConfigured() });
+      }
+      const connected = await isUserPerkvilleConnected(userId);
+      res.json({ connected, configured: isPerkvilleConfigured() });
+    } catch (error) {
+      res.json({ connected: false, configured: isPerkvilleConfigured() });
+    }
+  });
+
+  app.get("/api/perkville/me", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const info = await getPerkvilleCustomerInfo(userId);
+      res.json(info);
+    } catch (error: any) {
+      console.error("Error fetching Perkville customer info:", error);
+      res.status(500).json({ error: error?.message || "Failed to fetch customer info" });
+    }
+  });
+
+  app.get("/api/perkville/points", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const pointsData = await getPerkvillePoints(userId);
+      const normalized = {
+        total: Array.isArray(pointsData) ? pointsData.reduce((sum: number, p: any) => sum + (p.total || p.points || 0), 0) : (pointsData?.total || 0),
+        available: Array.isArray(pointsData) ? pointsData.reduce((sum: number, p: any) => sum + (p.available || p.points || 0), 0) : (pointsData?.available || 0),
+        pending: Array.isArray(pointsData) ? pointsData.reduce((sum: number, p: any) => sum + (p.pending || 0), 0) : (pointsData?.pending || 0),
+      };
+      res.json(normalized);
+    } catch (error: any) {
+      console.error("Error fetching Perkville points:", error);
+      res.status(500).json({ error: error?.message || "Failed to fetch points" });
+    }
+  });
+
+  app.get("/api/perkville/rewards", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const rewardsData = await getPerkvilleRewards(userId);
+      const normalized = Array.isArray(rewardsData) ? rewardsData.map((r: any) => ({
+        id: r.id || r.reward_id || String(Math.random()),
+        name: r.name || r.title || "Reward",
+        description: r.description || "",
+        pointsCost: r.points_cost || r.pointsCost || r.points || 0,
+        available: r.available !== false,
+      })) : [];
+      res.json(normalized);
+    } catch (error: any) {
+      console.error("Error fetching Perkville rewards:", error);
+      res.status(500).json({ error: error?.message || "Failed to fetch rewards" });
+    }
+  });
+
+  app.get("/api/perkville/activity", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const activityData = await getPerkvilleActivity(userId);
+      const normalized = Array.isArray(activityData) ? activityData.map((a: any) => ({
+        id: a.id || a.activity_id || String(Math.random()),
+        type: a.type || a.activity_type || "activity",
+        description: a.description || a.message || a.name || "Activity",
+        points: a.points || a.point_value || 0,
+        date: a.date || a.created_at || a.timestamp || new Date().toISOString(),
+      })) : [];
+      res.json(normalized);
+    } catch (error: any) {
+      console.error("Error fetching Perkville activity:", error);
+      res.status(500).json({ error: error?.message || "Failed to fetch activity" });
+    }
+  });
+
   // Apple Calendar integration endpoints
   app.get("/api/apple-calendar/status", isAuthenticated, async (req: any, res) => {
     try {
@@ -2299,6 +2486,7 @@ export async function registerRoutes(
         appleCalendarConnected,
         asanaSystemConnected,
         asanaUserConnected,
+        perkvilleConnected,
         userIntegrations,
         disabledIntegrations
       ] = await Promise.all([
@@ -2310,6 +2498,7 @@ export async function registerRoutes(
         isAppleCalendarConnected(userId).catch(() => false),
         isAsanaConnected().catch(() => false),
         isUserAsanaConnected(userId).catch(() => false),
+        isUserPerkvilleConnected(userId).catch(() => false),
         storage.getUserIntegrations(userId).catch(() => []),
         storage.getUserDisabledIntegrations(userId).catch((): string[] => []),
       ]);
@@ -2330,6 +2519,7 @@ export async function registerRoutes(
         asana: isEnabled('asana', asanaUserConnected || asanaSystemConnected),
         calendly: isEnabled('calendly', !!calendlyKey),
         typeform: isEnabled('typeform', !!typeformKey),
+        perkville: isEnabled('perkville', perkvilleConnected),
       });
     } catch (error) {
       console.error("Error checking integration status:", error);
@@ -2342,6 +2532,7 @@ export async function registerRoutes(
         asana: false,
         calendly: false,
         typeform: false,
+        perkville: false,
       });
     }
   });
