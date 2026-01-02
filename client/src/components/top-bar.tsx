@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Moon, Sun, LogOut, Bug, Lightbulb, Send, HelpCircle } from "lucide-react";
+import { Moon, Sun, LogOut, Bug, Lightbulb, Send, HelpCircle, Clock } from "lucide-react";
 import { useGuidedTour } from "@/components/guided-tour";
 import { useTheme } from "@/App";
 import { useAuth } from "@/hooks/useAuth";
@@ -96,6 +96,24 @@ export function TopBar() {
       <div className="h-14 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-b border-gray-200 dark:border-slate-700 flex items-center justify-between px-6 gap-4 sticky top-0 z-40">
         <GlobalSearch />
         <div className="flex items-center gap-3">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 gap-2 text-muted-foreground hover:text-primary border-primary/20 hover:border-primary/40"
+                onClick={() => setLocation("/time-tracking")}
+                data-testid="button-enter-time"
+              >
+                <Clock className="h-4 w-4" />
+                <span className="hidden sm:inline">Enter Time</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Time Tracking</p>
+            </TooltipContent>
+          </Tooltip>
+
           {user && (
             <span className="text-sm font-medium text-muted-foreground" data-testid="text-current-user">
               {user.firstName || user.email?.split('@')[0]}

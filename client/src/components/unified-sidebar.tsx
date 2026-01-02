@@ -21,8 +21,7 @@ import {
   ChevronRight,
   Zap,
   Wrench,
-  Star,
-  Clock
+  Star
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
@@ -102,7 +101,6 @@ export function UnifiedSidebar() {
       icon: Wrench,
       defaultCollapsed: true,
       items: [
-        { icon: Clock, label: "Time Tracking", href: "/time-tracking", tourId: "nav-time-tracking" },
         { icon: Archive, label: "Archive", href: "/archive", tourId: "nav-archive" },
         { icon: PlusCircle, label: "Connect App", href: "/connect", tourId: "nav-connect" },
         { icon: Settings, label: "Settings", href: "/settings", tourId: "nav-settings" },
