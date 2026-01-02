@@ -89,23 +89,14 @@ export async function getPerkvilleMe(userId: string): Promise<any | null> {
 
 export async function getPerkvilleBusinesses(userId: string): Promise<any[]> {
   try {
-    const me = await getPerkvilleMe(userId);
-    if (!me) return [];
+    const data = await perkvilleApiRequest(userId, "/businesses/");
+    const results = data.results || data || [];
     
-    const staffConnections = me.staff_connections || [];
-    const businesses: any[] = [];
-    
-    for (const conn of staffConnections) {
-      if (conn.business) {
-        businesses.push({
-          id: conn.business.id || conn.business,
-          name: conn.business.name || `Business ${conn.business}`,
-          role: conn.role,
-        });
-      }
-    }
-    
-    return businesses;
+    return results.map((biz: any) => ({
+      id: biz.id,
+      name: biz.name || `Business ${biz.id}`,
+      slug: biz.slug,
+    }));
   } catch (error) {
     console.error("Error fetching Perkville businesses:", error);
     return [];
@@ -195,20 +186,44 @@ export async function getPerkvilleCustomerInfo(userId: string): Promise<any | nu
   }
 }
 
-export async function getPerkvillePoints(userId: string): Promise<any[]> {
+export async function getPerkvillePoints(userId: string): Promise<{ total: number; available: number; pending: number }> {
   try {
-    const data = await perkvilleApiRequest(userId, "/points/");
-    return data.results || data || [];
+    const data = await perkvilleApiRequest(userId, "/connections/?user=me");
+    const connections = data.results || [];
+    
+    let total = 0;
+    let available = 0;
+    let pending = 0;
+    
+    for (const conn of connections) {
+      const balance = conn.balance || conn.points || 0;
+      total += balance;
+      available += conn.available_balance || balance;
+      pending += conn.pending_balance || 0;
+    }
+    
+    return { total, available, pending };
   } catch (error) {
     console.error("Error fetching Perkville points:", error);
-    return [];
+    return { total: 0, available: 0, pending: 0 };
   }
 }
 
 export async function getPerkvilleRewards(userId: string): Promise<any[]> {
   try {
-    const data = await perkvilleApiRequest(userId, "/rewards/");
-    return data.results || data || [];
+    const businesses = await getPerkvilleBusinesses(userId);
+    if (businesses.length === 0) return [];
+    
+    const businessId = businesses[0].id;
+    const data = await perkvilleApiRequest(userId, `/perks/?business=${businessId}&classification=REDEEM`);
+    const results = data.results || [];
+    
+    return results.map((perk: any) => ({
+      id: perk.id,
+      name: perk.title || perk.name,
+      description: perk.description || "",
+      pointsCost: perk.points || perk.point_value || 0,
+    }));
   } catch (error) {
     console.error("Error fetching Perkville rewards:", error);
     return [];
@@ -217,8 +232,16 @@ export async function getPerkvilleRewards(userId: string): Promise<any[]> {
 
 export async function getPerkvilleActivity(userId: string): Promise<any[]> {
   try {
-    const data = await perkvilleApiRequest(userId, "/activity/");
-    return data.results || data || [];
+    const data = await perkvilleApiRequest(userId, "/transactions/?user=me&limit=20");
+    const results = data.results || [];
+    
+    return results.map((tx: any) => ({
+      id: tx.id,
+      type: tx.points > 0 ? "earn" : "redeem",
+      description: tx.title || tx.perk_title || "Transaction",
+      points: tx.points || 0,
+      date: tx.transaction_dt || tx.created_at,
+    }));
   } catch (error) {
     console.error("Error fetching Perkville activity:", error);
     return [];
