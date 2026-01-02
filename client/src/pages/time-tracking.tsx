@@ -138,10 +138,27 @@ export default function TimeTrackingPage() {
   const sessions = sessionsData?.sessions || [];
 
   const currentUserEmployee = employees.find(emp => {
-    const userName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim().toLowerCase();
-    const empName = emp.employeeName.toLowerCase();
-    return empName.includes(userName) || userName.includes(empName) || 
-           (user?.email && empName.includes(user.email.split('@')[0].toLowerCase()));
+    const firstName = (user?.firstName || '').toLowerCase().trim();
+    const lastName = (user?.lastName || '').toLowerCase().trim();
+    const fullName = `${firstName} ${lastName}`.trim();
+    const empName = emp.employeeName.toLowerCase().trim();
+    const emailPrefix = user?.email?.split('@')[0].toLowerCase() || '';
+    
+    // Try multiple matching strategies
+    // 1. Exact full name match
+    if (empName === fullName) return true;
+    // 2. First name only match (for cases like "Ken" vs "Ken Nangle")
+    if (firstName && empName === firstName) return true;
+    if (firstName && empName.startsWith(firstName + ' ')) return true;
+    // 3. Employee name contains first name (partial match)
+    if (firstName && firstName.length >= 3 && empName.includes(firstName)) return true;
+    // 4. Full name contains employee name
+    if (fullName.includes(empName) || empName.includes(fullName)) return true;
+    // 5. Email prefix match
+    if (emailPrefix && empName.includes(emailPrefix)) return true;
+    if (emailPrefix && emailPrefix.includes(empName.split(' ')[0])) return true;
+    
+    return false;
   });
 
   const createMutation = useMutation({

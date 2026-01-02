@@ -21,7 +21,8 @@ import {
   ChevronRight,
   Zap,
   Wrench,
-  Star
+  Star,
+  Rocket
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
@@ -80,6 +81,7 @@ export function UnifiedSidebar() {
         { icon: CalendarIcon, label: "Calendar", href: "/calendar", tourId: "nav-calendar" },
         { icon: FolderKanban, label: "Projects", href: "/projects", tourId: "nav-projects" },
         { icon: ListTodo, label: "Tasks", href: "/tasks", tourId: "nav-tasks" },
+        { icon: Rocket, label: "Setup Guide", href: "/setup-guide", tourId: "nav-setup-guide" },
       ],
     },
     {
