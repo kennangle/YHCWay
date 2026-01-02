@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Clock, Plus, Users, Calendar, Loader2, CheckCircle, Coffee, LogOut } from "lucide-react";
 import { getQueryFn } from "@/lib/queryClient";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays } from "date-fns";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 
@@ -82,6 +83,7 @@ function getStatusIcon(status: string) {
 
 export default function TimeTrackingPage() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [dateRange, setDateRange] = useState<'week' | 'month' | 'custom'>('week');
   
@@ -100,7 +102,6 @@ export default function TimeTrackingPage() {
   const { start, end } = getDateRange();
 
   const [formData, setFormData] = useState({
-    employeeId: "",
     date: format(new Date(), 'yyyy-MM-dd'),
     startTime: "09:00",
     endTime: "17:00",
@@ -133,8 +134,22 @@ export default function TimeTrackingPage() {
     enabled: status?.connected,
   });
 
+  const employees = employeesStatus?.employees || [];
+  const sessions = sessionsData?.sessions || [];
+
+  const currentUserEmployee = employees.find(emp => {
+    const userName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim().toLowerCase();
+    const empName = emp.employeeName.toLowerCase();
+    return empName.includes(userName) || userName.includes(empName) || 
+           (user?.email && empName.includes(user.email.split('@')[0].toLowerCase()));
+  });
+
   const createMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
+      if (!currentUserEmployee) {
+        throw new Error("Could not find your employee record in YHCTime");
+      }
+      
       const startDateTime = new Date(`${data.date}T${data.startTime}:00`);
       const endDateTime = new Date(`${data.date}T${data.endTime}:00`);
       
@@ -142,7 +157,7 @@ export default function TimeTrackingPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          employeeId: parseInt(data.employeeId, 10),
+          employeeId: currentUserEmployee.employeeId,
           startTime: startDateTime.toISOString(),
           endTime: endDateTime.toISOString(),
           breakDuration: parseInt(data.breakDuration, 10) * 60000,
@@ -160,7 +175,6 @@ export default function TimeTrackingPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/yhctime/sessions"] });
       setIsCreateOpen(false);
       setFormData({
-        employeeId: "",
         date: format(new Date(), 'yyyy-MM-dd'),
         startTime: "09:00",
         endTime: "17:00",
@@ -173,9 +187,6 @@ export default function TimeTrackingPage() {
       toast.error(error.message || "Failed to create time entry");
     },
   });
-
-  const employees = employeesStatus?.employees || [];
-  const sessions = sessionsData?.sessions || [];
 
   if (statusLoading) {
     return (
@@ -255,22 +266,16 @@ export default function TimeTrackingPage() {
                     className="space-y-4"
                   >
                     <div>
-                      <Label htmlFor="employeeId">Employee</Label>
-                      <Select
-                        value={formData.employeeId}
-                        onValueChange={(value) => setFormData(prev => ({ ...prev, employeeId: value }))}
-                      >
-                        <SelectTrigger data-testid="select-employee">
-                          <SelectValue placeholder="Select employee" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {employees.map((emp) => (
-                            <SelectItem key={emp.employeeId} value={emp.employeeId.toString()}>
-                              {emp.employeeName}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Label>Employee</Label>
+                      <div className="flex items-center gap-2 h-10 px-3 rounded-md border border-input bg-background text-sm">
+                        {currentUserEmployee ? (
+                          <span data-testid="text-current-employee">{currentUserEmployee.employeeName}</span>
+                        ) : (
+                          <span className="text-muted-foreground">
+                            {user?.firstName} {user?.lastName} (not found in YHCTime)
+                          </span>
+                        )}
+                      </div>
                     </div>
                     
                     <div>
@@ -333,7 +338,7 @@ export default function TimeTrackingPage() {
                     <Button 
                       type="submit" 
                       className="w-full"
-                      disabled={createMutation.isPending || !formData.employeeId}
+                      disabled={createMutation.isPending || !currentUserEmployee}
                       data-testid="button-submit-session"
                     >
                       {createMutation.isPending ? (
