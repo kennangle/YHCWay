@@ -90,11 +90,12 @@ export async function getPerkvilleMe(userId: string): Promise<any | null> {
 export async function getPerkvilleBusinesses(userId: string): Promise<any[]> {
   try {
     const data = await perkvilleApiRequest(userId, "/businesses/");
-    console.log("[Perkville] /businesses/ raw response:", JSON.stringify(data, null, 2));
     
     let results: any[] = [];
     if (Array.isArray(data)) {
       results = data;
+    } else if (data?.objects && Array.isArray(data.objects)) {
+      results = data.objects;
     } else if (data?.results && Array.isArray(data.results)) {
       results = data.results;
     } else if (data?.id) {
@@ -102,8 +103,8 @@ export async function getPerkvilleBusinesses(userId: string): Promise<any[]> {
     }
     
     return results.map((biz: any) => ({
-      id: biz.id,
-      name: biz.name || `Business ${biz.id}`,
+      id: biz.business_id || biz.id,
+      name: biz.name || `Business ${biz.business_id || biz.id}`,
       slug: biz.slug,
     }));
   } catch (error) {
@@ -119,7 +120,7 @@ export async function getPerkvilleCustomers(userId: string, businessId: number):
     
     while (nextUrl) {
       const data = await perkvilleApiRequest(userId, nextUrl);
-      const results = data.results || [];
+      const results = data.objects || data.results || [];
       allCustomers.push(...results);
       nextUrl = data.next || null;
       
@@ -140,7 +141,7 @@ export async function getPerkvilleConnectionBalances(userId: string, businessId:
     
     while (nextUrl) {
       const data = await perkvilleApiRequest(userId, nextUrl);
-      const results = data.results || [];
+      const results = data.objects || data.results || [];
       allBalances.push(...results);
       nextUrl = data.next || null;
       
@@ -157,7 +158,7 @@ export async function getPerkvilleConnectionBalances(userId: string, businessId:
 export async function searchPerkvilleCustomerByEmail(userId: string, email: string): Promise<any | null> {
   try {
     const data = await perkvilleApiRequest(userId, `/connections/?user__emails__email=${encodeURIComponent(email)}`);
-    const results = data.results || [];
+    const results = data.objects || data.results || [];
     return results.length > 0 ? results[0] : null;
   } catch (error) {
     console.error("Error searching Perkville customer:", error);
@@ -178,7 +179,7 @@ export async function getPerkvilleCustomerById(userId: string, connectionId: num
 export async function getPerkvilleConnections(userId: string): Promise<any[]> {
   try {
     const data = await perkvilleApiRequest(userId, "/connections/");
-    return data.results || data || [];
+    return data.objects || data.results || data || [];
   } catch (error) {
     console.error("Error fetching Perkville connections:", error);
     return [];
@@ -198,7 +199,7 @@ export async function getPerkvilleCustomerInfo(userId: string): Promise<any | nu
 export async function getPerkvillePoints(userId: string): Promise<{ total: number; available: number; pending: number }> {
   try {
     const data = await perkvilleApiRequest(userId, "/connections/?user=me");
-    const connections = data.results || [];
+    const connections = data.objects || data.results || [];
     
     let total = 0;
     let available = 0;
@@ -225,7 +226,7 @@ export async function getPerkvilleRewards(userId: string): Promise<any[]> {
     
     const businessId = businesses[0].id;
     const data = await perkvilleApiRequest(userId, `/perks/?business=${businessId}&classification=REDEEM`);
-    const results = data.results || [];
+    const results = data.objects || data.results || [];
     
     return results.map((perk: any) => ({
       id: perk.id,
@@ -242,7 +243,7 @@ export async function getPerkvilleRewards(userId: string): Promise<any[]> {
 export async function getPerkvilleActivity(userId: string): Promise<any[]> {
   try {
     const data = await perkvilleApiRequest(userId, "/transactions/?user=me&limit=20");
-    const results = data.results || [];
+    const results = data.objects || data.results || [];
     
     return results.map((tx: any) => ({
       id: tx.id,
