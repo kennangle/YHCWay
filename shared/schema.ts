@@ -80,6 +80,8 @@ export const users = pgTable("users", {
   approvedBy: varchar("approved_by"),
   firstLoginAt: timestamp("first_login_at"),
   lastLoginAt: timestamp("last_login_at"),
+  yhctimeEmployeeId: integer("yhctime_employee_id"),
+  yhctimeEmployeeName: varchar("yhctime_employee_name"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

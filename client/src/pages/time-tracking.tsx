@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Clock, Plus, Users, Calendar, Loader2, CheckCircle, Coffee, LogOut } from "lucide-react";
+import { Clock, Plus, Users, Calendar, Loader2, CheckCircle, Coffee, LogOut, Link2, Unlink } from "lucide-react";
 import { getQueryFn } from "@/lib/queryClient";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -81,10 +81,17 @@ function getStatusIcon(status: string) {
   }
 }
 
+interface LinkedEmployee {
+  linked: boolean;
+  employeeId?: number;
+  employeeName?: string;
+}
+
 export default function TimeTrackingPage() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isLinkOpen, setIsLinkOpen] = useState(false);
   const [dateRange, setDateRange] = useState<'week' | 'month' | 'custom'>('week');
   
   const now = new Date();
@@ -114,6 +121,12 @@ export default function TimeTrackingPage() {
     queryFn: getQueryFn({ on401: "throw" }),
   });
 
+  const { data: linkedEmployee } = useQuery<LinkedEmployee>({
+    queryKey: ["/api/yhctime/linked-employee"],
+    queryFn: getQueryFn({ on401: "throw" }),
+    enabled: status?.connected,
+  });
+
   const { data: employeesStatus, isLoading: employeesLoading } = useQuery<AllEmployeesStatusResponse>({
     queryKey: ["/api/yhctime/current-status"],
     queryFn: getQueryFn({ on401: "throw" }),
@@ -137,28 +150,65 @@ export default function TimeTrackingPage() {
   const employees = employeesStatus?.employees || [];
   const sessions = sessionsData?.sessions || [];
 
-  const currentUserEmployee = employees.find(emp => {
-    const firstName = (user?.firstName || '').toLowerCase().trim();
-    const lastName = (user?.lastName || '').toLowerCase().trim();
-    const fullName = `${firstName} ${lastName}`.trim();
-    const empName = emp.employeeName.toLowerCase().trim();
-    const emailPrefix = user?.email?.split('@')[0].toLowerCase() || '';
-    
-    // Try multiple matching strategies
-    // 1. Exact full name match
-    if (empName === fullName) return true;
-    // 2. First name only match (for cases like "Ken" vs "Ken Nangle")
-    if (firstName && empName === firstName) return true;
-    if (firstName && empName.startsWith(firstName + ' ')) return true;
-    // 3. Employee name contains first name (partial match)
-    if (firstName && firstName.length >= 3 && empName.includes(firstName)) return true;
-    // 4. Full name contains employee name
-    if (fullName.includes(empName) || empName.includes(fullName)) return true;
-    // 5. Email prefix match
-    if (emailPrefix && empName.includes(emailPrefix)) return true;
-    if (emailPrefix && emailPrefix.includes(empName.split(' ')[0])) return true;
-    
-    return false;
+  // Use linked employee if available, otherwise try auto-detection
+  const currentUserEmployee = linkedEmployee?.linked 
+    ? { employeeId: linkedEmployee.employeeId!, employeeName: linkedEmployee.employeeName! }
+    : employees.find(emp => {
+        const firstName = (user?.firstName || '').toLowerCase().trim();
+        const lastName = (user?.lastName || '').toLowerCase().trim();
+        const fullName = `${firstName} ${lastName}`.trim();
+        const empName = emp.employeeName.toLowerCase().trim();
+        const emailPrefix = user?.email?.split('@')[0].toLowerCase() || '';
+        
+        // Try multiple matching strategies
+        if (empName === fullName) return true;
+        if (firstName && empName === firstName) return true;
+        if (firstName && empName.startsWith(firstName + ' ')) return true;
+        if (firstName && firstName.length >= 3 && empName.includes(firstName)) return true;
+        if (fullName.includes(empName) || empName.includes(fullName)) return true;
+        if (emailPrefix && empName.includes(emailPrefix)) return true;
+        if (emailPrefix && emailPrefix.includes(empName.split(' ')[0])) return true;
+        
+        return false;
+      });
+
+  const linkMutation = useMutation({
+    mutationFn: async (employee: { employeeId: number; employeeName: string }) => {
+      const res = await fetch("/api/yhctime/link-employee", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(employee),
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to link employee");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/yhctime/linked-employee"] });
+      setIsLinkOpen(false);
+      toast.success("Successfully linked to YHCTime employee");
+    },
+    onError: () => {
+      toast.error("Failed to link employee");
+    },
+  });
+
+  const unlinkMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/yhctime/link-employee", {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to unlink employee");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/yhctime/linked-employee"] });
+      toast.success("Unlinked from YHCTime employee");
+    },
+    onError: () => {
+      toast.error("Failed to unlink employee");
+    },
   });
 
   const createMutation = useMutation({
@@ -284,13 +334,41 @@ export default function TimeTrackingPage() {
                   >
                     <div>
                       <Label>Employee</Label>
-                      <div className="flex items-center gap-2 h-10 px-3 rounded-md border border-input bg-background text-sm">
-                        {currentUserEmployee ? (
-                          <span data-testid="text-current-employee">{currentUserEmployee.employeeName}</span>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 flex items-center gap-2 h-10 px-3 rounded-md border border-input bg-background text-sm">
+                          {linkedEmployee?.linked ? (
+                            <span data-testid="text-current-employee" className="text-green-600 font-medium">
+                              {linkedEmployee.employeeName} (linked)
+                            </span>
+                          ) : currentUserEmployee ? (
+                            <span data-testid="text-current-employee">{currentUserEmployee.employeeName}</span>
+                          ) : (
+                            <span className="text-muted-foreground">
+                              {user?.firstName} {user?.lastName} (not found in YHCTime)
+                            </span>
+                          )}
+                        </div>
+                        {linkedEmployee?.linked ? (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => unlinkMutation.mutate()}
+                            disabled={unlinkMutation.isPending}
+                            data-testid="button-unlink-employee"
+                          >
+                            <Unlink className="w-4 h-4" />
+                          </Button>
                         ) : (
-                          <span className="text-muted-foreground">
-                            {user?.firstName} {user?.lastName} (not found in YHCTime)
-                          </span>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setIsLinkOpen(true)}
+                            data-testid="button-link-employee"
+                          >
+                            <Link2 className="w-4 h-4" />
+                          </Button>
                         )}
                       </div>
                     </div>
@@ -368,6 +446,46 @@ export default function TimeTrackingPage() {
                       )}
                     </Button>
                   </form>
+                </DialogContent>
+              </Dialog>
+
+              <Dialog open={isLinkOpen} onOpenChange={setIsLinkOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Link to YHCTime Employee</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Select which YHCTime employee account you want to link to. This will be used when creating time entries.
+                    </p>
+                    {employees.length === 0 ? (
+                      <div className="text-center py-4">
+                        <p className="text-muted-foreground">No employees found in YHCTime.</p>
+                        <p className="text-sm text-muted-foreground mt-2">
+                          The YHCTime API may not be returning data. Please check the API configuration.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                        {employees.map((emp) => (
+                          <Button
+                            key={emp.employeeId}
+                            variant="outline"
+                            className="w-full justify-start"
+                            onClick={() => linkMutation.mutate({ 
+                              employeeId: emp.employeeId, 
+                              employeeName: emp.employeeName 
+                            })}
+                            disabled={linkMutation.isPending}
+                            data-testid={`button-select-employee-${emp.employeeId}`}
+                          >
+                            <Users className="w-4 h-4 mr-2" />
+                            {emp.employeeName}
+                          </Button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </DialogContent>
               </Dialog>
             </div>

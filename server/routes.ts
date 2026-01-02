@@ -5016,5 +5016,56 @@ export async function registerRoutes(
     }
   });
 
+  // Link current user to a YHCTime employee
+  app.post("/api/yhctime/link-employee", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { employeeId, employeeName } = req.body;
+      
+      if (!employeeId || !employeeName) {
+        return res.status(400).json({ error: "Employee ID and name are required" });
+      }
+
+      await storage.updateUserYHCTimeLink(userId, employeeId, employeeName);
+      res.json({ success: true, employeeId, employeeName });
+    } catch (error: any) {
+      console.error("Error linking YHCTime employee:", error);
+      res.status(500).json({ error: error.message || "Failed to link employee" });
+    }
+  });
+
+  // Get current user's linked YHCTime employee
+  app.get("/api/yhctime/linked-employee", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      
+      if (user?.yhctimeEmployeeId) {
+        res.json({ 
+          linked: true, 
+          employeeId: user.yhctimeEmployeeId, 
+          employeeName: user.yhctimeEmployeeName 
+        });
+      } else {
+        res.json({ linked: false });
+      }
+    } catch (error: any) {
+      console.error("Error getting linked employee:", error);
+      res.status(500).json({ error: error.message || "Failed to get linked employee" });
+    }
+  });
+
+  // Unlink YHCTime employee from current user
+  app.delete("/api/yhctime/link-employee", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      await storage.updateUserYHCTimeLink(userId, null, null);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error unlinking YHCTime employee:", error);
+      res.status(500).json({ error: error.message || "Failed to unlink employee" });
+    }
+  });
+
   return httpServer;
 }
