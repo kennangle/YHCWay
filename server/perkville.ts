@@ -2,7 +2,6 @@ import { storage } from "./storage";
 
 const PERKVILLE_CLIENT_ID = process.env.PERKVILLE_CLIENT_ID;
 const PERKVILLE_CLIENT_SECRET = process.env.PERKVILLE_CLIENT_SECRET;
-const PERKVILLE_AUTH_URL = "https://www.perkville.com/api/authorize/";
 const PERKVILLE_TOKEN_URL = "https://www.perkville.com/api/token/";
 const PERKVILLE_API_BASE = "https://api.perkville.com/v2";
 
@@ -10,21 +9,15 @@ export function isPerkvilleConfigured(): boolean {
   return !!(PERKVILLE_CLIENT_ID && PERKVILLE_CLIENT_SECRET);
 }
 
-export function getPerkvilleAuthUrl(redirectUri: string, state: string): string {
-  const params = new URLSearchParams({
-    response_type: "code",
-    client_id: PERKVILLE_CLIENT_ID!,
-    redirect_uri: redirectUri,
-    state: state,
-  });
-  return `${PERKVILLE_AUTH_URL}?${params.toString()}`;
-}
-
-export async function exchangePerkvilleCode(code: string, redirectUri: string): Promise<{
+export async function authenticateWithPerkville(username: string, password: string): Promise<{
   access_token: string;
   token_type: string;
   scope?: string;
 }> {
+  if (!PERKVILLE_CLIENT_ID || !PERKVILLE_CLIENT_SECRET) {
+    throw new Error("Perkville client credentials not configured");
+  }
+
   const credentials = Buffer.from(`${PERKVILLE_CLIENT_ID}:${PERKVILLE_CLIENT_SECRET}`).toString("base64");
   
   const response = await fetch(PERKVILLE_TOKEN_URL, {
@@ -34,20 +27,21 @@ export async function exchangePerkvilleCode(code: string, redirectUri: string): 
       "Authorization": `Basic ${credentials}`,
     },
     body: new URLSearchParams({
-      grant_type: "authorization_code",
-      code: code,
-      redirect_uri: redirectUri,
-      client_id: PERKVILLE_CLIENT_ID!,
+      grant_type: "password",
+      username: username,
+      password: password,
     }).toString(),
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error("Perkville token exchange failed:", errorText);
-    throw new Error("Failed to exchange Perkville authorization code");
+    console.error("[Perkville] Authentication failed:", errorText);
+    throw new Error("Invalid Perkville credentials");
   }
 
-  return response.json();
+  const tokenData = await response.json();
+  console.log("[Perkville] Authentication successful, scopes:", tokenData.scope);
+  return tokenData;
 }
 
 export async function isUserPerkvilleConnected(userId: string): Promise<boolean> {

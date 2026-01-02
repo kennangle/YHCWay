@@ -103,15 +103,12 @@ All AI features are user-scoped for security (data isolation per user). Note: Ca
 - **Asana**: OAuth for project/task data import (one-time migration, not ongoing sync)
 - **Mindbody Analytics**: External API integration via Bearer token for intro offer tracking
   - Dedicated `/intro-offers` page for viewing and managing intro offers
-- **Perkville**: OAuth integration for loyalty rewards program
-  - Per-user OAuth authentication with secure state handling (CSRF-protected)
+- **Perkville**: Resource Owner Grant integration for loyalty rewards program
+  - Uses password-based authentication (admin enters Perkville email/password)
   - Dedicated `/rewards` page for viewing points, available rewards, and activity history
-  - API endpoints: connect, callback, disconnect, status, me, points, rewards, activity
-  - Server-side normalization of Perkville API responses
+  - API endpoints: connect (POST with username/password), disconnect, status, me, points, rewards, activity
+  - Scopes granted: PUBLIC, ADMIN_CUSTOMER_INFO
   - Requires `PERKVILLE_CLIENT_ID` and `PERKVILLE_CLIENT_SECRET` environment variables
-  - **PENDING ACTION**: Email api@perkville.com to register redirect URIs:
-    - Production: `https://uniwork360.com/api/perkville/callback`
-    - Development: (current Replit dev URL)/api/perkville/callback
 - **QR Tiger**: API integration for dynamic QR code generation and tracking
   - Creates dynamic QR codes with customizable colors
   - Tracks scan analytics (requires valid QR Tiger ID)

@@ -22,7 +22,7 @@ import { getIntroOffers, getIntroOfferSummary, updateIntroOffer, getStudents, is
 import { generateEmailReplySuggestions, summarizeEmail } from "./ai-email";
 import { extractTasksFromContent, generateDailyBriefing, generateMeetingPrep, smartSearch, draftEmail, analyzeCalendar, prioritizeTasks } from "./ai-assistant";
 import { isQrTigerConfigured, createDynamicQRCode, createStaticQRCode, listQRCodes, getQRCodeAnalytics, deleteQRCode } from "./qr-tiger";
-import { isPerkvilleConfigured, getPerkvilleAuthUrl, exchangePerkvilleCode, isUserPerkvilleConnected, getPerkvilleCustomerInfo, getPerkvillePoints, getPerkvilleRewards, getPerkvilleActivity, disconnectPerkville } from "./perkville";
+import { isPerkvilleConfigured, authenticateWithPerkville, isUserPerkvilleConnected, getPerkvilleCustomerInfo, getPerkvillePoints, getPerkvilleRewards, getPerkvilleActivity, disconnectPerkville } from "./perkville";
 
 const isAdmin: RequestHandler = async (req: any, res, next) => {
   try {
@@ -2209,90 +2209,29 @@ export async function registerRoutes(
     }
   });
 
-  // Perkville OAuth - per-user authentication with secure state handling
-  // This endpoint now redirects directly to avoid popup blockers in Brave/Safari
-  app.get("/api/perkville/connect", isAuthenticated, async (req: any, res) => {
+  // Perkville Resource Owner Grant - authenticate with admin credentials
+  app.post("/api/perkville/connect", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims?.sub || req.user.id;
       console.log("[Perkville] Connect initiated for user:", userId);
       if (!userId) {
-        return res.redirect('/connect?error=unauthorized');
+        return res.status(401).json({ error: "Unauthorized" });
       }
       
       if (!isPerkvilleConfigured()) {
-        console.error("[Perkville] OAuth not configured - missing client ID or secret");
-        return res.redirect('/connect?error=perkville_not_configured');
+        console.error("[Perkville] Not configured - missing client ID or secret");
+        return res.status(400).json({ error: "Perkville integration not configured" });
       }
       
-      const crypto = await import('crypto');
-      const stateToken = crypto.randomBytes(32).toString('hex');
-      
-      req.session.perkvilleOAuthState = {
-        state: stateToken,
-        userId: userId,
-        createdAt: Date.now()
-      };
-      
-      // Save session before redirect
-      await new Promise<void>((resolve, reject) => {
-        req.session.save((err: any) => {
-          if (err) reject(err);
-          else resolve();
-        });
-      });
-      
-      const host = req.get('host') || 'localhost:5000';
-      const redirectUri = `${req.protocol}://${host}/api/perkville/callback`;
-      const authUrl = getPerkvilleAuthUrl(redirectUri, stateToken);
-      console.log("[Perkville] Redirecting to auth URL, redirectUri:", redirectUri);
-      
-      // Direct redirect instead of JSON response
-      res.redirect(authUrl);
-    } catch (error: any) {
-      console.error("[Perkville] Error generating auth URL:", error);
-      res.redirect('/connect?error=perkville_connection_failed');
-    }
-  });
-
-  app.get("/api/perkville/callback", async (req: any, res) => {
-    try {
-      const { code, state, error: oauthError, error_description } = req.query;
-      console.log("[Perkville] Callback received:", { code: !!code, state: !!state, oauthError, error_description });
-      
-      if (oauthError) {
-        console.error("[Perkville] OAuth error from provider:", oauthError, error_description);
-        return res.redirect('/connect?error=perkville_auth_failed');
+      const { username, password } = req.body;
+      if (!username || !password) {
+        return res.status(400).json({ error: "Username and password are required" });
       }
       
-      if (!code || !state || typeof code !== 'string' || typeof state !== 'string') {
-        console.error("[Perkville] Missing code or state:", { code: !!code, state: !!state });
-        return res.redirect('/connect?error=invalid_callback');
-      }
-      
-      const storedState = req.session?.perkvilleOAuthState;
-      console.log("[Perkville] Stored state check:", { hasStoredState: !!storedState, statesMatch: storedState?.state === state });
-      if (!storedState || storedState.state !== state) {
-        console.error("Perkville OAuth: Invalid state parameter");
-        return res.redirect('/connect?error=perkville_auth_failed');
-      }
-      
-      const stateAge = Date.now() - storedState.createdAt;
-      if (stateAge > 600000) {
-        console.error("Perkville OAuth: State token expired");
-        delete req.session.perkvilleOAuthState;
-        return res.redirect('/connect?error=perkville_auth_failed');
-      }
-      
-      const userId = storedState.userId;
-      delete req.session.perkvilleOAuthState;
-      
-      const host = req.get('host') || 'localhost:5000';
-      const redirectUri = `${req.protocol}://${host}/api/perkville/callback`;
-      
-      const tokenData = await exchangePerkvilleCode(code, redirectUri);
+      const tokenData = await authenticateWithPerkville(username, password);
       
       if (!tokenData.access_token) {
-        return res.redirect('/connect?error=perkville_missing_token');
+        return res.status(400).json({ error: "Failed to obtain access token" });
       }
       
       await storage.upsertOAuthAccount({
@@ -2300,16 +2239,15 @@ export async function registerRoutes(
         provider: 'perkville',
         providerAccountId: userId,
         accessToken: tokenData.access_token,
-        tokenType: tokenData.token_type,
         scope: tokenData.scope || null,
       });
       
       await storage.enableIntegration(userId, 'perkville');
       
-      res.redirect('/connect?success=perkville');
+      res.json({ success: true });
     } catch (error: any) {
-      console.error("Error in Perkville OAuth callback:", error);
-      res.redirect('/connect?error=perkville_connection_failed');
+      console.error("[Perkville] Authentication error:", error);
+      res.status(401).json({ error: error?.message || "Invalid Perkville credentials" });
     }
   });
 

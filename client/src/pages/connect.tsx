@@ -15,7 +15,7 @@ interface AppIntegration {
   icon: React.ReactNode;
   colorClass: string;
   category: "productivity" | "calendar" | "communication" | "forms" | "rewards" | "marketing";
-  connectType: "configured" | "api-key" | "special" | "oauth";
+  connectType: "configured" | "api-key" | "special" | "oauth" | "credentials";
   apiKeyLabel?: string;
   apiKeyHelp?: string;
   connected?: boolean;
@@ -96,7 +96,7 @@ const availableApps: AppIntegration[] = [
     icon: <Gift className="w-6 h-6" />,
     colorClass: "bg-[#7B61FF] text-white",
     category: "rewards",
-    connectType: "oauth",
+    connectType: "credentials",
   },
   {
     id: "qr-tiger",
@@ -194,6 +194,113 @@ function ApiKeyModal({
   );
 }
 
+function CredentialsModal({ 
+  app, 
+  onClose, 
+  onSave,
+  isSaving,
+  error
+}: { 
+  app: AppIntegration; 
+  onClose: () => void;
+  onSave: (username: string, password: string) => void;
+  isSaving: boolean;
+  error?: string | null;
+}) {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (username.trim() && password.trim()) {
+      onSave(username.trim(), password.trim());
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="glass-panel relative z-10 p-6 rounded-xl w-full max-w-md mx-4" data-testid="modal-credentials">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-xl ${app.colorClass} flex items-center justify-center`}>
+              {app.icon}
+            </div>
+            <h2 className="font-display font-semibold text-xl">Connect {app.name}</h2>
+          </div>
+          <button 
+            onClick={onClose}
+            className="text-muted-foreground hover:text-foreground transition-colors"
+            data-testid="button-close-credentials-modal"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        
+        <p className="text-sm text-muted-foreground mb-4">
+          Enter your Perkville admin credentials to connect your rewards program.
+        </p>
+        
+        {error && (
+          <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">
+            {error}
+          </div>
+        )}
+        
+        <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-2">
+              Email / Username
+            </label>
+            <input
+              type="email"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Enter your Perkville email..."
+              className="w-full px-4 py-3 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
+              data-testid="input-perkville-username"
+              autoFocus
+            />
+          </div>
+          
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-2">
+              Password
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your Perkville password..."
+              className="w-full px-4 py-3 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
+              data-testid="input-perkville-password"
+            />
+          </div>
+          
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-2 rounded-lg border border-border text-muted-foreground hover:bg-muted/50 transition-colors"
+              data-testid="button-cancel-credentials"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={!username.trim() || !password.trim() || isSaving}
+              className="flex-1 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+              data-testid="button-save-credentials"
+            >
+              {isSaving ? "Connecting..." : "Connect"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 function AppCard({ app, onConnect, onDisconnect, isConnecting }: { 
   app: AppIntegration; 
   onConnect: (appId: string) => void;
@@ -246,6 +353,8 @@ export default function Connect() {
   const [searchQuery, setSearchQuery] = useState("");
   const [connectingApp, setConnectingApp] = useState<string | null>(null);
   const [apiKeyModalApp, setApiKeyModalApp] = useState<AppIntegration | null>(null);
+  const [credentialsModalApp, setCredentialsModalApp] = useState<AppIntegration | null>(null);
+  const [credentialsError, setCredentialsError] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -447,12 +556,35 @@ export default function Connect() {
     },
   });
 
-  // Perkville uses direct navigation to avoid popup blockers in Brave/Safari
-  const handlePerkvilleConnect = () => {
-    setConnectingApp("perkville");
-    // Navigate directly - the server will redirect to Perkville
-    window.location.href = "/api/perkville/connect";
-  };
+  const perkvilleConnectMutation = useMutation({
+    mutationFn: async ({ username, password }: { username: string; password: string }) => {
+      const res = await fetch("/api/perkville/connect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ username, password }),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to connect Perkville");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Perkville Connected!",
+        description: "Your Perkville rewards account has been connected successfully.",
+      });
+      setCredentialsModalApp(null);
+      setCredentialsError(null);
+      setConnectingApp(null);
+      queryClient.invalidateQueries({ queryKey: ["connection-status"] });
+    },
+    onError: (error: Error) => {
+      setCredentialsError(error.message);
+      setConnectingApp(null);
+    },
+  });
 
   const perkvilleDisconnectMutation = useMutation({
     mutationFn: async () => {
@@ -517,6 +649,9 @@ export default function Connect() {
 
     if (app.connectType === "api-key") {
       setApiKeyModalApp(app);
+    } else if (app.connectType === "credentials") {
+      setCredentialsModalApp(app);
+      setCredentialsError(null);
     } else if (app.connectType === "oauth") {
       setConnectingApp(appId);
       if (appId === "gmail") {
@@ -525,8 +660,6 @@ export default function Connect() {
         slackConnectMutation.mutate();
       } else if (appId === "asana") {
         asanaConnectMutation.mutate();
-      } else if (appId === "perkville") {
-        handlePerkvilleConnect();
       }
     } else if (app.connectType === "configured") {
       toast({
@@ -543,6 +676,14 @@ export default function Connect() {
       integrationName: apiKeyModalApp.id, 
       apiKey 
     });
+  };
+
+  const handleSaveCredentials = (username: string, password: string) => {
+    if (!credentialsModalApp) return;
+    setConnectingApp(credentialsModalApp.id);
+    if (credentialsModalApp.id === "perkville") {
+      perkvilleConnectMutation.mutate({ username, password });
+    }
   };
 
   const handleDisconnect = (appId: string) => {
@@ -719,6 +860,19 @@ export default function Connect() {
           onClose={() => setApiKeyModalApp(null)}
           onSave={handleSaveApiKey}
           isSaving={saveApiKeyMutation.isPending}
+        />
+      )}
+      
+      {credentialsModalApp && (
+        <CredentialsModal
+          app={credentialsModalApp}
+          onClose={() => {
+            setCredentialsModalApp(null);
+            setCredentialsError(null);
+          }}
+          onSave={handleSaveCredentials}
+          isSaving={perkvilleConnectMutation.isPending}
+          error={credentialsError}
         />
       )}
     </div>
