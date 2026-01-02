@@ -10,6 +10,7 @@ import {
   CheckSquare, 
   Gift,
   QrCode,
+  Star,
   ArrowRight,
   CheckCircle,
   XCircle,
@@ -85,6 +86,15 @@ const appCards = [
     color: "#6366F1",
     href: "/qr-codes",
     serviceName: "QR Tiger"
+  },
+  {
+    id: "perkville",
+    name: "Perkville",
+    description: "Rewards program and customer loyalty",
+    icon: Star,
+    color: "#F59E0B",
+    href: "/rewards",
+    serviceName: "Perkville"
   }
 ];
 
@@ -107,14 +117,25 @@ export default function Overview() {
     },
   });
 
+  const { data: perkvilleStatus, isLoading: perkvilleLoading } = useQuery<{ connected: boolean }>({
+    queryKey: ["/api/perkville/status"],
+    queryFn: async () => {
+      const res = await fetch("/api/perkville/status", { credentials: "include" });
+      if (!res.ok) return { connected: false };
+      return res.json();
+    },
+  });
+
   const isServiceConnected = (serviceName: string | null) => {
     if (serviceName === null) return true;
     if (serviceName === "QR Tiger") return qrTigerStatus?.connected ?? false;
+    if (serviceName === "Perkville") return perkvilleStatus?.connected ?? false;
     return services?.find(s => s.name === serviceName)?.connected ?? false;
   };
 
   const isServiceLoading = (serviceName: string | null) => {
     if (serviceName === "QR Tiger") return qrTigerLoading;
+    if (serviceName === "Perkville") return perkvilleLoading;
     return isLoading;
   };
 
