@@ -94,18 +94,33 @@ class YHCTimeClient {
       ...headers,
     };
 
+    console.log(`[YHCTime] ${method} ${url}`);
+    
     const response = await fetch(url, {
       method,
       headers: requestHeaders,
       body: body ? JSON.stringify(body) : undefined,
     });
 
+    const contentType = response.headers.get('content-type') || '';
+    console.log(`[YHCTime] Response status: ${response.status}, content-type: ${contentType}`);
+
     if (!response.ok) {
       const errorText = await response.text();
+      console.log(`[YHCTime] Error response: ${errorText.substring(0, 200)}`);
       throw new Error(`YHCTime API error (${response.status}): ${errorText}`);
     }
 
-    return response.json();
+    // Check if response is HTML instead of JSON (indicates auth redirect)
+    if (contentType.includes('text/html')) {
+      const htmlText = await response.text();
+      console.log(`[YHCTime] Received HTML instead of JSON: ${htmlText.substring(0, 200)}`);
+      throw new Error('YHCTime API returned HTML - API may not be properly deployed or authenticated');
+    }
+
+    const data = await response.json();
+    console.log(`[YHCTime] Response data:`, JSON.stringify(data).substring(0, 200));
+    return data;
   }
 
   async getAllEmployeesStatus(): Promise<AllEmployeesStatusResponse> {
