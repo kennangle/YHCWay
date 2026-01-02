@@ -109,6 +109,15 @@ All AI features are user-scoped for security (data isolation per user). Note: Ca
   - API endpoints: connect, callback, disconnect, status, me, points, rewards, activity
   - Server-side normalization of Perkville API responses
   - Requires `PERKVILLE_CLIENT_ID` and `PERKVILLE_CLIENT_SECRET` environment variables
+  - **PENDING ACTION**: Email api@perkville.com to register redirect URIs:
+    - Production: `https://uniwork360.com/api/perkville/callback`
+    - Development: (current Replit dev URL)/api/perkville/callback
+- **QR Tiger**: API integration for dynamic QR code generation and tracking
+  - Creates dynamic QR codes with customizable colors
+  - Tracks scan analytics (requires valid QR Tiger ID)
+  - Local database persistence for QR codes created in-app
+  - Requires `QR_TIGER_API_KEY` environment variable
+  - API limitation: Cannot list existing QR codes from QR Tiger account, only tracks codes created in-app
 
 ### Authentication & Authorization
 - **Method**: Replit Auth (OpenID Connect)
