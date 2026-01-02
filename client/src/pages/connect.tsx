@@ -447,50 +447,12 @@ export default function Connect() {
     },
   });
 
-  const perkvilleConnectMutation = useMutation({
-    mutationFn: async () => {
-      console.log("[Perkville] Starting connect...");
-      const res = await fetch("/api/perkville/connect", { credentials: "include" });
-      console.log("[Perkville] Response status:", res.status);
-      if (!res.ok) {
-        const error = await res.json();
-        console.log("[Perkville] Error response:", error);
-        throw new Error(error.error || "Failed to initiate Perkville connection");
-      }
-      const data = await res.json();
-      console.log("[Perkville] Success response:", data);
-      return data;
-    },
-    onSuccess: (data) => {
-      console.log("[Perkville] onSuccess called with data:", data);
-      if (data.authUrl) {
-        console.log("[Perkville] Opening auth URL:", data.authUrl);
-        // Use window.open as fallback in case location.href is blocked
-        const opened = window.open(data.authUrl, "_self");
-        if (!opened) {
-          console.log("[Perkville] window.open failed, trying location.assign");
-          window.location.assign(data.authUrl);
-        }
-      } else {
-        console.log("[Perkville] No authUrl in response");
-        toast({
-          title: "Connection failed",
-          description: "No authorization URL received",
-          variant: "destructive",
-        });
-        setConnectingApp(null);
-      }
-    },
-    onError: (error: Error) => {
-      console.log("[Perkville] onError called:", error.message);
-      toast({
-        title: "Connection failed",
-        description: error.message,
-        variant: "destructive",
-      });
-      setConnectingApp(null);
-    },
-  });
+  // Perkville uses direct navigation to avoid popup blockers in Brave/Safari
+  const handlePerkvilleConnect = () => {
+    setConnectingApp("perkville");
+    // Navigate directly - the server will redirect to Perkville
+    window.location.href = "/api/perkville/connect";
+  };
 
   const perkvilleDisconnectMutation = useMutation({
     mutationFn: async () => {
@@ -564,7 +526,7 @@ export default function Connect() {
       } else if (appId === "asana") {
         asanaConnectMutation.mutate();
       } else if (appId === "perkville") {
-        perkvilleConnectMutation.mutate();
+        handlePerkvilleConnect();
       }
     } else if (app.connectType === "configured") {
       toast({

@@ -2210,17 +2210,18 @@ export async function registerRoutes(
   });
 
   // Perkville OAuth - per-user authentication with secure state handling
+  // This endpoint now redirects directly to avoid popup blockers in Brave/Safari
   app.get("/api/perkville/connect", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims?.sub || req.user.id;
       console.log("[Perkville] Connect initiated for user:", userId);
       if (!userId) {
-        return res.status(401).json({ error: "Unauthorized" });
+        return res.redirect('/connect?error=unauthorized');
       }
       
       if (!isPerkvilleConfigured()) {
         console.error("[Perkville] OAuth not configured - missing client ID or secret");
-        return res.status(500).json({ error: "Perkville OAuth not configured" });
+        return res.redirect('/connect?error=perkville_not_configured');
       }
       
       const crypto = await import('crypto');
@@ -2232,15 +2233,24 @@ export async function registerRoutes(
         createdAt: Date.now()
       };
       
+      // Save session before redirect
+      await new Promise<void>((resolve, reject) => {
+        req.session.save((err: any) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+      
       const host = req.get('host') || 'localhost:5000';
       const redirectUri = `${req.protocol}://${host}/api/perkville/callback`;
       const authUrl = getPerkvilleAuthUrl(redirectUri, stateToken);
-      console.log("[Perkville] Auth URL generated, redirectUri:", redirectUri);
+      console.log("[Perkville] Redirecting to auth URL, redirectUri:", redirectUri);
       
-      res.json({ authUrl });
+      // Direct redirect instead of JSON response
+      res.redirect(authUrl);
     } catch (error: any) {
       console.error("[Perkville] Error generating auth URL:", error);
-      res.status(500).json({ error: error?.message || "Failed to initiate Perkville connection" });
+      res.redirect('/connect?error=perkville_connection_failed');
     }
   });
 
