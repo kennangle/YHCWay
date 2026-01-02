@@ -60,7 +60,8 @@ async function perkvilleApiRequest(userId: string, endpoint: string): Promise<an
     throw new Error("Perkville not connected");
   }
 
-  const response = await fetch(`${PERKVILLE_API_BASE}${endpoint}`, {
+  const url = endpoint.startsWith("http") ? endpoint : `${PERKVILLE_API_BASE}${endpoint}`;
+  const response = await fetch(url, {
     headers: {
       "Authorization": `Bearer ${accessToken}`,
       "Content-Type": "application/json",
@@ -74,6 +75,104 @@ async function perkvilleApiRequest(userId: string, endpoint: string): Promise<an
   }
 
   return response.json();
+}
+
+export async function getPerkvilleMe(userId: string): Promise<any | null> {
+  try {
+    const data = await perkvilleApiRequest(userId, "/me/");
+    return data;
+  } catch (error) {
+    console.error("Error fetching Perkville me:", error);
+    return null;
+  }
+}
+
+export async function getPerkvilleBusinesses(userId: string): Promise<any[]> {
+  try {
+    const me = await getPerkvilleMe(userId);
+    if (!me) return [];
+    
+    const staffConnections = me.staff_connections || [];
+    const businesses: any[] = [];
+    
+    for (const conn of staffConnections) {
+      if (conn.business) {
+        businesses.push({
+          id: conn.business.id || conn.business,
+          name: conn.business.name || `Business ${conn.business}`,
+          role: conn.role,
+        });
+      }
+    }
+    
+    return businesses;
+  } catch (error) {
+    console.error("Error fetching Perkville businesses:", error);
+    return [];
+  }
+}
+
+export async function getPerkvilleCustomers(userId: string, businessId: number): Promise<any[]> {
+  try {
+    const allCustomers: any[] = [];
+    let nextUrl: string | null = `/connections/?business=${businessId}`;
+    
+    while (nextUrl) {
+      const data = await perkvilleApiRequest(userId, nextUrl);
+      const results = data.results || [];
+      allCustomers.push(...results);
+      nextUrl = data.next || null;
+      
+      if (allCustomers.length >= 500) break;
+    }
+    
+    return allCustomers;
+  } catch (error) {
+    console.error("Error fetching Perkville customers:", error);
+    return [];
+  }
+}
+
+export async function getPerkvilleConnectionBalances(userId: string, businessId: number): Promise<any[]> {
+  try {
+    const allBalances: any[] = [];
+    let nextUrl: string | null = `/connection-balances/?business=${businessId}`;
+    
+    while (nextUrl) {
+      const data = await perkvilleApiRequest(userId, nextUrl);
+      const results = data.results || [];
+      allBalances.push(...results);
+      nextUrl = data.next || null;
+      
+      if (allBalances.length >= 500) break;
+    }
+    
+    return allBalances;
+  } catch (error) {
+    console.error("Error fetching Perkville connection balances:", error);
+    return [];
+  }
+}
+
+export async function searchPerkvilleCustomerByEmail(userId: string, email: string): Promise<any | null> {
+  try {
+    const data = await perkvilleApiRequest(userId, `/connections/?user__emails__email=${encodeURIComponent(email)}`);
+    const results = data.results || [];
+    return results.length > 0 ? results[0] : null;
+  } catch (error) {
+    console.error("Error searching Perkville customer:", error);
+    return null;
+  }
+}
+
+export async function getPerkvilleCustomerById(userId: string, connectionId: number): Promise<any | null> {
+  try {
+    const data = await perkvilleApiRequest(userId, `/connections/${connectionId}/`);
+    return data;
+  } catch (error) {
+    console.error("Error fetching Perkville customer by ID:", error);
+    return null;
+  }
 }
 
 export async function getPerkvilleConnections(userId: string): Promise<any[]> {

@@ -22,7 +22,7 @@ import { getIntroOffers, getIntroOfferSummary, updateIntroOffer, getStudents, is
 import { generateEmailReplySuggestions, summarizeEmail } from "./ai-email";
 import { extractTasksFromContent, generateDailyBriefing, generateMeetingPrep, smartSearch, draftEmail, analyzeCalendar, prioritizeTasks } from "./ai-assistant";
 import { isQrTigerConfigured, createDynamicQRCode, createStaticQRCode, listQRCodes, getQRCodeAnalytics, deleteQRCode } from "./qr-tiger";
-import { isPerkvilleConfigured, authenticateWithPerkville, isUserPerkvilleConnected, getPerkvilleCustomerInfo, getPerkvillePoints, getPerkvilleRewards, getPerkvilleActivity, disconnectPerkville } from "./perkville";
+import { isPerkvilleConfigured, authenticateWithPerkville, isUserPerkvilleConnected, getPerkvilleCustomerInfo, getPerkvillePoints, getPerkvilleRewards, getPerkvilleActivity, disconnectPerkville, getPerkvilleBusinesses, getPerkvilleCustomers, getPerkvilleConnectionBalances, searchPerkvilleCustomerByEmail, getPerkvilleCustomerById } from "./perkville";
 
 const isAdmin: RequestHandler = async (req: any, res, next) => {
   try {
@@ -2351,6 +2351,161 @@ export async function registerRoutes(
     } catch (error: any) {
       console.error("Error fetching Perkville activity:", error);
       res.status(500).json({ error: error?.message || "Failed to fetch activity" });
+    }
+  });
+
+  app.get("/api/perkville/businesses", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const businesses = await getPerkvilleBusinesses(userId);
+      res.json(businesses);
+    } catch (error: any) {
+      console.error("Error fetching Perkville businesses:", error);
+      res.status(500).json({ error: error?.message || "Failed to fetch businesses" });
+    }
+  });
+
+  app.get("/api/perkville/customers", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const businessId = parseInt(req.query.businessId as string);
+      if (!businessId || isNaN(businessId)) {
+        return res.status(400).json({ error: "businessId is required" });
+      }
+      
+      const [customers, balances] = await Promise.all([
+        getPerkvilleCustomers(userId, businessId),
+        getPerkvilleConnectionBalances(userId, businessId),
+      ]);
+      
+      const balanceMap = new Map<number, number>();
+      for (const b of balances) {
+        const connId = b.connection || b.id;
+        balanceMap.set(connId, b.balance || b.points || 0);
+      }
+      
+      const normalized = customers.map((c: any) => ({
+        id: c.id,
+        userId: c.user?.id || c.user,
+        firstName: c.user?.first_name || c.first_name || "",
+        lastName: c.user?.last_name || c.last_name || "",
+        email: c.user?.emails?.[0]?.email || c.email || "",
+        status: c.status || "active",
+        joinDate: c.join_dt || c.created_at,
+        points: balanceMap.get(c.id) || c.points || 0,
+      }));
+      res.json(normalized);
+    } catch (error: any) {
+      console.error("Error fetching Perkville customers:", error);
+      res.status(500).json({ error: error?.message || "Failed to fetch customers" });
+    }
+  });
+
+  app.get("/api/perkville/balances", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const businessId = parseInt(req.query.businessId as string);
+      if (!businessId || isNaN(businessId)) {
+        return res.status(400).json({ error: "businessId is required" });
+      }
+      const balances = await getPerkvilleConnectionBalances(userId, businessId);
+      const totalPoints = balances.reduce((sum: number, b: any) => sum + (b.balance || b.points || 0), 0);
+      const customerCount = balances.length;
+      res.json({
+        totalPoints,
+        customerCount,
+        balances: balances.map((b: any) => ({
+          connectionId: b.connection || b.id,
+          balance: b.balance || b.points || 0,
+          lastModified: b.last_mod_dt || b.modified_at,
+        })),
+      });
+    } catch (error: any) {
+      console.error("Error fetching Perkville balances:", error);
+      res.status(500).json({ error: error?.message || "Failed to fetch balances" });
+    }
+  });
+
+  app.get("/api/perkville/search", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const email = req.query.email as string;
+      if (!email) {
+        return res.status(400).json({ error: "email is required" });
+      }
+      const customer = await searchPerkvilleCustomerByEmail(userId, email);
+      if (!customer) {
+        return res.json(null);
+      }
+      
+      let points = customer.balance || customer.points || 0;
+      if (customer.business?.id) {
+        try {
+          const balances = await getPerkvilleConnectionBalances(userId, customer.business.id);
+          const balance = balances.find((b: any) => (b.connection || b.id) === customer.id);
+          if (balance) {
+            points = balance.balance || balance.points || 0;
+          }
+        } catch (e) {}
+      }
+      
+      res.json({
+        id: customer.id,
+        userId: customer.user?.id || customer.user,
+        firstName: customer.user?.first_name || customer.first_name || "",
+        lastName: customer.user?.last_name || customer.last_name || "",
+        email: customer.user?.emails?.[0]?.email || email,
+        status: customer.status || "active",
+        joinDate: customer.join_dt || customer.created_at,
+        points,
+      });
+    } catch (error: any) {
+      console.error("Error searching Perkville customer:", error);
+      res.status(500).json({ error: error?.message || "Failed to search customer" });
+    }
+  });
+
+  app.get("/api/perkville/customers/:connectionId", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const connectionId = parseInt(req.params.connectionId);
+      if (!connectionId || isNaN(connectionId)) {
+        return res.status(400).json({ error: "Invalid connection ID" });
+      }
+      const customer = await getPerkvilleCustomerById(userId, connectionId);
+      if (!customer) {
+        return res.status(404).json({ error: "Customer not found" });
+      }
+      res.json({
+        id: customer.id,
+        userId: customer.user?.id || customer.user,
+        firstName: customer.user?.first_name || customer.first_name || "",
+        lastName: customer.user?.last_name || customer.last_name || "",
+        email: customer.user?.emails?.[0]?.email || customer.email || "",
+        status: customer.status || "active",
+        joinDate: customer.join_dt || customer.created_at,
+        points: customer.balance || customer.points || 0,
+        membershipType: customer.external_membership_type,
+        membershipStatus: customer.external_membership_status,
+      });
+    } catch (error: any) {
+      console.error("Error fetching Perkville customer:", error);
+      res.status(500).json({ error: error?.message || "Failed to fetch customer" });
     }
   });
 
