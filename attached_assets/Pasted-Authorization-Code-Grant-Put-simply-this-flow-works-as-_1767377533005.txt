@@ -1,0 +1,57 @@
+Authorization Code Grant
+Put simply, this flow works as follows: You redirect a user to Perkville. The user gives us permission to let you see and manipulate their data. We redirect back to your application with a short-lived access token. Finally, you make a separate call to Perkville in which you exchange the short-lived token for a long-term bearer token.
+
+PKCE extension
+We also support the PKCE extension for the authorization code grant flow. When implementing PKCE, before performing Step 1, the client first creates what are knows as the "code verifier" and the "code challenge" values. A succinct description of how to generate these values, and the PKCE flow in general can be found in the following docs. https://www.oauth.com/oauth2-servers/pkce/authorization-request/
+
+Step 1
+Redirect the user to our OAuth2 authorization URL with the querystring parameters listed below. Our OAuth2 authorization URL is the following:
+
+https://www.perkville.com/api/authorize/
+If your client uses a custom rewards program domain, the URL will be:
+https://www.client-custom-domain.com/api/authorize/
+This allows the user to use the same cookie for API authorization, if they're already logged into your client's application. Please reach out to api@perkville.com if you are unsure of your client's custom domain.
+key	required	description
+client_id	Yes	The client id that was emailed to the developer contact upon client registration
+redirect_uri	No	The redirect uri that you would like Perkville to redirect your user to once they have authorized your application to access their data on Perkville. Important: This MUST match one of the redirect uris that was provided upon client registration. If this querystring parameter is omitted, Perkville will default to the first redirect uri it has stored for the provided client id.
+response_type	Yes	This must be "code" for the authorization code flow.
+scope	No	The scopes that you would like to request access to on behalf of the user, separated by spaces. See below for a detailed explanation of the allowed scopes. If not provided, defaults to all of the scopes that your client application is allowed to request.
+state	No	It is recommended that the client application populate this query parameter with a random hash. When Perkville redirects the user back to the client server, this state will be included in the redirect request query string so that the client servers may verify the authenticity of the request.
+code_challenge
+( PKCE )	No	The code challenge value generated for use in the PKCE flow.
+code_challenge_method
+( PKCE )	No	This should be S256. While the PKCE flow spec allows both "S256" and "plain" as valid challenge methods, our application only supports S256 at this time.
+For example, the URL that you redirect a user to may look like the following:
+
+https://www.perkville.com/api/authorize/?scope=PUBLIC+USER_CUSTOMER_INFO+USER_REDEEM&state=dsgjndsguh3408fds&redirect_uri=https%3A%2F%2Fwww.example.org%2Foauth_callback%2F&response_type=code&client_id=123myclientid&response_type=code
+Step 2
+Once the user has been redirected to the Perkville servers, they will be asked to login. Then, the user will be shown a page which summarizes what actions the API client has access to, and asks the user to agree. Upon agreement, our servers generate an authorization code which we will include in a querystring and attach to the redirect uri that was specified in step 1. The user will then be redirected back to this uri, and the client servers may then grab this authorization code and proceed to step 3.
+
+Following from the example request in step 1, The URL that perkville will redirect the user back to may look like the following:
+
+https://www.example.org/oauth_callback/?code=ylisfw49snfnsdaa&state=dsgjndsguh3408fds
+Step 3
+Now that your application has an authorization code, you can use it to request an access token. Access tokens can be requested by POSTing to the access token URL listed below with the following POST body. Important: This step must be initiated within 5 minutes after the redirect to your application in step 2 above. Do NOT JSON-encode the POST body. Encode the request body as application/x-www-form-urlencoded, which looks just like a querystring. See the example below.
+
+https://www.perkville.com/api/token/
+key	required	description
+client_id	Yes	The client id of the consuming application.
+client_secret	No*	The client secret of the consuming application.
+* Include the secret here as a GET parameter, or in a Basic Auth header (described below).
+code	Yes	The authorization code that was given to the application in step 2.
+grant_type	Yes	The type of grant that's being requested. This should be "authorization_code".
+redirect_uri	Yes	This is the redirect_uri that was provided in step 1.
+code_verifier
+( PKCE )	No	The code verifier that was generated along with the code challenge if one was sent in Step 1.
+Client secret:
+
+Clients implementing the PKCE Mobile Grant flow should not use the client secret at all.
+Instead of passing in the client_secret as a GET parameter, the request may include it as a Basic Auth header. The username/password for the basic authentication request must be the client id/secret.
+Following from the above examples, here is what an example request may look like using curl:
+curl https://www.perkville.com/api/token/ -d "code=ylisfw49snfnsdaa&grant_type=authorization_code&redirect_uri=https%3A%2F%2Fwww.example.org%2Foauth_callback%2F&state=dsgjndsguh3408fds&client_id=123myclientid" -u 123myclientid:myclientpassword
+If successful, Perkville will respond with an access_token and the scopes that are applicable to the access token. The returned access token should be used to request v2 resources listed below. See "Accessing Endpoints" for more information on how to access resources.
+
+PKCE Mobile Grant
+The PKCE mobile grant flow is similar to the Authorization Code Grant flow with the PKCE extension, except that the client secret should not be used, nor should the basic auth header.
+
+This flow is intended to be used by mobile applications since they cannot keep the client secret value confidential. Whereas clients having the Authorization Code grant may optionally implement the PKCE extension for added security, clients having only the PKCE Mobile grant must implement this version of the PKCE flow.

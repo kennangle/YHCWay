@@ -2286,6 +2286,7 @@ export async function registerRoutes(
         return res.status(401).json({ error: "Unauthorized" });
       }
       const info = await getPerkvilleCustomerInfo(userId);
+      console.log("[Perkville] /me response:", JSON.stringify(info, null, 2));
       res.json(info);
     } catch (error: any) {
       console.error("Error fetching Perkville customer info:", error);
