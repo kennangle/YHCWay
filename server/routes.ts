@@ -23,6 +23,7 @@ import { generateEmailReplySuggestions, summarizeEmail } from "./ai-email";
 import { extractTasksFromContent, generateDailyBriefing, generateMeetingPrep, smartSearch, draftEmail, analyzeCalendar, prioritizeTasks } from "./ai-assistant";
 import { isQrTigerConfigured, createDynamicQRCode, createStaticQRCode, listQRCodes, getQRCodeAnalytics, deleteQRCode } from "./qr-tiger";
 import { isPerkvilleConfigured, authenticateWithPerkville, isUserPerkvilleConnected, getPerkvilleCustomerInfo, getPerkvillePoints, getPerkvilleRewards, getPerkvilleActivity, disconnectPerkville, getPerkvilleBusinesses, getPerkvilleCustomers, getPerkvilleConnectionBalances, searchPerkvilleCustomerByEmail, getPerkvilleCustomerById } from "./perkville";
+import { yhcTimeClient } from "./yhctime";
 
 const isAdmin: RequestHandler = async (req: any, res, next) => {
   try {
@@ -2239,7 +2240,6 @@ export async function registerRoutes(
         provider: 'perkville',
         providerAccountId: userId,
         accessToken: tokenData.access_token,
-        scope: tokenData.scope || null,
       });
       
       await storage.enableIntegration(userId, 'perkville');
@@ -4900,6 +4900,119 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error deleting QR code:", error);
       res.status(500).json({ error: "Failed to delete QR code" });
+    }
+  });
+
+  // =============================================================================
+  // YHCTIME ROUTES
+  // =============================================================================
+
+  app.get("/api/yhctime/status", isAuthenticated, async (req: any, res) => {
+    try {
+      res.json({ connected: yhcTimeClient.isConfigured() });
+    } catch (error) {
+      console.error("Error checking YHCTime status:", error);
+      res.status(500).json({ error: "Failed to check YHCTime status" });
+    }
+  });
+
+  app.get("/api/yhctime/current-status", isAuthenticated, async (req: any, res) => {
+    try {
+      if (!yhcTimeClient.isConfigured()) {
+        return res.status(400).json({ error: "YHCTime not configured" });
+      }
+      const status = await yhcTimeClient.getAllEmployeesStatus();
+      res.json(status);
+    } catch (error: any) {
+      console.error("Error fetching all employees status:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch employees status" });
+    }
+  });
+
+  app.get("/api/yhctime/employees/:employeeId/status", isAuthenticated, async (req: any, res) => {
+    try {
+      if (!yhcTimeClient.isConfigured()) {
+        return res.status(400).json({ error: "YHCTime not configured" });
+      }
+      const employeeId = parseInt(req.params.employeeId, 10);
+      if (isNaN(employeeId)) {
+        return res.status(400).json({ error: "Invalid employee ID" });
+      }
+      const status = await yhcTimeClient.getEmployeeStatus(employeeId);
+      res.json(status);
+    } catch (error: any) {
+      console.error("Error fetching employee status:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch employee status" });
+    }
+  });
+
+  app.get("/api/yhctime/sessions", isAuthenticated, async (req: any, res) => {
+    try {
+      if (!yhcTimeClient.isConfigured()) {
+        return res.status(400).json({ error: "YHCTime not configured" });
+      }
+      const { start, end } = req.query;
+      if (!start || !end) {
+        return res.status(400).json({ error: "start and end date parameters are required" });
+      }
+      const history = await yhcTimeClient.getSessionHistory({ 
+        start: start as string, 
+        end: end as string 
+      });
+      res.json(history);
+    } catch (error: any) {
+      console.error("Error fetching session history:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch session history" });
+    }
+  });
+
+  app.post("/api/yhctime/sessions", isAuthenticated, async (req: any, res) => {
+    try {
+      if (!yhcTimeClient.isConfigured()) {
+        return res.status(400).json({ error: "YHCTime not configured" });
+      }
+      
+      const { employeeId, startTime, endTime, breakDuration, notes, idempotencyKey } = req.body;
+      if (!employeeId || !startTime || !endTime) {
+        return res.status(400).json({ error: "employeeId, startTime, and endTime are required" });
+      }
+      
+      const session = await yhcTimeClient.createSession({
+        employeeId,
+        startTime,
+        endTime,
+        breakDuration,
+        notes,
+        idempotencyKey,
+      });
+      res.status(201).json(session);
+    } catch (error: any) {
+      console.error("Error creating session:", error);
+      res.status(500).json({ error: error.message || "Failed to create session" });
+    }
+  });
+
+  app.patch("/api/yhctime/sessions/:sessionId", isAuthenticated, async (req: any, res) => {
+    try {
+      if (!yhcTimeClient.isConfigured()) {
+        return res.status(400).json({ error: "YHCTime not configured" });
+      }
+      const sessionId = parseInt(req.params.sessionId, 10);
+      if (isNaN(sessionId)) {
+        return res.status(400).json({ error: "Invalid session ID" });
+      }
+      
+      const { startTime, endTime, breakDuration, notes } = req.body;
+      const session = await yhcTimeClient.updateSession(sessionId, {
+        startTime,
+        endTime,
+        breakDuration,
+        notes,
+      });
+      res.json(session);
+    } catch (error: any) {
+      console.error("Error updating session:", error);
+      res.status(500).json({ error: error.message || "Failed to update session" });
     }
   });
 

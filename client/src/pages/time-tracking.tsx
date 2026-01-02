@@ -1,0 +1,480 @@
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { UnifiedSidebar } from "@/components/unified-sidebar";
+import { TopBar } from "@/components/top-bar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Clock, Plus, Users, Calendar, Loader2, CheckCircle, Coffee, LogOut } from "lucide-react";
+import { getQueryFn } from "@/lib/queryClient";
+import { toast } from "sonner";
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays } from "date-fns";
+import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
+
+interface EmployeeStatus {
+  employeeId: number;
+  employeeName: string;
+  status: 'active' | 'break' | 'offline';
+  session?: {
+    id: number;
+    startTime: string;
+    breakStatus: 'none' | 'active';
+    grossDuration: number;
+    breakDuration: number;
+    netDuration: number;
+  };
+}
+
+interface AllEmployeesStatusResponse {
+  employees: EmployeeStatus[];
+}
+
+interface SessionHistoryItem {
+  id: number;
+  employeeId: number;
+  employeeName?: string;
+  startTime: string;
+  endTime: string;
+  grossDuration: number;
+  breakDuration: number;
+  netDuration: number;
+  notes?: string;
+  source?: string;
+  approved?: boolean;
+}
+
+interface SessionHistoryResponse {
+  sessions: SessionHistoryItem[];
+  total?: number;
+}
+
+function formatDuration(ms: number): string {
+  const hours = Math.floor(ms / 3600000);
+  const minutes = Math.floor((ms % 3600000) / 60000);
+  return `${hours}h ${minutes}m`;
+}
+
+function getStatusColor(status: string): string {
+  switch (status) {
+    case 'active':
+      return 'bg-green-500';
+    case 'break':
+      return 'bg-yellow-500';
+    default:
+      return 'bg-gray-400';
+  }
+}
+
+function getStatusIcon(status: string) {
+  switch (status) {
+    case 'active':
+      return <CheckCircle className="w-4 h-4" />;
+    case 'break':
+      return <Coffee className="w-4 h-4" />;
+    default:
+      return <LogOut className="w-4 h-4" />;
+  }
+}
+
+export default function TimeTrackingPage() {
+  const queryClient = useQueryClient();
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [dateRange, setDateRange] = useState<'week' | 'month' | 'custom'>('week');
+  
+  const now = new Date();
+  const getDateRange = () => {
+    switch (dateRange) {
+      case 'week':
+        return { start: startOfWeek(now), end: endOfWeek(now) };
+      case 'month':
+        return { start: startOfMonth(now), end: endOfMonth(now) };
+      default:
+        return { start: subDays(now, 7), end: now };
+    }
+  };
+  
+  const { start, end } = getDateRange();
+
+  const [formData, setFormData] = useState({
+    employeeId: "",
+    date: format(new Date(), 'yyyy-MM-dd'),
+    startTime: "09:00",
+    endTime: "17:00",
+    breakDuration: "0",
+    notes: "",
+  });
+
+  const { data: status, isLoading: statusLoading } = useQuery<{ connected: boolean }>({
+    queryKey: ["/api/yhctime/status"],
+    queryFn: getQueryFn({ on401: "throw" }),
+  });
+
+  const { data: employeesStatus, isLoading: employeesLoading } = useQuery<AllEmployeesStatusResponse>({
+    queryKey: ["/api/yhctime/current-status"],
+    queryFn: getQueryFn({ on401: "throw" }),
+    enabled: status?.connected,
+    refetchInterval: 60000,
+  });
+
+  const { data: sessionsData, isLoading: sessionsLoading } = useQuery<SessionHistoryResponse>({
+    queryKey: ["/api/yhctime/sessions", format(start, 'yyyy-MM-dd'), format(end, 'yyyy-MM-dd')],
+    queryFn: async () => {
+      const res = await fetch(
+        `/api/yhctime/sessions?start=${format(start, 'yyyy-MM-dd')}&end=${format(end, 'yyyy-MM-dd')}`,
+        { credentials: "include" }
+      );
+      if (!res.ok) throw new Error("Failed to fetch sessions");
+      return res.json();
+    },
+    enabled: status?.connected,
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: typeof formData) => {
+      const startDateTime = new Date(`${data.date}T${data.startTime}:00`);
+      const endDateTime = new Date(`${data.date}T${data.endTime}:00`);
+      
+      const res = await fetch("/api/yhctime/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          employeeId: parseInt(data.employeeId, 10),
+          startTime: startDateTime.toISOString(),
+          endTime: endDateTime.toISOString(),
+          breakDuration: parseInt(data.breakDuration, 10) * 60000,
+          notes: data.notes || undefined,
+        }),
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to create session");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/yhctime/sessions"] });
+      setIsCreateOpen(false);
+      setFormData({
+        employeeId: "",
+        date: format(new Date(), 'yyyy-MM-dd'),
+        startTime: "09:00",
+        endTime: "17:00",
+        breakDuration: "0",
+        notes: "",
+      });
+      toast.success("Time entry created successfully");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to create time entry");
+    },
+  });
+
+  const employees = employeesStatus?.employees || [];
+  const sessions = sessionsData?.sessions || [];
+
+  if (statusLoading) {
+    return (
+      <div 
+        className="min-h-screen bg-cover bg-center bg-fixed flex items-center justify-center"
+        style={{ backgroundImage: `url(${generatedBg})` }}
+      >
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!status?.connected) {
+    return (
+      <div 
+        className="min-h-screen bg-cover bg-center bg-fixed"
+        style={{ backgroundImage: `url(${generatedBg})` }}
+      >
+        <UnifiedSidebar />
+        <main className="md:ml-64 min-h-screen">
+          <TopBar />
+          <div className="p-6 md:p-8">
+            <div className="max-w-4xl mx-auto">
+              <div className="glass-card p-8 rounded-2xl text-center">
+                <Clock className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+                <h2 className="text-2xl font-bold mb-2">YHCTime Not Connected</h2>
+                <p className="text-muted-foreground mb-4">
+                  The YHCTIME_API_KEY is not configured. Please add it in your environment secrets.
+                </p>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  return (
+    <div 
+      className="min-h-screen bg-cover bg-center bg-fixed"
+      style={{ backgroundImage: `url(${generatedBg})` }}
+    >
+      <UnifiedSidebar />
+      
+      <main className="md:ml-64 min-h-screen">
+        <TopBar />
+        
+        <div className="p-6 md:p-8">
+          <div className="max-w-6xl mx-auto">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h1 className="text-3xl font-bold text-foreground mb-2 flex items-center gap-3">
+                  <Clock className="w-8 h-8 text-primary" />
+                  Time Tracking
+                </h1>
+                <p className="text-muted-foreground">
+                  View employee status and manage work sessions
+                </p>
+              </div>
+              
+              <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+                <DialogTrigger asChild>
+                  <Button data-testid="button-create-session">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Time Entry
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Create Time Entry</DialogTitle>
+                  </DialogHeader>
+                  <form 
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      createMutation.mutate(formData);
+                    }}
+                    className="space-y-4"
+                  >
+                    <div>
+                      <Label htmlFor="employeeId">Employee</Label>
+                      <Select
+                        value={formData.employeeId}
+                        onValueChange={(value) => setFormData(prev => ({ ...prev, employeeId: value }))}
+                      >
+                        <SelectTrigger data-testid="select-employee">
+                          <SelectValue placeholder="Select employee" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {employees.map((emp) => (
+                            <SelectItem key={emp.employeeId} value={emp.employeeId.toString()}>
+                              {emp.employeeName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="date">Date</Label>
+                      <Input
+                        id="date"
+                        type="date"
+                        value={formData.date}
+                        onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                        data-testid="input-date"
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="startTime">Start Time</Label>
+                        <Input
+                          id="startTime"
+                          type="time"
+                          value={formData.startTime}
+                          onChange={(e) => setFormData(prev => ({ ...prev, startTime: e.target.value }))}
+                          data-testid="input-start-time"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="endTime">End Time</Label>
+                        <Input
+                          id="endTime"
+                          type="time"
+                          value={formData.endTime}
+                          onChange={(e) => setFormData(prev => ({ ...prev, endTime: e.target.value }))}
+                          data-testid="input-end-time"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="breakDuration">Break Duration (minutes)</Label>
+                      <Input
+                        id="breakDuration"
+                        type="number"
+                        min="0"
+                        value={formData.breakDuration}
+                        onChange={(e) => setFormData(prev => ({ ...prev, breakDuration: e.target.value }))}
+                        data-testid="input-break-duration"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="notes">Notes (optional)</Label>
+                      <Textarea
+                        id="notes"
+                        value={formData.notes}
+                        onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                        placeholder="Add any notes about this session..."
+                        data-testid="input-notes"
+                      />
+                    </div>
+                    
+                    <Button 
+                      type="submit" 
+                      className="w-full"
+                      disabled={createMutation.isPending || !formData.employeeId}
+                      data-testid="button-submit-session"
+                    >
+                      {createMutation.isPending ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Creating...
+                        </>
+                      ) : (
+                        "Create Time Entry"
+                      )}
+                    </Button>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            <Tabs defaultValue="status" className="space-y-6">
+              <TabsList className="glass-card">
+                <TabsTrigger value="status" data-testid="tab-status">
+                  <Users className="w-4 h-4 mr-2" />
+                  Current Status
+                </TabsTrigger>
+                <TabsTrigger value="history" data-testid="tab-history">
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Session History
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="status">
+                <div className="glass-card p-6 rounded-2xl">
+                  <h2 className="text-xl font-semibold mb-4">Employee Status</h2>
+                  
+                  {employeesLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="w-6 h-6 animate-spin" />
+                    </div>
+                  ) : employees.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">
+                      No employee data available
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {employees.map((emp) => (
+                        <div 
+                          key={emp.employeeId}
+                          className="p-4 rounded-xl bg-background/50 border border-border"
+                          data-testid={`card-employee-${emp.employeeId}`}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <h3 className="font-medium">{emp.employeeName}</h3>
+                            <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-white text-xs ${getStatusColor(emp.status)}`}>
+                              {getStatusIcon(emp.status)}
+                              <span className="capitalize">{emp.status}</span>
+                            </div>
+                          </div>
+                          
+                          {emp.session && (
+                            <div className="text-sm text-muted-foreground space-y-1">
+                              <p>Started: {format(new Date(emp.session.startTime), 'h:mm a')}</p>
+                              <p>Net time: {formatDuration(emp.session.netDuration)}</p>
+                              {emp.session.breakDuration > 0 && (
+                                <p>Break: {formatDuration(emp.session.breakDuration)}</p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="history">
+                <div className="glass-card p-6 rounded-2xl">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-semibold">Session History</h2>
+                    <Select value={dateRange} onValueChange={(v: any) => setDateRange(v)}>
+                      <SelectTrigger className="w-40" data-testid="select-date-range">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="week">This Week</SelectItem>
+                        <SelectItem value="month">This Month</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {sessionsLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="w-6 h-6 animate-spin" />
+                    </div>
+                  ) : sessions.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">
+                      No sessions found for the selected period
+                    </p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b border-border">
+                            <th className="text-left py-3 px-4 font-medium">Employee</th>
+                            <th className="text-left py-3 px-4 font-medium">Date</th>
+                            <th className="text-left py-3 px-4 font-medium">Start</th>
+                            <th className="text-left py-3 px-4 font-medium">End</th>
+                            <th className="text-left py-3 px-4 font-medium">Net Time</th>
+                            <th className="text-left py-3 px-4 font-medium">Break</th>
+                            <th className="text-left py-3 px-4 font-medium">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {sessions.map((session) => (
+                            <tr 
+                              key={session.id} 
+                              className="border-b border-border/50 hover:bg-background/30"
+                              data-testid={`row-session-${session.id}`}
+                            >
+                              <td className="py-3 px-4">{session.employeeName || `Employee #${session.employeeId}`}</td>
+                              <td className="py-3 px-4">{format(new Date(session.startTime), 'MMM d, yyyy')}</td>
+                              <td className="py-3 px-4">{format(new Date(session.startTime), 'h:mm a')}</td>
+                              <td className="py-3 px-4">{format(new Date(session.endTime), 'h:mm a')}</td>
+                              <td className="py-3 px-4">{formatDuration(session.netDuration)}</td>
+                              <td className="py-3 px-4">{formatDuration(session.breakDuration)}</td>
+                              <td className="py-3 px-4">
+                                {session.approved ? (
+                                  <span className="text-green-600 text-sm">Approved</span>
+                                ) : (
+                                  <span className="text-yellow-600 text-sm">Pending</span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}

@@ -11,6 +11,7 @@ import {
   Gift,
   QrCode,
   Star,
+  Clock,
   ArrowRight,
   CheckCircle,
   XCircle,
@@ -95,6 +96,15 @@ const appCards = [
     color: "#F59E0B",
     href: "/rewards",
     serviceName: "Perkville"
+  },
+  {
+    id: "yhctime",
+    name: "YHCTime",
+    description: "Employee time tracking and sessions",
+    icon: Clock,
+    color: "#10B981",
+    href: "/time-tracking",
+    serviceName: "YHCTime"
   }
 ];
 
@@ -126,16 +136,27 @@ export default function Overview() {
     },
   });
 
+  const { data: yhcTimeStatus, isLoading: yhcTimeLoading } = useQuery<{ connected: boolean }>({
+    queryKey: ["/api/yhctime/status"],
+    queryFn: async () => {
+      const res = await fetch("/api/yhctime/status", { credentials: "include" });
+      if (!res.ok) return { connected: false };
+      return res.json();
+    },
+  });
+
   const isServiceConnected = (serviceName: string | null) => {
     if (serviceName === null) return true;
     if (serviceName === "QR Tiger") return qrTigerStatus?.connected ?? false;
     if (serviceName === "Perkville") return perkvilleStatus?.connected ?? false;
+    if (serviceName === "YHCTime") return yhcTimeStatus?.connected ?? false;
     return services?.find(s => s.name === serviceName)?.connected ?? false;
   };
 
   const isServiceLoading = (serviceName: string | null) => {
     if (serviceName === "QR Tiger") return qrTigerLoading;
     if (serviceName === "Perkville") return perkvilleLoading;
+    if (serviceName === "YHCTime") return yhcTimeLoading;
     return isLoading;
   };
 

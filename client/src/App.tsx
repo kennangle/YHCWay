@@ -82,6 +82,7 @@ import PendingApproval from "@/pages/pending-approval";
 import ArchivePage from "@/pages/archive";
 import QRCodes from "@/pages/qr-codes";
 import Rewards from "@/pages/rewards";
+import TimeTracking from "@/pages/time-tracking";
 import { FloatingAIButton } from "@/components/floating-ai-button";
 import { GuidedTour } from "@/components/guided-tour";
 
@@ -151,6 +152,7 @@ function Router() {
         <Route path="/setup-guide" component={SetupGuide} />
         <Route path="/qr-codes" component={QRCodes} />
         <Route path="/rewards" component={Rewards} />
+        <Route path="/time-tracking" component={TimeTracking} />
         <Route path="/login">{() => <Redirect to="/dashboard" />}</Route>
         <Route path="/register">{() => <Redirect to="/dashboard" />}</Route>
         <Route component={NotFound} />
