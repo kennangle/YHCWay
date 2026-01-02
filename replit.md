@@ -105,8 +105,18 @@ All AI features are user-scoped for security (data isolation per user). Note: Ca
   - Dedicated `/intro-offers` page for viewing and managing intro offers
 - **Perkville**: Resource Owner Grant integration for loyalty rewards program
   - Uses password-based authentication (admin enters Perkville email/password)
-  - Dedicated `/rewards` page for viewing points, available rewards, and activity history
-  - API endpoints: connect (POST with username/password), disconnect, status, me, points, rewards, activity
+  - Dedicated `/rewards` page with dual views:
+    - **Business Analytics**: Total points across all customers, customer count, top customer leaderboard
+    - **Customer Lookup**: Search customers by email to view their point balance
+    - **Personal Account**: View your own points (total/available/pending) and recent activity history
+  - API endpoints:
+    - `connect` (POST with username/password), `disconnect`, `status`
+    - `me`, `points`, `rewards`, `activity` - Personal account data
+    - `businesses` - List businesses the admin manages
+    - `customers?businessId=X` - Get all customers with merged point balances
+    - `balances?businessId=X` - Get aggregated totals (total points, customer count)
+    - `search?email=X` - Search customer by email with balance lookup
+  - Data merging: `/customers` endpoint fetches both customer list and connection-balances, merges via Map(connectionId → balance) to ensure accurate point totals
   - Scopes granted: PUBLIC, ADMIN_CUSTOMER_INFO
   - Requires `PERKVILLE_CLIENT_ID` and `PERKVILLE_CLIENT_SECRET` environment variables
 - **QR Tiger**: API integration for dynamic QR code generation and tracking
