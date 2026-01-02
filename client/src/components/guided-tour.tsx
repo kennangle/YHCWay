@@ -22,6 +22,7 @@ export function useGuidedTour() {
       prevBtnText: '← Back',
       doneBtnText: 'Get Started!',
       showButtons: ['next', 'previous', 'close'],
+      smoothScroll: true,
       steps: [
         {
           element: '[data-tour="sidebar-logo"]',
@@ -91,7 +92,7 @@ export function useGuidedTour() {
           popover: {
             title: 'Connect Your Apps',
             description: 'Link your Gmail, Google Calendar, Slack, Zoom, and other apps to unlock the full power of YHC Way.',
-            side: 'right',
+            side: 'top',
             align: 'start',
           },
         },
@@ -100,7 +101,7 @@ export function useGuidedTour() {
           popover: {
             title: 'Settings',
             description: 'Customize your experience, manage your profile, and configure your preferences.',
-            side: 'right',
+            side: 'top',
             align: 'start',
           },
         },
@@ -108,6 +109,8 @@ export function useGuidedTour() {
           popover: {
             title: 'You\'re All Set! 🎉',
             description: 'Start by connecting your apps to see your unified workspace come to life. Click "Get Started" to begin!',
+            side: 'top',
+            align: 'center',
           },
         },
       ],
