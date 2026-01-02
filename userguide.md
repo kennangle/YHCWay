@@ -1,6 +1,6 @@
-# UniWork User Guide
+# The YHC Way User Guide
 
-Welcome to UniWork! This guide will help you get started with your unified workspace and make the most of all its features.
+Welcome to The YHC Way! This guide will help you get started with your unified workspace and make the most of all its features.
 
 ---
 
@@ -8,9 +8,9 @@ Welcome to UniWork! This guide will help you get started with your unified works
 
 ### Your First Login
 
-After your administrator approves your account, you'll receive access to UniWork. When you log in for the first time, you'll see the Dashboard - your central hub for all work activity.
+After your administrator approves your account, you'll receive access to The YHC Way. When you log in for the first time, you'll see the Dashboard - your central hub for all work activity.
 
-Before diving in, we recommend visiting the **Setup Guide** (found in the left sidebar) to connect your favorite tools. The more services you connect, the more powerful UniWork becomes.
+Before diving in, we recommend visiting the **Setup Guide** (found in the left sidebar) to connect your favorite tools. The more services you connect, the more powerful The YHC Way becomes.
 
 ### Understanding the Sidebar
 
@@ -34,7 +34,7 @@ The left sidebar is your main navigation. Here's what you'll find:
 
 ## Connecting Your Services
 
-UniWork works best when you connect all your productivity tools. Here's how to set up each one:
+The YHC Way works best when you connect all your productivity tools. Here's how to set up each one:
 
 ### Gmail
 
@@ -56,13 +56,13 @@ UniWork works best when you connect all your productivity tools. Here's how to s
 3. Enter your Apple ID email address
 4. Enter an **App-Specific Password** (not your regular Apple password)
    - To create one: Go to appleid.apple.com > Sign-In and Security > App-Specific Passwords
-5. Your iCloud calendar events will sync to UniWork
+5. Your iCloud calendar events will sync to The YHC Way
 
 ### Slack
 
 1. Go to **Connect App** in the sidebar
 2. Find **Slack** and click **Connect**
-3. Authorize UniWork to access your Slack workspace
+3. Authorize The YHC Way to access your Slack workspace
 4. Your Slack messages and DMs will appear in the Unified Inbox
 
 ### Zoom
@@ -188,7 +188,7 @@ This information helps you follow up with new students who purchased intro offer
 
 ## Chat
 
-UniWork includes built-in chat for communicating with your team.
+The YHC Way includes built-in chat for communicating with your team.
 
 ### Starting a Conversation
 
@@ -233,7 +233,7 @@ Templates support variables like `{{firstName}}` that get replaced with actual d
 
 ## Settings
 
-Customize UniWork to work the way you prefer.
+Customize The YHC Way to work the way you prefer.
 
 ### Available Settings
 
@@ -304,7 +304,7 @@ All data within an organization is isolated and secure:
 
 ## Projects & Tasks
 
-UniWork includes a powerful project management system for organizing your work, with multiple views just like Asana.
+The YHC Way includes a powerful project management system for organizing your work, with multiple views just like Asana.
 
 ### Creating a Project
 
@@ -315,7 +315,7 @@ UniWork includes a powerful project management system for organizing your work, 
 
 ### Project Views
 
-UniWork offers four different ways to view your project:
+The YHC Way offers four different ways to view your project:
 
 **Board View** (Kanban)
 - The default view showing tasks as cards organized in columns
@@ -416,24 +416,24 @@ If you're migrating from Asana, you can import your projects:
 
 ## Typeform Integration
 
-Create and manage forms directly within UniWork.
+Create and manage forms directly within The YHC Way.
 
 ### Viewing Forms
 
 1. Go to **Typeform** in the sidebar (admin only)
 2. See all your Typeform forms in one place
-3. Click **Preview** to view a form without leaving UniWork
+3. Click **Preview** to view a form without leaving The YHC Way
 4. Click the external link icon to open forms in Typeform
 
 ### Connecting Typeform
 
-Typeform is configured by your administrator. Once connected, all your organization's forms will be accessible from UniWork.
+Typeform is configured by your administrator. Once connected, all your organization's forms will be accessible from The YHC Way.
 
 ---
 
 ## Email Notifications
 
-UniWork can send you email notifications when tasks are assigned to you.
+The YHC Way can send you email notifications when tasks are assigned to you.
 
 ### What Gets Notified
 
@@ -449,32 +449,32 @@ UniWork can send you email notifications when tasks are assigned to you.
 
 ## Mobile Access
 
-UniWork is fully mobile-optimized and works great on phones and tablets.
+The YHC Way is fully mobile-optimized and works great on phones and tablets.
 
 ### Accessing on Mobile
 
-Simply open UniWork in your mobile browser:
+Simply open The YHC Way in your mobile browser:
 - The layout automatically adjusts for smaller screens
 - All features are accessible on mobile
 - Touch-friendly buttons and navigation
 
 ### Adding to Your Home Screen
 
-For quick access, you can add UniWork to your phone's home screen:
+For quick access, you can add The YHC Way to your phone's home screen:
 
 **On iPhone/iPad:**
-1. Open UniWork in **Safari**
+1. Open The YHC Way in **Safari**
 2. Tap the **Share** button (square with arrow pointing up)
 3. Scroll down and tap **Add to Home Screen**
 4. Tap **Add**
 
 **On Android:**
-1. Open UniWork in **Chrome**
+1. Open The YHC Way in **Chrome**
 2. Tap the **three-dot menu** in the top right
 3. Tap **Add to Home Screen**
 4. Tap **Add**
 
-This creates a shortcut icon on your home screen for quick access to UniWork.
+This creates a shortcut icon on your home screen for quick access to The YHC Way.
 
 ---
 
@@ -503,7 +503,7 @@ Click the **X** button in the search bar to clear your search and see all conver
 
 ## Keyboard Shortcuts
 
-UniWork supports keyboard shortcuts to help you navigate quickly without using your mouse.
+The YHC Way supports keyboard shortcuts to help you navigate quickly without using your mouse.
 
 ### Navigation Shortcuts
 
@@ -531,7 +531,7 @@ When viewing a project board:
 
 ## Command Palette
 
-The Command Palette gives you quick access to everything in UniWork.
+The Command Palette gives you quick access to everything in The YHC Way.
 
 ### Opening the Command Palette
 
@@ -641,7 +641,7 @@ Zoom meetings include a **Join** button for quick access to your video calls dir
 
 ## AI Assistant
 
-UniWork includes a powerful AI Assistant to help you work smarter. Access it by clicking the **brain icon** in the bottom-right corner of your screen.
+The YHC Way includes a powerful AI Assistant to help you work smarter. Access it by clicking the **brain icon** in the bottom-right corner of your screen.
 
 ### Available Features
 
@@ -697,12 +697,12 @@ Get AI-powered task rankings:
 
 ## Tips for Success
 
-1. **Connect everything** - The more services you connect, the more useful UniWork becomes
+1. **Connect everything** - The more services you connect, the more useful The YHC Way becomes
 2. **Check the Dashboard daily** - Start your day with a quick overview of what needs attention
 3. **Use the Unified Inbox** - Stop switching between email and Slack tabs
 4. **Keep the Calendar open** - Never miss a meeting with all your events in one place
 5. **Add to your home screen** - Create a shortcut for quick mobile access
-6. **Use Projects** - Manage your tasks natively without leaving UniWork
+6. **Use Projects** - Manage your tasks natively without leaving The YHC Way
 7. **Learn keyboard shortcuts** - Press G + letter to navigate quickly
 8. **Use the Command Palette** - Press Cmd + K for quick access to anything
 9. **Create templates** - Save time on repetitive tasks with templates
@@ -720,4 +720,4 @@ If you have questions or run into issues:
 
 ---
 
-Thank you for using UniWork! We hope it helps you work more efficiently by bringing all your tools together in one place.
+Thank you for using The YHC Way! We hope it helps you work more efficiently by bringing all your tools together in one place.

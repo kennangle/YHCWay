@@ -1,8 +1,8 @@
-# UniWork Onboarding Guide
+# The YHC Way Onboarding Guide
 
 ## Getting Started
 
-UniWork is a unified workspace that brings together your email, calendar, Slack messages, and Zoom meetings in one place.
+The YHC Way is a unified workspace that brings together your email, calendar, Slack messages, and Zoom meetings in one place.
 
 ---
 
@@ -91,16 +91,16 @@ Apple Calendar requires special setup:
    - Sign in to your Apple account
    - Go to **Security** → **App-Specific Passwords**
    - Click **Generate an app-specific password**
-   - Name it "UniWork"
+   - Name it "The YHC Way"
    - Copy the 16-character password that appears
-5. Enter your Apple ID (email) and the app-specific password in UniWork
+5. Enter your Apple ID (email) and the app-specific password in The YHC Way
 6. Click **Connect Apple Calendar**
 
 **Note**: Your app-specific password is stored server-side to fetch your calendar data. It's separate from your main Apple password and can be revoked at any time from your Apple ID settings.
 
 ---
 
-## Using UniWork
+## Using The YHC Way
 
 ### Dashboard
 Your home screen shows:

@@ -846,8 +846,8 @@ export async function sendSlackBlockNotification(
   }
 }
 
-// Helper to format UniWork notifications nicely for Slack
-export function formatUniWorkNotification(
+// Helper to format The YHC Way notifications nicely for Slack
+export function formatYHCWayNotification(
   type: 'task_assigned' | 'task_completed' | 'project_update' | 'comment' | 'custom',
   data: {
     title: string;
@@ -907,10 +907,10 @@ export function formatUniWorkNotification(
           type: 'button',
           text: {
             type: 'plain_text',
-            text: 'View in UniWork',
+            text: 'View in The YHC Way',
           },
           url: data.link,
-          action_id: 'view_in_uniwork',
+          action_id: 'view_in_yhcway',
         },
       ],
     });

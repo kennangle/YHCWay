@@ -8,17 +8,17 @@ const apiInstance = new brevo.TransactionalEmailsApi();
 apiInstance.setApiKey(brevo.TransactionalEmailsApiApiKeys.apiKey, brevoApiKey);
 
 // Get sender email from environment variable or use default
-const SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'noreply@uniwork.app';
-const SENDER_NAME = process.env.BREVO_SENDER_NAME || 'UniWork';
+const SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'noreply@yhcway.com';
+const SENDER_NAME = process.env.BREVO_SENDER_NAME || 'The YHC Way';
 
 // Default invitation email template
-const DEFAULT_INVITATION_SUBJECT = "Welcome to UniWork!";
+const DEFAULT_INVITATION_SUBJECT = "Welcome to The YHC Way!";
 const DEFAULT_INVITATION_HTML = `
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <h1 style="color: #333; text-align: center;">UniWork</h1>
+  <h1 style="color: #333; text-align: center;">The YHC Way</h1>
   <h2 style="color: #666;">Welcome, {{firstName}}!</h2>
   <p style="color: #444; line-height: 1.6;">
-    You've been invited to join UniWork - your unified workspace for managing all your work tools in one place.
+    You've been invited to join The YHC Way - your unified workspace for managing all your work tools in one place.
   </p>
   <p style="color: #444; line-height: 1.6;">
     Here are your login credentials:
@@ -32,13 +32,13 @@ const DEFAULT_INVITATION_HTML = `
   </p>
   <div style="text-align: center; margin: 30px 0;">
     <a href="{{loginUrl}}" 
-       style="background-color: #6366f1; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold;">
-      Log In to UniWork
+       style="background-color: #FD971E; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold;">
+      Log In to The YHC Way
     </a>
   </div>
   <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
   <p style="color: #999; font-size: 12px; text-align: center;">
-    UniWork - Your Unified Workspace
+    The YHC Way - Your Unified Workspace
   </p>
 </div>
 `;

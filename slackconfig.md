@@ -1,13 +1,13 @@
-# Slack Configuration Guide for UniWork
+# Slack Configuration Guide for The YHC Way
 
-This guide walks you through setting up Slack integration for UniWork.
+This guide walks you through setting up Slack integration for The YHC Way.
 
 ## Step 1: Create a Slack App
 
 1. Go to [api.slack.com/apps](https://api.slack.com/apps)
 2. Click **Create New App**
 3. Choose **From scratch**
-4. Enter an app name (e.g., "UniWork Integration")
+4. Enter an app name (e.g., "The YHC Way Integration")
 5. Select your Slack workspace
 6. Click **Create App**
 
@@ -33,7 +33,7 @@ This guide walks you through setting up Slack integration for UniWork.
 3. Review the permissions and click **Allow**
 4. Copy the **Bot User OAuth Token** (starts with `xoxb-`)
 
-## Step 4: Add the Token to UniWork
+## Step 4: Add the Token to The YHC Way
 
 1. In your Replit project, go to the **Secrets** tab (lock icon in the left sidebar)
 2. Find or create a secret named `SLACK_BOT_TOKEN`
@@ -48,7 +48,7 @@ For the bot to read messages from a channel:
 2. Type `/invite @YourBotName` (replace with your bot's name)
 3. Press Enter
 
-The bot must be invited to each channel you want to see in UniWork.
+The bot must be invited to each channel you want to see in The YHC Way.
 
 ## Troubleshooting
 

@@ -1,6 +1,6 @@
-# UniWork360 New User Testing Guide
+# The YHC Way360 New User Testing Guide
 
-Welcome to UniWork360! This guide will walk you through setting up and testing all the features of your unified workspace.
+Welcome to The YHC Way360! This guide will walk you through setting up and testing all the features of your unified workspace.
 
 ---
 
