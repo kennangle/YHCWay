@@ -90,7 +90,16 @@ export async function getPerkvilleMe(userId: string): Promise<any | null> {
 export async function getPerkvilleBusinesses(userId: string): Promise<any[]> {
   try {
     const data = await perkvilleApiRequest(userId, "/businesses/");
-    const results = data.results || data || [];
+    console.log("[Perkville] /businesses/ raw response:", JSON.stringify(data, null, 2));
+    
+    let results: any[] = [];
+    if (Array.isArray(data)) {
+      results = data;
+    } else if (data?.results && Array.isArray(data.results)) {
+      results = data.results;
+    } else if (data?.id) {
+      results = [data];
+    }
     
     return results.map((biz: any) => ({
       id: biz.id,
