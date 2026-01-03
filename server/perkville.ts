@@ -1,7 +1,7 @@
 import { storage } from "./storage";
 
-const PERKVILLE_CLIENT_ID = process.env.PERKVILLE_CLIENT_ID?.trim().replace(/[\r\n\-]+$/, '');
-const PERKVILLE_CLIENT_SECRET = process.env.PERKVILLE_CLIENT_SECRET?.trim().replace(/[\r\n\-]+$/, '');
+const PERKVILLE_CLIENT_ID = process.env.PERKVILLE_CLIENT_ID?.trim().replace(/\\n/g, '').replace(/[\r\n\-]+$/, '');
+const PERKVILLE_CLIENT_SECRET = process.env.PERKVILLE_CLIENT_SECRET?.trim().replace(/\\n/g, '').replace(/[\r\n\-]+$/, '');
 const PERKVILLE_TOKEN_URL = "https://www.perkville.com/api/token/";
 const PERKVILLE_API_BASE = "https://api.perkville.com/v2";
 
