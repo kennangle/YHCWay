@@ -18,6 +18,7 @@ export async function authenticateWithPerkville(username: string, password: stri
     throw new Error("Perkville client credentials not configured");
   }
 
+  console.log("[Perkville] Using Client ID:", PERKVILLE_CLIENT_ID?.substring(0, 10) + "...");
   const credentials = Buffer.from(`${PERKVILLE_CLIENT_ID}:${PERKVILLE_CLIENT_SECRET}`).toString("base64");
   
   const response = await fetch(PERKVILLE_TOKEN_URL, {
