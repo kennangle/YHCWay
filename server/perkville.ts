@@ -18,8 +18,21 @@ export async function authenticateWithPerkville(username: string, password: stri
     throw new Error("Perkville client credentials not configured");
   }
 
-  console.log("[Perkville] Using Client ID:", PERKVILLE_CLIENT_ID?.substring(0, 10) + "...");
+  console.log("[Perkville] Using Client ID:", PERKVILLE_CLIENT_ID);
+  console.log("[Perkville] Client Secret length:", PERKVILLE_CLIENT_SECRET?.length);
+  console.log("[Perkville] Authenticating user:", username);
+  
   const credentials = Buffer.from(`${PERKVILLE_CLIENT_ID}:${PERKVILLE_CLIENT_SECRET}`).toString("base64");
+  
+  const bodyParams = new URLSearchParams({
+    grant_type: "password",
+    username: username,
+    password: password,
+    client_id: PERKVILLE_CLIENT_ID,
+  });
+  
+  console.log("[Perkville] Token URL:", PERKVILLE_TOKEN_URL);
+  console.log("[Perkville] Request body:", bodyParams.toString().replace(/password=[^&]+/, 'password=***'));
   
   const response = await fetch(PERKVILLE_TOKEN_URL, {
     method: "POST",
@@ -27,11 +40,7 @@ export async function authenticateWithPerkville(username: string, password: stri
       "Content-Type": "application/x-www-form-urlencoded",
       "Authorization": `Basic ${credentials}`,
     },
-    body: new URLSearchParams({
-      grant_type: "password",
-      username: username,
-      password: password,
-    }).toString(),
+    body: bodyParams.toString(),
   });
 
   if (!response.ok) {
