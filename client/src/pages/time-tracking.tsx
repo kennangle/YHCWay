@@ -458,35 +458,43 @@ export default function TimeTrackingPage() {
                   </DialogHeader>
                   <div className="space-y-4">
                     <p className="text-sm text-muted-foreground">
-                      Select which YHCTime employee account you want to link to. This will be used when creating time entries.
+                      Link your account to your YHCTime employee profile. This will be used when creating time entries.
                     </p>
-                    {employees.length === 0 ? (
-                      <div className="text-center py-4">
-                        <p className="text-muted-foreground">No employees found in YHCTime.</p>
-                        <p className="text-sm text-muted-foreground mt-2">
-                          The YHCTime API may not be returning data. Please check the API configuration.
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="space-y-2 max-h-64 overflow-y-auto">
-                        {employees.map((emp) => (
-                          <Button
-                            key={emp.employeeId}
-                            variant="outline"
-                            className="w-full justify-start"
-                            onClick={() => linkMutation.mutate({ 
-                              employeeId: emp.employeeId, 
-                              employeeName: emp.employeeName 
-                            })}
-                            disabled={linkMutation.isPending}
-                            data-testid={`button-select-employee-${emp.employeeId}`}
-                          >
-                            <Users className="w-4 h-4 mr-2" />
-                            {emp.employeeName}
-                          </Button>
-                        ))}
-                      </div>
-                    )}
+                    {(() => {
+                      const matchingEmployee = employees.find(emp => 
+                        emp.email?.toLowerCase() === user?.email?.toLowerCase()
+                      );
+                      
+                      if (!matchingEmployee) {
+                        return (
+                          <div className="text-center py-4">
+                            <p className="text-muted-foreground">No matching YHCTime account found.</p>
+                            <p className="text-sm text-muted-foreground mt-2">
+                              Your email ({user?.email}) doesn't match any employee in YHCTime.
+                            </p>
+                          </div>
+                        );
+                      }
+                      
+                      return (
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start"
+                          onClick={() => linkMutation.mutate({ 
+                            employeeId: matchingEmployee.employeeId, 
+                            employeeName: matchingEmployee.employeeName 
+                          })}
+                          disabled={linkMutation.isPending}
+                          data-testid={`button-select-employee-${matchingEmployee.employeeId}`}
+                        >
+                          <Users className="w-4 h-4 mr-2" />
+                          {matchingEmployee.employeeName}
+                          <span className="ml-auto text-xs text-muted-foreground">
+                            {matchingEmployee.email}
+                          </span>
+                        </Button>
+                      );
+                    })()}
                   </div>
                 </DialogContent>
               </Dialog>
