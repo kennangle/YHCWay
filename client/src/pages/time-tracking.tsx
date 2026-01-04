@@ -514,45 +514,66 @@ export default function TimeTrackingPage() {
 
               <TabsContent value="status">
                 <div className="glass-card p-6 rounded-2xl">
-                  <h2 className="text-xl font-semibold mb-4">Employee Status</h2>
+                  <h2 className="text-xl font-semibold mb-4">My Status</h2>
                   
                   {employeesLoading ? (
                     <div className="flex items-center justify-center py-8">
                       <Loader2 className="w-6 h-6 animate-spin" />
                     </div>
-                  ) : employees.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-8">
-                      No employee data available
-                    </p>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {employees.map((emp) => (
+                  ) : (() => {
+                    const myEmployee = employees.find(emp => 
+                      emp.email?.toLowerCase() === user?.email?.toLowerCase()
+                    );
+                    
+                    if (!myEmployee) {
+                      return (
+                        <p className="text-center text-muted-foreground py-8">
+                          No matching YHCTime account found for {user?.email}
+                        </p>
+                      );
+                    }
+                    
+                    return (
+                      <div className="max-w-md">
                         <div 
-                          key={emp.employeeId}
-                          className="p-4 rounded-xl bg-background/50 border border-border"
-                          data-testid={`card-employee-${emp.employeeId}`}
+                          className="p-6 rounded-xl bg-background/50 border border-border"
+                          data-testid={`card-employee-${myEmployee.employeeId}`}
                         >
-                          <div className="flex items-center justify-between mb-2">
-                            <h3 className="font-medium">{emp.employeeName}</h3>
-                            <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-white text-xs ${getStatusColor(emp.status)}`}>
-                              {getStatusIcon(emp.status)}
-                              <span className="capitalize">{emp.status}</span>
+                          <div className="flex items-center justify-between mb-3">
+                            <h3 className="font-medium text-lg">{myEmployee.employeeName}</h3>
+                            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white text-sm ${getStatusColor(myEmployee.status)}`}>
+                              {getStatusIcon(myEmployee.status)}
+                              <span className="capitalize">{myEmployee.status}</span>
                             </div>
                           </div>
+                          <p className="text-sm text-muted-foreground mb-3">{myEmployee.email}</p>
                           
-                          {emp.session && (
-                            <div className="text-sm text-muted-foreground space-y-1">
-                              <p>Started: {format(new Date(emp.session.startTime), 'h:mm a')}</p>
-                              <p>Net time: {formatDuration(emp.session.netDuration)}</p>
-                              {emp.session.breakDuration > 0 && (
-                                <p>Break: {formatDuration(emp.session.breakDuration)}</p>
+                          {myEmployee.session ? (
+                            <div className="text-sm space-y-2 border-t border-border pt-3 mt-3">
+                              <p className="flex justify-between">
+                                <span className="text-muted-foreground">Started:</span>
+                                <span>{format(new Date(myEmployee.session.startTime), 'h:mm a')}</span>
+                              </p>
+                              <p className="flex justify-between">
+                                <span className="text-muted-foreground">Net time:</span>
+                                <span>{formatDuration(myEmployee.session.netDuration)}</span>
+                              </p>
+                              {myEmployee.session.breakDuration > 0 && (
+                                <p className="flex justify-between">
+                                  <span className="text-muted-foreground">Break:</span>
+                                  <span>{formatDuration(myEmployee.session.breakDuration)}</span>
+                                </p>
                               )}
                             </div>
+                          ) : (
+                            <p className="text-sm text-muted-foreground border-t border-border pt-3 mt-3">
+                              No active session
+                            </p>
                           )}
                         </div>
-                      ))}
-                    </div>
-                  )}
+                      </div>
+                    );
+                  })()}
                 </div>
               </TabsContent>
 
