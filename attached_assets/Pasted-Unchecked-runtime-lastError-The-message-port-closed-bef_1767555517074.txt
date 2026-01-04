@@ -1,0 +1,2053 @@
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: The message port closed before a response was received.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received
+Unchecked runtime.lastError: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received
+Unchecked runtime.lastError: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received
+Unchecked runtime.lastError: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received
+Unchecked runtime.lastError: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received
+Unchecked runtime.lastError: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received
+Unchecked runtime.lastError: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received
+Unchecked runtime.lastError: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received
+Unchecked runtime.lastError: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received
+Unchecked runtime.lastError: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received
+Unchecked runtime.lastError: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received
+Unchecked runtime.lastError: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received
+Unchecked runtime.lastError: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received
+Unchecked runtime.lastError: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received
+Unchecked runtime.lastError: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received
+Unchecked runtime.lastError: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received
+Unchecked runtime.lastError: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received
+Unchecked runtime.lastError: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received
+Unchecked runtime.lastError: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received
+Unchecked runtime.lastError: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received
+Unchecked runtime.lastError: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received
+Unchecked runtime.lastError: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received
+Unchecked runtime.lastError: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received
+Unchecked runtime.lastError: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received
+Unchecked runtime.lastError: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received
+ WebSocket connection to 'wss://b5n.1password.com/TX4AUFZGB5ADFM3PVUKUTAEEZQ/CT75BCL3EVHH7OIUCJRQEITHMM/l4c5ba6irv2oym52hxvh6s6azq?c=1767305371&s=1767305371&p=v4.public.eyJhY3QiOiJUWDRBVUZaR0I1QURGTTNQVlVLVVRBRUVaUSIsImVudiI6InByZCIsImV4cCI6IjIwMjYtMDEtMzFUMjI6MDk6MzFaIiwiaWF0IjoiMjAyNi0wMS0wMVQyMjowOTozMVoiLCJqdGkiOiI1RDJDS0I2SVhGSE5IT0xDREwzTENYUFFVSSIsInNlcyI6IkQyR0o3MzJMTFZDTkJDWjNCUFpWTTdMSlFRIiwic3ViIjoiQ1Q3NUJDTDNFVkhIN09JVUNKUlFFSVRITU0ifcodjH68CqzpXPjTqmwJHoK9ACOEeZEizE1GRAOZI0oHK-cQsCusm98NbKvgOxeOMrE6_XfHDlhv-irH4ehzdwY.eyJraWQiOiIyM0tBUE5HQ0lKQU9MSk43NU5JWVo1TFVTRSJ9' failed: Error in connection establishment: net::ERR_NETWORK_IO_SUSPENDED
+connect @ background.js:60
+background.js:70 [OP] Locked at Sat Jan 03 2026 16:56:46 GMT-0800 (Pacific Standard Time)
+background.js:70 Received Modern Notification:<LockStateChanged> from the native core
+background.js:70 [OP] Locked at Sat Jan 03 2026 16:56:51 GMT-0800 (Pacific Standard Time)
+background.js:70 Received Legacy Notification:<LockStateChanged> from the native core
+background.js:70 [OP] Locked at Sat Jan 03 2026 16:56:51 GMT-0800 (Pacific Standard Time)
+background.js:70 Received Modern Notification:<LockStateChanged> from the native core
+background.js:70 [OP] Locked at Sat Jan 03 2026 16:56:51 GMT-0800 (Pacific Standard Time)
+background.js:70 Received Legacy Notification:<LockStateChanged> from the native core
+background.js:70 [OP] Locked at Sat Jan 03 2026 16:56:51 GMT-0800 (Pacific Standard Time)
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Received Modern Notification:<LockStateChanged> from the native core
+background.js:70 [OP] Locked at Sat Jan 03 2026 20:56:46 GMT-0800 (Pacific Standard Time)
+background.js:70 Received Legacy Notification:<LockStateChanged> from the native core
+background.js:70 [OP] Locked at Sat Jan 03 2026 20:56:46 GMT-0800 (Pacific Standard Time)
+background.js:70 Received Modern Notification:<LockStateChanged> from the native core
+background.js:70 [OP] Locked at Sat Jan 03 2026 20:56:56 GMT-0800 (Pacific Standard Time)
+background.js:70 Received Legacy Notification:<LockStateChanged> from the native core
+background.js:70 [OP] Locked at Sat Jan 03 2026 20:56:56 GMT-0800 (Pacific Standard Time)
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Received Modern Notification:<LockStateChanged> from the native core
+ [OP] Locked at Sun Jan 04 2026 08:40:08 GMT-0800 (Pacific Standard Time)
+ Received Legacy Notification:<LockStateChanged> from the native core
+ [OP] Locked at Sun Jan 04 2026 08:40:08 GMT-0800 (Pacific Standard Time)
+ Received Modern Notification:<LockStateChanged> from the native core
+ [OP] Locked at Sun Jan 04 2026 08:44:32 GMT-0800 (Pacific Standard Time)
+ Received Legacy Notification:<LockStateChanged> from the native core
+ [OP] Locked at Sun Jan 04 2026 08:44:32 GMT-0800 (Pacific Standard Time)
+ Received Modern Notification:<LockStateChanged> from the native core
+ [OP] Locked at Sun Jan 04 2026 08:44:32 GMT-0800 (Pacific Standard Time)
+ Received Legacy Notification:<LockStateChanged> from the native core
+ [OP] Locked at Sun Jan 04 2026 08:44:32 GMT-0800 (Pacific Standard Time)
+ Received Modern Notification:<LockStateChanged> from the native core
+ [OP] Locked at Sun Jan 04 2026 08:44:33 GMT-0800 (Pacific Standard Time)
+ Received Legacy Notification:<LockStateChanged> from the native core
+ [OP] Locked at Sun Jan 04 2026 08:44:33 GMT-0800 (Pacific Standard Time)
+ Received Modern Notification:<LockStateChanged> from the native core
+ [OP] Locked at Sun Jan 04 2026 08:44:33 GMT-0800 (Pacific Standard Time)
+ Received Legacy Notification:<LockStateChanged> from the native core
+ [OP] Locked at Sun Jan 04 2026 08:44:33 GMT-0800 (Pacific Standard Time)
+ Received Modern Notification:<LockStateChanged> from the native core
+ [OP] Locked at Sun Jan 04 2026 08:51:57 GMT-0800 (Pacific Standard Time)
+ Received Legacy Notification:<LockStateChanged> from the native core
+ [OP] Locked at Sun Jan 04 2026 08:51:57 GMT-0800 (Pacific Standard Time)
+ Received Modern Notification:<LockStateChanged> from the native core
+ [OP] Locked at Sun Jan 04 2026 08:51:57 GMT-0800 (Pacific Standard Time)
+ Received Legacy Notification:<LockStateChanged> from the native core
+ [OP] Locked at Sun Jan 04 2026 08:51:57 GMT-0800 (Pacific Standard Time)
+ WebSocket connection to 'wss://b5n.1password.com/TX4AUFZGB5ADFM3PVUKUTAEEZQ/CT75BCL3EVHH7OIUCJRQEITHMM/l4c5ba6irv2oym52hxvh6s6azq?c=1767469425&s=1767469425&p=v4.public.eyJhY3QiOiJUWDRBVUZaR0I1QURGTTNQVlVLVVRBRUVaUSIsImVudiI6InByZCIsImV4cCI6IjIwMjYtMDItMDJUMTk6NDM6NDVaIiwiaWF0IjoiMjAyNi0wMS0wM1QxOTo0Mzo0NVoiLCJqdGkiOiJSTVhOQUMzTUdCQU1ISk9ONUNTNTNRUFNGTSIsInNlcyI6IjczSERKS1VCR0ZINFZKVVNUT0xLNTJMVEpNIiwic3ViIjoiQ1Q3NUJDTDNFVkhIN09JVUNKUlFFSVRITU0ifVjJ6EL_n3DuBlhjy60EamUKmTQnV8kXMTunq0P4SOuwf8AJpg3Z61znYhnrgVBOMxugrnQ0gj2ojbG8Jiybrww.eyJraWQiOiIyM0tBUE5HQ0lKQU9MSk43NU5JWVo1TFVTRSJ9' failed: Error in connection establishment: net::ERR_INTERNET_DISCONNECTED
+connect @ background.js:60
+ WebSocket connection to 'wss://b5n.1password.com/TX4AUFZGB5ADFM3PVUKUTAEEZQ/CT75BCL3EVHH7OIUCJRQEITHMM/l4c5ba6irv2oym52hxvh6s6azq?c=1767469425&s=1767469425&p=v4.public.eyJhY3QiOiJUWDRBVUZaR0I1QURGTTNQVlVLVVRBRUVaUSIsImVudiI6InByZCIsImV4cCI6IjIwMjYtMDItMDJUMTk6NDM6NDVaIiwiaWF0IjoiMjAyNi0wMS0wM1QxOTo0Mzo0NVoiLCJqdGkiOiI0UVRHRzczT0xWRU9KTTJZNkFEUlU3STRWRSIsInNlcyI6IlRNR1IyNFE1UEZGUTdIUjNBTUtDQjRLTlRBIiwic3ViIjoiQ1Q3NUJDTDNFVkhIN09JVUNKUlFFSVRITU0ifXV1bcssA7-7UvhdgKX0l9M8_EdvQvu8uXPSTKHBUWoqDM8td8W1PC3K64QT9Ohg3Wcsj4T-peV0-lTATRlo0Ag.eyJraWQiOiIyM0tBUE5HQ0lKQU9MSk43NU5JWVo1TFVTRSJ9' failed: Error in connection establishment: net::ERR_INTERNET_DISCONNECTED
+connect @ background.js:60
+ WebSocket connection to 'wss://b5n.1password.com/TX4AUFZGB5ADFM3PVUKUTAEEZQ/CT75BCL3EVHH7OIUCJRQEITHMM/l4c5ba6irv2oym52hxvh6s6azq?c=1767469425&s=1767469425&p=v4.public.eyJhY3QiOiJUWDRBVUZaR0I1QURGTTNQVlVLVVRBRUVaUSIsImVudiI6InByZCIsImV4cCI6IjIwMjYtMDItMDJUMTk6NDM6NDVaIiwiaWF0IjoiMjAyNi0wMS0wM1QxOTo0Mzo0NVoiLCJqdGkiOiJRR1Q1VlI2UVlORUJIQklYTlhNQUNMSUtKRSIsInNlcyI6IlJGS0cyTUZCVk5DNExHM1BTQ1JNRlg3SlpFIiwic3ViIjoiQ1Q3NUJDTDNFVkhIN09JVUNKUlFFSVRITU0ifRkw0pyU2xdqzAja1zwuERIUqSpm1rK6stauzWbWhK3oaq6OQB06zgIURJwoFGeZaWr9YTXam1mGqXaEePjKJgc.eyJraWQiOiIyM0tBUE5HQ0lKQU9MSk43NU5JWVo1TFVTRSJ9' failed: Error in connection establishment: net::ERR_INTERNET_DISCONNECTED
+connect @ background.js:60
+ WebSocket connection to 'wss://b5n.1password.com/TX4AUFZGB5ADFM3PVUKUTAEEZQ/CT75BCL3EVHH7OIUCJRQEITHMM/l4c5ba6irv2oym52hxvh6s6azq?c=1767469425&s=1767469425&p=v4.public.eyJhY3QiOiJUWDRBVUZaR0I1QURGTTNQVlVLVVRBRUVaUSIsImVudiI6InByZCIsImV4cCI6IjIwMjYtMDItMDJUMTk6NDM6NDVaIiwiaWF0IjoiMjAyNi0wMS0wM1QxOTo0Mzo0NVoiLCJqdGkiOiJSTVhOQUMzTUdCQU1ISk9ONUNTNTNRUFNGTSIsInNlcyI6IjczSERKS1VCR0ZINFZKVVNUT0xLNTJMVEpNIiwic3ViIjoiQ1Q3NUJDTDNFVkhIN09JVUNKUlFFSVRITU0ifVjJ6EL_n3DuBlhjy60EamUKmTQnV8kXMTunq0P4SOuwf8AJpg3Z61znYhnrgVBOMxugrnQ0gj2ojbG8Jiybrww.eyJraWQiOiIyM0tBUE5HQ0lKQU9MSk43NU5JWVo1TFVTRSJ9' failed: Error in connection establishment: net::ERR_INTERNET_DISCONNECTED
+connect @ background.js:60
+ Received Modern Notification:<LockStateChanged> from the native core
+ [OP] Locked at Sun Jan 04 2026 10:27:36 GMT-0800 (Pacific Standard Time)
+ Received Legacy Notification:<LockStateChanged> from the native core
+ [OP] Locked at Sun Jan 04 2026 10:27:36 GMT-0800 (Pacific Standard Time)
+ WebSocket connection to 'wss://b5n.1password.com/TX4AUFZGB5ADFM3PVUKUTAEEZQ/CT75BCL3EVHH7OIUCJRQEITHMM/l4c5ba6irv2oym52hxvh6s6azq?c=1767469425&s=1767469425&p=v4.public.eyJhY3QiOiJUWDRBVUZaR0I1QURGTTNQVlVLVVRBRUVaUSIsImVudiI6InByZCIsImV4cCI6IjIwMjYtMDItMDJUMTk6NDM6NDVaIiwiaWF0IjoiMjAyNi0wMS0wM1QxOTo0Mzo0NVoiLCJqdGkiOiI0UVRHRzczT0xWRU9KTTJZNkFEUlU3STRWRSIsInNlcyI6IlRNR1IyNFE1UEZGUTdIUjNBTUtDQjRLTlRBIiwic3ViIjoiQ1Q3NUJDTDNFVkhIN09JVUNKUlFFSVRITU0ifXV1bcssA7-7UvhdgKX0l9M8_EdvQvu8uXPSTKHBUWoqDM8td8W1PC3K64QT9Ohg3Wcsj4T-peV0-lTATRlo0Ag.eyJraWQiOiIyM0tBUE5HQ0lKQU9MSk43NU5JWVo1TFVTRSJ9' failed: Error in connection establishment: net::ERR_INTERNET_DISCONNECTED
+connect @ background.js:60
+ WebSocket connection to 'wss://b5n.1password.com/TX4AUFZGB5ADFM3PVUKUTAEEZQ/CT75BCL3EVHH7OIUCJRQEITHMM/l4c5ba6irv2oym52hxvh6s6azq?c=1767469425&s=1767469425&p=v4.public.eyJhY3QiOiJUWDRBVUZaR0I1QURGTTNQVlVLVVRBRUVaUSIsImVudiI6InByZCIsImV4cCI6IjIwMjYtMDItMDJUMTk6NDM6NDVaIiwiaWF0IjoiMjAyNi0wMS0wM1QxOTo0Mzo0NVoiLCJqdGkiOiJRR1Q1VlI2UVlORUJIQklYTlhNQUNMSUtKRSIsInNlcyI6IlJGS0cyTUZCVk5DNExHM1BTQ1JNRlg3SlpFIiwic3ViIjoiQ1Q3NUJDTDNFVkhIN09JVUNKUlFFSVRITU0ifRkw0pyU2xdqzAja1zwuERIUqSpm1rK6stauzWbWhK3oaq6OQB06zgIURJwoFGeZaWr9YTXam1mGqXaEePjKJgc.eyJraWQiOiIyM0tBUE5HQ0lKQU9MSk43NU5JWVo1TFVTRSJ9' failed: Error in connection establishment: net::ERR_NAME_NOT_RESOLVED
+connect @ background.js:60
+ WebSocket connection to 'wss://b5n.1password.com/TX4AUFZGB5ADFM3PVUKUTAEEZQ/CT75BCL3EVHH7OIUCJRQEITHMM/l4c5ba6irv2oym52hxvh6s6azq?c=1767469425&s=1767469425&p=v4.public.eyJhY3QiOiJUWDRBVUZaR0I1QURGTTNQVlVLVVRBRUVaUSIsImVudiI6InByZCIsImV4cCI6IjIwMjYtMDItMDJUMTk6NDM6NDVaIiwiaWF0IjoiMjAyNi0wMS0wM1QxOTo0Mzo0NVoiLCJqdGkiOiI0UVRHRzczT0xWRU9KTTJZNkFEUlU3STRWRSIsInNlcyI6IlRNR1IyNFE1UEZGUTdIUjNBTUtDQjRLTlRBIiwic3ViIjoiQ1Q3NUJDTDNFVkhIN09JVUNKUlFFSVRITU0ifXV1bcssA7-7UvhdgKX0l9M8_EdvQvu8uXPSTKHBUWoqDM8td8W1PC3K64QT9Ohg3Wcsj4T-peV0-lTATRlo0Ag.eyJraWQiOiIyM0tBUE5HQ0lKQU9MSk43NU5JWVo1TFVTRSJ9' failed: Error in connection establishment: net::ERR_NAME_NOT_RESOLVED
+connect @ background.js:60
+ WebSocket connection to 'wss://b5n.1password.com/TX4AUFZGB5ADFM3PVUKUTAEEZQ/CT75BCL3EVHH7OIUCJRQEITHMM/l4c5ba6irv2oym52hxvh6s6azq?c=1767469425&s=1767469425&p=v4.public.eyJhY3QiOiJUWDRBVUZaR0I1QURGTTNQVlVLVVRBRUVaUSIsImVudiI6InByZCIsImV4cCI6IjIwMjYtMDItMDJUMTk6NDM6NDVaIiwiaWF0IjoiMjAyNi0wMS0wM1QxOTo0Mzo0NVoiLCJqdGkiOiJSTVhOQUMzTUdCQU1ISk9ONUNTNTNRUFNGTSIsInNlcyI6IjczSERKS1VCR0ZINFZKVVNUT0xLNTJMVEpNIiwic3ViIjoiQ1Q3NUJDTDNFVkhIN09JVUNKUlFFSVRITU0ifVjJ6EL_n3DuBlhjy60EamUKmTQnV8kXMTunq0P4SOuwf8AJpg3Z61znYhnrgVBOMxugrnQ0gj2ojbG8Jiybrww.eyJraWQiOiIyM0tBUE5HQ0lKQU9MSk43NU5JWVo1TFVTRSJ9' failed: Error in connection establishment: net::ERR_NAME_NOT_RESOLVED
+connect @ background.js:60
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Received Modern Notification:<Offline> from the native core
+ Received Legacy Notification:<Offline> from the native core
+ Received Modern Notification:<LockStateChanged> from the native core
+ 📤 Sending <NmRequestAccounts> message to native core <1060196486>
+ Received Legacy Notification:<LockStateChanged> from the native core
+ 📥 Received message <NmRequestAccounts> from native core <1060196486>. Duration: 15.6ms
+ 📤 Sending <NmRequestAccounts> message to native core <4129066543>
+ Hooray!; Unlocked account TX4AUFZGB5ADFM3PVUKUTAEEZQ with MUK; 🎉
+ We successfully unlocked 1 account(s) from a Desktop app with 1 unlocked and 0 locked account(s).
+ 📥 Received message <NmRequestAccounts> from native core <4129066543>. Duration: 27.8ms
+background.js:70 📤 Sending <NmRequestDelegatedSession> message to native core <1342736284>
+background.js:70 📥 Received message <NmRequestDelegatedSession> from native core <1342736284>. Duration: 10.4ms
+background.js:70 Failed to request delegated session: RequestError
+(anonymous) @ background.js:70
+background.js:70 Sync error for account: TX4AUFZGB5ADFM3PVUKUTAEEZQ
+(anonymous) @ background.js:70
+background.js:70 Sync error: Failed to request delegated session: RequestError
+(anonymous) @ background.js:70
+background.js:70 📤 Sending <NmRequestDelegatedSession> message to native core <2363010635>
+background.js:70 📥 Received message <NmRequestDelegatedSession> from native core <2363010635>. Duration: 44.9ms
+background.js:70 Failed to request delegated session: RequestError
+(anonymous) @ background.js:70
+background.js:70 Something went wrong when trying to unlock account with UUID TX4AUFZGB5ADFM3PVUKUTAEEZQ, account auth methods: PASSWORD+SK
+(anonymous) @ background.js:70
+background.js:70 We successfully unlocked 0 account(s) from a Desktop app with 1 unlocked and 0 locked account(s).
+background.js:70 📤 Sending <NmLockState> message to native core <51284786>
+background.js:70 [LM] Started Desktop Lock Monitor at 1767551386645 (Connected to desktop app).
+background.js:70 [LM] Started Desktop Lock Monitor at 1767551386646 (Connected to desktop app).
+background.js:70 📥 Received message <NmLockState> from native core <51284786>. Duration: 33.9ms
+background.js:70 📤 Sending <NmLockState> message to native core <3417727862>
+background.js:70 [LM] Started Desktop Lock Monitor at 1767551386648 (Connected to desktop app).
+background.js:70 📥 Received message <NmLockState> from native core <3417727862>. Duration: 10.5ms
+background.js:70 📤 Sending <NmLockState> message to native core <2944194764>
+background.js:70 📥 Received message <NmLockState> from native core <2944194764>. Duration: 4.3ms
+background.js:70 📤 Sending <NmLockState> message to native core <546007230>
+background.js:70 📥 Received message <NmLockState> from native core <546007230>. Duration: 3.4ms
+background.js:70 📤 Sending <NmLockState> message to native core <1128910980>
+background.js:70 📥 Received message <NmLockState> from native core <1128910980>. Duration: 5.6ms
+background.js:70 📤 Sending <NmLockState> message to native core <2461441040>
+background.js:70 📥 Received message <NmLockState> from native core <2461441040>. Duration: 3.7ms
+background.js:70 📤 Sending <NmLockState> message to native core <2364910856>
+background.js:70 📥 Received message <NmLockState> from native core <2364910856>. Duration: 4ms
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 📤 Sending <NmLockState> message to native core <4141762642>
+background.js:70 📥 Received message <NmLockState> from native core <4141762642>. Duration: 200.5ms
+background.js:70 📤 Sending <NmLockState> message to native core <1828625752>
+background.js:70 📥 Received message <NmLockState> from native core <1828625752>. Duration: 5.2ms
+background.js:70 📤 Sending <NmLockState> message to native core <1171360412>
+background.js:70 📥 Received message <NmLockState> from native core <1171360412>. Duration: 2.6ms
+background.js:70 📤 Sending <NmLockState> message to native core <232400029>
+background.js:70 📥 Received message <NmLockState> from native core <232400029>. Duration: 30.6ms
+background.js:70 Received Modern Notification:<ClientCreated> from the native core
+background.js:70 📤 Sending <NmRequestAccounts> message to native core <3181356398>
+background.js:70 Received Legacy Notification:<ClientCreated> from the native core
+background.js:70 📥 Received message <NmRequestAccounts> from native core <3181356398>. Duration: 3.6ms
+background.js:70 📤 Sending <NmRequestDelegatedSession> message to native core <4286151162>
+background.js:70 📥 Received message <NmRequestDelegatedSession> from native core <4286151162>. Duration: 178.8ms
+background.js:70 📤 Sending <NmOfflineStatus> message to native core <137531982>
+background.js:70 📥 Received message <NmOfflineStatus> from native core <137531982>. Duration: 11ms
+background.js:70 📤 Sending <NmLockState> message to native core <1915841879>
+background.js:70 📥 Received message <NmLockState> from native core <1915841879>. Duration: 4.5ms
+background.js:70 📤 Sending <NmLockState> message to native core <1583609704>
+background.js:70 📥 Received message <NmLockState> from native core <1583609704>. Duration: 9.4ms
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 📤 Sending <NmLockState> message to native core <2795098719>
+background.js:70 📥 Received message <NmLockState> from native core <2795098719>. Duration: 5.7ms
+background.js:70 📤 Sending <NmLockState> message to native core <881651623>
+background.js:70 📥 Received message <NmLockState> from native core <881651623>. Duration: 3.9ms
+background.js:70 📤 Sending <NmLockState> message to native core <953451846>
+background.js:70 📥 Received message <NmLockState> from native core <953451846>. Duration: 5.5ms
+background.js:70 📤 Sending <NmLockState> message to native core <3893652627>
+background.js:70 📥 Received message <NmLockState> from native core <3893652627>. Duration: 8.6ms
+background.js:70 Could not complete _handleGetCredential: missing-public-key
+(anonymous) @ background.js:70
+background.js:70 📤 Sending <NmOfflineStatus> message to native core <1512734787>
+background.js:70 📥 Received message <NmOfflineStatus> from native core <1512734787>. Duration: 2ms
+background.js:70 [Sign in with] Session transitioned from * -> Pending after detecting provider from redirect
+background.js:70 Session does not exist for 1334527512, skipping event.
+(anonymous) @ background.js:70
+background.js:70 [Sign in with] Sign in with session Pending -> Pending after inner provider navigation.
+background.js:70 [Sign in with] Sign in with session Pending -> Pending after inner provider navigation.
+background.js:70 📤 Sending <NmLockState> message to native core <769962224>
+background.js:70 📥 Received message <NmLockState> from native core <769962224>. Duration: 22.1ms
+background.js:70 📤 Sending <NmLockState> message to native core <3060977826>
+background.js:70 📥 Received message <NmLockState> from native core <3060977826>. Duration: 5.5ms
+background.js:70 📤 Sending <NmLockState> message to native core <2690318105>
+background.js:70 📥 Received message <NmLockState> from native core <2690318105>. Duration: 4.1ms
+background.js:70 📤 Sending <NmLockState> message to native core <489318744>
+background.js:70 📥 Received message <NmLockState> from native core <489318744>. Duration: 3.6ms
+background.js:70 [Sign in with] Sign in with session Pending -> Pending after inner provider navigation.
+background.js:70 [Sign in with] Sign in with session Pending -> Pending after inner provider navigation.
+background.js:70 [Sign in with] Session went from Pending | Finished -> Finished, tab closed itself
+background.js:70 Session does not exist for 1334527512, skipping event.
+(anonymous) @ background.js:70
+background.js:70 Unable to inject for a URL (redacted)
+(anonymous) @ background.js:70
+background.js:70 Cannot find supported unlocked accounts to load managed apps
+(anonymous) @ background.js:70
+background.js:70 [Sign in with] Should skip save notification because an item with a matching username for this provider already exists.
+background.js:70 📤 Sending <NmLockState> message to native core <1475036704>
+background.js:70 📥 Received message <NmLockState> from native core <1475036704>. Duration: 3.2ms
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+background.js:70 📤 Sending <NmLockState> message to native core <155288674>
+background.js:70 📥 Received message <NmLockState> from native core <155288674>. Duration: 5.5ms
+background.js:70 📤 Sending <NmLockState> message to native core <3072970914>
+background.js:70 📥 Received message <NmLockState> from native core <3072970914>. Duration: 2.7ms
+background.js:70 📤 Sending <NmLockState> message to native core <1859057211>
+background.js:70 📥 Received message <NmLockState> from native core <1859057211>. Duration: 4.5ms
+background.js:70 📤 Sending <NmLockState> message to native core <2171914239>
+background.js:70 📥 Received message <NmLockState> from native core <2171914239>. Duration: 7.5ms
+background.js:70 📤 Sending <NmLockState> message to native core <1377204562>
+background.js:70 📥 Received message <NmLockState> from native core <1377204562>. Duration: 4.5ms
+background.js:70 📤 Sending <NmLockState> message to native core <1071266327>
+background.js:70 📥 Received message <NmLockState> from native core <1071266327>. Duration: 11.4ms
+background.js:70 📤 Sending <NmLockState> message to native core <499875491>
+background.js:70 📥 Received message <NmLockState> from native core <499875491>. Duration: 4.8ms
+background.js:70 📤 Sending <NmLockState> message to native core <2307846916>
+background.js:70 📥 Received message <NmLockState> from native core <2307846916>. Duration: 4.2ms
+background.js:70 📤 Sending <NmLockState> message to native core <856601722>
+background.js:70 📥 Received message <NmLockState> from native core <856601722>. Duration: 3.2ms
+background.js:70 📤 Sending <NmLockState> message to native core <430256217>
+background.js:70 📥 Received message <NmLockState> from native core <430256217>. Duration: 5.5ms
+background.js:70 📤 Sending <NmLockState> message to native core <3963870390>
+ 📥 Received message <NmLockState> from native core <3963870390>. Duration: 2.6ms
+ 📤 Sending <NmLockState> message to native core <1991685017>
+ 📥 Received message <NmLockState> from native core <1991685017>. Duration: 7ms
+ 📤 Sending <NmLockState> message to native core <265740073>
+ 📥 Received message <NmLockState> from native core <265740073>. Duration: 2.1ms
+ 📤 Sending <NmLockState> message to native core <1663961414>
+ 📥 Received message <NmLockState> from native core <1663961414>. Duration: 4.5ms
+ 📤 Sending <NmLockState> message to native core <3649331572>
+ 📥 Received message <NmLockState> from native core <3649331572>. Duration: 3.5ms
+ 📤 Sending <NmLockState> message to native core <1649683503>
+ 📥 Received message <NmLockState> from native core <1649683503>. Duration: 2.2ms
+ 📤 Sending <NmLockState> message to native core <3653555985>
+ 📥 Received message <NmLockState> from native core <3653555985>. Duration: 4.5ms
+ 📤 Sending <NmLockState> message to native core <2543725977>
+ 📥 Received message <NmLockState> from native core <2543725977>. Duration: 2.9ms
+ 📤 Sending <NmLockState> message to native core <580337169>
+ 📥 Received message <NmLockState> from native core <580337169>. Duration: 3.7ms
+ 📤 Sending <NmLockState> message to native core <999548637>
+ 📥 Received message <NmLockState> from native core <999548637>. Duration: 4.4ms
+ 📤 Sending <NmLockState> message to native core <588206037>
+ 📥 Received message <NmLockState> from native core <588206037>. Duration: 5ms
+ Received Modern Notification:<AutofillItemUpdated> from the native core
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ 📤 Sending <NmLockState> message to native core <1046828506>
+ 📥 Received message <NmLockState> from native core <1046828506>. Duration: 3.2ms
+ 📤 Sending <NmLockState> message to native core <78609957>
+ 📥 Received message <NmLockState> from native core <78609957>. Duration: 12.5ms
+ 📤 Sending <NmLockState> message to native core <467752218>
+ 📥 Received message <NmLockState> from native core <467752218>. Duration: 4.2ms
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ 📤 Sending <NmLockState> message to native core <3748511012>
+ 📥 Received message <NmLockState> from native core <3748511012>. Duration: 3.7ms
+ 📤 Sending <NmLockState> message to native core <139316166>
+ 📥 Received message <NmLockState> from native core <139316166>. Duration: 4.3ms
+ 📤 Sending <NmLockState> message to native core <2858539612>
+ 📥 Received message <NmLockState> from native core <2858539612>. Duration: 2.5ms
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The-YHC-Way:1 The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The-YHC-Way:1 The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The-YHC-Way:1 The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+ [Coframe] Replit Enterprise watcher loaded
+ 📤 Sending <NmLockState> message to native core <4100940816>
+ 📥 Received message <NmLockState> from native core <4100940816>. Duration: 5ms
+ 
+      /////////////////////
+   ///////////////////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////        Curious and driven?
+  ///////////////@@@@@@@///////        Work with us!
+  ///////////////@@@@@@@///////
+  ///////////////@@@@@@@///////        https://join.replit.com/hack.with.us
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@#//////////////
+   ///////////////////////////
+      /////////////////////
+      
+ Download the Apollo DevTools for a better development experience: https://chrome.google.com/webstore/detail/apollo-client-developer-t/jdkknkkbebbapilgoeccciglkfbmbnfm
+ [LaunchDarkly] LaunchDarkly client initialized
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+ Unrecognized feature: 'ambient-light-sensor'.
+z @ ed1e693c96a75807.js:2
+ Unrecognized feature: 'battery'.
+z @ ed1e693c96a75807.js:2
+ Unrecognized feature: 'execution-while-not-rendered'.
+z @ ed1e693c96a75807.js:2
+ Unrecognized feature: 'execution-while-out-of-viewport'.
+z @ ed1e693c96a75807.js:2
+ Unrecognized feature: 'layout-animations'.
+z @ ed1e693c96a75807.js:2
+ Unrecognized feature: 'legacy-image-formats'.
+z @ ed1e693c96a75807.js:2
+ Unrecognized feature: 'navigation-override'.
+z @ ed1e693c96a75807.js:2
+ Unrecognized feature: 'oversized-images'.
+z @ ed1e693c96a75807.js:2
+ Unrecognized feature: 'publickey-credentials'.
+z @ ed1e693c96a75807.js:2
+ Unrecognized feature: 'speaker-selection'.
+z @ ed1e693c96a75807.js:2
+ Unrecognized feature: 'unoptimized-images'.
+z @ ed1e693c96a75807.js:2
+ Unrecognized feature: 'unsized-media'.
+z @ ed1e693c96a75807.js:2
+ Unrecognized feature: 'pointer-lock'.
+z @ ed1e693c96a75807.js:2
+ Allow attribute will take precedence over 'allowfullscreen'.
+z @ ed1e693c96a75807.js:2
+ Allow attribute will take precedence over 'allowpaymentrequest'.
+z @ ed1e693c96a75807.js:2
+The-YHC-Way:1 Banner not shown: beforeinstallpromptevent.preventDefault() called. The page must call beforeinstallpromptevent.prompt() to show the banner.
+attached_assets/Screenshot_2026-01-03_at_2.36.54_PM_1767479877575.png:1  Failed to load resource: the server responded with a status of 404 ()
+attached_assets/Screenshot_2026-01-03_at_2.49.04_PM_1767480558641.png:1  Failed to load resource: the server responded with a status of 404 ()
+attached_assets/Screenshot_2026-01-03_at_2.51.37_PM_1767480760319.png:1  Failed to load resource: the server responded with a status of 404 ()
+attached_assets/Screenshot_2026-01-03_at_2.56.51_PM_1767481020907.png:1  Failed to load resource: the server responded with a status of 404 ()
+attached_assets/Screenshot_2026-01-04_at_10.34.07_AM_1767551745292.png:1  Failed to load resource: the server responded with a status of 404 ()
+attached_assets/Screenshot_2026-01-04_at_10.34.14_AM_1767551745291.png:1  Failed to load resource: the server responded with a status of 404 ()
+attached_assets/Screenshot_2026-01-03_at_2.51.05_PM_1767480760319.png:1  Failed to load resource: the server responded with a status of 404 ()
+ 📤 Sending <NmLockState> message to native core <1227245076>
+ 📥 Received message <NmLockState> from native core <1227245076>. Duration: 9.7ms
+ 📤 Sending <NmLockState> message to native core <2624567253>
+ 📥 Received message <NmLockState> from native core <2624567253>. Duration: 4ms
+ 📤 Sending <NmLockState> message to native core <3152208758>
+ 📥 Received message <NmLockState> from native core <3152208758>. Duration: 27.4ms
+ 📤 Sending <NmLockState> message to native core <3040316587>
+ 📥 Received message <NmLockState> from native core <3040316587>. Duration: 2ms
+ 📤 Sending <NmLockState> message to native core <3400429042>
+ 📥 Received message <NmLockState> from native core <3400429042>. Duration: 2.3ms
+ 📤 Sending <NmLockState> message to native core <969449058>
+ 📥 Received message <NmLockState> from native core <969449058>. Duration: 7.4ms
+ 📤 Sending <NmLockState> message to native core <869095948>
+ 📥 Received message <NmLockState> from native core <869095948>. Duration: 2.8ms
+ Cache data may be lost when replacing the hostingBuildDeployActionUpdates field of a Subscription object.
+
+This could cause additional (usually avoidable) network requests to fetch data that were otherwise cached.
+
+To address this problem (which is not a bug in Apollo Client), either ensure all objects of type HostingBuildDeployLogAction and HostingBuildDeployStatusAction have an ID or a custom merge function, or define a custom merge function for the Subscription.hostingBuildDeployActionUpdates field, so InMemoryCache can safely merge these objects:
+
+  existing: {"__typename":"HostingBuildDeployLogAction","log":"\r\u001b[38;2;169;169;169m2026-01-04T18:40:54Z\u001b[37m \u001b[32minfo\u001b[37m: Build: d8759936-3fd3-4029-9466-4550c7fab47f\r\n"}
+  incoming: {"__typename":"HostingBuildDeployStatusAction","status":"security_scanning","message":null,"debugSummary":null}
+
+For more information about these options, please refer to the documentation:
+
+  * Ensuring entity objects have IDs: https://go.apollo.dev/c/generating-unique-identifiers
+  * Defining custom merge functions: https://go.apollo.dev/c/merging-non-normalized-objects
+
+(anonymous) @ e3625b80d33ff5b0.js:2
+ 📤 Sending <NmLockState> message to native core <130631268>
+ 📥 Received message <NmLockState> from native core <130631268>. Duration: 4.5ms
+ 📤 Sending <NmLockState> message to native core <699103312>
+ 📥 Received message <NmLockState> from native core <699103312>. Duration: 2ms
+ 📤 Sending <NmLockState> message to native core <1671677201>
+ 📥 Received message <NmLockState> from native core <1671677201>. Duration: 2.3ms
+ 📤 Sending <NmLockState> message to native core <3541739681>
+ 📥 Received message <NmLockState> from native core <3541739681>. Duration: 16.6ms
+ 📤 Sending <NmLockState> message to native core <1789102576>
+ 📥 Received message <NmLockState> from native core <1789102576>. Duration: 2.6ms
+ 📤 Sending <NmLockState> message to native core <1874441256>
+ 📥 Received message <NmLockState> from native core <1874441256>. Duration: 3.4ms
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ 📤 Sending <NmLockState> message to native core <3938892943>
+ 📥 Received message <NmLockState> from native core <3938892943>. Duration: 5.8ms
+ 📤 Sending <NmLockState> message to native core <1420261696>
+ 📥 Received message <NmLockState> from native core <1420261696>. Duration: 8.8ms
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ 📤 Sending <NmLockState> message to native core <1124725121>
+ 📥 Received message <NmLockState> from native core <1124725121>. Duration: 8.7ms
+ 📤 Sending <NmLockState> message to native core <3891155061>
+ 📥 Received message <NmLockState> from native core <3891155061>. Duration: 3.6ms
+ 📤 Sending <NmLockState> message to native core <4233330746>
+ 📥 Received message <NmLockState> from native core <4233330746>. Duration: 2.8ms
+ stallwart: failed ping 1
+ 📤 Sending <NmLockState> message to native core <3159442476>
+ 📥 Received message <NmLockState> from native core <3159442476>. Duration: 10.6ms
+ 📤 Sending <NmLockState> message to native core <3069901179>
+ 📥 Received message <NmLockState> from native core <3069901179>. Duration: 4.7ms
+ 📤 Sending <NmLockState> message to native core <3927118709>
+ 📥 Received message <NmLockState> from native core <3927118709>. Duration: 7.1ms
+attached_assets/Screenshot_2026-01-03_at_3.18.10_PM_1767482343589.png:1  Failed to load resource: the server responded with a status of 404 ()
+attached_assets/Screenshot_2026-01-03_at_3.44.07_PM_1767483895277.png:1  Failed to load resource: the server responded with a status of 404 ()
+attached_assets/Screenshot_2026-01-03_at_3.18.03_PM_1767482343589.png:1  Failed to load resource: the server responded with a status of 404 ()
+attached_assets/Screenshot_2026-01-03_at_3.44.16_PM_1767483895281.png:1  Failed to load resource: the server responded with a status of 404 ()
+ 📤 Sending <NmLockState> message to native core <3430950634>
+ 📥 Received message <NmLockState> from native core <3430950634>. Duration: 4.5ms
+ 📤 Sending <NmLockState> message to native core <997975223>
+ 📥 Received message <NmLockState> from native core <997975223>. Duration: 2.8ms
+ 📤 Sending <NmLockState> message to native core <17767251>
+ 📥 Received message <NmLockState> from native core <17767251>. Duration: 5.5ms
+ 📤 Sending <NmLockState> message to native core <739258975>
+ 📥 Received message <NmLockState> from native core <739258975>. Duration: 8.5ms
+ 📤 Sending <NmLockState> message to native core <751694356>
+ 📥 Received message <NmLockState> from native core <751694356>. Duration: 3.9ms
+ 📤 Sending <NmLockState> message to native core <140048774>
+ 📥 Received message <NmLockState> from native core <140048774>. Duration: 2.9ms
+ 📤 Sending <NmLockState> message to native core <1700429379>
+ 📥 Received message <NmLockState> from native core <1700429379>. Duration: 6.1ms
+ 📤 Sending <NmLockState> message to native core <1727729915>
+ 📥 Received message <NmLockState> from native core <1727729915>. Duration: 6ms
+ 📤 Sending <NmLockState> message to native core <1916467337>
+ 📥 Received message <NmLockState> from native core <1916467337>. Duration: 2.4ms
+ Could not complete _handleGetCredential: missing-public-key
+(anonymous) @ background.js:70
+ 📤 Sending <NmLockState> message to native core <3835019831>
+ 📥 Received message <NmLockState> from native core <3835019831>. Duration: 5.8ms
+ 📤 Sending <NmLockState> message to native core <2153978929>
+ 📥 Received message <NmLockState> from native core <2153978929>. Duration: 6.8ms
+ 📤 Sending <NmOfflineStatus> message to native core <1044968645>
+ 📥 Received message <NmOfflineStatus> from native core <1044968645>. Duration: 7.6ms
+ 📤 Sending <NmLockState> message to native core <1376666106>
+ 📥 Received message <NmLockState> from native core <1376666106>. Duration: 3.6ms
+ 📤 Sending <NmLockState> message to native core <339076961>
+ 📥 Received message <NmLockState> from native core <339076961>. Duration: 3.3ms
+ Could not complete _handleGetCredential: missing-public-key
+(anonymous) @ background.js:70
+ 📤 Sending <NmLockState> message to native core <672422268>
+ 📥 Received message <NmLockState> from native core <672422268>. Duration: 3.5ms
+ 📤 Sending <NmLockState> message to native core <331259345>
+ 📥 Received message <NmLockState> from native core <331259345>. Duration: 2.5ms
+attached_assets/Screenshot_2026-01-03_at_2.51.37_PM_1767480760319.png:1  Failed to load resource: the server responded with a status of 404 ()
+attached_assets/Screenshot_2026-01-04_at_10.34.07_AM_1767551745292.png:1  Failed to load resource: the server responded with a status of 404 ()
+attached_assets/Screenshot_2026-01-03_at_2.56.51_PM_1767481020907.png:1  Failed to load resource: the server responded with a status of 404 ()
+attached_assets/Screenshot_2026-01-04_at_10.34.14_AM_1767551745291.png:1  Failed to load resource: the server responded with a status of 404 ()
+ 📤 Sending <NmLockState> message to native core <1811818679>
+ 📥 Received message <NmLockState> from native core <1811818679>. Duration: 135.2ms
+attached_assets/Screenshot_2026-01-04_at_10.40.22_AM_1767552041747.png:1  Failed to load resource: the server responded with a status of 404 ()
+ Could not complete _handleGetCredential: missing-public-key
+(anonymous) @ background.js:70
+ 📤 Sending <NmOfflineStatus> message to native core <2931801048>
+ 📥 Received message <NmOfflineStatus> from native core <2931801048>. Duration: 9.4ms
+ 📤 Sending <NmLockState> message to native core <2537616161>
+ 📥 Received message <NmLockState> from native core <2537616161>. Duration: 1.7ms
+ 📤 Sending <NmLockState> message to native core <2729146015>
+ 📥 Received message <NmLockState> from native core <2729146015>. Duration: 25ms
+ 📤 Sending <NmLockState> message to native core <2692614246>
+ 📥 Received message <NmLockState> from native core <2692614246>. Duration: 2.4ms
+ 📤 Sending <NmLockState> message to native core <3533441865>
+ 📥 Received message <NmLockState> from native core <3533441865>. Duration: 5.4ms
+attached_assets/Screenshot_2026-01-03_at_2.51.37_PM_1767480760319.png:1  Failed to load resource: the server responded with a status of 404 ()
+attached_assets/Screenshot_2026-01-03_at_2.56.51_PM_1767481020907.png:1  Failed to load resource: the server responded with a status of 404 ()
+attached_assets/Screenshot_2026-01-04_at_10.34.14_AM_1767551745291.png:1  Failed to load resource: the server responded with a status of 404 ()
+attached_assets/Screenshot_2026-01-03_at_2.51.05_PM_1767480760319.png:1  Failed to load resource: the server responded with a status of 404 ()
+attached_assets/Screenshot_2026-01-04_at_10.34.07_AM_1767551745292.png:1  Failed to load resource: the server responded with a status of 404 ()
+ 📤 Sending <NmLockState> message to native core <3830314921>
+ 📥 Received message <NmLockState> from native core <3830314921>. Duration: 200.6ms
+ 📤 Sending <NmLockState> message to native core <202853829>
+ 📥 Received message <NmLockState> from native core <202853829>. Duration: 5.3ms
+ 📤 Sending <NmLockState> message to native core <2669792894>
+ 📥 Received message <NmLockState> from native core <2669792894>. Duration: 4ms
+ Could not complete _handleGetCredential: missing-public-key
+(anonymous) @ background.js:70
+ 📤 Sending <NmOfflineStatus> message to native core <505364189>
+ 📥 Received message <NmOfflineStatus> from native core <505364189>. Duration: 3.4ms
+ 📤 Sending <NmLockState> message to native core <1264934255>
+ 📥 Received message <NmLockState> from native core <1264934255>. Duration: 2.5ms
+ 📤 Sending <NmLockState> message to native core <572619684>
+ 📥 Received message <NmLockState> from native core <572619684>. Duration: 15.3ms
+ 📤 Sending <NmLockState> message to native core <4286903762>
+ 📥 Received message <NmLockState> from native core <4286903762>. Duration: 3.9ms
+ 📤 Sending <NmLockState> message to native core <2781057068>
+ 📥 Received message <NmLockState> from native core <2781057068>. Duration: 6.7ms
+ 📤 Sending <NmLockState> message to native core <519240839>
+ 📥 Received message <NmLockState> from native core <519240839>. Duration: 7.2ms
+ 📤 Sending <NmLockState> message to native core <3247934648>
+ 📥 Received message <NmLockState> from native core <3247934648>. Duration: 5.8ms
+ 📤 Sending <NmLockState> message to native core <3528482709>
+ 📥 Received message <NmLockState> from native core <3528482709>. Duration: 3.4ms
+attached_assets/Screenshot_2026-01-03_at_2.51.37_PM_1767480760319.png:1  Failed to load resource: the server responded with a status of 404 ()
+attached_assets/Screenshot_2026-01-03_at_2.56.51_PM_1767481020907.png:1  Failed to load resource: the server responded with a status of 404 ()
+attached_assets/Screenshot_2026-01-04_at_10.34.07_AM_1767551745292.png:1  Failed to load resource: the server responded with a status of 404 ()
+attached_assets/Screenshot_2026-01-04_at_10.40.22_AM_1767552041747.png:1  Failed to load resource: the server responded with a status of 404 ()
+attached_assets/Screenshot_2026-01-04_at_10.34.14_AM_1767551745291.png:1  Failed to load resource: the server responded with a status of 404 ()
+ 📤 Sending <NmLockState> message to native core <1209337984>
+ 📥 Received message <NmLockState> from native core <1209337984>. Duration: 9.2ms
+ 📤 Sending <NmLockState> message to native core <2960829806>
+ 📥 Received message <NmLockState> from native core <2960829806>. Duration: 3.2ms
+ 📤 Sending <NmLockState> message to native core <2193998814>
+ 📥 Received message <NmLockState> from native core <2193998814>. Duration: 3.5ms
+ 📤 Sending <NmLockState> message to native core <1677920981>
+ 📥 Received message <NmLockState> from native core <1677920981>. Duration: 2.4ms
+ 📤 Sending <NmLockState> message to native core <3846855593>
+ 📥 Received message <NmLockState> from native core <3846855593>. Duration: 4.4ms
+ 📤 Sending <NmLockState> message to native core <161724092>
+ 📥 Received message <NmLockState> from native core <161724092>. Duration: 5.3ms
+ 📤 Sending <NmLockState> message to native core <3494811237>
+ 📥 Received message <NmLockState> from native core <3494811237>. Duration: 2.6ms
+ 📤 Sending <NmLockState> message to native core <3302962109>
+ 📥 Received message <NmLockState> from native core <3302962109>. Duration: 2.3ms
+ 📤 Sending <NmLockState> message to native core <498176115>
+ 📥 Received message <NmLockState> from native core <498176115>. Duration: 6.2ms
+ 📤 Sending <NmLockState> message to native core <1939512715>
+ 📥 Received message <NmLockState> from native core <1939512715>. Duration: 7.6ms
+ 📤 Sending <NmLockState> message to native core <2441888122>
+ 📥 Received message <NmLockState> from native core <2441888122>. Duration: 6ms
+ Could not collect all frames that were initially found.
+(anonymous) @ background.js:70
+ Could not collect all frames that were initially found.
+(anonymous) @ background.js:70
+ Could not collect all frames that were initially found.
+(anonymous) @ background.js:70
+ Could not collect all frames that were initially found.
+(anonymous) @ background.js:70
+ Could not collect all frames that were initially found.
+(anonymous) @ background.js:70
+ 📤 Sending <NmLockState> message to native core <278926260>
+ 📥 Received message <NmLockState> from native core <278926260>. Duration: 3.2ms
+ 📤 Sending <NmOfflineStatus> message to native core <309544951>
+ Could not collect all frames that were initially found.
+(anonymous) @ background.js:70
+ 📥 Received message <NmOfflineStatus> from native core <309544951>. Duration: 3.5ms
+ Could not collect all frames that were initially found.
+(anonymous) @ background.js:70
+ Could not collect all frames that were initially found.
+(anonymous) @ background.js:70
+ Could not collect all frames that were initially found.
+(anonymous) @ background.js:70
+ Could not collect all frames that were initially found.
+(anonymous) @ background.js:70
+ 📤 Sending <NmOfflineStatus> message to native core <2795999538>
+ 📥 Received message <NmOfflineStatus> from native core <2795999538>. Duration: 1.6ms
+ 📤 Sending <NmOfflineStatus> message to native core <1107112344>
+ 📥 Received message <NmOfflineStatus> from native core <1107112344>. Duration: 2ms
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ [Autosave] Start handling submit event
+ [Autosave] Start handling submit event
+ Account Handler: failed to save after sync: <redacted>
+(anonymous) @ background.js:70
+ Exception while handling request <autosave-save>: save
+(anonymous) @ background.js:70
+ 📤 Sending <NmLockState> message to native core <3100998330>
+ 📥 Received message <NmLockState> from native core <3100998330>. Duration: 4ms
+ 📤 Sending <NmLockState> message to native core <208034591>
+ 📥 Received message <NmLockState> from native core <208034591>. Duration: 6.8ms
+ 📤 Sending <NmLockState> message to native core <1279454866>
+ 📥 Received message <NmLockState> from native core <1279454866>. Duration: 4.9ms
+ 📤 Sending <NmLockState> message to native core <430548666>
+ 📥 Received message <NmLockState> from native core <430548666>. Duration: 2.6ms
+ stallwart: failed ping 1
+ 📤 Sending <NmLockState> message to native core <356011229>
+ 📥 Received message <NmLockState> from native core <356011229>. Duration: 10.8ms
+ 📤 Sending <NmLockState> message to native core <1955209679>
+ 📥 Received message <NmLockState> from native core <1955209679>. Duration: 4.7ms
+ 📤 Sending <NmLockState> message to native core <1091029215>
+ 📥 Received message <NmLockState> from native core <1091029215>. Duration: 2.5ms
+ 📤 Sending <NmLockState> message to native core <1370217177>
+ 📥 Received message <NmLockState> from native core <1370217177>. Duration: 3.5ms
+ 📤 Sending <NmLockState> message to native core <4275029953>
+ 📥 Received message <NmLockState> from native core <4275029953>. Duration: 4.5ms
+ 📤 Sending <NmLockState> message to native core <160111896>
+ 📥 Received message <NmLockState> from native core <160111896>. Duration: 4.3ms
+ 📤 Sending <NmLockState> message to native core <689376783>
+ 📥 Received message <NmLockState> from native core <689376783>. Duration: 2.8ms
+ 📤 Sending <NmLockState> message to native core <2327378247>
+ 📥 Received message <NmLockState> from native core <2327378247>. Duration: 4.9ms
+ [Sign in with] Session transitioned from * -> Pending after detecting provider from redirect
+ Session does not exist for 1334527520, skipping event.
+(anonymous) @ background.js:70
+ [Sign in with] Sign in with session Pending -> Pending after inner provider navigation.
+ Unable to find any fillable passkeys
+(anonymous) @ background.js:70
+ Failed to _handleGetCredential: A
+(anonymous) @ background.js:70
+ Could not complete _handleGetCredential while unlocked: missing-item
+(anonymous) @ background.js:70
+ 📤 Sending <NmLockState> message to native core <3112060142>
+ 📥 Received message <NmLockState> from native core <3112060142>. Duration: 4.8ms
+ 📤 Sending <NmLockState> message to native core <979070145>
+ 📥 Received message <NmLockState> from native core <979070145>. Duration: 5.7ms
+ 📤 Sending <NmLockState> message to native core <700669704>
+ 📥 Received message <NmLockState> from native core <700669704>. Duration: 5ms
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ 📤 Sending <NmLockState> message to native core <909741061>
+ 📥 Received message <NmLockState> from native core <909741061>. Duration: 4ms
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ Failed to refresh keysets <redacted>
+(anonymous) @ background.js:70
+ 📤 Sending <NmLockState> message to native core <3699559262>
+ 📥 Received message <NmLockState> from native core <3699559262>. Duration: 3ms
+ 📤 Sending <NmLockState> message to native core <1916740509>
+ 📥 Received message <NmLockState> from native core <1916740509>. Duration: 5.1ms
+ 📤 Sending <NmLockState> message to native core <2836951926>
+ 📥 Received message <NmLockState> from native core <2836951926>. Duration: 7.6ms
+ 📤 Sending <NmLockState> message to native core <3056723272>
+ 📥 Received message <NmLockState> from native core <3056723272>. Duration: 10.3ms
+ 📤 Sending <NmLockState> message to native core <483719099>
+ 📥 Received message <NmLockState> from native core <483719099>. Duration: 4.8ms
+ 📤 Sending <NmLockState> message to native core <1556654277>
+ 📥 Received message <NmLockState> from native core <1556654277>. Duration: 8.4ms
+ 📤 Sending <NmLockState> message to native core <2691622194>
+ 📥 Received message <NmLockState> from native core <2691622194>. Duration: 5.6ms
+ 📤 Sending <NmLockState> message to native core <2478157448>
+ 📥 Received message <NmLockState> from native core <2478157448>. Duration: 6.3ms
+ 📤 Sending <NmLockState> message to native core <1162097857>
+ 📥 Received message <NmLockState> from native core <1162097857>. Duration: 8.1ms
+ 📤 Sending <NmLockState> message to native core <1727146421>
+ 📥 Received message <NmLockState> from native core <1727146421>. Duration: 3.4ms
+ 📤 Sending <NmLockState> message to native core <1145741923>
+ 📥 Received message <NmLockState> from native core <1145741923>. Duration: 3.7ms
+ [Autosave] Start handling submit event
+ 📤 Sending <NmOfflineStatus> message to native core <421093490>
+ 📥 Received message <NmOfflineStatus> from native core <421093490>. Duration: 2ms
+ [Autosave] Start handling submit event
+ Account Handler: failed to save after sync: <redacted>
+(anonymous) @ background.js:70
+ Exception while handling request <autosave-save>: save
+(anonymous) @ background.js:70
+ [Sign in with] Sign in with session Pending -> Finished after returning to initiators domain.
+ Cannot find supported unlocked accounts to load managed apps
+(anonymous) @ background.js:70
+ 📤 Sending <NmOfflineStatus> message to native core <156845935>
+ 📥 Received message <NmOfflineStatus> from native core <156845935>. Duration: 5.6ms
+ 📤 Sending <NmLockState> message to native core <2129400839>
+ 📥 Received message <NmLockState> from native core <2129400839>. Duration: 7.6ms
+ 📤 Sending <NmLockState> message to native core <2566147805>
+ 📥 Received message <NmLockState> from native core <2566147805>. Duration: 6.8ms
+ 📤 Sending <NmLockState> message to native core <4116707325>
+ 📥 Received message <NmLockState> from native core <4116707325>. Duration: 6.3ms
+ 📤 Sending <NmOfflineStatus> message to native core <3308896236>
+ 📥 Received message <NmOfflineStatus> from native core <3308896236>. Duration: 2.7ms
+ 📤 Sending <NmLockState> message to native core <389000266>
+ 📥 Received message <NmLockState> from native core <389000266>. Duration: 1.7ms
+ Account Handler: failed to save after sync: <redacted>
+(anonymous) @ background.js:70
+ Exception while handling request <autosave-save>: save
+(anonymous) @ background.js:70
+ 📤 Sending <NmLockState> message to native core <413440183>
+ 📥 Received message <NmLockState> from native core <413440183>. Duration: 6.1ms
+ 📤 Sending <NmLockState> message to native core <1607188360>
+ 📥 Received message <NmLockState> from native core <1607188360>. Duration: 7.3ms
+ 📤 Sending <NmLockState> message to native core <3326334485>
+ 📥 Received message <NmLockState> from native core <3326334485>. Duration: 8.2ms
+ 📤 Sending <NmLockState> message to native core <1664966769>
+ 📥 Received message <NmLockState> from native core <1664966769>. Duration: 5.2ms
+ 📤 Sending <NmLockState> message to native core <4286971385>
+ 📥 Received message <NmLockState> from native core <4286971385>. Duration: 6.3ms
+ 📤 Sending <NmLockState> message to native core <2836653823>
+ 📥 Received message <NmLockState> from native core <2836653823>. Duration: 5.9ms
+ 📤 Sending <NmLockState> message to native core <3917160913>
+ 📥 Received message <NmLockState> from native core <3917160913>. Duration: 5.2ms
+ 📤 Sending <NmLockState> message to native core <2714175930>
+ 📥 Received message <NmLockState> from native core <2714175930>. Duration: 5.7ms
+ 📤 Sending <NmLockState> message to native core <229778078>
+ 📥 Received message <NmLockState> from native core <229778078>. Duration: 14.4ms
+ 📤 Sending <NmLockState> message to native core <4081333912>
+ 📥 Received message <NmLockState> from native core <4081333912>. Duration: 4.7ms
+ 📤 Sending <NmLockState> message to native core <1670870984>
+ 📥 Received message <NmLockState> from native core <1670870984>. Duration: 11.9ms
+ 📤 Sending <NmLockState> message to native core <2249781090>
+ 📥 Received message <NmLockState> from native core <2249781090>. Duration: 6.9ms
+ 📤 Sending <NmLockState> message to native core <584000855>
+ 📥 Received message <NmLockState> from native core <584000855>. Duration: 3.4ms
+ 📤 Sending <NmLockState> message to native core <534072439>
+ 📥 Received message <NmLockState> from native core <534072439>. Duration: 3.9ms
+ 📤 Sending <NmLockState> message to native core <1012881056>
+ 📥 Received message <NmLockState> from native core <1012881056>. Duration: 4.4ms
+ 📤 Sending <NmLockState> message to native core <2917514638>
+ 📥 Received message <NmLockState> from native core <2917514638>. Duration: 2ms
+ 📤 Sending <NmLockState> message to native core <315349043>
+ 📥 Received message <NmLockState> from native core <315349043>. Duration: 5.1ms
+ Could not complete _handleGetCredential: missing-public-key
+(anonymous) @ background.js:70
+ 📤 Sending <NmOfflineStatus> message to native core <1885268557>
+ 📥 Received message <NmOfflineStatus> from native core <1885268557>. Duration: 2ms
+ Could not complete _handleGetCredential: missing-public-key
+(anonymous) @ background.js:70
+ 📤 Sending <NmOfflineStatus> message to native core <3553159596>
+ 📥 Received message <NmOfflineStatus> from native core <3553159596>. Duration: 2.9ms
+ [Sign in with] Session transitioned from * -> Pending after detecting provider from redirect
+background.js:70 Session does not exist for 1334527512, skipping event.
+(anonymous) @ background.js:70
+background.js:70 [Sign in with] Sign in with session Pending -> Pending after inner provider navigation.
+background.js:70 📤 Sending <NmLockState> message to native core <3986324976>
+background.js:70 📥 Received message <NmLockState> from native core <3986324976>. Duration: 3ms
+background.js:70 [Sign in with] Sign in with session Pending -> Pending after inner provider navigation.
+background.js:70 [Sign in with] Sign in with session Pending -> Pending after inner provider navigation.
+background.js:70 [Sign in with] Session went from Pending | Finished -> Finished, tab closed itself
+background.js:70 Session does not exist for 1334527512, skipping event.
+(anonymous) @ background.js:70
+background.js:70 Unable to inject for a URL (redacted)
+(anonymous) @ background.js:70
+background.js:70 Cannot find supported unlocked accounts to load managed apps
+(anonymous) @ background.js:70
+background.js:70 [Sign in with] Should skip save notification because an item with a matching username for this provider already exists.
+background.js:70 Could not complete _handleGetCredential: missing-public-key
+(anonymous) @ background.js:70
+background.js:70 📤 Sending <NmOfflineStatus> message to native core <2921258061>
+background.js:70 📥 Received message <NmOfflineStatus> from native core <2921258061>. Duration: 3.3ms
+background.js:70 📤 Sending <NmLockState> message to native core <3425170808>
+background.js:70 📥 Received message <NmLockState> from native core <3425170808>. Duration: 3.9ms
+background.js:70 [Sign in with] Session transitioned from * -> Pending after detecting provider from redirect
+background.js:70 Session does not exist for 1334527512, skipping event.
+(anonymous) @ background.js:70
+background.js:70 [Sign in with] Sign in with session Pending -> Pending after inner provider navigation.
+background.js:70 📤 Sending <NmLockState> message to native core <3396333743>
+background.js:70 📥 Received message <NmLockState> from native core <3396333743>. Duration: 3.8ms
+background.js:70 [Sign in with] Sign in with session Pending -> Finished after returning to initiators domain.
+background.js:70 Session does not exist for 1334527512, skipping event.
+(anonymous) @ background.js:70
+background.js:70 Cannot find supported unlocked accounts to load managed apps
+(anonymous) @ background.js:70
+background.js:70 📤 Sending <NmOfflineStatus> message to native core <872471315>
+background.js:70 📥 Received message <NmOfflineStatus> from native core <872471315>. Duration: 2.4ms
+background.js:70 📤 Sending <NmLockState> message to native core <939759874>
+background.js:70 📥 Received message <NmLockState> from native core <939759874>. Duration: 5.7ms
+background.js:70 📤 Sending <NmOfflineStatus> message to native core <1105659905>
+background.js:70 📥 Received message <NmOfflineStatus> from native core <1105659905>. Duration: 14.1ms
+background.js:70 Username suggestions weighted by vault is not yet supported here
+(anonymous) @ background.js:70
+background.js:70 Account Handler: failed to save after sync: <redacted>
+(anonymous) @ background.js:70
+background.js:70 📤 Sending <NmLockState> message to native core <642920775>
+background.js:70 📥 Received message <NmLockState> from native core <642920775>. Duration: 3.7ms
+background.js:119 Uncaught (in promise) Error: ⛔ Core error code: MissingUrl
+    at gpe (background.js:119:75871)
+    at tdA.sendCoreMessage (background.js:119:72185)
+    at async Dh (background.js:103:25423)
+background.js:119 Uncaught (in promise) Error: ⛔ Core error code: MissingUrl
+    at gpe (background.js:119:75871)
+    at tdA.sendCoreMessage (background.js:119:72185)
+    at async Dh (background.js:103:25423)
+background.js:70 📤 Sending <NmLockState> message to native core <3676846707>
+background.js:70 📥 Received message <NmLockState> from native core <3676846707>. Duration: 2.2ms
+background.js:70 📤 Sending <NmLockState> message to native core <1713875027>
+background.js:70 📥 Received message <NmLockState> from native core <1713875027>. Duration: 5.9ms
+background.js:70 📤 Sending <NmLockState> message to native core <474495953>
+background.js:70 📥 Received message <NmLockState> from native core <474495953>. Duration: 1.9ms
+background.js:70 [Sign in with] Session transitioned from * -> Pending after detecting provider from redirect
+background.js:70 Session does not exist for 1334527512, skipping event.
+(anonymous) @ background.js:70
+background.js:70 [Sign in with] Sign in with session Pending -> Pending after inner provider navigation.
+background.js:70 📤 Sending <NmLockState> message to native core <1413725226>
+background.js:70 📥 Received message <NmLockState> from native core <1413725226>. Duration: 6.1ms
+background.js:70 [Sign in with] Sign in with session Pending -> Finished after returning to initiators domain.
+background.js:70 Session does not exist for 1334527512, skipping event.
+(anonymous) @ background.js:70
+background.js:70 Cannot find supported unlocked accounts to load managed apps
+(anonymous) @ background.js:70
+background.js:70 📤 Sending <NmOfflineStatus> message to native core <2806788847>
+background.js:70 📥 Received message <NmOfflineStatus> from native core <2806788847>. Duration: 1.8ms
+background.js:70 📤 Sending <NmLockState> message to native core <1615062836>
+background.js:70 📥 Received message <NmLockState> from native core <1615062836>. Duration: 3.8ms
+background.js:70 📤 Sending <NmLockState> message to native core <2338082602>
+background.js:70 📥 Received message <NmLockState> from native core <2338082602>. Duration: 19.2ms
+background.js:70 📤 Sending <NmLockState> message to native core <3052177563>
+background.js:70 📥 Received message <NmLockState> from native core <3052177563>. Duration: 2.6ms
+background.js:70 📤 Sending <NmLockState> message to native core <1366969443>
+background.js:70 📥 Received message <NmLockState> from native core <1366969443>. Duration: 3.1ms
+background.js:70 📤 Sending <NmLockState> message to native core <2313796689>
+background.js:70 📥 Received message <NmLockState> from native core <2313796689>. Duration: 2.4ms
+background.js:70 📤 Sending <NmLockState> message to native core <3592086637>
+background.js:70 📥 Received message <NmLockState> from native core <3592086637>. Duration: 16ms
+background.js:70 📤 Sending <NmLockState> message to native core <2118252414>
+background.js:70 📥 Received message <NmLockState> from native core <2118252414>. Duration: 6ms
+background.js:70 📤 Sending <NmLockState> message to native core <1894062806>
+background.js:70 📥 Received message <NmLockState> from native core <1894062806>. Duration: 5.8ms
+background.js:70 📤 Sending <NmLockState> message to native core <1911189355>
+background.js:70 📥 Received message <NmLockState> from native core <1911189355>. Duration: 3.8ms
+background.js:70 📤 Sending <NmLockState> message to native core <125481812>
+background.js:70 📥 Received message <NmLockState> from native core <125481812>. Duration: 7ms
+background.js:70 📤 Sending <NmLockState> message to native core <4214035739>
+background.js:70 📥 Received message <NmLockState> from native core <4214035739>. Duration: 2.5ms
+background.js:70 📤 Sending <NmLockState> message to native core <217675918>
+background.js:70 📥 Received message <NmLockState> from native core <217675918>. Duration: 2.1ms
+background.js:70 Could not complete _handleGetCredential: missing-public-key
+(anonymous) @ background.js:70
+background.js:70 📤 Sending <NmOfflineStatus> message to native core <3513213962>
+background.js:70 📥 Received message <NmOfflineStatus> from native core <3513213962>. Duration: 2ms
+background.js:70 [Sign in with] Session transitioned from * -> Pending after detecting provider from redirect
+background.js:70 Session does not exist for 1334527526, skipping event.
+(anonymous) @ background.js:70
+background.js:70 [Sign in with] Sign in with session Pending -> Pending after inner provider navigation.
+background.js:70 [Sign in with] Sign in with session Pending -> Pending after inner provider navigation.
+background.js:70 [Sign in with] Sign in with session Pending -> Pending after inner provider navigation.
+background.js:70 [Sign in with] Session went from Pending | Finished -> Finished, tab closed itself
+background.js:70 Session does not exist for 1334527526, skipping event.
+(anonymous) @ background.js:70
+background.js:70 Unable to inject for a URL (redacted)
+(anonymous) @ background.js:70
+background.js:70 Cannot find supported unlocked accounts to load managed apps
+(anonymous) @ background.js:70
+background.js:70 [Sign in with] Should skip save notification because an item with a matching username for this provider already exists.
+background.js:70 📤 Sending <NmLockState> message to native core <2818719563>
+background.js:70 📥 Received message <NmLockState> from native core <2818719563>. Duration: 5.9ms
+background.js:70 📤 Sending <NmLockState> message to native core <2794687744>
+background.js:70 📥 Received message <NmLockState> from native core <2794687744>. Duration: 2.5ms
+background.js:70 📤 Sending <NmLockState> message to native core <4185958275>
+background.js:70 📥 Received message <NmLockState> from native core <4185958275>. Duration: 4ms
+background.js:70 📤 Sending <NmLockState> message to native core <2346417351>
+background.js:70 📥 Received message <NmLockState> from native core <2346417351>. Duration: 5.6ms
+background.js:70 📤 Sending <NmLockState> message to native core <1267949016>
+background.js:70 📥 Received message <NmLockState> from native core <1267949016>. Duration: 3.6ms
+background.js:70 📤 Sending <NmLockState> message to native core <3889851519>
+background.js:70 📥 Received message <NmLockState> from native core <3889851519>. Duration: 6ms
+background.js:70 📤 Sending <NmLockState> message to native core <3553187086>
+background.js:70 📥 Received message <NmLockState> from native core <3553187086>. Duration: 5.6ms
+background.js:70 📤 Sending <NmLockState> message to native core <2859314720>
+background.js:70 📥 Received message <NmLockState> from native core <2859314720>. Duration: 4.6ms
+ 📤 Sending <NmLockState> message to native core <1384976425>
+ 📥 Received message <NmLockState> from native core <1384976425>. Duration: 2.7ms
+ 📤 Sending <NmLockState> message to native core <4063367523>
+ 📥 Received message <NmLockState> from native core <4063367523>. Duration: 3ms
+ 📤 Sending <NmLockState> message to native core <1878805894>
+ 📥 Received message <NmLockState> from native core <1878805894>. Duration: 14.2ms
+ 📤 Sending <NmLockState> message to native core <3670184524>
+ 📥 Received message <NmLockState> from native core <3670184524>. Duration: 5.1ms
+ 📤 Sending <NmLockState> message to native core <1143276387>
+ 📥 Received message <NmLockState> from native core <1143276387>. Duration: 6.8ms
+attached_assets/Screenshot_2026-01-04_at_11.07.11_AM_1767553692732.png:1  Failed to load resource: the server responded with a status of 404 ()
+ 📤 Sending <NmLockState> message to native core <4038104465>
+ 📥 Received message <NmLockState> from native core <4038104465>. Duration: 11.3ms
+ 📤 Sending <NmLockState> message to native core <4001366089>
+ 📥 Received message <NmLockState> from native core <4001366089>. Duration: 4.5ms
+ 📤 Sending <NmLockState> message to native core <4166360513>
+ 📥 Received message <NmLockState> from native core <4166360513>. Duration: 2.5ms
+ 📤 Sending <NmLockState> message to native core <3648381857>
+ 📥 Received message <NmLockState> from native core <3648381857>. Duration: 6.8ms
+ 📤 Sending <NmLockState> message to native core <552635534>
+ 📥 Received message <NmLockState> from native core <552635534>. Duration: 3.4ms
+ 📤 Sending <NmLockState> message to native core <751219208>
+ 📥 Received message <NmLockState> from native core <751219208>. Duration: 2.8ms
+ 📤 Sending <NmLockState> message to native core <2390856482>
+ 📥 Received message <NmLockState> from native core <2390856482>. Duration: 50.9ms
+attached_assets/Screenshot_2026-01-03_at_3.18.10_PM_1767482343589.png:1  Failed to load resource: the server responded with a status of 404 ()
+attached_assets/Screenshot_2026-01-03_at_3.18.03_PM_1767482343589.png:1  Failed to load resource: the server responded with a status of 404 ()
+attached_assets/Screenshot_2026-01-03_at_3.44.16_PM_1767483895281.png:1  Failed to load resource: the server responded with a status of 404 ()
+attached_assets/Screenshot_2026-01-03_at_3.44.07_PM_1767483895277.png:1  Failed to load resource: the server responded with a status of 404 ()
+ stallwart: failed ping 1
+ 📤 Sending <NmLockState> message to native core <1950384357>
+ 📥 Received message <NmLockState> from native core <1950384357>. Duration: 13.3ms
+attached_assets/Screenshot_2026-01-04_at_11.07.11_AM_1767553692732.png:1  Failed to load resource: the server responded with a status of 404 ()
+attached_assets/Screenshot_2026-01-04_at_11.03.29_AM_1767553440118.png:1  Failed to load resource: the server responded with a status of 404 ()
+attached_assets/Screenshot_2026-01-04_at_11.09.10_AM_1767553770215.png:1  Failed to load resource: the server responded with a status of 404 ()
+attached_assets/Screenshot_2026-01-04_at_11.07.27_AM_1767553692731.png:1  Failed to load resource: the server responded with a status of 404 ()
+ 📤 Sending <NmLockState> message to native core <2577120250>
+ 📥 Received message <NmLockState> from native core <2577120250>. Duration: 3.4ms
+ 📤 Sending <NmLockState> message to native core <3749622545>
+ 📥 Received message <NmLockState> from native core <3749622545>. Duration: 2.5ms
+ 📤 Sending <NmLockState> message to native core <1656992467>
+ 📥 Received message <NmLockState> from native core <1656992467>. Duration: 7.1ms
+ 📤 Sending <NmLockState> message to native core <725230552>
+ 📥 Received message <NmLockState> from native core <725230552>. Duration: 2.5ms
+ 📤 Sending <NmLockState> message to native core <764814243>
+ 📥 Received message <NmLockState> from native core <764814243>. Duration: 2.4ms
+ 📤 Sending <NmLockState> message to native core <2872844342>
+ 📥 Received message <NmLockState> from native core <2872844342>. Duration: 1.9ms
+ 📤 Sending <NmLockState> message to native core <1609307118>
+ 📥 Received message <NmLockState> from native core <1609307118>. Duration: 2.3ms
+ 📤 Sending <NmLockState> message to native core <1133538255>
+ 📥 Received message <NmLockState> from native core <1133538255>. Duration: 4.3ms
+ 📤 Sending <NmLockState> message to native core <1127721297>
+ 📥 Received message <NmLockState> from native core <1127721297>. Duration: 2.9ms
+ 📤 Sending <NmLockState> message to native core <3290061901>
+ 📥 Received message <NmLockState> from native core <3290061901>. Duration: 2.3ms
+ 📤 Sending <NmLockState> message to native core <42975899>
+ 📥 Received message <NmLockState> from native core <42975899>. Duration: 2.7ms
+ 📤 Sending <NmLockState> message to native core <1525741720>
+ 📥 Received message <NmLockState> from native core <1525741720>. Duration: 16.9ms
+ 📤 Sending <NmLockState> message to native core <1996890022>
+ 📥 Received message <NmLockState> from native core <1996890022>. Duration: 2.9ms
+ 📤 Sending <NmLockState> message to native core <605852783>
+ 📥 Received message <NmLockState> from native core <605852783>. Duration: 2.3ms
+ 📤 Sending <NmLockState> message to native core <3725515963>
+ 📥 Received message <NmLockState> from native core <3725515963>. Duration: 2.8ms
+ 📤 Sending <NmLockState> message to native core <2873811702>
+ 📥 Received message <NmLockState> from native core <2873811702>. Duration: 4.5ms
+ 📤 Sending <NmLockState> message to native core <3336136102>
+ 📥 Received message <NmLockState> from native core <3336136102>. Duration: 2.2ms
+ 📤 Sending <NmLockState> message to native core <526310712>
+ 📥 Received message <NmLockState> from native core <526310712>. Duration: 4.1ms
+ 📤 Sending <NmLockState> message to native core <1481284315>
+ 📥 Received message <NmLockState> from native core <1481284315>. Duration: 3.5ms
+ stallwart: failed ping 1
+ 📤 Sending <NmLockState> message to native core <2353531860>
+ 📥 Received message <NmLockState> from native core <2353531860>. Duration: 70.7ms
+ 📤 Sending <NmLockState> message to native core <4099922010>
+ 📥 Received message <NmLockState> from native core <4099922010>. Duration: 14ms
+ 📤 Sending <NmLockState> message to native core <322682353>
+ 📥 Received message <NmLockState> from native core <322682353>. Duration: 4.7ms
+ [Sign in with] Session transitioned from * -> Pending after detecting provider from redirect
+ Session does not exist for 1334527530, skipping event.
+(anonymous) @ background.js:70
+ [Sign in with] Sign in with session Pending -> Pending after inner provider navigation.
+ [Sign in with] Sign in with session Pending -> Pending after inner provider navigation.
+ [Sign in with] Session went from Pending | Finished -> Finished, tab closed itself
+Unchecked runtime.lastError: No tab with id: 1334527530.
+ [Sign in with] Tab no longer exists for session
+(anonymous) @ background.js:70
+Unchecked runtime.lastError: No tab with id: 1334527530.
+ [Sign in with] Tab no longer exists for session.
+(anonymous) @ background.js:70
+Unchecked runtime.lastError: No tab with id: 1334527530.
+ 📤 Sending <NmLockState> message to native core <3721435505>
+ 📥 Received message <NmLockState> from native core <3721435505>. Duration: 2.5ms
+ 📤 Sending <NmLockState> message to native core <3153003296>
+ 📥 Received message <NmLockState> from native core <3153003296>. Duration: 4.7ms
+ 📤 Sending <NmLockState> message to native core <2412376385>
+ 📥 Received message <NmLockState> from native core <2412376385>. Duration: 6.9ms
+t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://uniwork360.co&size=32:1  Failed to load resource: the server responded with a status of 404 ()
+t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://uniwork360.com/&size=32:1  Failed to load resource: the server responded with a status of 404 ()
+ 📤 Sending <NmLockState> message to native core <1988393472>
+ 📥 Received message <NmLockState> from native core <1988393472>. Duration: 2.7ms
+t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://uniwork360.co/&size=32:1  Failed to load resource: the server responded with a status of 404 ()
+t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://uniwork360.com&size=32:1  Failed to load resource: the server responded with a status of 404 ()
+ 📤 Sending <NmLockState> message to native core <1180316106>
+ 📥 Received message <NmLockState> from native core <1180316106>. Duration: 8ms
+ 📤 Sending <NmLockState> message to native core <2166481840>
+ 📥 Received message <NmLockState> from native core <2166481840>. Duration: 3.8ms
+ 📤 Sending <NmLockState> message to native core <2734471766>
+ 📥 Received message <NmLockState> from native core <2734471766>. Duration: 3.4ms
+ 📤 Sending <NmLockState> message to native core <1762176932>
+ 📥 Received message <NmLockState> from native core <1762176932>. Duration: 2.4ms
+ 📤 Sending <NmLockState> message to native core <3308824185>
+ 📥 Received message <NmLockState> from native core <3308824185>. Duration: 2.2ms
+ 📤 Sending <NmLockState> message to native core <2603357415>
+ 📥 Received message <NmLockState> from native core <2603357415>. Duration: 2.3ms
+ 📤 Sending <NmLockState> message to native core <3509282342>
+ 📥 Received message <NmLockState> from native core <3509282342>. Duration: 2.7ms
+ 📤 Sending <NmLockState> message to native core <3769723790>
+ 📥 Received message <NmLockState> from native core <3769723790>. Duration: 3.7ms
+ 📤 Sending <NmLockState> message to native core <159321256>
+ 📥 Received message <NmLockState> from native core <159321256>. Duration: 2.6ms
+ Cache data may be lost when replacing the dnsRecords field of a Domain object.
+
+This could cause additional (usually avoidable) network requests to fetch data that were otherwise cached.
+
+To address this problem (which is not a bug in Apollo Client), define a custom merge function for the Domain.dnsRecords field, so InMemoryCache can safely merge these objects:
+
+  existing: [{"__ref":"DnsRecord:274193536"},{"__ref":"DnsRecord:274193540"},{"__ref":"DnsRecord:274193543"}]
+  incoming: [{"__ref":"DnsRecord:274193540"},{"__ref":"DnsRecord:274193543"}]
+
+For more information about these options, please refer to the documentation:
+
+  * Ensuring entity objects have IDs: https://go.apollo.dev/c/generating-unique-identifiers
+  * Defining custom merge functions: https://go.apollo.dev/c/merging-non-normalized-objects
+
+(anonymous) @ e3625b80d33ff5b0.js:2
+ 📤 Sending <NmLockState> message to native core <193159470>
+ 📥 Received message <NmLockState> from native core <193159470>. Duration: 5.2ms
+ 📤 Sending <NmLockState> message to native core <634025243>
+ 📥 Received message <NmLockState> from native core <634025243>. Duration: 3.5ms
+ 📤 Sending <NmLockState> message to native core <196418893>
+ 📥 Received message <NmLockState> from native core <196418893>. Duration: 4.7ms
+ 📤 Sending <NmLockState> message to native core <2107168969>
+ 📥 Received message <NmLockState> from native core <2107168969>. Duration: 3.4ms
+ 📤 Sending <NmLockState> message to native core <2926284339>
+ 📥 Received message <NmLockState> from native core <2926284339>. Duration: 6.2ms
+ 📤 Sending <NmLockState> message to native core <2402480109>
+ 📥 Received message <NmLockState> from native core <2402480109>. Duration: 2.1ms
+ 📤 Sending <NmLockState> message to native core <418522624>
+ 📥 Received message <NmLockState> from native core <418522624>. Duration: 2.5ms
+ 📤 Sending <NmLockState> message to native core <3878401482>
+ 📥 Received message <NmLockState> from native core <3878401482>. Duration: 3.4ms
+ 📤 Sending <NmLockState> message to native core <3766356729>
+ 📥 Received message <NmLockState> from native core <3766356729>. Duration: 3.3ms
+ 📤 Sending <NmLockState> message to native core <1054679444>
+ 📥 Received message <NmLockState> from native core <1054679444>. Duration: 4.1ms
+ 📤 Sending <NmLockState> message to native core <1694281331>
+ 📥 Received message <NmLockState> from native core <1694281331>. Duration: 8.7ms
+ 📤 Sending <NmLockState> message to native core <3593771726>
+ 📥 Received message <NmLockState> from native core <3593771726>. Duration: 3.5ms
+ 📤 Sending <NmLockState> message to native core <1476451015>
+ 📥 Received message <NmLockState> from native core <1476451015>. Duration: 3.5ms
+ 📤 Sending <NmLockState> message to native core <1373430575>
+ 📥 Received message <NmLockState> from native core <1373430575>. Duration: 6.6ms
+ 📤 Sending <NmLockState> message to native core <1755469028>
+ 📥 Received message <NmLockState> from native core <1755469028>. Duration: 5.5ms
+ 📤 Sending <NmLockState> message to native core <2837594433>
+ 📥 Received message <NmLockState> from native core <2837594433>. Duration: 9.6ms
+ 📤 Sending <NmLockState> message to native core <1929543271>
+ 📥 Received message <NmLockState> from native core <1929543271>. Duration: 6ms
+ 📤 Sending <NmLockState> message to native core <2079849426>
+ 📥 Received message <NmLockState> from native core <2079849426>. Duration: 10.8ms
+ 📤 Sending <NmLockState> message to native core <502108868>
+ 📥 Received message <NmLockState> from native core <502108868>. Duration: 5.6ms
+ 📤 Sending <NmLockState> message to native core <1249396066>
+ 📥 Received message <NmLockState> from native core <1249396066>. Duration: 3ms
+ 📤 Sending <NmLockState> message to native core <63122160>
+ 📥 Received message <NmLockState> from native core <63122160>. Duration: 5.1ms
+ 📤 Sending <NmLockState> message to native core <742602006>
+ 📥 Received message <NmLockState> from native core <742602006>. Duration: 2.8ms
+ 📤 Sending <NmLockState> message to native core <1460882492>
+ 📥 Received message <NmLockState> from native core <1460882492>. Duration: 11.5ms
+ 📤 Sending <NmLockState> message to native core <4144977788>
+ 📥 Received message <NmLockState> from native core <4144977788>. Duration: 3.1ms
+ 📤 Sending <NmLockState> message to native core <863674589>
+ 📥 Received message <NmLockState> from native core <863674589>. Duration: 2.9ms
+ 📤 Sending <NmLockState> message to native core <1994653203>
+ 📥 Received message <NmLockState> from native core <1994653203>. Duration: 1.9ms
+ 📤 Sending <NmLockState> message to native core <1866927352>
+ 📥 Received message <NmLockState> from native core <1866927352>. Duration: 3.9ms
+ 📤 Sending <NmLockState> message to native core <2596030018>
+ 📥 Received message <NmLockState> from native core <2596030018>. Duration: 3.7ms
+ 📤 Sending <NmLockState> message to native core <529991767>
+ 📥 Received message <NmLockState> from native core <529991767>. Duration: 5.1ms
+ 📤 Sending <NmLockState> message to native core <371016698>
+ 📥 Received message <NmLockState> from native core <371016698>. Duration: 2.4ms
+ 📤 Sending <NmLockState> message to native core <3940797037>
+ 📥 Received message <NmLockState> from native core <3940797037>. Duration: 2.3ms
+ 📤 Sending <NmLockState> message to native core <1037963419>
+ 📥 Received message <NmLockState> from native core <1037963419>. Duration: 2.9ms
+ 📤 Sending <NmLockState> message to native core <3197081944>
+ 📥 Received message <NmLockState> from native core <3197081944>. Duration: 6.5ms
+ 📤 Sending <NmLockState> message to native core <439971110>
+ 📥 Received message <NmLockState> from native core <439971110>. Duration: 3.8ms
+ 📤 Sending <NmLockState> message to native core <2041589580>
+ 📥 Received message <NmLockState> from native core <2041589580>. Duration: 3.9ms
+ 📤 Sending <NmLockState> message to native core <2453717884>
+ 📥 Received message <NmLockState> from native core <2453717884>. Duration: 2.8ms
+ 📤 Sending <NmLockState> message to native core <537539048>
+ 📥 Received message <NmLockState> from native core <537539048>. Duration: 2.6ms
+ 📤 Sending <NmLockState> message to native core <3058950091>
+ 📥 Received message <NmLockState> from native core <3058950091>. Duration: 3.5ms
+ 📤 Sending <NmLockState> message to native core <14211231>
+ 📥 Received message <NmLockState> from native core <14211231>. Duration: 3.2ms
+ 📤 Sending <NmLockState> message to native core <2174186851>
+ 📥 Received message <NmLockState> from native core <2174186851>. Duration: 2.9ms
+ 📤 Sending <NmLockState> message to native core <2624372408>
+ 📥 Received message <NmLockState> from native core <2624372408>. Duration: 3ms
+ 📤 Sending <NmLockState> message to native core <157485214>
+ 📥 Received message <NmLockState> from native core <157485214>. Duration: 17.7ms
+ 📤 Sending <NmLockState> message to native core <3832780865>
+ 📥 Received message <NmLockState> from native core <3832780865>. Duration: 6.2ms
+ 📤 Sending <NmLockState> message to native core <2180385470>
+ 📥 Received message <NmLockState> from native core <2180385470>. Duration: 4.1ms
+ 📤 Sending <NmLockState> message to native core <1955859662>
+ 📥 Received message <NmLockState> from native core <1955859662>. Duration: 4.8ms
+ 📤 Sending <NmLockState> message to native core <3767553737>
+ 📥 Received message <NmLockState> from native core <3767553737>. Duration: 2.7ms
+ 📤 Sending <NmLockState> message to native core <3772591837>
+ 📥 Received message <NmLockState> from native core <3772591837>. Duration: 2.6ms
+ 📤 Sending <NmLockState> message to native core <2782838258>
+ 📥 Received message <NmLockState> from native core <2782838258>. Duration: 3.6ms
+ 📤 Sending <NmLockState> message to native core <1135156880>
+ 📥 Received message <NmLockState> from native core <1135156880>. Duration: 12.8ms
+ 📤 Sending <NmLockState> message to native core <9814223>
+ 📥 Received message <NmLockState> from native core <9814223>. Duration: 3.4ms
+ 📤 Sending <NmLockState> message to native core <1440353643>
+ 📥 Received message <NmLockState> from native core <1440353643>. Duration: 2.2ms
+ 📤 Sending <NmLockState> message to native core <1918125096>
+ 📥 Received message <NmLockState> from native core <1918125096>. Duration: 3.4ms
+ 📤 Sending <NmLockState> message to native core <3202261439>
+ 📥 Received message <NmLockState> from native core <3202261439>. Duration: 2.2ms
+ 📤 Sending <NmLockState> message to native core <848661568>
+ 📥 Received message <NmLockState> from native core <848661568>. Duration: 2.4ms
+ 📤 Sending <NmLockState> message to native core <2083090578>
+ 📥 Received message <NmLockState> from native core <2083090578>. Duration: 3.8ms
+ 📤 Sending <NmLockState> message to native core <2323417831>
+ 📥 Received message <NmLockState> from native core <2323417831>. Duration: 3.3ms
+ 📤 Sending <NmLockState> message to native core <141137900>
+ 📥 Received message <NmLockState> from native core <141137900>. Duration: 2.9ms
+background.js:70 📤 Sending <NmLockState> message to native core <1544695059>
+background.js:70 📥 Received message <NmLockState> from native core <1544695059>. Duration: 10.1ms
+background.js:70 📤 Sending <NmLockState> message to native core <3237761376>
+background.js:70 📥 Received message <NmLockState> from native core <3237761376>. Duration: 4.3ms
+background.js:70 📤 Sending <NmLockState> message to native core <3088650514>
+background.js:70 📥 Received message <NmLockState> from native core <3088650514>. Duration: 2.4ms
+background.js:70 📤 Sending <NmLockState> message to native core <3231972301>
+background.js:70 📥 Received message <NmLockState> from native core <3231972301>. Duration: 2.3ms
+background.js:70 📤 Sending <NmLockState> message to native core <953909161>
+background.js:70 📥 Received message <NmLockState> from native core <953909161>. Duration: 2ms
+background.js:70 📤 Sending <NmLockState> message to native core <3997235448>
+background.js:70 📥 Received message <NmLockState> from native core <3997235448>. Duration: 12.2ms
+background.js:70 📤 Sending <NmLockState> message to native core <2524110586>
+background.js:70 📥 Received message <NmLockState> from native core <2524110586>. Duration: 14.8ms
+background.js:70 📤 Sending <NmLockState> message to native core <743795971>
+background.js:70 📥 Received message <NmLockState> from native core <743795971>. Duration: 5.6ms
+background.js:70 📤 Sending <NmLockState> message to native core <3833595893>
+background.js:70 📥 Received message <NmLockState> from native core <3833595893>. Duration: 11.8ms
+background.js:70 📤 Sending <NmLockState> message to native core <2815958472>
+background.js:70 📥 Received message <NmLockState> from native core <2815958472>. Duration: 2.1ms
+background.js:70 📤 Sending <NmLockState> message to native core <1560216455>
+background.js:70 📥 Received message <NmLockState> from native core <1560216455>. Duration: 5.6ms
+background.js:70 📤 Sending <NmLockState> message to native core <975311536>
+background.js:70 📥 Received message <NmLockState> from native core <975311536>. Duration: 3.4ms
+background.js:70 📤 Sending <NmLockState> message to native core <804069986>
+background.js:70 📥 Received message <NmLockState> from native core <804069986>. Duration: 6.4ms
+background.js:70 📤 Sending <NmLockState> message to native core <2331677877>
+background.js:70 📥 Received message <NmLockState> from native core <2331677877>. Duration: 9.8ms
+background.js:70 📤 Sending <NmLockState> message to native core <3456327299>
+background.js:70 📥 Received message <NmLockState> from native core <3456327299>. Duration: 2.4ms
+background.js:70 📤 Sending <NmLockState> message to native core <2637311213>
+background.js:70 📥 Received message <NmLockState> from native core <2637311213>. Duration: 3.9ms
+background.js:70 📤 Sending <NmLockState> message to native core <786615920>
+background.js:70 📥 Received message <NmLockState> from native core <786615920>. Duration: 13.8ms
+background.js:70 📤 Sending <NmLockState> message to native core <3753959021>
+background.js:70 📥 Received message <NmLockState> from native core <3753959021>. Duration: 18.4ms
+background.js:70 📤 Sending <NmLockState> message to native core <1051001588>
+background.js:70 📥 Received message <NmLockState> from native core <1051001588>. Duration: 2.4ms
+background.js:70 📤 Sending <NmLockState> message to native core <3196195306>
+background.js:70 📥 Received message <NmLockState> from native core <3196195306>. Duration: 2.8ms
+background.js:70 📤 Sending <NmLockState> message to native core <1982036662>
+background.js:70 📥 Received message <NmLockState> from native core <1982036662>. Duration: 3ms
+background.js:70 📤 Sending <NmLockState> message to native core <3385083419>
+background.js:70 📥 Received message <NmLockState> from native core <3385083419>. Duration: 6.5ms
+background.js:70 📤 Sending <NmLockState> message to native core <413330307>
+background.js:70 📥 Received message <NmLockState> from native core <413330307>. Duration: 2.2ms
+background.js:70 📤 Sending <NmLockState> message to native core <577485041>
+background.js:70 📥 Received message <NmLockState> from native core <577485041>. Duration: 45ms
+background.js:70 📤 Sending <NmLockState> message to native core <2035700122>
+background.js:70 📥 Received message <NmLockState> from native core <2035700122>. Duration: 11.6ms
+background.js:70 📤 Sending <NmLockState> message to native core <1420955381>
+background.js:70 📥 Received message <NmLockState> from native core <1420955381>. Duration: 4.3ms
+background.js:70 📤 Sending <NmLockState> message to native core <1961417244>
+background.js:70 📥 Received message <NmLockState> from native core <1961417244>. Duration: 2.2ms
+background.js:70 📤 Sending <NmLockState> message to native core <3853619666>
+background.js:70 📥 Received message <NmLockState> from native core <3853619666>. Duration: 2.3ms
+background.js:70 📤 Sending <NmLockState> message to native core <3246226907>
+background.js:70 📥 Received message <NmLockState> from native core <3246226907>. Duration: 2.4ms
+background.js:70 📤 Sending <NmLockState> message to native core <431797361>
+background.js:70 📥 Received message <NmLockState> from native core <431797361>. Duration: 2.1ms
+background.js:70 📤 Sending <NmLockState> message to native core <1446219567>
+background.js:70 📥 Received message <NmLockState> from native core <1446219567>. Duration: 7.8ms
+7e54089f-4964-4385-8b93-d112fce4aafd-00-3mbshn7gzcgzv.spock.replit.dev/__replco/workspace_iframe.html?initialPath=%2Ftime-tracking&id=%3Arei2%3A:32 Unrecognized feature: 'ambient-light-sensor'.
+7e54089f-4964-4385-8b93-d112fce4aafd-00-3mbshn7gzcgzv.spock.replit.dev/__replco/workspace_iframe.html?initialPath=%2Ftime-tracking&id=%3Arei2%3A:32 Unrecognized feature: 'battery'.
+7e54089f-4964-4385-8b93-d112fce4aafd-00-3mbshn7gzcgzv.spock.replit.dev/__replco/workspace_iframe.html?initialPath=%2Ftime-tracking&id=%3Arei2%3A:32 Unrecognized feature: 'execution-while-not-rendered'.
+7e54089f-4964-4385-8b93-d112fce4aafd-00-3mbshn7gzcgzv.spock.replit.dev/__replco/workspace_iframe.html?initialPath=%2Ftime-tracking&id=%3Arei2%3A:32 Unrecognized feature: 'execution-while-out-of-viewport'.
+7e54089f-4964-4385-8b93-d112fce4aafd-00-3mbshn7gzcgzv.spock.replit.dev/__replco/workspace_iframe.html?initialPath=%2Ftime-tracking&id=%3Arei2%3A:32 Unrecognized feature: 'layout-animations'.
+7e54089f-4964-4385-8b93-d112fce4aafd-00-3mbshn7gzcgzv.spock.replit.dev/__replco/workspace_iframe.html?initialPath=%2Ftime-tracking&id=%3Arei2%3A:32 Unrecognized feature: 'legacy-image-formats'.
+7e54089f-4964-4385-8b93-d112fce4aafd-00-3mbshn7gzcgzv.spock.replit.dev/__replco/workspace_iframe.html?initialPath=%2Ftime-tracking&id=%3Arei2%3A:32 Unrecognized feature: 'navigation-override'.
+7e54089f-4964-4385-8b93-d112fce4aafd-00-3mbshn7gzcgzv.spock.replit.dev/__replco/workspace_iframe.html?initialPath=%2Ftime-tracking&id=%3Arei2%3A:32 Unrecognized feature: 'oversized-images'.
+7e54089f-4964-4385-8b93-d112fce4aafd-00-3mbshn7gzcgzv.spock.replit.dev/__replco/workspace_iframe.html?initialPath=%2Ftime-tracking&id=%3Arei2%3A:32 Unrecognized feature: 'publickey-credentials'.
+7e54089f-4964-4385-8b93-d112fce4aafd-00-3mbshn7gzcgzv.spock.replit.dev/__replco/workspace_iframe.html?initialPath=%2Ftime-tracking&id=%3Arei2%3A:32 Unrecognized feature: 'speaker-selection'.
+7e54089f-4964-4385-8b93-d112fce4aafd-00-3mbshn7gzcgzv.spock.replit.dev/__replco/workspace_iframe.html?initialPath=%2Ftime-tracking&id=%3Arei2%3A:32 Unrecognized feature: 'unoptimized-images'.
+7e54089f-4964-4385-8b93-d112fce4aafd-00-3mbshn7gzcgzv.spock.replit.dev/__replco/workspace_iframe.html?initialPath=%2Ftime-tracking&id=%3Arei2%3A:32 Unrecognized feature: 'unsized-media'.
+7e54089f-4964-4385-8b93-d112fce4aafd-00-3mbshn7gzcgzv.spock.replit.dev/__replco/workspace_iframe.html?initialPath=%2Ftime-tracking&id=%3Arei2%3A:32 Allow attribute will take precedence over 'allowfullscreen'.
+7e54089f-4964-4385-8b93-d112fce4aafd-00-3mbshn7gzcgzv.spock.replit.dev/__replco/workspace_iframe.html?initialPath=%2Ftime-tracking&id=%3Arei2%3A:32 Allow attribute will take precedence over 'allowpaymentrequest'.
+background.js:70 📤 Sending <NmLockState> message to native core <3210836152>
+background.js:70 📥 Received message <NmLockState> from native core <3210836152>. Duration: 3ms
+client:745 WebSocket connection to 'wss://7e54089f-4964-4385-8b93-d112fce4aafd-00-3mbshn7gzcgzv.spock.replit.dev/vite-hmr?token=e6MyWo7cqdEp' failed: 
+createConnection @ client:745
+client:755 WebSocket connection to 'wss://localhost:5173/?token=e6MyWo7cqdEp' failed: 
+createConnection @ client:755
+7e54089f-4964-4385-8b93-d112fce4aafd-00-3mbshn7gzcgzv.spock.replit.dev/api/auth/user:1  Failed to load resource: the server responded with a status of 401 (Unauthorized)
+background.js:70 📤 Sending <NmLockState> message to native core <138782232>
+background.js:70 📥 Received message <NmLockState> from native core <138782232>. Duration: 3.5ms
+client:745 WebSocket connection to 'wss://7e54089f-4964-4385-8b93-d112fce4aafd-00-3mbshn7gzcgzv.spock.replit.dev/vite-hmr?token=e6MyWo7cqdEp' failed: 
+createConnection @ client:745
+client:755 WebSocket connection to 'wss://localhost:5173/?token=e6MyWo7cqdEp' failed: 
+createConnection @ client:755
+injected.js:37 [vite] failed to connect to websocket.
+your current setup:
+  (browser) 7e54089f-4964-4385-8b93-d112fce4aafd-00-3mbshn7gzcgzv.spock.replit.dev/ <--[HTTP]--> localhost:5173/ (server)
+  (browser) 7e54089f-4964-4385-8b93-d112fce4aafd-00-3mbshn7gzcgzv.spock.replit.dev:/vite-hmr <--[WebSocket (failing)]--> localhost:5173/ (server)
+Check out your Vite / network configuration and https://vite.dev/config/server-options.html#server-hmr .
+(anonymous) @ injected.js:37
+7e54089f-4964-4385-8b93-d112fce4aafd-00-3mbshn7gzcgzv.spock.replit.dev/api/auth/user:1  Failed to load resource: the server responded with a status of 401 (Unauthorized)
+background.js:70 📤 Sending <NmOfflineStatus> message to native core <912520321>
+background.js:70 📥 Received message <NmOfflineStatus> from native core <912520321>. Duration: 3.3ms
+background.js:70 📤 Sending <NmLockState> message to native core <1597154290>
+background.js:70 📥 Received message <NmLockState> from native core <1597154290>. Duration: 1.7ms
+injected.js:16 Attempting to use "onMessage" for <inline-menu-ready> without registering a handler. Handlers must be registered before using "onMessage".
+jt @ injected.js:16
+background.js:70 URL for frame 3761 tab 1334527109
+(anonymous) @ background.js:70
+background.js:70 URL for frame 3761 tab 1334527109
+(anonymous) @ background.js:70
+background.js:70 URL for frame 3761 tab 1334527109
+(anonymous) @ background.js:70
+background.js:70 📤 Sending <NmLockState> message to native core <1237132692>
+background.js:70 📥 Received message <NmLockState> from native core <1237132692>. Duration: 3.1ms
+background.js:70 📤 Sending <NmLockState> message to native core <78511988>
+background.js:70 📥 Received message <NmLockState> from native core <78511988>. Duration: 4ms
+background.js:70 📤 Sending <NmLockState> message to native core <852927817>
+background.js:70 📥 Received message <NmLockState> from native core <852927817>. Duration: 3.3ms
+background.js:70 📤 Sending <NmLockState> message to native core <2968888392>
+background.js:70 📥 Received message <NmLockState> from native core <2968888392>. Duration: 2.9ms
+injected.js:16 Attempting to use "onMessage" for <inline-menu-ready> without registering a handler. Handlers must be registered before using "onMessage".
+jt @ injected.js:16
+background.js:70 URL for frame 3761 tab 1334527109
+(anonymous) @ background.js:70
+background.js:70 URL for frame 3761 tab 1334527109
+(anonymous) @ background.js:70
+background.js:70 URL for frame 3761 tab 1334527109
+(anonymous) @ background.js:70
+background.js:70 📤 Sending <NmLockState> message to native core <3519438666>
+background.js:70 📥 Received message <NmLockState> from native core <3519438666>. Duration: 2.4ms
+background.js:70 📤 Sending <NmLockState> message to native core <3275452533>
+background.js:70 📥 Received message <NmLockState> from native core <3275452533>. Duration: 8ms
+background.js:70 📤 Sending <NmLockState> message to native core <142782536>
+background.js:70 📥 Received message <NmLockState> from native core <142782536>. Duration: 3.4ms
+background.js:70 📤 Sending <NmLockState> message to native core <60393235>
+background.js:70 📥 Received message <NmLockState> from native core <60393235>. Duration: 5ms
+background.js:70 📤 Sending <NmLockState> message to native core <17049427>
+background.js:70 📥 Received message <NmLockState> from native core <17049427>. Duration: 5ms
+background.js:70 📤 Sending <NmLockState> message to native core <4055026712>
+background.js:70 📥 Received message <NmLockState> from native core <4055026712>. Duration: 5.1ms
+background.js:70 📤 Sending <NmLockState> message to native core <2243268948>
+background.js:70 📥 Received message <NmLockState> from native core <2243268948>. Duration: 3.4ms
+background.js:70 📤 Sending <NmLockState> message to native core <649974044>
+background.js:70 📥 Received message <NmLockState> from native core <649974044>. Duration: 24.3ms
+background.js:70 📤 Sending <NmOfflineStatus> message to native core <1924200020>
+background.js:70 📥 Received message <NmOfflineStatus> from native core <1924200020>. Duration: 5.8ms
+notification.js:3 [Notification] Mounted notification: suggestSocialLogin
+background.js:70 📤 Sending <NmLockState> message to native core <1019220650>
+background.js:70 📥 Received message <NmLockState> from native core <1019220650>. Duration: 2ms
+stallwart.build.js:1 stallwart: failed ping 1
+stallwart.build.js:1 stallwart: failed ping 2
