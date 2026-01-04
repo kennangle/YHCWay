@@ -504,7 +504,7 @@ export default function TimeTrackingPage() {
               <TabsList className="glass-card">
                 <TabsTrigger value="status" data-testid="tab-status">
                   <Users className="w-4 h-4 mr-2" />
-                  Current Status
+                  My Profile
                 </TabsTrigger>
                 <TabsTrigger value="history" data-testid="tab-history">
                   <Calendar className="w-4 h-4 mr-2" />
@@ -514,7 +514,7 @@ export default function TimeTrackingPage() {
 
               <TabsContent value="status">
                 <div className="glass-card p-6 rounded-2xl">
-                  <h2 className="text-xl font-semibold mb-4">My Status</h2>
+                  <h2 className="text-xl font-semibold mb-4">My Profile</h2>
                   
                   {employeesLoading ? (
                     <div className="flex items-center justify-center py-8">
@@ -527,9 +527,14 @@ export default function TimeTrackingPage() {
                     
                     if (!myEmployee) {
                       return (
-                        <p className="text-center text-muted-foreground py-8">
-                          No matching YHCTime account found for {user?.email}
-                        </p>
+                        <div className="text-center py-8">
+                          <p className="text-muted-foreground mb-4">
+                            No matching YHCTime account found for {user?.email}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            You can still add time entries by linking to your YHCTime account.
+                          </p>
+                        </div>
                       );
                     }
                     
@@ -541,35 +546,27 @@ export default function TimeTrackingPage() {
                         >
                           <div className="flex items-center justify-between mb-3">
                             <h3 className="font-medium text-lg">{myEmployee.employeeName}</h3>
-                            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white text-sm ${getStatusColor(myEmployee.status)}`}>
-                              {getStatusIcon(myEmployee.status)}
-                              <span className="capitalize">{myEmployee.status}</span>
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-500 text-white text-sm">
+                              <CheckCircle className="w-4 h-4" />
+                              <span>Linked</span>
                             </div>
                           </div>
                           <p className="text-sm text-muted-foreground mb-3">{myEmployee.email}</p>
+                          <p className="text-sm text-muted-foreground mb-3 capitalize">Role: {myEmployee.role?.replace('_', ' ')}</p>
                           
-                          {myEmployee.session ? (
-                            <div className="text-sm space-y-2 border-t border-border pt-3 mt-3">
-                              <p className="flex justify-between">
-                                <span className="text-muted-foreground">Started:</span>
-                                <span>{format(new Date(myEmployee.session.startTime), 'h:mm a')}</span>
-                              </p>
-                              <p className="flex justify-between">
-                                <span className="text-muted-foreground">Net time:</span>
-                                <span>{formatDuration(myEmployee.session.netDuration)}</span>
-                              </p>
-                              {myEmployee.session.breakDuration > 0 && (
-                                <p className="flex justify-between">
-                                  <span className="text-muted-foreground">Break:</span>
-                                  <span>{formatDuration(myEmployee.session.breakDuration)}</span>
-                                </p>
-                              )}
-                            </div>
-                          ) : (
-                            <p className="text-sm text-muted-foreground border-t border-border pt-3 mt-3">
-                              No active session
+                          <div className="border-t border-border pt-4 mt-4">
+                            <p className="text-sm text-muted-foreground mb-3">
+                              You can add time entries anytime using the "Add Time Entry" button above.
                             </p>
-                          )}
+                            <Button 
+                              onClick={() => setIsCreateOpen(true)}
+                              className="w-full"
+                              data-testid="button-add-time-quick"
+                            >
+                              <Plus className="w-4 h-4 mr-2" />
+                              Add Time Entry
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     );
