@@ -123,11 +123,21 @@ class YHCTimeClient {
     return data;
   }
 
-  async getAllEmployeesStatus(): Promise<AllEmployeesStatusResponse> {
-    return this.request<AllEmployeesStatusResponse>(
+  async getAllEmployeesStatus(): Promise<EmployeeStatus[]> {
+    const rawData = await this.request<any[]>(
       'GET',
       '/api/integration/current-status'
     );
+    
+    // Transform API response to match expected interface
+    return rawData.map((emp: any) => ({
+      employeeId: emp.id,
+      employeeName: emp.name || `${emp.firstName || ''} ${emp.lastName || ''}`.trim() || 'Unknown',
+      status: emp.status === 'active' ? 'active' : emp.status === 'break' ? 'break' : 'offline',
+      email: emp.email,
+      role: emp.role,
+      session: emp.session,
+    }));
   }
 
   async getEmployeeStatus(employeeId: number): Promise<EmployeeStatus> {
@@ -139,14 +149,29 @@ class YHCTimeClient {
 
   async getSessionHistory(
     options: { start: string; end: string }
-  ): Promise<SessionHistoryResponse> {
+  ): Promise<SessionHistoryItem[]> {
     const params = new URLSearchParams();
     params.append('start', options.start);
     params.append('end', options.end);
     
     const path = `/api/integration/sessions?${params.toString()}`;
     
-    return this.request<SessionHistoryResponse>('GET', path);
+    const rawData = await this.request<any[]>('GET', path);
+    
+    // Transform API response to match expected interface
+    return rawData.map((session: any) => ({
+      id: session.id,
+      employeeId: session.employeeId || session.employee_id,
+      employeeName: session.employeeName || session.employee_name,
+      startTime: session.startTime || session.start_time,
+      endTime: session.endTime || session.end_time,
+      grossDuration: session.grossDuration || session.gross_duration || 0,
+      breakDuration: session.breakDuration || session.break_duration || 0,
+      netDuration: session.netDuration || session.net_duration || 0,
+      notes: session.notes,
+      source: session.source,
+      approved: session.approved,
+    }));
   }
 
   async createSession(

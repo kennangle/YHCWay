@@ -4955,11 +4955,11 @@ export async function registerRoutes(
       if (!start || !end) {
         return res.status(400).json({ error: "start and end date parameters are required" });
       }
-      const history = await yhcTimeClient.getSessionHistory({ 
+      const sessions = await yhcTimeClient.getSessionHistory({ 
         start: start as string, 
         end: end as string 
       });
-      res.json(history);
+      res.json({ sessions });
     } catch (error: any) {
       console.error("Error fetching session history:", error);
       res.status(500).json({ error: error.message || "Failed to fetch session history" });

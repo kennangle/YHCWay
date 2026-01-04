@@ -17,8 +17,10 @@ import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays } fro
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 
 interface EmployeeStatus {
-  employeeId: number;
+  employeeId: string;
   employeeName: string;
+  email?: string;
+  role?: string;
   status: 'active' | 'break' | 'offline';
   session?: {
     id: number;
@@ -35,8 +37,8 @@ interface AllEmployeesStatusResponse {
 }
 
 interface SessionHistoryItem {
-  id: number;
-  employeeId: number;
+  id: string | number;
+  employeeId: string;
   employeeName?: string;
   startTime: string;
   endTime: string;
@@ -83,7 +85,7 @@ function getStatusIcon(status: string) {
 
 interface LinkedEmployee {
   linked: boolean;
-  employeeId?: number;
+  employeeId?: string;
   employeeName?: string;
 }
 
@@ -173,7 +175,7 @@ export default function TimeTrackingPage() {
       });
 
   const linkMutation = useMutation({
-    mutationFn: async (employee: { employeeId: number; employeeName: string }) => {
+    mutationFn: async (employee: { employeeId: string; employeeName: string }) => {
       const res = await fetch("/api/yhctime/link-employee", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
