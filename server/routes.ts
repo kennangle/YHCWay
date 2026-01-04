@@ -4921,8 +4921,8 @@ export async function registerRoutes(
       if (!yhcTimeClient.isConfigured()) {
         return res.status(400).json({ error: "YHCTime not configured" });
       }
-      const status = await yhcTimeClient.getAllEmployeesStatus();
-      res.json(status);
+      const employees = await yhcTimeClient.getAllEmployeesStatus();
+      res.json({ employees });
     } catch (error: any) {
       console.error("Error fetching all employees status:", error);
       res.status(500).json({ error: error.message || "Failed to fetch employees status" });
