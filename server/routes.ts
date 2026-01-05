@@ -5120,6 +5120,7 @@ export async function registerRoutes(
       params.limit = (limit as string) || '50';
       params.offset = (offset as string) || '0';
       params.sort = 'desc';
+      params.statistics = 'campaignStats';
       if (status) params.status = status as string;
 
       const daysNum = parseInt(days as string) || 30;
@@ -5128,14 +5129,35 @@ export async function registerRoutes(
 
       const campaignsData = await brevoRequest('/emailCampaigns', params);
       
-      const campaigns = (campaignsData.campaigns || [])
+      const filteredCampaigns = (campaignsData.campaigns || [])
         .filter((c: any) => {
           const sentAt = c.sentDate ? new Date(c.sentDate) : null;
           const scheduledAt = c.scheduledDate ? new Date(c.scheduledDate) : null;
           const campaignDate = sentAt || scheduledAt;
           return campaignDate && campaignDate >= startDate;
-        })
-        .map((c: any) => ({
+        });
+
+      const campaigns = await Promise.all(filteredCampaigns.map(async (c: any) => {
+        let stats = c.statistics?.campaignStats?.[0] || c.statistics?.globalStats || null;
+        
+        if (!stats && c.status === 'sent') {
+          try {
+            const detailedStats = await brevoRequest(`/emailCampaigns/${c.id}/statistics`);
+            stats = detailedStats?.globalStats || detailedStats?.campaignStats?.[0] || null;
+          } catch (e) {
+            console.log(`[Brevo] Could not fetch detailed stats for campaign ${c.id}`);
+          }
+        }
+
+        const sent = stats?.sent || 0;
+        const delivered = stats?.delivered || 0;
+        const uniqueOpens = stats?.uniqueOpens || 0;
+        const uniqueClicks = stats?.uniqueClicks || 0;
+        const hardBounces = stats?.hardBounces || 0;
+        const softBounces = stats?.softBounces || 0;
+        const unsubscribed = stats?.unsubscriptions || stats?.unsubscribed || 0;
+
+        return {
           id: c.id,
           name: c.name,
           subject: c.subject,
@@ -5143,21 +5165,18 @@ export async function registerRoutes(
           type: c.type,
           sentAt: c.sentDate,
           scheduledAt: c.scheduledDate,
-          recipients: c.statistics?.globalStats?.sent || c.recipients?.lists?.reduce((sum: number, l: any) => sum + (l.count || 0), 0) || 0,
+          recipients: sent,
           stats: {
-            delivered: c.statistics?.globalStats?.delivered || 0,
-            opens: c.statistics?.globalStats?.uniqueOpens || 0,
-            clicks: c.statistics?.globalStats?.uniqueClicks || 0,
-            bounces: (c.statistics?.globalStats?.hardBounces || 0) + (c.statistics?.globalStats?.softBounces || 0),
-            unsubscribed: c.statistics?.globalStats?.unsubscriptions || 0,
-            openRate: c.statistics?.globalStats?.sent > 0 
-              ? ((c.statistics?.globalStats?.uniqueOpens || 0) / c.statistics?.globalStats?.sent * 100).toFixed(2) 
-              : '0',
-            clickRate: c.statistics?.globalStats?.sent > 0 
-              ? ((c.statistics?.globalStats?.uniqueClicks || 0) / c.statistics?.globalStats?.sent * 100).toFixed(2) 
-              : '0',
+            delivered,
+            opens: uniqueOpens,
+            clicks: uniqueClicks,
+            bounces: hardBounces + softBounces,
+            unsubscribed,
+            openRate: sent > 0 ? ((uniqueOpens / sent) * 100).toFixed(2) : '0',
+            clickRate: sent > 0 ? ((uniqueClicks / sent) * 100).toFixed(2) : '0',
           }
-        }));
+        };
+      }));
 
       res.json({ campaigns, count: campaigns.length });
     } catch (error: any) {
