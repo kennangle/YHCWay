@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Clock, Plus, Users, Calendar, Loader2, CheckCircle, Coffee, LogOut, Link2, Unlink } from "lucide-react";
+import { Clock, Plus, Users, Calendar, Loader2, CheckCircle, Coffee, LogOut, Link2, Unlink, Trash2 } from "lucide-react";
 import { getQueryFn } from "@/lib/queryClient";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -254,6 +254,27 @@ export default function TimeTrackingPage() {
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to create time entry");
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (sessionId: string | number) => {
+      const res = await fetch(`/api/yhctime/sessions/${sessionId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to delete session");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/yhctime/sessions"] });
+      toast.success("Time entry deleted successfully");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to delete time entry");
     },
   });
 
@@ -609,6 +630,7 @@ export default function TimeTrackingPage() {
                             <th className="text-left py-3 px-4 font-medium">Net Time</th>
                             <th className="text-left py-3 px-4 font-medium">Break</th>
                             <th className="text-left py-3 px-4 font-medium">Status</th>
+                            <th className="text-left py-3 px-4 font-medium">Actions</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -630,6 +652,21 @@ export default function TimeTrackingPage() {
                                 ) : (
                                   <span className="text-yellow-600 text-sm">Pending</span>
                                 )}
+                              </td>
+                              <td className="py-3 px-4">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    if (confirm("Are you sure you want to delete this time entry?")) {
+                                      deleteMutation.mutate(session.id);
+                                    }
+                                  }}
+                                  disabled={deleteMutation.isPending}
+                                  data-testid={`button-delete-session-${session.id}`}
+                                >
+                                  <Trash2 className="w-4 h-4 text-destructive" />
+                                </Button>
                               </td>
                             </tr>
                           ))}

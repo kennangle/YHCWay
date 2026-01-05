@@ -5016,6 +5016,24 @@ export async function registerRoutes(
     }
   });
 
+  app.delete("/api/yhctime/sessions/:sessionId", isAuthenticated, async (req: any, res) => {
+    try {
+      if (!yhcTimeClient.isConfigured()) {
+        return res.status(400).json({ error: "YHCTime not configured" });
+      }
+      const sessionId = req.params.sessionId;
+      if (!sessionId) {
+        return res.status(400).json({ error: "Invalid session ID" });
+      }
+      
+      const result = await yhcTimeClient.deleteSession(sessionId);
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error deleting session:", error);
+      res.status(500).json({ error: error.message || "Failed to delete session" });
+    }
+  });
+
   // Link current user to a YHCTime employee
   app.post("/api/yhctime/link-employee", isAuthenticated, async (req: any, res) => {
     try {

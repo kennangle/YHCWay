@@ -200,6 +200,13 @@ class YHCTimeClient {
       updates
     );
   }
+
+  async deleteSession(sessionId: string): Promise<{ message: string; id: string }> {
+    return this.request<{ message: string; id: string }>(
+      'DELETE',
+      `/api/integration/sessions/${sessionId}`
+    );
+  }
 }
 
 export const yhcTimeClient = new YHCTimeClient();
