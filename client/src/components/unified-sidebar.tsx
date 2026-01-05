@@ -107,7 +107,7 @@ export function UnifiedSidebar() {
       defaultCollapsed: true,
       items: [
         { icon: Clock, label: "Time Tracking", href: "/time-tracking", tourId: "nav-time-tracking" },
-        { icon: Building2, label: "HR & Payroll", href: "/gusto", tourId: "nav-gusto" },
+        { icon: Building2, label: "HR & Payroll", href: "/gusto", tourId: "nav-gusto", adminOnly: true },
         { icon: PlusCircle, label: "Connect App", href: "/connect", tourId: "nav-connect" },
         { icon: Settings, label: "Settings", href: "/settings", tourId: "nav-settings" },
         { icon: FileText, label: "Typeform", href: "/typeform", tourId: "nav-typeform", adminOnly: true },
