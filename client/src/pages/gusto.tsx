@@ -33,6 +33,7 @@ interface Employee {
   termination_date?: string;
   department?: string;
   current_employment_status?: string;
+  terminated?: boolean;
   jobs?: { title?: string; rate?: string; payment_unit?: string }[];
 }
 
@@ -200,8 +201,8 @@ export default function GustoPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Employees</p>
-                  <p className="text-2xl font-bold">{employees?.length || 0}</p>
+                  <p className="text-sm text-gray-500">Active Employees</p>
+                  <p className="text-2xl font-bold">{employees?.filter(e => !e.terminated).length || 0}</p>
                 </div>
                 <div className="p-3 rounded-full bg-blue-100">
                   <Users className="h-5 w-5 text-blue-600" />
@@ -258,7 +259,7 @@ export default function GustoPage() {
                 </div>
               ) : employees && employees.length > 0 ? (
                 <div className="space-y-2">
-                  {employees.map((employee, idx) => (
+                  {employees.filter(e => !e.terminated).map((employee, idx) => (
                     <div
                       key={employee.uuid}
                       className="flex items-center justify-between p-4 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
