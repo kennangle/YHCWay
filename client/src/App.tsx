@@ -79,7 +79,6 @@ import IntroOffers from "@/pages/intro-offers";
 import Webhooks from "@/pages/webhooks";
 import SetupGuide from "@/pages/setup-guide";
 import PendingApproval from "@/pages/pending-approval";
-import ArchivePage from "@/pages/archive";
 import QRCodes from "@/pages/qr-codes";
 import Rewards from "@/pages/rewards";
 import TimeTracking from "@/pages/time-tracking";
@@ -148,7 +147,6 @@ function Router() {
         <Route path="/email-builder" component={EmailBuilderPage} />
         <Route path="/intro-offers" component={IntroOffers} />
         <Route path="/webhooks" component={Webhooks} />
-        <Route path="/archive" component={ArchivePage} />
         <Route path="/setup-guide" component={SetupGuide} />
         <Route path="/qr-codes" component={QRCodes} />
         <Route path="/rewards" component={Rewards} />

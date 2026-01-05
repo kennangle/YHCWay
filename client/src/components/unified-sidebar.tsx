@@ -15,7 +15,6 @@ import {
   Mail,
   Gift,
   BookOpen,
-  Archive,
   QrCode,
   ChevronDown,
   ChevronRight,
@@ -105,7 +104,6 @@ export function UnifiedSidebar() {
       defaultCollapsed: true,
       items: [
         { icon: Clock, label: "Time Tracking", href: "/time-tracking", tourId: "nav-time-tracking" },
-        { icon: Archive, label: "Archive", href: "/archive", tourId: "nav-archive" },
         { icon: PlusCircle, label: "Connect App", href: "/connect", tourId: "nav-connect" },
         { icon: Settings, label: "Settings", href: "/settings", tourId: "nav-settings" },
         { icon: FileText, label: "Typeform", href: "/typeform", tourId: "nav-typeform", adminOnly: true },
