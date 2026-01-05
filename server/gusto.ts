@@ -84,7 +84,10 @@ export async function getEmployee(employeeId: string) {
 }
 
 export async function getPayrolls(companyId: string) {
-  return gustoRequest(`/v1/companies/${companyId}/payrolls?processed=true`);
+  // Include totals in the payroll response
+  const payrolls = await gustoRequest(`/v1/companies/${companyId}/payrolls?processed=true&include=totals`);
+  console.log('[Gusto] Payrolls response:', JSON.stringify(payrolls).slice(0, 2000));
+  return payrolls;
 }
 
 export async function getPayroll(companyId: string, payrollId: string) {

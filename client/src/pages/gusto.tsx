@@ -73,7 +73,10 @@ export default function GustoPage() {
     queryFn: async () => {
       const res = await fetch(`/api/gusto/companies/${selectedCompany}/payrolls`);
       if (!res.ok) throw new Error('Failed to fetch payrolls');
-      return res.json();
+      const data = await res.json();
+      return data
+        .filter((p: Payroll) => parseFloat(p.totals?.gross_pay || '0') > 0)
+        .sort((a: Payroll, b: Payroll) => new Date(b.check_date).getTime() - new Date(a.check_date).getTime());
     },
     enabled: !!selectedCompany,
   });
