@@ -4955,11 +4955,31 @@ export async function registerRoutes(
       if (!start || !end) {
         return res.status(400).json({ error: "start and end date parameters are required" });
       }
-      const sessions = await yhcTimeClient.getSessionHistory({ 
+      
+      const allSessions = await yhcTimeClient.getSessionHistory({ 
         start: start as string, 
         end: end as string 
       });
-      res.json({ sessions });
+      
+      // Get user to check if admin and get linked employee
+      const user = await storage.getUser(req.user.id);
+      
+      // Admins see all sessions
+      if (user?.isAdmin) {
+        return res.json({ sessions: allSessions });
+      }
+      
+      // Non-admins only see their own sessions if linked
+      if (!user?.yhctimeEmployeeId) {
+        return res.json({ sessions: [], notLinked: true });
+      }
+      
+      // Filter sessions to only show the user's own entries
+      const userSessions = allSessions.filter(
+        session => session.employeeId === user.yhctimeEmployeeId
+      );
+      
+      res.json({ sessions: userSessions });
     } catch (error: any) {
       console.error("Error fetching session history:", error);
       res.status(500).json({ error: error.message || "Failed to fetch session history" });

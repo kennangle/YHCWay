@@ -53,6 +53,7 @@ interface SessionHistoryItem {
 interface SessionHistoryResponse {
   sessions: SessionHistoryItem[];
   total?: number;
+  notLinked?: boolean;
 }
 
 function formatDuration(ms: number): string {
@@ -613,6 +614,16 @@ export default function TimeTrackingPage() {
                   {sessionsLoading ? (
                     <div className="flex items-center justify-center py-8">
                       <Loader2 className="w-6 h-6 animate-spin" />
+                    </div>
+                  ) : sessionsData?.notLinked ? (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground mb-4">
+                        You need to link your account to view your time entries.
+                      </p>
+                      <Button onClick={() => setIsLinkOpen(true)} data-testid="button-link-to-view">
+                        <Link2 className="w-4 h-4 mr-2" />
+                        Link YHCTime Account
+                      </Button>
                     </div>
                   ) : sessions.length === 0 ? (
                     <p className="text-center text-muted-foreground py-8">
