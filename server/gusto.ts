@@ -18,7 +18,7 @@ async function gustoRequest(endpoint: string, options: RequestInit = {}) {
     headers: {
       'Authorization': `Bearer ${GUSTO_API_TOKEN}`,
       'Content-Type': 'application/json',
-      'X-Gusto-API-Version': '2024-04-01',
+      'X-Gusto-API-Version': '2025-06-15',
       ...options.headers,
     },
   });
