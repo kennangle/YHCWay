@@ -68,6 +68,26 @@ interface BrevoStatus {
   plan?: string;
 }
 
+interface Campaign {
+  id: number;
+  name: string;
+  subject: string;
+  status: string;
+  type: string;
+  sentAt: string | null;
+  scheduledAt: string | null;
+  recipients: number;
+  stats: {
+    delivered: number;
+    opens: number;
+    clicks: number;
+    bounces: number;
+    unsubscribed: number;
+    openRate: string;
+    clickRate: string;
+  };
+}
+
 function StatCard({ 
   title, 
   value, 
@@ -167,9 +187,20 @@ export default function EmailActivityPage() {
     enabled: isConnected,
   });
 
+  const { data: campaignsData, isLoading: campaignsLoading, refetch: refetchCampaigns } = useQuery<{ campaigns: Campaign[], count: number }>({
+    queryKey: ['/api/brevo/campaigns', days],
+    queryFn: async () => {
+      const res = await fetch(`/api/brevo/campaigns?days=${days}`);
+      if (!res.ok) throw new Error('Failed to fetch campaigns');
+      return res.json();
+    },
+    enabled: isConnected,
+  });
+
   const handleRefresh = () => {
     refetchStats();
     refetchEvents();
+    refetchCampaigns();
   };
 
   if (statusLoading) {
@@ -302,17 +333,86 @@ export default function EmailActivityPage() {
         </div>
       )}
 
-      <Tabs defaultValue="events" className="w-full">
+      <Tabs defaultValue="campaigns" className="w-full">
         <TabsList>
-          <TabsTrigger value="events" data-testid="tab-events">Recent Events</TabsTrigger>
+          <TabsTrigger value="campaigns" data-testid="tab-campaigns">Marketing Campaigns</TabsTrigger>
+          <TabsTrigger value="events" data-testid="tab-events">Transactional Events</TabsTrigger>
           <TabsTrigger value="daily" data-testid="tab-daily">Daily Reports</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="campaigns" className="mt-4">
+          <Card className="backdrop-blur-sm bg-white/80 border-white/20">
+            <CardHeader>
+              <CardTitle className="text-lg">Marketing Campaigns</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {campaignsLoading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} className="h-16 bg-gray-100 rounded animate-pulse" />
+                  ))}
+                </div>
+              ) : campaignsData?.campaigns?.length ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-2 px-3 font-medium">Campaign</th>
+                        <th className="text-left py-2 px-3 font-medium">Status</th>
+                        <th className="text-right py-2 px-3 font-medium">Recipients</th>
+                        <th className="text-right py-2 px-3 font-medium">Opens</th>
+                        <th className="text-right py-2 px-3 font-medium">Clicks</th>
+                        <th className="text-right py-2 px-3 font-medium">Unsubscribed</th>
+                        <th className="text-left py-2 px-3 font-medium">Sent</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {campaignsData.campaigns.map((campaign, idx) => (
+                        <tr key={campaign.id} className="border-b hover:bg-gray-50" data-testid={`campaign-row-${idx}`}>
+                          <td className="py-3 px-3">
+                            <div>
+                              <p className="font-medium text-gray-900">{campaign.name}</p>
+                              <p className="text-xs text-gray-500 truncate max-w-xs">{campaign.subject}</p>
+                            </div>
+                          </td>
+                          <td className="py-3 px-3">
+                            <Badge className={campaign.status === 'sent' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}>
+                              {campaign.status}
+                            </Badge>
+                          </td>
+                          <td className="text-right py-3 px-3 font-medium">{campaign.recipients.toLocaleString()}</td>
+                          <td className="text-right py-3 px-3">
+                            <span className="text-purple-600">{campaign.stats.opens.toLocaleString()}</span>
+                            <span className="text-gray-400 text-xs ml-1">({campaign.stats.openRate}%)</span>
+                          </td>
+                          <td className="text-right py-3 px-3">
+                            <span className="text-orange-600">{campaign.stats.clicks.toLocaleString()}</span>
+                            <span className="text-gray-400 text-xs ml-1">({campaign.stats.clickRate}%)</span>
+                          </td>
+                          <td className="text-right py-3 px-3 text-red-600">{campaign.stats.unsubscribed}</td>
+                          <td className="py-3 px-3 text-gray-500 text-xs">
+                            {campaign.sentAt ? format(new Date(campaign.sentAt), 'MMM d, yyyy h:mm a') : '-'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <Mail className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p>No marketing campaigns found for this period</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="events" className="mt-4">
           <Card className="backdrop-blur-sm bg-white/80 border-white/20">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">Recent Email Events</CardTitle>
+                <CardTitle className="text-lg">Recent Transactional Events</CardTitle>
                 <Select value={eventFilter} onValueChange={setEventFilter}>
                   <SelectTrigger className="w-40" data-testid="select-event-filter">
                     <SelectValue placeholder="Filter by event" />

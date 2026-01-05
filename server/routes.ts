@@ -5112,5 +5112,59 @@ export async function registerRoutes(
     }
   });
 
+  app.get('/api/brevo/campaigns', isAuthenticated, requireBrevoConfigured, async (req: any, res) => {
+    try {
+      const { days, status, limit, offset } = req.query;
+      const params: Record<string, string> = {};
+      
+      params.limit = (limit as string) || '50';
+      params.offset = (offset as string) || '0';
+      params.sort = 'desc';
+      if (status) params.status = status as string;
+
+      const daysNum = parseInt(days as string) || 30;
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - daysNum);
+
+      const campaignsData = await brevoRequest('/emailCampaigns', params);
+      
+      const campaigns = (campaignsData.campaigns || [])
+        .filter((c: any) => {
+          const sentAt = c.sentDate ? new Date(c.sentDate) : null;
+          const scheduledAt = c.scheduledDate ? new Date(c.scheduledDate) : null;
+          const campaignDate = sentAt || scheduledAt;
+          return campaignDate && campaignDate >= startDate;
+        })
+        .map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          subject: c.subject,
+          status: c.status,
+          type: c.type,
+          sentAt: c.sentDate,
+          scheduledAt: c.scheduledDate,
+          recipients: c.statistics?.globalStats?.sent || c.recipients?.lists?.reduce((sum: number, l: any) => sum + (l.count || 0), 0) || 0,
+          stats: {
+            delivered: c.statistics?.globalStats?.delivered || 0,
+            opens: c.statistics?.globalStats?.uniqueOpens || 0,
+            clicks: c.statistics?.globalStats?.uniqueClicks || 0,
+            bounces: (c.statistics?.globalStats?.hardBounces || 0) + (c.statistics?.globalStats?.softBounces || 0),
+            unsubscribed: c.statistics?.globalStats?.unsubscriptions || 0,
+            openRate: c.statistics?.globalStats?.sent > 0 
+              ? ((c.statistics?.globalStats?.uniqueOpens || 0) / c.statistics?.globalStats?.sent * 100).toFixed(2) 
+              : '0',
+            clickRate: c.statistics?.globalStats?.sent > 0 
+              ? ((c.statistics?.globalStats?.uniqueClicks || 0) / c.statistics?.globalStats?.sent * 100).toFixed(2) 
+              : '0',
+          }
+        }));
+
+      res.json({ campaigns, count: campaigns.length });
+    } catch (error: any) {
+      console.error('[Brevo] Campaigns error:', error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   return httpServer;
 }
