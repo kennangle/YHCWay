@@ -5309,13 +5309,14 @@ export async function registerRoutes(
           features.forEach((f, i) => {
             const col = i % 2;
             const row = Math.floor(i / 2);
-            pptSlide.addText(f.name, {
+            const featureTitle = f.navLabel ? `${f.name} → ${f.navLabel}` : f.name;
+            pptSlide.addText(featureTitle, {
               x: 0.5 + col * 4.5, y: 1.3 + row * 1.5, w: 4, h: 0.4,
-              fontSize: 18, bold: true, color: darkText
+              fontSize: 16, bold: true, color: darkText
             });
             pptSlide.addText(f.desc, {
               x: 0.5 + col * 4.5, y: 1.7 + row * 1.5, w: 4, h: 0.5,
-              fontSize: 14, color: lightText
+              fontSize: 13, color: lightText
             });
           });
           if (slide.benefit) {

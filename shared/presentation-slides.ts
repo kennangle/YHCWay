@@ -1,6 +1,8 @@
 export interface SlideFeature {
   name: string;
   desc: string;
+  navLabel?: string;
+  navPath?: string;
 }
 
 export interface SlideBenefit {
@@ -49,10 +51,10 @@ export const presentationSlides: Slide[] = [
     title: "Communication Hub",
     icon: "📬",
     features: [
-      { name: "Unified Inbox", desc: "All emails, messages, and notifications in one place" },
-      { name: "Gmail Integration", desc: "Read, compose, and manage emails without leaving the app" },
-      { name: "Slack Channels", desc: "Stay connected with team conversations" },
-      { name: "AI Email Drafting", desc: "Compose professional emails in seconds" },
+      { name: "Unified Inbox", desc: "All emails, messages, and notifications in one place", navLabel: "Inbox", navPath: "/inbox" },
+      { name: "Gmail Integration", desc: "Read, compose, and manage emails without leaving the app", navLabel: "Inbox", navPath: "/inbox" },
+      { name: "Slack Channels", desc: "Stay connected with team conversations", navLabel: "Chat", navPath: "/chat" },
+      { name: "AI Email Drafting", desc: "Compose professional emails in seconds", navLabel: "Inbox", navPath: "/inbox" },
     ],
     benefit: "Never miss an important message again",
   },
@@ -62,10 +64,10 @@ export const presentationSlides: Slide[] = [
     title: "Calendar & Scheduling",
     icon: "📅",
     features: [
-      { name: "Google Calendar", desc: "View and manage all your appointments" },
-      { name: "Zoom Integration", desc: "Join meetings with one click" },
-      { name: "Daily Briefing", desc: "Start your day with a summary of upcoming events" },
-      { name: "Smart Scheduling", desc: "Find optimal times and manage your schedule" },
+      { name: "Google Calendar", desc: "View and manage all your appointments", navLabel: "Calendar", navPath: "/calendar" },
+      { name: "Zoom Integration", desc: "Join meetings with one click", navLabel: "Calendar", navPath: "/calendar" },
+      { name: "Daily Briefing", desc: "Start your day with a summary of upcoming events", navLabel: "Dashboard", navPath: "/dashboard" },
+      { name: "Smart Scheduling", desc: "Find optimal times and manage your schedule", navLabel: "Calendar", navPath: "/calendar" },
     ],
     benefit: "Stay organized and prepared for every day",
   },
@@ -75,10 +77,10 @@ export const presentationSlides: Slide[] = [
     title: "Projects & Tasks",
     icon: "📋",
     features: [
-      { name: "Kanban Boards", desc: "Visual project management with drag-and-drop" },
-      { name: "Task Management", desc: "Subtasks, due dates, priorities, and assignments" },
-      { name: "Asana Import", desc: "Seamlessly migrate existing projects" },
-      { name: "AI Task Prioritization", desc: "Smart ranking of what matters most" },
+      { name: "Kanban Boards", desc: "Visual project management with drag-and-drop", navLabel: "Projects", navPath: "/projects" },
+      { name: "Task Management", desc: "Subtasks, due dates, priorities, and assignments", navLabel: "Tasks", navPath: "/tasks" },
+      { name: "Asana Import", desc: "Seamlessly migrate existing projects", navLabel: "Projects", navPath: "/projects" },
+      { name: "AI Task Prioritization", desc: "Smart ranking of what matters most", navLabel: "Tasks", navPath: "/tasks" },
     ],
     benefit: "Get more done with less effort",
   },
@@ -88,10 +90,10 @@ export const presentationSlides: Slide[] = [
     title: "AI-Powered Assistant",
     icon: "🤖",
     features: [
-      { name: "Daily Briefing", desc: "Morning summary of tasks, meetings, and messages" },
-      { name: "Smart Search", desc: "Natural language search across all your data" },
-      { name: "Task Extraction", desc: "Auto-generate tasks from emails and messages" },
-      { name: "Calendar Optimization", desc: "Find focus time and identify overloaded days" },
+      { name: "Daily Briefing", desc: "Morning summary of tasks, meetings, and messages", navLabel: "Dashboard", navPath: "/dashboard" },
+      { name: "Smart Search", desc: "Natural language search across all your data", navLabel: "Cmd+K", navPath: "" },
+      { name: "Task Extraction", desc: "Auto-generate tasks from emails and messages", navLabel: "AI Button", navPath: "" },
+      { name: "Calendar Optimization", desc: "Find focus time and identify overloaded days", navLabel: "AI Button", navPath: "" },
     ],
     benefit: "Your intelligent productivity partner",
   },
@@ -101,10 +103,10 @@ export const presentationSlides: Slide[] = [
     title: "Client Engagement",
     icon: "🎁",
     features: [
-      { name: "Intro Offers Tracking", desc: "Monitor new client conversions via Mindbody" },
-      { name: "Perkville Rewards", desc: "View and manage customer loyalty points" },
-      { name: "QR Code Generator", desc: "Create trackable QR codes for marketing" },
-      { name: "Email Builder", desc: "Design beautiful email campaigns" },
+      { name: "Intro Offers Tracking", desc: "Monitor new client conversions via Mindbody", navLabel: "Intro Offers", navPath: "/intro-offers" },
+      { name: "Perkville Rewards", desc: "View and manage customer loyalty points", navLabel: "Rewards", navPath: "/rewards" },
+      { name: "QR Code Generator", desc: "Create trackable QR codes for marketing", navLabel: "QR Codes", navPath: "/qr-codes" },
+      { name: "Email Builder", desc: "Design beautiful email campaigns", navLabel: "Email Builder", navPath: "/email-builder" },
     ],
     benefit: "Build lasting relationships with your clients",
   },
@@ -114,10 +116,10 @@ export const presentationSlides: Slide[] = [
     title: "HR & Operations",
     icon: "👥",
     features: [
-      { name: "Gusto HR & Payroll", desc: "Employee directory and payroll history at a glance" },
-      { name: "YHCTime Tracking", desc: "Track employee hours and manage time entries" },
-      { name: "User Management", desc: "Control access with role-based permissions" },
-      { name: "Audit Logs", desc: "Complete compliance trail for enterprise security" },
+      { name: "Gusto HR & Payroll", desc: "Employee directory and payroll history at a glance", navLabel: "HR & Payroll", navPath: "/gusto" },
+      { name: "YHCTime Tracking", desc: "Track employee hours and manage time entries", navLabel: "Time Tracking", navPath: "/time-tracking" },
+      { name: "User Management", desc: "Control access with role-based permissions", navLabel: "Admin", navPath: "/admin" },
+      { name: "Audit Logs", desc: "Complete compliance trail for enterprise security", navLabel: "Admin", navPath: "/admin" },
     ],
     benefit: "Streamline your back-office operations",
   },

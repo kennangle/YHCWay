@@ -113,7 +113,14 @@ export default function PresentationPage() {
             <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6">
               {slide.features?.map((feature, i) => (
                 <div key={i} className="bg-white/80 backdrop-blur rounded-2xl p-6 shadow-lg border border-gray-100">
-                  <h3 className="text-xl font-bold text-gray-800 mb-2">{feature.name}</h3>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-xl font-bold text-gray-800">{feature.name}</h3>
+                    {feature.navLabel && (
+                      <span className="text-xs font-medium px-2 py-1 bg-orange-100 text-orange-700 rounded-full" data-testid={`nav-label-${i}`}>
+                        {feature.navLabel}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-lg text-gray-600">{feature.desc}</p>
                 </div>
               ))}
