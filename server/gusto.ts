@@ -75,8 +75,22 @@ export async function getCompany(companyId: string) {
   return gustoRequest(`/v1/companies/${companyId}`);
 }
 
-export async function getEmployees(companyId: string, page = 1, perPage = 25) {
-  return gustoRequest(`/v1/companies/${companyId}/employees?page=${page}&per=${perPage}`);
+export async function getEmployees(companyId: string) {
+  // Fetch all employees with pagination
+  const allEmployees: any[] = [];
+  let page = 1;
+  const perPage = 100; // Max allowed by Gusto API
+  
+  while (true) {
+    const employees = await gustoRequest(`/v1/companies/${companyId}/employees?page=${page}&per=${perPage}`);
+    if (!employees || employees.length === 0) break;
+    allEmployees.push(...employees);
+    if (employees.length < perPage) break; // Last page
+    page++;
+  }
+  
+  console.log(`[Gusto] Fetched ${allEmployees.length} total employees`);
+  return allEmployees;
 }
 
 export async function getEmployee(employeeId: string) {
