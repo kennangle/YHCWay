@@ -75,7 +75,6 @@ export async function handleGmailCallback(code: string, userId: string): Promise
 export async function getGmailClientForUser(userId: string) {
   console.log("[Gmail OAuth] Getting client for user:", userId);
   const account = await storage.getOAuthAccount(userId, 'gmail');
-  console.log("[Gmail OAuth] Account found:", !!account, "Has access token:", !!account?.accessToken);
   
   if (!account || !account.accessToken) {
     throw new Error('Gmail not connected');
