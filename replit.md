@@ -105,6 +105,7 @@ All AI features are user-scoped for security (data isolation per user). Note: Ca
   - Dedicated `/intro-offers` page for viewing and managing intro offers
 - **Perkville**: Resource Owner Grant integration for loyalty rewards program
   - Uses password-based authentication (admin enters Perkville email/password)
+  - **Business ID**: Configured via `PERKVILLE_BUSINESS_ID` environment variable (defaults to 7128 for Yoga Health Center)
   - Dedicated `/rewards` page with dual views:
     - **Business Analytics**: Total points across all customers, customer count, top customer leaderboard
     - **Customer Lookup**: Search customers by email to view their point balance
@@ -112,13 +113,19 @@ All AI features are user-scoped for security (data isolation per user). Note: Ca
   - API endpoints:
     - `connect` (POST with username/password), `disconnect`, `status`
     - `me`, `points`, `rewards`, `activity` - Personal account data
-    - `businesses` - List businesses the admin manages
+    - `businesses` - Fetches specific business by ID (not all businesses)
     - `customers?businessId=X` - Get all customers with merged point balances
     - `balances?businessId=X` - Get aggregated totals (total points, customer count)
     - `search?email=X` - Search customer by email with balance lookup
   - Data merging: `/customers` endpoint fetches both customer list and connection-balances, merges via Map(connectionId → balance) to ensure accurate point totals
   - Scopes granted: PUBLIC, ADMIN_CUSTOMER_INFO
-  - Requires `PERKVILLE_CLIENT_ID` and `PERKVILLE_CLIENT_SECRET` environment variables
+  - Requires `PERKVILLE_CLIENT_ID`, `PERKVILLE_CLIENT_SECRET`, and `PERKVILLE_BUSINESS_ID` environment variables
+- **YHCTime**: Employee time tracking integration
+  - Sessions API for creating, viewing, and deleting time entries
+  - Role-based access: Non-admins only see their own entries, admins see all
+  - User linking: Users can link their account to a YHCTime employee ID
+  - Dedicated `/time-tracking` page for managing time entries
+  - Requires `YHCTIME_API_KEY` environment variable
 - **QR Tiger**: API integration for dynamic QR code generation and tracking
   - Creates dynamic QR codes with customizable colors
   - Tracks scan analytics (requires valid QR Tiger ID)
@@ -127,9 +134,24 @@ All AI features are user-scoped for security (data isolation per user). Note: Ca
   - API limitation: Cannot list existing QR codes from QR Tiger account, only tracks codes created in-app
 
 ### Authentication & Authorization
-- **Method**: Replit Auth (OpenID Connect)
-- **Session Storage**: PostgreSQL-backed sessions
+- **Method**: Local email/password authentication with session cookies
+- **Session Storage**: PostgreSQL-backed sessions via connect-pg-simple
 - **Admin Access**: Determined by `isAdmin` flag on user record, with a hardcoded admin email constant
+- **Password Reset**: Via Brevo transactional emails (requires verified sender in Brevo)
+- **User Approval**: New users require admin approval before accessing the app
+
+### Guided Tour (Onboarding)
+- **Implementation**: driver.js library for step-by-step walkthrough
+- **Tracking**: Stored in database per user (`hasCompletedTour` field)
+- **Behavior**: Only shows for new users with `hasCompletedTour === false`
+- **API**: `POST /api/auth/tour-completed` marks tour as done
+
+### Email Service (Brevo)
+- **Provider**: Brevo (formerly Sendinblue) transactional emails
+- **Templates**: Password reset, user invitation, notifications
+- **Sender**: Configured via `BREVO_SENDER_EMAIL` and `BREVO_SENDER_NAME`
+- **Important**: Sender email must be verified in Brevo, and recipient emails must not be on Brevo's blocklist
+- **IP Blocking**: Must be deactivated in Brevo for Replit deployments (dynamic IPs)
 
 ### Project Structure
 ```
