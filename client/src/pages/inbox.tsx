@@ -1,6 +1,6 @@
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { TopBar } from "@/components/top-bar";
-import { Search, Mail, MessageCircle, Users, MessageSquare, PenSquare, Archive, Loader2, Share2, Check } from "lucide-react";
+import { Search, Mail, MessageCircle, Users, MessageSquare, PenSquare, Loader2, Share2, Check } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SlackChannelConfig } from "@/components/slack-channel-config";
@@ -61,64 +61,9 @@ export default function Inbox() {
   const [filter, setFilter] = useState<FilterType>('all');
   const [selectedEmailId, setSelectedEmailId] = useState<string | null>(null);
   const [isComposing, setIsComposing] = useState(false);
-  const [archivingId, setArchivingId] = useState<string | null>(null);
   const [sharingMessage, setSharingMessage] = useState<UnifiedMessage | null>(null);
   const [shareNote, setShareNote] = useState("");
   const queryClient = useQueryClient();
-
-  const archiveEmailMutation = useMutation({
-    mutationFn: async (email: GmailMessage) => {
-      const res = await fetch("/api/archive/emails", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          emailId: email.id,
-          threadId: email.threadId,
-          subject: email.subject,
-          from: email.from,
-          snippet: email.snippet,
-          date: email.date,
-          isUnread: email.isUnread,
-        }),
-      });
-      if (!res.ok) throw new Error("Failed to archive email");
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["gmail-messages"] });
-      queryClient.invalidateQueries({ queryKey: ["archived-emails"] });
-      setArchivingId(null);
-    },
-    onError: () => setArchivingId(null),
-  });
-
-  const archiveSlackMutation = useMutation({
-    mutationFn: async (msg: SlackMessage) => {
-      const res = await fetch("/api/archive/slack", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          messageId: msg.id,
-          channelId: msg.channelId,
-          channelName: msg.channelName,
-          text: msg.text,
-          userName: msg.userName,
-          timestamp: msg.timestamp,
-          isDm: msg.isDm,
-        }),
-      });
-      if (!res.ok) throw new Error("Failed to archive message");
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["slack-messages"] });
-      queryClient.invalidateQueries({ queryKey: ["archived-slack"] });
-      setArchivingId(null);
-    },
-    onError: () => setArchivingId(null),
-  });
 
   const shareItemMutation = useMutation({
     mutationFn: async (data: { itemType: "email" | "slack"; itemId: string; title: string; preview: string; note?: string }) => {
@@ -303,33 +248,12 @@ export default function Inbox() {
               const borderColor = message.type === 'gmail' ? 'border-l-red-500' : message.type === 'slack-dm' ? 'border-l-pink-500' : 'border-l-purple-500';
               const bgColor = message.type === 'gmail' ? 'bg-red-100' : message.type === 'slack-dm' ? 'bg-pink-100' : 'bg-purple-100';
               const iconColor = message.type === 'gmail' ? 'text-red-600' : message.type === 'slack-dm' ? 'text-pink-600' : 'text-purple-600';
-              const isArchiving = archivingId === message.id;
               
               const handleClick = (e: React.MouseEvent) => {
                 if (message.type === 'gmail') {
                   e.preventDefault();
                   const gmailId = message.id.replace('gmail-', '');
                   setSelectedEmailId(gmailId);
-                }
-              };
-
-              const handleArchive = (e: React.MouseEvent) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setArchivingId(message.id);
-                
-                if (message.type === 'gmail') {
-                  const emailId = message.id.replace('gmail-', '');
-                  const originalEmail = gmailMessages.find(e => e.id === emailId);
-                  if (originalEmail) {
-                    archiveEmailMutation.mutate(originalEmail);
-                  }
-                } else {
-                  const msgId = message.id.replace('slack-', '');
-                  const originalMsg = slackMessages.find(m => m.id === msgId);
-                  if (originalMsg) {
-                    archiveSlackMutation.mutate(originalMsg);
-                  }
                 }
               };
 
@@ -381,20 +305,6 @@ export default function Inbox() {
                             data-testid={`button-share-${message.id}`}
                           >
                             <Share2 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={handleArchive}
-                            disabled={isArchiving}
-                            className="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100"
-                            style={{ opacity: 1 }}
-                            title="Archive"
-                            data-testid={`button-archive-${message.id}`}
-                          >
-                            {isArchiving ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <Archive className="w-4 h-4" />
-                            )}
                           </button>
                         </div>
                       </div>
