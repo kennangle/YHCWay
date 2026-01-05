@@ -2,7 +2,6 @@ import * as brevo from '@getbrevo/brevo';
 import { storage } from './storage';
 
 const brevoApiKey = process.env.BREVO_API_KEY || '';
-console.log(`[Email] Brevo API key configured: ${brevoApiKey ? 'Yes (' + brevoApiKey.substring(0, 10) + '...)' : 'No'}`);
 
 const apiInstance = new brevo.TransactionalEmailsApi();
 apiInstance.setApiKey(brevo.TransactionalEmailsApiApiKeys.apiKey, brevoApiKey);
