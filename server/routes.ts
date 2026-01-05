@@ -5215,9 +5215,7 @@ export async function registerRoutes(
         return res.status(503).json({ error: 'Gusto not configured' });
       }
       const { companyId } = req.params;
-      const page = parseInt(req.query.page as string) || 1;
-      const perPage = parseInt(req.query.per as string) || 25;
-      const employees = await getEmployees(companyId, page, perPage);
+      const employees = await getEmployees(companyId);
       res.json(employees);
     } catch (error: any) {
       console.error('[Gusto] Employees error:', error.message);
@@ -5250,6 +5248,123 @@ export async function registerRoutes(
     } catch (error: any) {
       console.error('[Gusto] Payroll details error:', error.message);
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get('/api/presentation/download', isAuthenticated, async (req: any, res) => {
+    try {
+      const PptxGenJS = (await import('pptxgenjs')).default;
+      const { presentationSlides } = await import('@shared/presentation-slides');
+      
+      const pptx = new PptxGenJS();
+      pptx.author = 'The YHC Way';
+      pptx.title = 'The YHC Way - Features & Benefits';
+      pptx.subject = 'Unified Workspace for Yoga Health Center';
+
+      const primaryColor = 'F97316';
+      const secondaryColor = 'EC4899';
+      const darkText = '1F2937';
+      const lightText = '6B7280';
+
+      for (const slide of presentationSlides) {
+        const pptSlide = pptx.addSlide();
+        pptSlide.background = { color: 'FFFFFF' };
+
+        if (slide.type === 'title') {
+          pptSlide.addText(slide.title, {
+            x: 0.5, y: 2.5, w: 9, h: 1.2,
+            fontSize: 54, bold: true, align: 'center',
+            color: primaryColor
+          });
+          pptSlide.addText(slide.subtitle || '', {
+            x: 0.5, y: 3.7, w: 9, h: 0.6,
+            fontSize: 24, align: 'center', color: darkText
+          });
+          pptSlide.addText(slide.tagline || '', {
+            x: 0.5, y: 4.4, w: 9, h: 0.5,
+            fontSize: 18, align: 'center', color: lightText, italic: true
+          });
+        } else if (slide.type === 'overview') {
+          pptSlide.addText(slide.title, {
+            x: 0.5, y: 0.5, w: 9, h: 0.8,
+            fontSize: 36, bold: true, color: darkText
+          });
+          const bullets = (slide.points || []).map(p => ({ text: p, options: { bullet: true, color: darkText } }));
+          pptSlide.addText(bullets, {
+            x: 0.5, y: 1.5, w: 9, h: 3,
+            fontSize: 20, lineSpacing: 32
+          });
+          if (slide.benefit) {
+            pptSlide.addText(slide.benefit, {
+              x: 0.5, y: 4.8, w: 9, h: 0.6,
+              fontSize: 18, bold: true, color: primaryColor, align: 'center'
+            });
+          }
+        } else if (slide.type === 'feature') {
+          pptSlide.addText(`${slide.icon || ''} ${slide.title}`, {
+            x: 0.5, y: 0.4, w: 9, h: 0.7,
+            fontSize: 32, bold: true, color: darkText
+          });
+          const features = slide.features || [];
+          features.forEach((f, i) => {
+            const col = i % 2;
+            const row = Math.floor(i / 2);
+            pptSlide.addText(f.name, {
+              x: 0.5 + col * 4.5, y: 1.3 + row * 1.5, w: 4, h: 0.4,
+              fontSize: 18, bold: true, color: darkText
+            });
+            pptSlide.addText(f.desc, {
+              x: 0.5 + col * 4.5, y: 1.7 + row * 1.5, w: 4, h: 0.5,
+              fontSize: 14, color: lightText
+            });
+          });
+          if (slide.benefit) {
+            pptSlide.addText(slide.benefit, {
+              x: 0.5, y: 4.8, w: 9, h: 0.5,
+              fontSize: 16, bold: true, color: secondaryColor, align: 'center'
+            });
+          }
+        } else if (slide.type === 'benefits') {
+          pptSlide.addText(slide.title, {
+            x: 0.5, y: 0.4, w: 9, h: 0.7,
+            fontSize: 32, bold: true, color: darkText, align: 'center'
+          });
+          const benefits = slide.benefits || [];
+          benefits.forEach((b, i) => {
+            const col = i % 3;
+            const row = Math.floor(i / 3);
+            pptSlide.addText(`${b.icon} ${b.title}`, {
+              x: 0.3 + col * 3.2, y: 1.4 + row * 1.8, w: 3, h: 0.5,
+              fontSize: 16, bold: true, color: darkText, align: 'center'
+            });
+            pptSlide.addText(b.desc, {
+              x: 0.3 + col * 3.2, y: 1.9 + row * 1.8, w: 3, h: 0.6,
+              fontSize: 12, color: lightText, align: 'center'
+            });
+          });
+        } else if (slide.type === 'closing') {
+          pptSlide.addText(slide.title, {
+            x: 0.5, y: 2, w: 9, h: 0.7,
+            fontSize: 28, bold: true, color: darkText, align: 'center'
+          });
+          pptSlide.addText(slide.subtitle || '', {
+            x: 0.5, y: 2.8, w: 9, h: 1,
+            fontSize: 48, bold: true, color: primaryColor, align: 'center'
+          });
+          pptSlide.addText(slide.tagline || '', {
+            x: 0.5, y: 4, w: 9, h: 0.5,
+            fontSize: 18, color: lightText, align: 'center', italic: true
+          });
+        }
+      }
+
+      const buffer = await pptx.write({ outputType: 'nodebuffer' });
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
+      res.setHeader('Content-Disposition', 'attachment; filename="The-YHC-Way-Presentation.pptx"');
+      res.send(buffer);
+    } catch (error: any) {
+      console.error('[Presentation] PPTX generation error:', error);
+      res.status(500).json({ error: 'Failed to generate presentation' });
     }
   });
 

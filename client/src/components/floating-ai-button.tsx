@@ -1,10 +1,16 @@
 import { useState } from "react";
-import { Brain, X } from "lucide-react";
+import { Brain } from "lucide-react";
 import { AIAssistantPanel } from "./ai-assistant-panel";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { useLocation } from "wouter";
 
 export function FloatingAIButton() {
   const [isOpen, setIsOpen] = useState(false);
+  const [location] = useLocation();
+
+  if (location === "/presentation") {
+    return null;
+  }
 
   return (
     <>
