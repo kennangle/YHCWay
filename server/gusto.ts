@@ -1,7 +1,10 @@
 // Gusto API integration for employee directory and payroll data
 
 const GUSTO_API_TOKEN = process.env.GUSTO_API_TOKEN;
-const GUSTO_BASE_URL = 'https://api.gusto-demo.com';
+// Use production API if GUSTO_USE_PRODUCTION is set, otherwise demo
+const GUSTO_BASE_URL = process.env.GUSTO_USE_PRODUCTION === 'true' 
+  ? 'https://api.gusto.com' 
+  : 'https://api.gusto-demo.com';
 
 export function isGustoConfigured(): boolean {
   return !!GUSTO_API_TOKEN;
