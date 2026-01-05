@@ -5261,10 +5261,10 @@ export async function registerRoutes(
       pptx.title = 'The YHC Way - Features & Benefits';
       pptx.subject = 'Unified Workspace for Yoga Health Center';
 
-      const primaryColor = 'F97316';
-      const secondaryColor = 'EC4899';
-      const darkText = '1F2937';
-      const lightText = '6B7280';
+      const primaryColor = 'FD971E';
+      const secondaryColor = 'F59E0B';
+      const darkText = '1C1917';
+      const lightText = '78716C';
 
       for (const slide of presentationSlides) {
         const pptSlide = pptx.addSlide();

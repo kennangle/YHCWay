@@ -75,7 +75,7 @@ export default function PresentationPage() {
       case "title":
         return (
           <div className="flex flex-col items-center justify-center h-full text-center px-8">
-            <h1 className="text-6xl md:text-8xl font-bold bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600 bg-clip-text text-transparent mb-6">
+            <h1 className="text-6xl md:text-8xl font-bold bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 bg-clip-text text-transparent mb-6">
               {slide.title}
             </h1>
             <p className="text-2xl md:text-3xl text-gray-600 mb-4">{slide.subtitle}</p>
@@ -96,7 +96,7 @@ export default function PresentationPage() {
                   </li>
                 ))}
               </ul>
-              <div className="mt-12 p-6 bg-gradient-to-r from-orange-100 to-pink-100 rounded-2xl">
+              <div className="mt-12 p-6 bg-gradient-to-r from-orange-100 to-amber-100 rounded-2xl">
                 <p className="text-2xl font-semibold text-orange-700">{slide.benefit}</p>
               </div>
             </div>
@@ -118,8 +118,8 @@ export default function PresentationPage() {
                 </div>
               ))}
             </div>
-            <div className="mt-8 p-5 bg-gradient-to-r from-purple-100 to-blue-100 rounded-2xl">
-              <p className="text-xl font-semibold text-purple-700 text-center">{slide.benefit}</p>
+            <div className="mt-8 p-5 bg-gradient-to-r from-orange-100 to-amber-100 rounded-2xl">
+              <p className="text-xl font-semibold text-orange-700 text-center">{slide.benefit}</p>
             </div>
           </div>
         );
@@ -144,12 +144,12 @@ export default function PresentationPage() {
         return (
           <div className="flex flex-col items-center justify-center h-full text-center px-8">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-8">{slide.title}</h2>
-            <div className="text-6xl md:text-7xl font-bold bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600 bg-clip-text text-transparent mb-6">
+            <div className="text-6xl md:text-7xl font-bold bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 bg-clip-text text-transparent mb-6">
               {slide.subtitle}
             </div>
             <p className="text-2xl text-gray-600 mb-10 italic">{slide.tagline}</p>
             <Link href="/">
-              <Button size="lg" className="text-xl px-8 py-6 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600">
+              <Button size="lg" className="text-xl px-8 py-6 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600">
                 {slide.cta}
               </Button>
             </Link>
@@ -162,7 +162,7 @@ export default function PresentationPage() {
   };
 
   return (
-    <div ref={containerRef} className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-purple-50 flex flex-col">
+    <div ref={containerRef} className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100 flex flex-col">
       <div className="flex-1 flex items-center justify-center p-4">
         <div className="w-full max-w-6xl aspect-[16/9] bg-white rounded-3xl shadow-2xl overflow-hidden relative">
           {renderSlide()}
