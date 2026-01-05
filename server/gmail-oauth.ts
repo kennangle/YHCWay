@@ -295,7 +295,6 @@ export async function isGmailConnectedForUser(userId: string): Promise<boolean> 
     console.log("[Gmail OAuth] Checking connection for user:", userId);
     const account = await storage.getOAuthAccount(userId, 'gmail');
     const isConnected = !!account?.accessToken;
-    console.log("[Gmail OAuth] Connection check result:", isConnected, "Account exists:", !!account);
     return isConnected;
   } catch (error) {
     console.error("[Gmail OAuth] Error checking connection:", error);
