@@ -2,6 +2,7 @@ import { storage } from "./storage";
 
 const PERKVILLE_CLIENT_ID = process.env.PERKVILLE_CLIENT_ID?.trim().replace(/\\n/g, '').replace(/[\r\n\-]+$/, '');
 const PERKVILLE_CLIENT_SECRET = process.env.PERKVILLE_CLIENT_SECRET?.trim().replace(/\\n/g, '').replace(/[\r\n\-]+$/, '');
+const PERKVILLE_BUSINESS_ID = process.env.PERKVILLE_BUSINESS_ID ? parseInt(process.env.PERKVILLE_BUSINESS_ID) : 7128;
 const PERKVILLE_TOKEN_URL = "https://www.perkville.com/api/token/";
 const PERKVILLE_API_BASE = "https://api.perkville.com/v2";
 
@@ -97,28 +98,26 @@ export async function getPerkvilleMe(userId: string): Promise<any | null> {
   }
 }
 
+export function getDefaultPerkvilleBusinessId(): number {
+  return PERKVILLE_BUSINESS_ID;
+}
+
 export async function getPerkvilleBusinesses(userId: string): Promise<any[]> {
   try {
-    const data = await perkvilleApiRequest(userId, "/businesses/");
+    // Fetch the specific business by ID instead of all businesses
+    const data = await perkvilleApiRequest(userId, `/businesses/${PERKVILLE_BUSINESS_ID}/`);
     
-    let results: any[] = [];
-    if (Array.isArray(data)) {
-      results = data;
-    } else if (data?.objects && Array.isArray(data.objects)) {
-      results = data.objects;
-    } else if (data?.results && Array.isArray(data.results)) {
-      results = data.results;
-    } else if (data?.id) {
-      results = [data];
+    if (data?.id || data?.business_id) {
+      return [{
+        id: data.business_id || data.id,
+        name: data.name || `Business ${data.business_id || data.id}`,
+        slug: data.slug,
+      }];
     }
     
-    return results.map((biz: any) => ({
-      id: biz.business_id || biz.id,
-      name: biz.name || `Business ${biz.business_id || biz.id}`,
-      slug: biz.slug,
-    }));
+    return [];
   } catch (error) {
-    console.error("Error fetching Perkville businesses:", error);
+    console.error("Error fetching Perkville business:", error);
     return [];
   }
 }
