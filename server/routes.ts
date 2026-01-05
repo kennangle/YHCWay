@@ -523,6 +523,20 @@ export async function registerRoutes(
     }
   });
 
+  app.post('/api/auth/tour-completed', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const user = await storage.markTourCompleted(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking tour completed:", error);
+      res.status(500).json({ message: "Failed to mark tour completed" });
+    }
+  });
+
   app.get("/api/services", async (req, res) => {
     try {
       const allServices = await storage.getAllServices();

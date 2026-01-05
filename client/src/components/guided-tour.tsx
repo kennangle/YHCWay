@@ -1,6 +1,8 @@
 import { useEffect, useCallback } from 'react';
 import { driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
+import { useAuth } from '@/hooks/useAuth';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface GuidedTourProps {
   onComplete?: () => void;
@@ -8,6 +10,22 @@ interface GuidedTourProps {
 }
 
 export function useGuidedTour() {
+  const queryClient = useQueryClient();
+  
+  const markTourCompletedMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch('/api/auth/tour-completed', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error('Failed to mark tour completed');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['auth-user'] });
+    },
+  });
+
   const startTour = useCallback(() => {
     const driverObj = driver({
       showProgress: true,
@@ -115,36 +133,32 @@ export function useGuidedTour() {
         },
       ],
       onDestroyStarted: () => {
-        localStorage.setItem('yhc-tour-completed', 'true');
+        markTourCompletedMutation.mutate();
         driverObj.destroy();
       },
     });
 
     driverObj.drive();
-  }, []);
+  }, [markTourCompletedMutation]);
 
   const resetTour = useCallback(() => {
-    localStorage.removeItem('yhc-tour-completed');
   }, []);
 
-  const hasTourCompleted = useCallback(() => {
-    return localStorage.getItem('yhc-tour-completed') === 'true';
-  }, []);
-
-  return { startTour, resetTour, hasTourCompleted };
+  return { startTour, resetTour };
 }
 
 export function GuidedTour({ onComplete, autoStart = false }: GuidedTourProps) {
-  const { startTour, hasTourCompleted } = useGuidedTour();
+  const { user } = useAuth();
+  const { startTour } = useGuidedTour();
 
   useEffect(() => {
-    if (autoStart && !hasTourCompleted()) {
+    if (autoStart && user && !user.hasCompletedTour) {
       const timer = setTimeout(() => {
         startTour();
       }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [autoStart, startTour, hasTourCompleted]);
+  }, [autoStart, startTour, user]);
 
   return null;
 }

@@ -82,6 +82,7 @@ export const users = pgTable("users", {
   lastLoginAt: timestamp("last_login_at"),
   yhctimeEmployeeId: integer("yhctime_employee_id"),
   yhctimeEmployeeName: varchar("yhctime_employee_name"),
+  hasCompletedTour: boolean("has_completed_tour").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

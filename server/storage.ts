@@ -128,6 +128,7 @@ export interface IStorage {
   updateUserApprovalStatus(id: string, status: string, approvedBy?: string): Promise<User | undefined>;
   updateUserProfile(id: string, firstName: string, lastName: string): Promise<User | undefined>;
   updateUserYHCTimeLink(id: string, employeeId: number | null, employeeName: string | null): Promise<User | undefined>;
+  markTourCompleted(id: string): Promise<User | undefined>;
   recordUserLogin(id: string): Promise<User | undefined>;
   getActiveSessions(): Promise<string[]>;
   deleteUser(id: string): Promise<void>;
@@ -508,6 +509,15 @@ export class DbStorage implements IStorage {
         yhctimeEmployeeName: employeeName, 
         updatedAt: new Date() 
       })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  async markTourCompleted(id: string): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set({ hasCompletedTour: true, updatedAt: new Date() })
       .where(eq(users.id, id))
       .returning();
     return user;
