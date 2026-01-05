@@ -129,9 +129,11 @@ export default function EmailActivityPage() {
   const [days, setDays] = useState("30");
   const [eventFilter, setEventFilter] = useState("all");
 
-  const { data: status } = useQuery<BrevoStatus>({
+  const { data: status, isLoading: statusLoading } = useQuery<BrevoStatus>({
     queryKey: ['/api/brevo/status'],
   });
+
+  const isConnected = status?.connected === true;
 
   const { data: aggregatedStats, isLoading: statsLoading, refetch: refetchStats } = useQuery<AggregatedStats>({
     queryKey: ['/api/brevo/statistics/aggregated', days],
@@ -140,6 +142,7 @@ export default function EmailActivityPage() {
       if (!res.ok) throw new Error('Failed to fetch stats');
       return res.json();
     },
+    enabled: isConnected,
   });
 
   const { data: dailyReports, isLoading: reportsLoading } = useQuery<{ reports: DailyReport[] }>({
@@ -149,6 +152,7 @@ export default function EmailActivityPage() {
       if (!res.ok) throw new Error('Failed to fetch reports');
       return res.json();
     },
+    enabled: isConnected,
   });
 
   const { data: eventsData, isLoading: eventsLoading, refetch: refetchEvents } = useQuery<{ events: EmailEvent[] }>({
@@ -160,6 +164,7 @@ export default function EmailActivityPage() {
       if (!res.ok) throw new Error('Failed to fetch events');
       return res.json();
     },
+    enabled: isConnected,
   });
 
   const handleRefresh = () => {
@@ -167,7 +172,20 @@ export default function EmailActivityPage() {
     refetchEvents();
   };
 
-  if (!status?.connected) {
+  if (statusLoading) {
+    return (
+      <div className="p-6 max-w-7xl mx-auto">
+        <Card className="backdrop-blur-sm bg-white/80 border-white/20">
+          <CardContent className="p-8 text-center">
+            <RefreshCw className="h-12 w-12 mx-auto text-gray-400 mb-4 animate-spin" />
+            <p className="text-gray-500">Checking Brevo connection...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!isConnected) {
     return (
       <div className="p-6 max-w-7xl mx-auto">
         <Card className="backdrop-blur-sm bg-white/80 border-white/20">

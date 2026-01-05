@@ -5002,12 +5002,16 @@ export async function registerRoutes(
   const BREVO_BASE_URL = 'https://api.brevo.com/v3';
 
   async function brevoRequest(endpoint: string, params: Record<string, string> = {}) {
+    if (!BREVO_API_KEY) {
+      throw new Error('Brevo API key not configured');
+    }
+    
     const url = new URL(`${BREVO_BASE_URL}${endpoint}`);
     Object.entries(params).forEach(([key, value]) => {
       if (value) url.searchParams.append(key, value);
     });
 
-    const response = await fetch(url.toString(), {
+    const response = await globalThis.fetch(url.toString(), {
       headers: {
         'accept': 'application/json',
         'api-key': BREVO_API_KEY
@@ -5040,7 +5044,14 @@ export async function registerRoutes(
     }
   });
 
-  app.get('/api/brevo/statistics/aggregated', isAuthenticated, async (req: any, res) => {
+  const requireBrevoConfigured = (req: any, res: any, next: any) => {
+    if (!BREVO_API_KEY) {
+      return res.status(503).json({ error: 'Brevo API key not configured' });
+    }
+    next();
+  };
+
+  app.get('/api/brevo/statistics/aggregated', isAuthenticated, requireBrevoConfigured, async (req: any, res) => {
     try {
       const { startDate, endDate, days } = req.query;
       const params: Record<string, string> = {};
@@ -5061,7 +5072,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get('/api/brevo/statistics/reports', isAuthenticated, async (req: any, res) => {
+  app.get('/api/brevo/statistics/reports', isAuthenticated, requireBrevoConfigured, async (req: any, res) => {
     try {
       const { startDate, endDate, days } = req.query;
       const params: Record<string, string> = {};
@@ -5082,7 +5093,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get('/api/brevo/statistics/events', isAuthenticated, async (req: any, res) => {
+  app.get('/api/brevo/statistics/events', isAuthenticated, requireBrevoConfigured, async (req: any, res) => {
     try {
       const { limit, offset, startDate, endDate, event, email, sort } = req.query;
       const params: Record<string, string> = {};
