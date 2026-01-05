@@ -34,7 +34,40 @@ async function gustoRequest(endpoint: string, options: RequestInit = {}) {
   return response.json();
 }
 
+export async function getTokenInfo() {
+  return gustoRequest('/v1/token_info');
+}
+
+export async function getCurrentUser() {
+  return gustoRequest('/v1/me');
+}
+
 export async function getCompanies() {
+  // First try to get token info to find the company
+  try {
+    const tokenInfo = await getTokenInfo();
+    console.log('[Gusto] Token info:', JSON.stringify(tokenInfo));
+    if (tokenInfo.resource && tokenInfo.resource.type === 'Company') {
+      // Return the company from the token
+      const company = await gustoRequest(`/v1/companies/${tokenInfo.resource.uuid}`);
+      return [company];
+    }
+  } catch (e) {
+    console.log('[Gusto] Token info failed, trying /v1/me:', e);
+  }
+  
+  // Try /v1/me endpoint
+  try {
+    const me = await getCurrentUser();
+    console.log('[Gusto] Me response:', JSON.stringify(me));
+    if (me.companies && me.companies.length > 0) {
+      return me.companies;
+    }
+  } catch (e) {
+    console.log('[Gusto] /v1/me failed, trying /v1/companies:', e);
+  }
+  
+  // Fall back to original endpoint
   return gustoRequest('/v1/companies');
 }
 
