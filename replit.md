@@ -121,9 +121,10 @@ All AI features are user-scoped for security (data isolation per user). Note: Ca
   - Scopes granted: PUBLIC, ADMIN_CUSTOMER_INFO
   - Requires `PERKVILLE_CLIENT_ID`, `PERKVILLE_CLIENT_SECRET`, and `PERKVILLE_BUSINESS_ID` environment variables
 - **YHCTime**: Employee time tracking integration
+  - **Prerequisite**: Users must link their YHC Way account to a YHCTime employee ID before they can enter time (via Settings page)
   - Sessions API for creating, viewing, and deleting time entries
   - Role-based access: Non-admins only see their own entries, admins see all
-  - User linking: Users can link their account to a YHCTime employee ID
+  - User linking: Users can link their account to a YHCTime employee ID in Settings
   - Dedicated `/time-tracking` page for managing time entries
   - Requires `YHCTIME_API_KEY` environment variable
 - **QR Tiger**: API integration for dynamic QR code generation and tracking
