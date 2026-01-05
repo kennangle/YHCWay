@@ -1,0 +1,322 @@
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight, Home, Download, Maximize2 } from "lucide-react";
+import { Link } from "wouter";
+
+const slides = [
+  {
+    id: 1,
+    type: "title",
+    title: "The YHC Way",
+    subtitle: "Unified Workspace for Yoga Health Center",
+    tagline: "One platform. All your tools. Seamlessly connected.",
+  },
+  {
+    id: 2,
+    type: "overview",
+    title: "What is The YHC Way?",
+    points: [
+      "A unified workspace that brings all your business tools together",
+      "Purpose-built for Yoga Health Center's unique workflow",
+      "Eliminates app-switching and information silos",
+      "Modern, intuitive interface accessible from anywhere",
+    ],
+    benefit: "Save hours every week by working smarter, not harder",
+  },
+  {
+    id: 3,
+    type: "feature",
+    title: "Communication Hub",
+    icon: "📬",
+    features: [
+      { name: "Unified Inbox", desc: "All emails, messages, and notifications in one place" },
+      { name: "Gmail Integration", desc: "Read, compose, and manage emails without leaving the app" },
+      { name: "Slack Channels", desc: "Stay connected with team conversations" },
+      { name: "AI Email Drafting", desc: "Compose professional emails in seconds" },
+    ],
+    benefit: "Never miss an important message again",
+  },
+  {
+    id: 4,
+    type: "feature",
+    title: "Calendar & Scheduling",
+    icon: "📅",
+    features: [
+      { name: "Google Calendar", desc: "View and manage all your appointments" },
+      { name: "Zoom Integration", desc: "Join meetings with one click" },
+      { name: "Daily Briefing", desc: "Start your day with a summary of upcoming events" },
+      { name: "Smart Scheduling", desc: "Find optimal times and manage your schedule" },
+    ],
+    benefit: "Stay organized and prepared for every day",
+  },
+  {
+    id: 5,
+    type: "feature",
+    title: "Projects & Tasks",
+    icon: "📋",
+    features: [
+      { name: "Kanban Boards", desc: "Visual project management with drag-and-drop" },
+      { name: "Task Management", desc: "Subtasks, due dates, priorities, and assignments" },
+      { name: "Asana Import", desc: "Seamlessly migrate existing projects" },
+      { name: "AI Task Prioritization", desc: "Smart ranking of what matters most" },
+    ],
+    benefit: "Get more done with less effort",
+  },
+  {
+    id: 6,
+    type: "feature",
+    title: "AI-Powered Assistant",
+    icon: "🤖",
+    features: [
+      { name: "Daily Briefing", desc: "Morning summary of tasks, meetings, and messages" },
+      { name: "Smart Search", desc: "Natural language search across all your data" },
+      { name: "Task Extraction", desc: "Auto-generate tasks from emails and messages" },
+      { name: "Calendar Optimization", desc: "Find focus time and identify overloaded days" },
+    ],
+    benefit: "Your intelligent productivity partner",
+  },
+  {
+    id: 7,
+    type: "feature",
+    title: "Client Engagement",
+    icon: "🎁",
+    features: [
+      { name: "Intro Offers Tracking", desc: "Monitor new client conversions via Mindbody" },
+      { name: "Perkville Rewards", desc: "View and manage customer loyalty points" },
+      { name: "QR Code Generator", desc: "Create trackable QR codes for marketing" },
+      { name: "Email Builder", desc: "Design beautiful email campaigns" },
+    ],
+    benefit: "Build lasting relationships with your clients",
+  },
+  {
+    id: 8,
+    type: "feature",
+    title: "HR & Operations",
+    icon: "👥",
+    features: [
+      { name: "Gusto HR & Payroll", desc: "Employee directory and payroll history at a glance" },
+      { name: "YHCTime Tracking", desc: "Track employee hours and manage time entries" },
+      { name: "User Management", desc: "Control access with role-based permissions" },
+      { name: "Audit Logs", desc: "Complete compliance trail for enterprise security" },
+    ],
+    benefit: "Streamline your back-office operations",
+  },
+  {
+    id: 9,
+    type: "benefits",
+    title: "Why Choose The YHC Way?",
+    benefits: [
+      { icon: "⏱️", title: "Save Time", desc: "Stop switching between 10+ apps every day" },
+      { icon: "🎯", title: "Stay Focused", desc: "Everything you need in one unified view" },
+      { icon: "🔒", title: "Secure", desc: "Enterprise-grade security with role-based access" },
+      { icon: "📱", title: "Accessible", desc: "Work from anywhere on any device" },
+      { icon: "🤝", title: "Team Aligned", desc: "Keep everyone on the same page" },
+      { icon: "📈", title: "Data Driven", desc: "AI insights to work smarter" },
+    ],
+  },
+  {
+    id: 10,
+    type: "closing",
+    title: "Ready to Transform Your Workflow?",
+    subtitle: "The YHC Way",
+    tagline: "Work unified. Work smarter. Work the YHC way.",
+    cta: "Get Started Today",
+  },
+];
+
+export default function PresentationPage() {
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const goNext = useCallback(() => {
+    setCurrentSlide((prev) => Math.min(prev + 1, slides.length - 1));
+  }, []);
+
+  const goPrev = useCallback(() => {
+    setCurrentSlide((prev) => Math.max(prev - 1, 0));
+  }, []);
+
+  const toggleFullscreen = async () => {
+    try {
+      if (!document.fullscreenElement && containerRef.current?.requestFullscreen) {
+        await containerRef.current.requestFullscreen();
+        setIsFullscreen(true);
+      } else if (document.exitFullscreen) {
+        await document.exitFullscreen();
+        setIsFullscreen(false);
+      }
+    } catch (err) {
+      console.log("Fullscreen not supported");
+    }
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight") {
+        goNext();
+      } else if (e.key === "ArrowLeft") {
+        goPrev();
+      } else if (e.key === "Escape" && document.fullscreenElement) {
+        document.exitFullscreen?.();
+        setIsFullscreen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [goNext, goPrev]);
+
+  const slide = slides[currentSlide];
+
+  const renderSlide = () => {
+    switch (slide.type) {
+      case "title":
+        return (
+          <div className="flex flex-col items-center justify-center h-full text-center px-8">
+            <h1 className="text-6xl md:text-8xl font-bold bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600 bg-clip-text text-transparent mb-6">
+              {slide.title}
+            </h1>
+            <p className="text-2xl md:text-3xl text-gray-600 mb-4">{slide.subtitle}</p>
+            <p className="text-xl text-gray-500 italic">{slide.tagline}</p>
+          </div>
+        );
+
+      case "overview":
+        return (
+          <div className="flex flex-col h-full px-12 py-8">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-12">{slide.title}</h2>
+            <div className="flex-1 flex flex-col justify-center">
+              <ul className="space-y-6">
+                {slide.points?.map((point, i) => (
+                  <li key={i} className="flex items-start gap-4">
+                    <span className="text-3xl text-orange-500">✓</span>
+                    <span className="text-2xl text-gray-700">{point}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-12 p-6 bg-gradient-to-r from-orange-100 to-pink-100 rounded-2xl">
+                <p className="text-2xl font-semibold text-orange-700">{slide.benefit}</p>
+              </div>
+            </div>
+          </div>
+        );
+
+      case "feature":
+        return (
+          <div className="flex flex-col h-full px-12 py-8">
+            <div className="flex items-center gap-4 mb-10">
+              <span className="text-5xl">{slide.icon}</span>
+              <h2 className="text-4xl md:text-5xl font-bold text-gray-800">{slide.title}</h2>
+            </div>
+            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6">
+              {slide.features?.map((feature, i) => (
+                <div key={i} className="bg-white/80 backdrop-blur rounded-2xl p-6 shadow-lg border border-gray-100">
+                  <h3 className="text-xl font-bold text-gray-800 mb-2">{feature.name}</h3>
+                  <p className="text-lg text-gray-600">{feature.desc}</p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-8 p-5 bg-gradient-to-r from-purple-100 to-blue-100 rounded-2xl">
+              <p className="text-xl font-semibold text-purple-700 text-center">{slide.benefit}</p>
+            </div>
+          </div>
+        );
+
+      case "benefits":
+        return (
+          <div className="flex flex-col h-full px-12 py-8">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-10 text-center">{slide.title}</h2>
+            <div className="flex-1 grid grid-cols-2 md:grid-cols-3 gap-6">
+              {slide.benefits?.map((benefit, i) => (
+                <div key={i} className="bg-white/80 backdrop-blur rounded-2xl p-6 shadow-lg border border-gray-100 flex flex-col items-center text-center">
+                  <span className="text-4xl mb-3">{benefit.icon}</span>
+                  <h3 className="text-xl font-bold text-gray-800 mb-2">{benefit.title}</h3>
+                  <p className="text-gray-600">{benefit.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
+      case "closing":
+        return (
+          <div className="flex flex-col items-center justify-center h-full text-center px-8">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-8">{slide.title}</h2>
+            <div className="text-6xl md:text-7xl font-bold bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600 bg-clip-text text-transparent mb-6">
+              {slide.subtitle}
+            </div>
+            <p className="text-2xl text-gray-600 mb-10 italic">{slide.tagline}</p>
+            <Link href="/">
+              <Button size="lg" className="text-xl px-8 py-6 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600">
+                {slide.cta}
+              </Button>
+            </Link>
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div ref={containerRef} className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-purple-50 flex flex-col">
+      <div className="flex-1 flex items-center justify-center p-4">
+        <div className="w-full max-w-6xl aspect-[16/9] bg-white rounded-3xl shadow-2xl overflow-hidden relative">
+          {renderSlide()}
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between px-8 py-4 bg-white/80 backdrop-blur border-t">
+        <div className="flex items-center gap-4">
+          <Link href="/">
+            <Button variant="ghost" size="sm" data-testid="link-home">
+              <Home className="h-4 w-4 mr-2" />
+              Home
+            </Button>
+          </Link>
+          <Button variant="ghost" size="sm" onClick={() => window.print()} data-testid="button-print">
+            <Download className="h-4 w-4 mr-2" />
+            Print/PDF
+          </Button>
+          <Button variant="ghost" size="sm" onClick={toggleFullscreen} data-testid="button-fullscreen">
+            <Maximize2 className="h-4 w-4 mr-2" />
+            {isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+          </Button>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {slides.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrentSlide(i)}
+              className={`w-3 h-3 rounded-full transition-all ${
+                i === currentSlide ? "bg-orange-500 scale-125" : "bg-gray-300 hover:bg-gray-400"
+              }`}
+              data-testid={`slide-dot-${i}`}
+            />
+          ))}
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-500 mr-4">
+            {currentSlide + 1} / {slides.length}
+          </span>
+          <Button variant="outline" size="sm" onClick={goPrev} disabled={currentSlide === 0} data-testid="button-prev">
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button variant="outline" size="sm" onClick={goNext} disabled={currentSlide === slides.length - 1} data-testid="button-next">
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      <style>{`
+        @media print {
+          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          .min-h-screen { min-height: auto; }
+        }
+      `}</style>
+    </div>
+  );
+}
