@@ -82,6 +82,7 @@ import PendingApproval from "@/pages/pending-approval";
 import QRCodes from "@/pages/qr-codes";
 import Rewards from "@/pages/rewards";
 import TimeTracking from "@/pages/time-tracking";
+import EmailActivity from "@/pages/email-activity";
 import { FloatingAIButton } from "@/components/floating-ai-button";
 import { GuidedTour } from "@/components/guided-tour";
 
@@ -151,6 +152,7 @@ function Router() {
         <Route path="/qr-codes" component={QRCodes} />
         <Route path="/rewards" component={Rewards} />
         <Route path="/time-tracking" component={TimeTracking} />
+        <Route path="/email-activity" component={EmailActivity} />
         <Route path="/login">{() => <Redirect to="/dashboard" />}</Route>
         <Route path="/register">{() => <Redirect to="/dashboard" />}</Route>
         <Route component={NotFound} />

@@ -4994,5 +4994,114 @@ export async function registerRoutes(
     }
   });
 
+  // =============================================================================
+  // BREVO EMAIL ACTIVITY ROUTES
+  // =============================================================================
+
+  const BREVO_API_KEY = process.env.BREVO_API_KEY || '';
+  const BREVO_BASE_URL = 'https://api.brevo.com/v3';
+
+  async function brevoRequest(endpoint: string, params: Record<string, string> = {}) {
+    const url = new URL(`${BREVO_BASE_URL}${endpoint}`);
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) url.searchParams.append(key, value);
+    });
+
+    const response = await fetch(url.toString(), {
+      headers: {
+        'accept': 'application/json',
+        'api-key': BREVO_API_KEY
+      }
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Brevo API error: ${response.status} - ${error}`);
+    }
+
+    return response.json();
+  }
+
+  app.get('/api/brevo/status', isAuthenticated, async (req: any, res) => {
+    try {
+      if (!BREVO_API_KEY) {
+        return res.json({ connected: false, message: 'Brevo API key not configured' });
+      }
+      const account = await brevoRequest('/account');
+      res.json({
+        connected: true,
+        email: account.email,
+        companyName: account.companyName,
+        plan: account.plan?.[0]?.type || 'Unknown'
+      });
+    } catch (error: any) {
+      console.error('[Brevo] Status check error:', error.message);
+      res.json({ connected: false, message: error.message });
+    }
+  });
+
+  app.get('/api/brevo/statistics/aggregated', isAuthenticated, async (req: any, res) => {
+    try {
+      const { startDate, endDate, days } = req.query;
+      const params: Record<string, string> = {};
+      
+      if (startDate) params.startDate = startDate as string;
+      if (endDate) params.endDate = endDate as string;
+      if (days) params.days = days as string;
+      
+      if (!startDate && !endDate && !days) {
+        params.days = '30';
+      }
+
+      const stats = await brevoRequest('/smtp/statistics/aggregatedReport', params);
+      res.json(stats);
+    } catch (error: any) {
+      console.error('[Brevo] Aggregated stats error:', error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get('/api/brevo/statistics/reports', isAuthenticated, async (req: any, res) => {
+    try {
+      const { startDate, endDate, days } = req.query;
+      const params: Record<string, string> = {};
+      
+      if (startDate) params.startDate = startDate as string;
+      if (endDate) params.endDate = endDate as string;
+      if (days) params.days = days as string;
+      
+      if (!startDate && !endDate && !days) {
+        params.days = '7';
+      }
+
+      const reports = await brevoRequest('/smtp/statistics/reports', params);
+      res.json(reports);
+    } catch (error: any) {
+      console.error('[Brevo] Daily reports error:', error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get('/api/brevo/statistics/events', isAuthenticated, async (req: any, res) => {
+    try {
+      const { limit, offset, startDate, endDate, event, email, sort } = req.query;
+      const params: Record<string, string> = {};
+      
+      params.limit = (limit as string) || '50';
+      if (offset) params.offset = offset as string;
+      if (startDate) params.startDate = startDate as string;
+      if (endDate) params.endDate = endDate as string;
+      if (event) params.event = event as string;
+      if (email) params.email = email as string;
+      params.sort = (sort as string) || 'desc';
+
+      const events = await brevoRequest('/smtp/statistics/events', params);
+      res.json(events);
+    } catch (error: any) {
+      console.error('[Brevo] Events error:', error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   return httpServer;
 }
