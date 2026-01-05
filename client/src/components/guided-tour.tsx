@@ -152,7 +152,11 @@ export function GuidedTour({ onComplete, autoStart = false }: GuidedTourProps) {
   const { startTour } = useGuidedTour();
 
   useEffect(() => {
-    if (autoStart && user && !user.hasCompletedTour) {
+    if (!autoStart || !user) return;
+    
+    // Only show tour if hasCompletedTour is explicitly false (not undefined/null)
+    // This ensures existing users who don't have this field yet don't see the tour
+    if (user.hasCompletedTour === false) {
       const timer = setTimeout(() => {
         startTour();
       }, 1000);
