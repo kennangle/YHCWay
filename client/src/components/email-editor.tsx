@@ -191,7 +191,10 @@ export function EmailEditor({ value, onChange, variables = [] }: EmailEditorProp
               `<span style="background:#fef3c7;padding:0 4px;border-radius:2px;">${val}</span>`
             );
           });
-          span.innerHTML = html;
+          span.innerHTML = DOMPurify.sanitize(html, {
+            USE_PROFILES: { html: true },
+            ADD_ATTR: ['style'],
+          });
           node.parentNode?.replaceChild(span, node);
         }
       } else {
