@@ -5185,5 +5185,73 @@ export async function registerRoutes(
     }
   });
 
+  // Gusto API routes
+  const { isGustoConfigured, getCompanies, getEmployees, getPayrolls, getPayroll } = await import('./gusto');
+
+  app.get('/api/gusto/status', isAuthenticated, async (req: any, res) => {
+    try {
+      res.json({ connected: isGustoConfigured() });
+    } catch (error: any) {
+      res.json({ connected: false, message: error.message });
+    }
+  });
+
+  app.get('/api/gusto/companies', isAuthenticated, async (req: any, res) => {
+    try {
+      if (!isGustoConfigured()) {
+        return res.status(503).json({ error: 'Gusto not configured' });
+      }
+      const companies = await getCompanies();
+      res.json(companies);
+    } catch (error: any) {
+      console.error('[Gusto] Companies error:', error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get('/api/gusto/companies/:companyId/employees', isAuthenticated, async (req: any, res) => {
+    try {
+      if (!isGustoConfigured()) {
+        return res.status(503).json({ error: 'Gusto not configured' });
+      }
+      const { companyId } = req.params;
+      const page = parseInt(req.query.page as string) || 1;
+      const perPage = parseInt(req.query.per as string) || 25;
+      const employees = await getEmployees(companyId, page, perPage);
+      res.json(employees);
+    } catch (error: any) {
+      console.error('[Gusto] Employees error:', error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get('/api/gusto/companies/:companyId/payrolls', isAuthenticated, async (req: any, res) => {
+    try {
+      if (!isGustoConfigured()) {
+        return res.status(503).json({ error: 'Gusto not configured' });
+      }
+      const { companyId } = req.params;
+      const payrolls = await getPayrolls(companyId);
+      res.json(payrolls);
+    } catch (error: any) {
+      console.error('[Gusto] Payrolls error:', error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get('/api/gusto/companies/:companyId/payrolls/:payrollId', isAuthenticated, async (req: any, res) => {
+    try {
+      if (!isGustoConfigured()) {
+        return res.status(503).json({ error: 'Gusto not configured' });
+      }
+      const { companyId, payrollId } = req.params;
+      const payroll = await getPayroll(companyId, payrollId);
+      res.json(payroll);
+    } catch (error: any) {
+      console.error('[Gusto] Payroll details error:', error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   return httpServer;
 }

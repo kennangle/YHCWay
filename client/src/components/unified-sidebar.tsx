@@ -23,7 +23,8 @@ import {
   Star,
   Rocket,
   Clock,
-  BarChart3
+  BarChart3,
+  Building2
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
@@ -106,6 +107,7 @@ export function UnifiedSidebar() {
       defaultCollapsed: true,
       items: [
         { icon: Clock, label: "Time Tracking", href: "/time-tracking", tourId: "nav-time-tracking" },
+        { icon: Building2, label: "HR & Payroll", href: "/gusto", tourId: "nav-gusto" },
         { icon: PlusCircle, label: "Connect App", href: "/connect", tourId: "nav-connect" },
         { icon: Settings, label: "Settings", href: "/settings", tourId: "nav-settings" },
         { icon: FileText, label: "Typeform", href: "/typeform", tourId: "nav-typeform", adminOnly: true },
