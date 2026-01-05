@@ -2170,8 +2170,6 @@ export async function registerRoutes(
       const expiresIn = tokenData.expires_in;
       const asanaUserId = tokenData.data?.gid || tokenData.data?.id;
       
-      console.log('[Asana Callback] Got tokens - hasAccess:', !!accessToken, 'hasRefresh:', !!refreshToken, 'asanaUserId:', asanaUserId);
-      
       if (!accessToken) {
         console.error('[Asana Callback] Missing access token in response');
         return res.redirect('/connect?error=asana_missing_token');
