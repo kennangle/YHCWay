@@ -131,8 +131,9 @@ export async function sendPasswordResetEmail(to: string, resetLink: string): Pro
     sendSmtpEmail.to = [{ email: to }];
 
     console.log(`[Email] Calling Brevo API...`);
-    await apiInstance.sendTransacEmail(sendSmtpEmail);
+    const response = await apiInstance.sendTransacEmail(sendSmtpEmail);
     console.log(`[Email] Password reset email sent successfully to ${to}`);
+    console.log(`[Email] Brevo response:`, JSON.stringify(response.body || response));
     return true;
   } catch (error: any) {
     console.error("[Email] Error sending password reset email:", error?.message || error);
