@@ -179,7 +179,7 @@ export default function Overview() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {appCards.map((app) => {
                 const connected = isServiceConnected(app.serviceName);
                 const Icon = app.icon;
@@ -187,42 +187,42 @@ export default function Overview() {
                 return (
                   <Link key={app.id} href={connected ? app.href : "/connect"}>
                     <div 
-                      className="glass-card p-6 rounded-2xl hover:shadow-lg transition-all duration-300 cursor-pointer group"
+                      className="glass-card p-4 rounded-xl hover:shadow-lg transition-all duration-300 cursor-pointer group"
                       data-testid={`card-app-${app.id}`}
                     >
-                      <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-start justify-between mb-3">
                         <div 
-                          className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg"
+                          className="w-10 h-10 rounded-lg flex items-center justify-center shadow-md"
                           style={{ backgroundColor: app.color }}
                         >
-                          <Icon className="w-6 h-6 text-white" />
+                          <Icon className="w-5 h-5 text-white" />
                         </div>
                         
                         {isServiceLoading(app.serviceName) ? (
-                          <Loader2 className="w-5 h-5 text-muted-foreground animate-spin" />
+                          <Loader2 className="w-4 h-4 text-muted-foreground animate-spin" />
                         ) : connected ? (
-                          <div className="flex items-center gap-1.5 text-green-600">
-                            <CheckCircle className="w-4 h-4" />
+                          <div className="flex items-center gap-1 text-green-600">
+                            <CheckCircle className="w-3.5 h-3.5" />
                             <span className="text-xs font-medium">Connected</span>
                           </div>
                         ) : (
-                          <div className="flex items-center gap-1.5 text-muted-foreground">
-                            <XCircle className="w-4 h-4" />
+                          <div className="flex items-center gap-1 text-muted-foreground">
+                            <XCircle className="w-3.5 h-3.5" />
                             <span className="text-xs font-medium">Not connected</span>
                           </div>
                         )}
                       </div>
                       
-                      <h3 className="text-lg font-semibold text-foreground mb-1">
+                      <h3 className="text-base font-semibold text-foreground mb-0.5">
                         {app.name}
                       </h3>
-                      <p className="text-sm text-muted-foreground mb-4">
+                      <p className="text-xs text-muted-foreground mb-3">
                         {app.description}
                       </p>
                       
-                      <div className="flex items-center text-primary text-sm font-medium group-hover:gap-2 transition-all">
+                      <div className="flex items-center text-primary text-xs font-medium group-hover:gap-2 transition-all">
                         {connected ? "Open" : "Connect"} 
-                        <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                        <ArrowRight className="w-3.5 h-3.5 ml-1 group-hover:translate-x-1 transition-transform" />
                       </div>
                     </div>
                   </Link>
