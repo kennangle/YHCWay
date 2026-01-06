@@ -861,6 +861,57 @@ export async function sendSlackBlockNotification(
   }
 }
 
+// Send a message using user's OAuth token (for DM replies)
+export async function sendUserSlackMessage(
+  userId: string,
+  channelId: string,
+  message: string,
+  options?: {
+    threadTs?: string;
+  }
+): Promise<SlackNotificationResult> {
+  try {
+    const token = await getUserSlackToken(userId);
+    if (!token) {
+      return { success: false, error: 'User Slack not connected' };
+    }
+    
+    const payload: any = {
+      channel: channelId,
+      text: message,
+    };
+
+    if (options?.threadTs) {
+      payload.thread_ts = options.threadTs;
+    }
+
+    const response = await fetch('https://slack.com/api/chat.postMessage', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json();
+
+    if (!data.ok) {
+      console.error('Slack user postMessage error:', data.error);
+      return { success: false, error: data.error };
+    }
+
+    return {
+      success: true,
+      channelId: data.channel,
+      timestamp: data.ts,
+    };
+  } catch (error: any) {
+    console.error('Error sending Slack message as user:', error);
+    return { success: false, error: error?.message || 'Failed to send message' };
+  }
+}
+
 // Helper to format The YHC Way notifications nicely for Slack
 export function formatYHCWayNotification(
   type: 'task_assigned' | 'task_completed' | 'project_update' | 'comment' | 'custom',

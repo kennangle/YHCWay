@@ -11,7 +11,7 @@ import { getRecentEmails, isGmailConnected } from "./gmail";
 import { getGmailAuthUrl, handleGmailCallback, getRecentEmailsForUser, isGmailConnectedForUser, disconnectGmailForUser, getGmailClientForUser, getEmailById, sendEmail, deleteEmailById } from "./gmail-oauth";
 import { getUpcomingEvents, getEventsForMonth, isCalendarConnected, createCalendarEvent } from "./calendar";
 import { getUpcomingMeetings, isZoomConnected } from "./zoom";
-import { getRecentMessages as getSlackMessages, getAllMessages as getAllSlackMessages, getDirectMessages as getSlackDMs, getThreadReplies as getSlackThreadReplies, isSlackConnected, getChannels as getSlackChannels, getRecentMessagesFiltered, isUserSlackConnected, getUserAllMessages, getUserDirectMessages, getUserChannels, sendSlackNotification, sendSlackBlockNotification, formatYHCWayNotification } from "./slack";
+import { getRecentMessages as getSlackMessages, getAllMessages as getAllSlackMessages, getDirectMessages as getSlackDMs, getThreadReplies as getSlackThreadReplies, isSlackConnected, getChannels as getSlackChannels, getRecentMessagesFiltered, isUserSlackConnected, getUserAllMessages, getUserDirectMessages, getUserChannels, sendSlackNotification, sendSlackBlockNotification, formatYHCWayNotification, sendUserSlackMessage } from "./slack";
 import { isAppleCalendarConnected, testAppleCalendarConnection, saveAppleCalendarCredentials, deleteAppleCalendarCredentials, getAppleCalendarEvents, getAppleCalendarEventsForMonth } from "./appleCalendar";
 import { isAsanaConnected, getMyTasks, getProjects, getUpcomingTasks, isUserAsanaConnected, getUserMyTasks, getUserProjects, getUserUpcomingTasks, getAsanaProjectsForImport, getProjectSections, getProjectTasksForImport } from "./asana";
 import { getTypeformForms, getTypeformForm, createTypeformForm, updateTypeformForm, deleteTypeformForm, getTypeformResponses, isTypeformConfigured } from "./typeform";
@@ -2088,6 +2088,36 @@ export async function registerRoutes(
     } catch (error: any) {
       console.error("Error sending Slack notification:", error);
       res.status(500).json({ error: error?.message || "Failed to send Slack notification" });
+    }
+  });
+
+  // Slack reply - send message using user's OAuth token
+  app.post("/api/slack/reply", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const { channelId, message, threadTs } = req.body;
+      
+      if (!channelId) {
+        return res.status(400).json({ error: "channelId is required" });
+      }
+      if (!message || !message.trim()) {
+        return res.status(400).json({ error: "message is required" });
+      }
+
+      const result = await sendUserSlackMessage(userId, channelId, message.trim(), { threadTs });
+
+      if (result.success) {
+        res.json(result);
+      } else {
+        res.status(400).json({ error: result.error || "Failed to send reply" });
+      }
+    } catch (error: any) {
+      console.error("Error sending Slack reply:", error);
+      res.status(500).json({ error: error?.message || "Failed to send Slack reply" });
     }
   });
 
