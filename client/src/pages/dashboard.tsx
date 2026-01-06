@@ -480,6 +480,25 @@ export default function Dashboard() {
     }
   };
 
+  const formatEventDate = (startStr: string) => {
+    try {
+      const start = new Date(startStr);
+      const today = new Date();
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      
+      if (start.toDateString() === today.toDateString()) {
+        return "Today";
+      } else if (start.toDateString() === tomorrow.toDateString()) {
+        return "Tomorrow";
+      } else {
+        return start.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      }
+    } catch {
+      return "";
+    }
+  };
+
   const detectMention = (text: string, userEmail?: string | null): boolean => {
     if (!text) return false;
     const lowerText = text.toLowerCase();
@@ -761,6 +780,9 @@ export default function Dashboard() {
                     <Link key={event.id} href="/calendar" data-testid={`upcoming-event-${event.id}`}>
                       <div className="flex-shrink-0 flex items-center gap-3 px-4 py-2 rounded-lg bg-white/60 border border-white/30 hover:bg-white/80 transition-colors cursor-pointer">
                         <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isNow ? 'bg-primary animate-pulse' : 'bg-green-500'}`}></div>
+                        <span className="text-xs font-medium text-primary/80 flex-shrink-0">
+                          {formatEventDate(event.start)}
+                        </span>
                         <span className={`text-xs font-semibold flex-shrink-0 ${isNow ? 'text-primary' : 'text-muted-foreground'}`}>
                           {isNow ? 'NOW' : formatEventStartTime(event.start, event.isAllDay)}
                         </span>
