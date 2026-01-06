@@ -2099,6 +2099,12 @@ export async function registerRoutes(
         return res.status(401).json({ error: "Unauthorized" });
       }
       
+      // Check if user has Slack credentials
+      const isConnected = await isUserSlackConnected(userId);
+      if (!isConnected) {
+        return res.status(403).json({ error: "Slack not connected. Please connect your Slack account in Settings." });
+      }
+      
       const { channelId, message, threadTs } = req.body;
       
       if (!channelId) {

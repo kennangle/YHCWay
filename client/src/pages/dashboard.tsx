@@ -124,6 +124,8 @@ export default function Dashboard() {
   const queryClient = useQueryClient();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [aiPanelOpen, setAiPanelOpen] = useState(false);
+  const [replyingToMessage, setReplyingToMessage] = useState<string | null>(null);
+  const [replyTexts, setReplyTexts] = useState<Record<string, string>>({});
   const today = currentTime.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
   const timeStr = currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 
@@ -163,6 +165,35 @@ export default function Dashboard() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["preferences"] });
+    },
+  });
+
+  const slackReplyMutation = useMutation({
+    mutationFn: async ({ channelId, message, threadTs }: { channelId: string; message: string; threadTs?: string }) => {
+      const res = await fetch("/api/slack/reply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ channelId, message, threadTs }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to send reply");
+      }
+      return res.json();
+    },
+    onSuccess: (_, variables) => {
+      toast.success("Reply sent!");
+      setReplyingToMessage(null);
+      setReplyTexts(prev => {
+        const updated = { ...prev };
+        delete updated[variables.channelId];
+        return updated;
+      });
+      queryClient.invalidateQueries({ queryKey: ["slack-messages"] });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to send reply");
     },
   });
 
@@ -1084,13 +1115,11 @@ export default function Dashboard() {
                     
                     if (item.type === "slack") {
                       const message = item.data as SlackMessage;
+                      const isReplyOpen = replyingToMessage === message.id;
                       return (
-                        <a 
+                        <div 
                           key={item.id}
-                          href={message.permalink || '#'}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={`glass-panel p-4 rounded-xl hover:bg-white/80 transition-colors cursor-pointer block border-l-4 ${message.isDm ? 'border-l-pink-500' : 'border-l-purple-500'}`}
+                          className={`glass-panel p-4 rounded-xl hover:bg-white/80 transition-colors block border-l-4 ${message.isDm ? 'border-l-pink-500' : 'border-l-purple-500'}`}
                           data-testid={`feed-slack-${message.id}`}
                         >
                           <div className="flex items-start gap-3">
@@ -1124,9 +1153,74 @@ export default function Dashboard() {
                               </div>
                               <p className="text-xs text-muted-foreground mb-1">{message.userName}</p>
                               <p className="text-sm text-foreground line-clamp-2">{message.text}</p>
+                              
+                              {message.isDm && (
+                                <div className="mt-3 pt-3 border-t border-gray-200">
+                                  {isReplyOpen ? (
+                                    <div className="flex gap-2">
+                                      <Input
+                                        value={replyTexts[message.id] || ""}
+                                        onChange={(e) => setReplyTexts(prev => ({ ...prev, [message.id]: e.target.value }))}
+                                        placeholder={`Reply to ${message.channelName}...`}
+                                        className="flex-1 h-8 text-sm"
+                                        onKeyDown={(e) => {
+                                          const text = replyTexts[message.id] || "";
+                                          if (e.key === 'Enter' && !e.shiftKey && text.trim()) {
+                                            e.preventDefault();
+                                            slackReplyMutation.mutate({
+                                              channelId: message.channelId,
+                                              message: text.trim(),
+                                              threadTs: message.threadTs,
+                                            });
+                                          }
+                                          if (e.key === 'Escape') {
+                                            setReplyingToMessage(null);
+                                          }
+                                        }}
+                                        data-testid={`input-slack-reply-${message.id}`}
+                                        autoFocus
+                                      />
+                                      <button
+                                        onClick={() => {
+                                          const text = replyTexts[message.id] || "";
+                                          if (text.trim()) {
+                                            slackReplyMutation.mutate({
+                                              channelId: message.channelId,
+                                              message: text.trim(),
+                                              threadTs: message.threadTs,
+                                            });
+                                          }
+                                        }}
+                                        disabled={!(replyTexts[message.id] || "").trim() || slackReplyMutation.isPending}
+                                        className="h-8 px-3 bg-primary text-white rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 text-sm"
+                                        data-testid={`button-send-slack-reply-${message.id}`}
+                                      >
+                                        <Send className="w-3.5 h-3.5" />
+                                        {slackReplyMutation.isPending ? "..." : "Send"}
+                                      </button>
+                                      <button
+                                        onClick={() => setReplyingToMessage(null)}
+                                        className="h-8 px-2 text-muted-foreground hover:text-foreground"
+                                        data-testid={`button-cancel-slack-reply-${message.id}`}
+                                      >
+                                        <X className="w-4 h-4" />
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      onClick={() => setReplyingToMessage(message.id)}
+                                      className="text-xs text-primary hover:text-primary/80 font-medium flex items-center gap-1"
+                                      data-testid={`button-reply-slack-${message.id}`}
+                                    >
+                                      <MessageSquare className="w-3.5 h-3.5" />
+                                      Reply
+                                    </button>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           </div>
-                        </a>
+                        </div>
                       );
                     }
 
