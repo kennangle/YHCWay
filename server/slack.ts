@@ -549,6 +549,21 @@ export async function getUserDirectMessages(userId: string, maxResults: number =
   }
 
   const allDmChannels = data.channels || [];
+  
+  // Sort DM channels by priority (most recently active first)
+  // Priority is based on 'priority' field if available, or 'updated' timestamp
+  const sortedDmChannels = [...allDmChannels].sort((a, b) => {
+    // Higher priority values = more recent activity
+    const priorityA = a.priority || 0;
+    const priorityB = b.priority || 0;
+    if (priorityA !== priorityB) return priorityB - priorityA;
+    
+    // Fall back to updated timestamp
+    const updatedA = a.updated || 0;
+    const updatedB = b.updated || 0;
+    return updatedB - updatedA;
+  });
+  
   console.log(`[Slack User DMs] Found ${allDmChannels.length} DM channels for user ${userId}`);
 
   const messages: SlackMessage[] = [];
@@ -556,8 +571,8 @@ export async function getUserDirectMessages(userId: string, maxResults: number =
 
   const twentyFourMonthsAgo = Date.now() - (24 * 30 * 24 * 60 * 60 * 1000);
 
-  // Fetch from up to 20 DM channels with user token
-  for (const dm of allDmChannels.slice(0, 20)) {
+  // Fetch from up to 30 DM channels with user token (prioritized by recent activity)
+  for (const dm of sortedDmChannels.slice(0, 30)) {
     try {
       const historyResponse = await fetch(
         `https://slack.com/api/conversations.history?channel=${dm.id}&limit=10`,
