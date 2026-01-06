@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Moon, Sun, LogOut, Bug, Lightbulb, Send, HelpCircle, Clock } from "lucide-react";
 import { useGuidedTour } from "@/components/guided-tour";
 import { useTheme } from "@/App";
@@ -34,6 +34,14 @@ export function TopBar() {
   const [feedbackTitle, setFeedbackTitle] = useState("");
   const [feedbackDescription, setFeedbackDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [appVersion, setAppVersion] = useState<string>("");
+
+  useEffect(() => {
+    fetch("/manifest.json")
+      .then(res => res.json())
+      .then(data => setAppVersion(data.version || ""))
+      .catch(() => setAppVersion(""));
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -119,9 +127,11 @@ export function TopBar() {
               <span className="text-sm font-medium text-muted-foreground" data-testid="text-current-user">
                 {user.firstName || user.email?.split('@')[0]}
               </span>
-              <span className="text-xs text-muted-foreground/60" data-testid="text-version">
-                v1.0.0
-              </span>
+              {appVersion && (
+                <span className="text-xs text-muted-foreground/60" data-testid="text-version">
+                  v{appVersion}
+                </span>
+              )}
             </div>
           )}
 
