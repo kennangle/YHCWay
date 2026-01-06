@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { TopBar } from "@/components/top-bar";
-import { ListTodo, Plus, RefreshCw, Calendar, Flag, CheckCircle2, Circle, Clock, Filter, ChevronDown, ChevronRight, FolderKanban } from "lucide-react";
+import { ListTodo, Plus, RefreshCw, Calendar, Flag, CheckCircle2, Circle, Clock, Filter, ChevronDown, ChevronRight, FolderKanban, MoreHorizontal, ArrowRight, Link2 } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
@@ -11,7 +11,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal } from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
 
 interface Task {
   id: number;
@@ -41,6 +43,7 @@ type FilterType = "all" | "today" | "upcoming" | "overdue" | "completed";
 
 export default function Tasks() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [filter, setFilter] = useState<FilterType>("all");
   const [expandedProjects, setExpandedProjects] = useState<Set<number>>(new Set());
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -100,6 +103,48 @@ export default function Tasks() {
       setCreateDialogOpen(false);
       setNewTask({ title: "", description: "", priority: "medium", dueDate: "" });
       setSelectedProjectId(null);
+    },
+  });
+
+  const moveTaskMutation = useMutation({
+    mutationFn: async ({ taskId, projectId }: { taskId: number; projectId: number }) => {
+      const res = await fetch(`/api/tasks/${taskId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ projectId }),
+      });
+      if (!res.ok) throw new Error("Failed to move task");
+      return res.json();
+    },
+    onSuccess: (_, { projectId }) => {
+      queryClient.invalidateQueries({ queryKey: ["all-tasks"] });
+      const project = projects.find(p => p.id === projectId);
+      toast({ title: "Task moved", description: `Moved to ${project?.name || "project"}` });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to move task", variant: "destructive" });
+    },
+  });
+
+  const linkTaskMutation = useMutation({
+    mutationFn: async ({ taskId, projectId }: { taskId: number; projectId: number }) => {
+      const res = await fetch(`/api/tasks/${taskId}/projects`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ projectId }),
+      });
+      if (!res.ok) throw new Error("Failed to link task");
+      return res.json();
+    },
+    onSuccess: (_, { projectId }) => {
+      queryClient.invalidateQueries({ queryKey: ["all-tasks"] });
+      const project = projects.find(p => p.id === projectId);
+      toast({ title: "Task linked", description: `Also added to ${project?.name || "project"}` });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to link task", variant: "destructive" });
     },
   });
 
@@ -367,11 +412,69 @@ export default function Tasks() {
                                     )}
                                   </div>
                                 </div>
-                                <Link href={`/projects/${task.projectId}`}>
-                                  <Button variant="ghost" size="sm" className="text-muted-foreground">
-                                    View
-                                  </Button>
-                                </Link>
+                                <div className="flex items-center gap-1">
+                                  <Link href={`/projects/${task.projectId}`}>
+                                    <Button variant="ghost" size="sm" className="text-muted-foreground">
+                                      View
+                                    </Button>
+                                  </Link>
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0" data-testid={`task-menu-${task.id}`}>
+                                        <MoreHorizontal className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuSub>
+                                        <DropdownMenuSubTrigger>
+                                          <ArrowRight className="mr-2 h-4 w-4" />
+                                          Move to project
+                                        </DropdownMenuSubTrigger>
+                                        <DropdownMenuPortal>
+                                          <DropdownMenuSubContent>
+                                            {projects.filter(p => p.id !== task.projectId).map(p => (
+                                              <DropdownMenuItem
+                                                key={p.id}
+                                                onClick={() => moveTaskMutation.mutate({ taskId: task.id, projectId: p.id })}
+                                                data-testid={`move-task-${task.id}-to-${p.id}`}
+                                              >
+                                                <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: p.color }} />
+                                                {p.name}
+                                              </DropdownMenuItem>
+                                            ))}
+                                            {projects.filter(p => p.id !== task.projectId).length === 0 && (
+                                              <DropdownMenuItem disabled>No other projects</DropdownMenuItem>
+                                            )}
+                                          </DropdownMenuSubContent>
+                                        </DropdownMenuPortal>
+                                      </DropdownMenuSub>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuSub>
+                                        <DropdownMenuSubTrigger>
+                                          <Link2 className="mr-2 h-4 w-4" />
+                                          Add to project
+                                        </DropdownMenuSubTrigger>
+                                        <DropdownMenuPortal>
+                                          <DropdownMenuSubContent>
+                                            {projects.filter(p => p.id !== task.projectId).map(p => (
+                                              <DropdownMenuItem
+                                                key={p.id}
+                                                onClick={() => linkTaskMutation.mutate({ taskId: task.id, projectId: p.id })}
+                                                data-testid={`link-task-${task.id}-to-${p.id}`}
+                                              >
+                                                <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: p.color }} />
+                                                {p.name}
+                                              </DropdownMenuItem>
+                                            ))}
+                                            {projects.filter(p => p.id !== task.projectId).length === 0 && (
+                                              <DropdownMenuItem disabled>No other projects</DropdownMenuItem>
+                                            )}
+                                          </DropdownMenuSubContent>
+                                        </DropdownMenuPortal>
+                                      </DropdownMenuSub>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </div>
                               </div>
                             );
                           })}
