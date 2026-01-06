@@ -115,9 +115,14 @@ export function TopBar() {
           </Tooltip>
 
           {user && (
-            <span className="text-sm font-medium text-muted-foreground" data-testid="text-current-user">
-              {user.firstName || user.email?.split('@')[0]}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-muted-foreground" data-testid="text-current-user">
+                {user.firstName || user.email?.split('@')[0]}
+              </span>
+              <span className="text-xs text-muted-foreground/60" data-testid="text-version">
+                v1.0.0
+              </span>
+            </div>
           )}
 
           <Tooltip>
