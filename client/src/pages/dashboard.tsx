@@ -82,6 +82,7 @@ interface CalendarEvent {
   location?: string;
   description?: string;
   isAllDay: boolean;
+  source?: "google" | "calendly";
 }
 
 interface ZoomMeeting {
@@ -807,10 +808,16 @@ export default function Dashboard() {
               <div className="flex gap-3 overflow-x-auto pb-2">
                 {calendarEvents.slice(0, 10).map((event) => {
                   const isNow = isEventNow(event.start, event.end, event.isAllDay);
+                  const isCalendly = event.source === "calendly";
                   return (
                     <Link key={event.id} href="/calendar" data-testid={`upcoming-event-${event.id}`}>
-                      <div className="flex-shrink-0 flex items-center gap-3 px-4 py-2 rounded-lg bg-white/60 border border-white/30 hover:bg-white/80 transition-colors cursor-pointer">
-                        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isNow ? 'bg-primary animate-pulse' : 'bg-green-500'}`}></div>
+                      <div className={`flex-shrink-0 flex items-center gap-3 px-4 py-2 rounded-lg border transition-colors cursor-pointer ${isCalendly ? 'bg-blue-50/60 border-blue-200/50 hover:bg-blue-100/80' : 'bg-white/60 border-white/30 hover:bg-white/80'}`}>
+                        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isNow ? 'bg-primary animate-pulse' : isCalendly ? 'bg-blue-500' : 'bg-green-500'}`}></div>
+                        {isCalendly && (
+                          <span className="text-[10px] font-semibold text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded flex-shrink-0">
+                            Calendly
+                          </span>
+                        )}
                         <span className="text-xs font-medium text-primary/80 flex-shrink-0">
                           {formatEventDate(event.start)}
                         </span>

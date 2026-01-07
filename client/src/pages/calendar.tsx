@@ -25,7 +25,7 @@ interface CalendarEvent {
   location?: string;
   description?: string;
   isAllDay: boolean;
-  source?: 'google' | 'apple';
+  source?: 'google' | 'apple' | 'calendly';
 }
 
 interface ZoomMeeting {
@@ -116,6 +116,7 @@ export default function Calendar() {
     google: preferences?.googleCalendarColor || "#3b82f6",
     apple: preferences?.appleCalendarColor || "#22c55e",
     zoom: preferences?.zoomColor || "#a855f7",
+    calendly: "#006BFF",
   }), [preferences]);
 
   const { data: googleEvents = [], isLoading: googleLoading } = useQuery<CalendarEvent[]>({
@@ -124,7 +125,7 @@ export default function Calendar() {
       const res = await fetch(`/api/calendar/month/${currentDate.getFullYear()}/${currentDate.getMonth()}`, { credentials: "include" });
       if (!res.ok) return [];
       const events = await res.json();
-      return events.map((e: CalendarEvent) => ({ ...e, source: 'google' as const }));
+      return events.map((e: CalendarEvent) => ({ ...e, source: e.source || 'google' as const }));
     },
     retry: false,
   });
@@ -235,7 +236,7 @@ export default function Calendar() {
   };
 
   const allEvents = [
-    ...calendarEvents.map(e => ({ ...e, type: e.source === 'apple' ? 'apple' as const : 'calendar' as const })),
+    ...calendarEvents.map(e => ({ ...e, type: e.source === 'apple' ? 'apple' as const : e.source === 'calendly' ? 'calendly' as const : 'calendar' as const })),
     ...zoomMeetings.map(m => ({ 
       id: String(m.id), 
       title: m.topic, 
@@ -304,7 +305,9 @@ export default function Calendar() {
                   ? colors.zoom 
                   : event.type === 'apple' 
                     ? colors.apple 
-                    : colors.google;
+                    : event.type === 'calendly'
+                      ? colors.calendly
+                      : colors.google;
                 
                 const getEventUrl = () => {
                   if (event.type === 'zoom' && 'joinUrl' in event) {
@@ -399,6 +402,10 @@ export default function Calendar() {
               <span>Google Calendar</span>
             </div>
             <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: colors.calendly }} />
+              <span>Calendly</span>
+            </div>
+            <div className="flex items-center gap-1.5">
               <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: colors.apple }} />
               <span>Apple Calendar</span>
             </div>
@@ -444,8 +451,8 @@ export default function Calendar() {
                           key={event.id}
                           className="hidden md:block text-[10px] font-semibold px-1 py-0.5 rounded truncate"
                           style={{
-                            backgroundColor: getMediumBg(event.source === 'apple' ? colors.apple : colors.google),
-                            color: event.source === 'apple' ? colors.apple : colors.google,
+                            backgroundColor: getMediumBg(event.source === 'apple' ? colors.apple : event.source === 'calendly' ? colors.calendly : colors.google),
+                            color: event.source === 'apple' ? colors.apple : event.source === 'calendly' ? colors.calendly : colors.google,
                           }}
                         >
                           {event.title}
@@ -469,7 +476,7 @@ export default function Calendar() {
                           <div 
                             key={event.id}
                             className="w-1.5 h-1.5 rounded-full"
-                            style={{ backgroundColor: event.source === 'apple' ? colors.apple : colors.google }}
+                            style={{ backgroundColor: event.source === 'apple' ? colors.apple : event.source === 'calendly' ? colors.calendly : colors.google }}
                           />
                         ))}
                         {dayMeetings.slice(0, Math.max(0, 3 - dayEvents.length)).map(meeting => (
@@ -503,7 +510,7 @@ export default function Calendar() {
               const dayEvents = getEventsForDay(selectedDay);
               const dayMeetings = getMeetingsForDay(selectedDay);
               const allDayEvents = [
-                ...dayEvents.map(e => ({ ...e, type: e.source === 'apple' ? 'apple' as const : 'calendar' as const })),
+                ...dayEvents.map(e => ({ ...e, type: e.source === 'apple' ? 'apple' as const : e.source === 'calendly' ? 'calendly' as const : 'calendar' as const })),
                 ...dayMeetings.map(m => ({ 
                   id: String(m.id), 
                   title: m.topic, 
@@ -526,7 +533,9 @@ export default function Calendar() {
                       ? colors.zoom 
                       : event.type === 'apple' 
                         ? colors.apple 
-                        : colors.google;
+                        : event.type === 'calendly'
+                          ? colors.calendly
+                          : colors.google;
                     
                     return (
                       <div 
