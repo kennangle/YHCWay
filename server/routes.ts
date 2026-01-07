@@ -24,6 +24,7 @@ import { extractTasksFromContent, generateDailyBriefing, generateMeetingPrep, sm
 import { isQrTigerConfigured, createDynamicQRCode, createStaticQRCode, listQRCodes, getQRCodeAnalytics, deleteQRCode } from "./qr-tiger";
 import { isPerkvilleConfigured, authenticateWithPerkville, isUserPerkvilleConnected, getPerkvilleCustomerInfo, getPerkvillePoints, getPerkvilleRewards, getPerkvilleActivity, disconnectPerkville, getPerkvilleBusinesses, getPerkvilleCustomers, getPerkvilleConnectionBalances, searchPerkvilleCustomerByEmail, getPerkvilleCustomerById } from "./perkville";
 import { yhcTimeClient } from "./yhctime";
+import { getCalendlyEvents, getCalendlyEventsForMonth, isCalendlyConnected } from "./calendly";
 
 const isAdmin: RequestHandler = async (req: any, res, next) => {
   try {
@@ -1702,22 +1703,31 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/calendar/events", isAuthenticated, async (req, res) => {
+  app.get("/api/calendar/events", isAuthenticated, async (req: any, res) => {
     try {
-      const events = await getUpcomingEvents(10);
-      res.json(events);
+      const userId = req.user?.id;
+      const googleEvents = await getUpcomingEvents(10).catch(() => []);
+      const calendlyEvents = userId ? await getCalendlyEvents(userId, 10).catch(() => []) : [];
+      const mergedEvents = [...googleEvents.map(e => ({ ...e, source: "google" as const })), ...calendlyEvents]
+        .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
+        .slice(0, 15);
+      res.json(mergedEvents);
     } catch (error) {
       console.error("Error fetching calendar events:", error);
       res.status(500).json({ error: "Failed to fetch calendar events" });
     }
   });
 
-  app.get("/api/calendar/month/:year/:month", isAuthenticated, async (req, res) => {
+  app.get("/api/calendar/month/:year/:month", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user?.id;
       const year = parseInt(req.params.year);
       const month = parseInt(req.params.month);
-      const events = await getEventsForMonth(year, month);
-      res.json(events);
+      const googleEvents = await getEventsForMonth(year, month).catch(() => []);
+      const calendlyEvents = userId ? await getCalendlyEventsForMonth(userId, year, month).catch(() => []) : [];
+      const mergedEvents = [...googleEvents.map(e => ({ ...e, source: "google" as const })), ...calendlyEvents]
+        .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
+      res.json(mergedEvents);
     } catch (error) {
       console.error("Error fetching month events:", error);
       res.status(500).json({ error: "Failed to fetch calendar events" });
