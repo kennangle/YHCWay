@@ -101,6 +101,11 @@ All AI features are user-scoped for security (data isolation per user). Note: Ca
 - **Zoom**: Server-to-server OAuth
 - **Apple Calendar**: CalDAV via tsdav library (requires user app-specific password)
 - **Asana**: OAuth for project/task data import (one-time migration, not ongoing sync)
+- **Calendly**: Personal Access Token integration for scheduling
+  - Events merged with Google Calendar in unified calendar view
+  - Displays in Dashboard "Upcoming Events" widget with blue "Calendly" badge
+  - Visual distinction with Calendly blue (#006BFF) color in calendar legend
+  - Requires user to enter their Calendly Personal Access Token via Connect page
 - **Mindbody Analytics**: External API integration via Bearer token for intro offer tracking
   - Dedicated `/intro-offers` page for viewing and managing intro offers
 - **Perkville**: Resource Owner Grant integration for loyalty rewards program
