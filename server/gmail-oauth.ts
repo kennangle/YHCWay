@@ -17,17 +17,20 @@ function getOAuth2Client() {
   }
   
   // Use environment-specific redirect URI
-  // In production: use the production domain
-  // In development: use REPLIT_DEV_DOMAIN if available
+  // Priority: APP_URL > REPLIT_DEV_DOMAIN > REPL_SLUG fallback
   let redirectUri: string;
   
   if (process.env.APP_URL) {
-    // Use custom domain if configured
+    // Use custom domain if configured (production)
     redirectUri = `${process.env.APP_URL}/api/gmail/callback`;
-  } else if (process.env.NODE_ENV === 'production' || !process.env.REPLIT_DEV_DOMAIN) {
-    redirectUri = 'https://sync-connect--ken196.replit.app/api/gmail/callback';
-  } else {
+  } else if (process.env.REPLIT_DEV_DOMAIN) {
+    // Development environment
     redirectUri = `https://${process.env.REPLIT_DEV_DOMAIN}/api/gmail/callback`;
+  } else if (process.env.REPL_SLUG && process.env.REPL_OWNER) {
+    // Fallback for Replit deployment
+    redirectUri = `https://${process.env.REPL_SLUG}--${process.env.REPL_OWNER.toLowerCase()}.replit.app/api/gmail/callback`;
+  } else {
+    redirectUri = 'http://localhost:5000/api/gmail/callback';
   }
   
   console.log('[Gmail OAuth] Using redirect URI:', redirectUri);
