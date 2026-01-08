@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal } from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 
 interface Task {
   id: number;
@@ -44,6 +45,7 @@ type FilterType = "all" | "today" | "upcoming" | "overdue" | "completed";
 export default function Tasks() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const mainContentClass = useMainContentClass();
   const [filter, setFilter] = useState<FilterType>("all");
   const [expandedProjects, setExpandedProjects] = useState<Set<number>>(new Set());
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -246,7 +248,7 @@ export default function Tasks() {
       
       <UnifiedSidebar />
 
-      <main className="flex-1 ml-0 md:ml-64 relative z-10 flex flex-col">
+      <main className={`flex-1 ml-0 ${mainContentClass} relative z-10 flex flex-col transition-all duration-300`}>
         <TopBar />
         <div className="flex-1 p-4 md:p-8 pb-20 md:pb-8">
           <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 md:mb-8">

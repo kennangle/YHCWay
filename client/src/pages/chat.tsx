@@ -7,6 +7,7 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 
 interface User {
   id: string;
@@ -38,6 +39,7 @@ interface Conversation {
 export default function Chat() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const mainContentClass = useMainContentClass();
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [messageInput, setMessageInput] = useState("");
   const [threadInput, setThreadInput] = useState("");
@@ -296,7 +298,7 @@ export default function Chat() {
       
       <UnifiedSidebar />
 
-      <main className="flex-1 ml-0 md:ml-64 relative z-10 flex flex-col">
+      <main className={`flex-1 ml-0 ${mainContentClass} relative z-10 flex flex-col transition-all duration-300`}>
         <TopBar />
         <div className="flex-1 flex">
         <div className="w-80 border-r border-border/50 glass-panel flex flex-col">

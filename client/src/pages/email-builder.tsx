@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { Mail, Plus, Trash2, FileText, Save, RotateCcw } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 
 interface EmailTemplate {
   id: number;
@@ -40,6 +41,7 @@ export default function EmailBuilderPage() {
   const [newTemplateType, setNewTemplateType] = useState("");
   const [newTemplateSubject, setNewTemplateSubject] = useState("");
   const queryClient = useQueryClient();
+  const mainContentClass = useMainContentClass();
 
   const { data: templates = [], isLoading } = useQuery<EmailTemplate[]>({
     queryKey: ["/api/admin/email-templates"],
@@ -130,7 +132,7 @@ export default function EmailBuilderPage() {
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       <UnifiedSidebar />
-      <main className="flex-1 overflow-auto ml-0 md:ml-64">
+      <main className={`flex-1 overflow-auto ml-0 ${mainContentClass} transition-all duration-300`}>
         <TopBar />
         <div className="p-6 w-full overflow-x-hidden">
           <div className="flex items-center justify-between mb-6">

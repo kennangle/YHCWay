@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery } from "@tanstack/react-query";
+import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 
 interface ServiceStatus {
   gmail: boolean;
@@ -42,6 +43,7 @@ interface ServiceStatus {
 
 export default function SetupGuide() {
   const { user, isLoading: authLoading } = useAuth();
+  const mainContentClass = useMainContentClass();
 
   const { data: gmailStatus } = useQuery<{ connected: boolean }>({
     queryKey: ["/api/gmail/status"],
@@ -285,7 +287,7 @@ export default function SetupGuide() {
       
       <UnifiedSidebar />
 
-      <main className="flex-1 ml-0 md:ml-64 relative z-10 flex flex-col">
+      <main className={`flex-1 ml-0 ${mainContentClass} relative z-10 flex flex-col transition-all duration-300`}>
         <TopBar />
         <div className="flex-1 p-8 max-w-4xl mx-auto w-full">
           <header className="mb-8">

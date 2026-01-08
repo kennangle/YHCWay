@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DndContext, DragEndEvent, DragOverEvent, DragStartEvent, PointerSensor, useSensor, useSensors, closestCorners, DragOverlay } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 
 interface ProjectColumn {
   id: number;
@@ -647,6 +648,7 @@ export default function ProjectBoard() {
   const params = useParams();
   const projectId = parseInt(params.id as string);
   const queryClient = useQueryClient();
+  const mainContentClass = useMainContentClass();
   
   const [createTaskDialogOpen, setCreateTaskDialogOpen] = useState(false);
   const [selectedColumnId, setSelectedColumnId] = useState<number | null>(null);
@@ -1042,7 +1044,7 @@ export default function ProjectBoard() {
     return (
       <div className="min-h-screen bg-background text-foreground flex font-sans">
         <UnifiedSidebar />
-        <main className="flex-1 md:ml-64 flex items-center justify-center">
+        <main className={`flex-1 ${mainContentClass} flex items-center justify-center transition-all duration-300`}>
           <RefreshCw className="w-8 h-8 animate-spin text-primary" />
         </main>
       </div>
@@ -1062,7 +1064,7 @@ export default function ProjectBoard() {
       
       <UnifiedSidebar />
 
-      <main className="flex-1 md:ml-64 relative z-10 flex flex-col">
+      <main className={`flex-1 ${mainContentClass} relative z-10 flex flex-col transition-all duration-300`}>
         <TopBar />
         <div className="flex-1 p-4 md:p-8 pb-20 md:pb-8 flex flex-col">
           <header className="mb-4 md:mb-6 space-y-3">

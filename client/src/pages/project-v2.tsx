@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { TaskLite } from "@/features/projects/types";
+import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 
 type FilterState = {
   assignee: string | null;
@@ -23,6 +24,7 @@ export default function ProjectPageV2() {
   const projectId = parseInt(params.id || "0");
   const searchString = useSearch();
   const [, setLocation] = useLocation();
+  const mainContentClass = useMainContentClass();
 
   const searchParams = new URLSearchParams(searchString);
   const viewMode = (searchParams.get("view") as "board" | "list") || "board";
@@ -190,7 +192,7 @@ export default function ProjectPageV2() {
     return (
       <div className="min-h-screen bg-gray-50 flex">
         <UnifiedSidebar />
-        <main className="flex-1 md:ml-64 flex items-center justify-center">
+        <main className={`flex-1 ${mainContentClass} flex items-center justify-center transition-all duration-300`}>
           <RefreshCw className="w-8 h-8 animate-spin text-primary" />
         </main>
       </div>
@@ -201,7 +203,7 @@ export default function ProjectPageV2() {
     return (
       <div className="min-h-screen bg-gray-50 flex">
         <UnifiedSidebar />
-        <main className="flex-1 md:ml-64 flex items-center justify-center">
+        <main className={`flex-1 ${mainContentClass} flex items-center justify-center transition-all duration-300`}>
           <p className="text-gray-500">Project not found</p>
         </main>
       </div>
@@ -212,7 +214,7 @@ export default function ProjectPageV2() {
     <div className="min-h-screen bg-gray-50 flex">
       <UnifiedSidebar />
 
-      <main className="flex-1 md:ml-64 flex flex-col h-screen">
+      <main className={`flex-1 ${mainContentClass} flex flex-col h-screen transition-all duration-300`}>
         <TopBar />
 
         <ProjectHeader

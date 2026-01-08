@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 
 interface IntroOffer {
   id: string;
@@ -56,6 +57,7 @@ type SortDirection = "asc" | "desc";
 export default function IntroOffers() {
   const queryClient = useQueryClient();
   const [location] = useLocation();
+  const mainContentClass = useMainContentClass();
   
   // Parse initial filter from URL
   const getInitialFilter = (): StatusFilter => {
@@ -251,7 +253,7 @@ export default function IntroOffers() {
           style={{ backgroundImage: `url(${generatedBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
         />
         <UnifiedSidebar />
-        <main className="flex-1 ml-0 md:ml-64 relative z-10 flex flex-col">
+        <main className={`flex-1 ml-0 ${mainContentClass} relative z-10 flex flex-col transition-all duration-300`}>
           <TopBar />
           <div className="flex-1 p-8 flex items-center justify-center">
             <div className="text-center">
@@ -274,7 +276,7 @@ export default function IntroOffers() {
       
       <UnifiedSidebar />
 
-      <main className="flex-1 ml-0 md:ml-64 relative z-10 flex flex-col">
+      <main className={`flex-1 ml-0 ${mainContentClass} relative z-10 flex flex-col transition-all duration-300`}>
         <TopBar />
         <div className="flex-1 p-8">
         <header className="flex justify-between items-center mb-8">

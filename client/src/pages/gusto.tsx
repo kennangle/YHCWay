@@ -11,6 +11,7 @@ import { format } from "date-fns";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { TopBar } from "@/components/top-bar";
 import { useAuth } from "@/hooks/useAuth";
+import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 
 interface Company {
   uuid: string;
@@ -53,6 +54,7 @@ interface Payroll {
 
 export default function GustoPage() {
   const { user, isLoading: authLoading } = useAuth();
+  const mainContentClass = useMainContentClass();
   const [selectedCompany, setSelectedCompany] = useState<string>("");
 
   const { data: status, isLoading: statusLoading } = useQuery<{ connected: boolean }>({
@@ -117,7 +119,7 @@ export default function GustoPage() {
     return (
       <div className="min-h-screen bg-background text-foreground flex font-sans">
         <UnifiedSidebar />
-        <main className="flex-1 ml-0 md:ml-64 relative z-10 flex flex-col">
+        <main className={`flex-1 ml-0 ${mainContentClass} relative z-10 flex flex-col transition-all duration-300`}>
           <TopBar />
           <div className="flex-1 p-6 max-w-7xl mx-auto">
             <Card className="backdrop-blur-sm bg-white/80 border-white/20">
@@ -136,7 +138,7 @@ export default function GustoPage() {
     return (
       <div className="min-h-screen bg-background text-foreground flex font-sans">
         <UnifiedSidebar />
-        <main className="flex-1 ml-0 md:ml-64 relative z-10 flex flex-col">
+        <main className={`flex-1 ml-0 ${mainContentClass} relative z-10 flex flex-col transition-all duration-300`}>
           <TopBar />
           <div className="flex-1 p-6 max-w-7xl mx-auto">
             <Card className="backdrop-blur-sm bg-white/80 border-white/20">
@@ -157,7 +159,7 @@ export default function GustoPage() {
   return (
     <div className="min-h-screen bg-background text-foreground flex font-sans">
       <UnifiedSidebar />
-      <main className="flex-1 ml-0 md:ml-64 relative z-10 flex flex-col">
+      <main className={`flex-1 ml-0 ${mainContentClass} relative z-10 flex flex-col transition-all duration-300`}>
         <TopBar />
         <div className="flex-1 p-6 max-w-7xl mx-auto space-y-6">
       <div className="flex items-center justify-between">

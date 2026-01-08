@@ -17,17 +17,26 @@ import {
   QrCode,
   ChevronDown,
   ChevronRight,
+  ChevronLeft,
   Zap,
   Wrench,
   Star,
   Rocket,
   Clock,
   BarChart3,
-  Building2
+  Building2,
+  PanelLeftClose,
+  PanelLeft
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
+import { useSidebarContext } from "@/hooks/useSidebarCollapse";
 import yhcLogo from "@assets/logo_bug_1024_1767889616107.jpg";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface NavItem {
   icon: any;
@@ -48,6 +57,7 @@ interface NavGroup {
 export function UnifiedSidebar() {
   const [location] = useLocation();
   const { user } = useAuth();
+  const { isCollapsed, toggle: toggleSidebar } = useSidebarContext();
   
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>(() => {
     if (typeof window !== 'undefined') {
@@ -148,20 +158,39 @@ export function UnifiedSidebar() {
     if (item.adminOnly && !user?.isAdmin) return null;
     
     const isActive = location === item.href;
+    
+    const navContent = (
+      <div 
+        className={cn(
+          "flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 group cursor-pointer",
+          isActive 
+            ? "bg-primary text-primary-foreground shadow-md shadow-primary/20" 
+            : "text-muted-foreground hover:bg-white/50 hover:text-foreground",
+          isCollapsed && "justify-center px-2"
+        )}
+        data-tour={item.tourId}
+      >
+        <item.icon className={cn("w-4 h-4 flex-shrink-0", isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-foreground")} />
+        {!isCollapsed && <span className="text-sm font-medium">{item.label}</span>}
+      </div>
+    );
+
+    if (isCollapsed) {
+      return (
+        <Tooltip key={item.href}>
+          <TooltipTrigger asChild>
+            <Link href={item.href}>{navContent}</Link>
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            <p>{item.label}</p>
+          </TooltipContent>
+        </Tooltip>
+      );
+    }
+
     return (
       <Link key={item.href} href={item.href}>
-        <div 
-          className={cn(
-            "flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 group cursor-pointer",
-            isActive 
-              ? "bg-primary text-primary-foreground shadow-md shadow-primary/20" 
-              : "text-muted-foreground hover:bg-white/50 hover:text-foreground"
-          )}
-          data-tour={item.tourId}
-        >
-          <item.icon className={cn("w-4 h-4", isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-foreground")} />
-          <span className="text-sm font-medium">{item.label}</span>
-        </div>
+        {navContent}
       </Link>
     );
   };
@@ -169,20 +198,33 @@ export function UnifiedSidebar() {
   return (
     <>
       {/* Desktop Sidebar */}
-      <div className="hidden md:flex w-64 h-screen glass-panel flex-col border-r border-white/20 fixed left-0 top-0 z-50">
-        <div className="p-6 flex items-center gap-3" data-tour="sidebar-logo">
-          <img src={yhcLogo} alt="YHC Logo" className="w-10 h-10 rounded-xl object-cover shadow-lg" />
-          <span className="font-display font-bold text-xl tracking-tight text-foreground">
-            The YHC Way
-          </span>
+      <div className={cn(
+        "hidden md:flex h-screen glass-panel flex-col border-r border-white/20 fixed left-0 top-0 z-50 transition-all duration-300",
+        isCollapsed ? "w-16" : "w-64"
+      )}>
+        <div className={cn("p-4 flex items-center gap-3", isCollapsed ? "justify-center" : "p-6")} data-tour="sidebar-logo">
+          <img src={yhcLogo} alt="YHC Logo" className={cn("rounded-xl object-cover shadow-lg transition-all", isCollapsed ? "w-8 h-8" : "w-10 h-10")} />
+          {!isCollapsed && (
+            <span className="font-display font-bold text-xl tracking-tight text-foreground">
+              The YHC Way
+            </span>
+          )}
         </div>
 
-        <div className="flex-1 px-3 py-4 space-y-4 overflow-y-auto">
+        <div className={cn("flex-1 py-4 space-y-4 overflow-y-auto", isCollapsed ? "px-2" : "px-3")}>
           {navGroups.map((group) => {
-            const isCollapsed = collapsedGroups[group.id] ?? group.defaultCollapsed;
+            const isGroupCollapsed = collapsedGroups[group.id] ?? group.defaultCollapsed;
             const visibleItems = group.items.filter(item => !item.adminOnly || user?.isAdmin);
             
             if (visibleItems.length === 0) return null;
+            
+            if (isCollapsed) {
+              return (
+                <div key={group.id} className="space-y-1">
+                  {visibleItems.map(renderNavItem)}
+                </div>
+              );
+            }
             
             return (
               <div key={group.id} className="space-y-1">
@@ -195,14 +237,14 @@ export function UnifiedSidebar() {
                     <group.icon className="w-3.5 h-3.5" />
                     <span>{group.label}</span>
                   </div>
-                  {isCollapsed ? (
+                  {isGroupCollapsed ? (
                     <ChevronRight className="w-3.5 h-3.5" />
                   ) : (
                     <ChevronDown className="w-3.5 h-3.5" />
                   )}
                 </button>
                 
-                {!isCollapsed && (
+                {!isGroupCollapsed && (
                   <div className="space-y-1 ml-1">
                     {visibleItems.map(renderNavItem)}
                   </div>
@@ -212,31 +254,83 @@ export function UnifiedSidebar() {
           })}
         </div>
 
-        <div className="p-4 mt-auto">
-          <div className="pt-4 border-t border-border px-2">
-            <div className="flex items-center gap-3 mb-3">
-              <Link href="/setup-guide">
-                <div className="w-8 h-8 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer" title="Setup Guide">
-                  <BookOpen className="w-4 h-4" />
-                </div>
-              </Link>
-              {user?.profileImageUrl ? (
-                <img 
-                  src={user.profileImageUrl} 
-                  alt={initials}
-                  className="w-8 h-8 rounded-full ring-2 ring-white object-cover"
-                />
-              ) : (
-                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-400 to-blue-500 ring-2 ring-white flex items-center justify-center text-white text-sm font-semibold">
-                  {initials}
-                </div>
-              )}
-              <div className="flex flex-col flex-1 min-w-0">
-                <span className="text-sm font-semibold truncate">{initials}</span>
-                <span className="text-xs text-muted-foreground truncate">{user?.email}</span>
+        <div className={cn("p-4 mt-auto", isCollapsed && "p-2")}>
+          <div className={cn("pt-4 border-t border-border", isCollapsed ? "px-0" : "px-2")}>
+            {isCollapsed ? (
+              <div className="flex flex-col items-center gap-2">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link href="/setup-guide">
+                      <div className="w-8 h-8 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
+                        <BookOpen className="w-4 h-4" />
+                      </div>
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">Setup Guide</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    {user?.profileImageUrl ? (
+                      <img 
+                        src={user.profileImageUrl} 
+                        alt={initials}
+                        className="w-8 h-8 rounded-full ring-2 ring-white object-cover cursor-pointer"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-400 to-blue-500 ring-2 ring-white flex items-center justify-center text-white text-sm font-semibold cursor-pointer">
+                        {initials}
+                      </div>
+                    )}
+                  </TooltipTrigger>
+                  <TooltipContent side="right">{user?.email}</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={toggleSidebar}
+                      className="w-8 h-8 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                      data-testid="toggle-sidebar"
+                    >
+                      <PanelLeft className="w-4 h-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">Expand sidebar</TooltipContent>
+                </Tooltip>
               </div>
-            </div>
-            
+            ) : (
+              <>
+                <div className="flex items-center gap-3 mb-3">
+                  <Link href="/setup-guide">
+                    <div className="w-8 h-8 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer" title="Setup Guide">
+                      <BookOpen className="w-4 h-4" />
+                    </div>
+                  </Link>
+                  {user?.profileImageUrl ? (
+                    <img 
+                      src={user.profileImageUrl} 
+                      alt={initials}
+                      className="w-8 h-8 rounded-full ring-2 ring-white object-cover"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-400 to-blue-500 ring-2 ring-white flex items-center justify-center text-white text-sm font-semibold">
+                      {initials}
+                    </div>
+                  )}
+                  <div className="flex flex-col flex-1 min-w-0">
+                    <span className="text-sm font-semibold truncate">{initials}</span>
+                    <span className="text-xs text-muted-foreground truncate">{user?.email}</span>
+                  </div>
+                </div>
+                <button
+                  onClick={toggleSidebar}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-white/30 rounded-lg transition-colors"
+                  data-testid="toggle-sidebar"
+                >
+                  <PanelLeftClose className="w-4 h-4" />
+                  <span>Collapse</span>
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

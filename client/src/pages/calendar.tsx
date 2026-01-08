@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 
 interface UserPreferences {
   googleCalendarColor: string;
@@ -75,6 +76,7 @@ export default function Calendar() {
     isAllDay: false,
   });
   const queryClient = useQueryClient();
+  const mainContentClass = useMainContentClass();
 
   const createEventMutation = useMutation({
     mutationFn: async (eventData: typeof newEvent) => {
@@ -263,7 +265,7 @@ export default function Calendar() {
       
       <UnifiedSidebar />
 
-      <main className="flex-1 ml-0 md:ml-64 relative z-10 flex flex-col pb-20 md:pb-0">
+      <main className={`flex-1 ml-0 ${mainContentClass} relative z-10 flex flex-col pb-20 md:pb-0 transition-all duration-300`}>
         <TopBar />
         <div className="flex-1 p-4 md:p-8">
         <header className="flex justify-between items-end mb-6 md:mb-8">

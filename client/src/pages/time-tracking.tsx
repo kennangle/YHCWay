@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays } from "date-fns";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
+import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 
 interface EmployeeStatus {
   employeeId: string;
@@ -93,6 +94,7 @@ interface LinkedEmployee {
 export default function TimeTrackingPage() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const mainContentClass = useMainContentClass();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isLinkOpen, setIsLinkOpen] = useState(false);
   const [dateRange, setDateRange] = useState<'week' | 'month' | 'custom'>('week');
@@ -297,7 +299,7 @@ export default function TimeTrackingPage() {
         style={{ backgroundImage: `url(${generatedBg})` }}
       >
         <UnifiedSidebar />
-        <main className="md:ml-64 min-h-screen">
+        <main className={`${mainContentClass} min-h-screen transition-all duration-300`}>
           <TopBar />
           <div className="p-6 md:p-8">
             <div className="max-w-4xl mx-auto">
@@ -322,7 +324,7 @@ export default function TimeTrackingPage() {
     >
       <UnifiedSidebar />
       
-      <main className="md:ml-64 min-h-screen">
+      <main className={`${mainContentClass} min-h-screen transition-all duration-300`}>
         <TopBar />
         
         <div className="p-6 md:p-8">

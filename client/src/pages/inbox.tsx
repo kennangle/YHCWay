@@ -7,6 +7,7 @@ import { SlackChannelConfig } from "@/components/slack-channel-config";
 import { EmailDetailPanel } from "@/components/email-detail-panel";
 import { ComposeEmailModal } from "@/components/compose-email-modal";
 import { useState } from "react";
+import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 import {
   Dialog,
   DialogContent,
@@ -64,6 +65,7 @@ export default function Inbox() {
   const [sharingMessage, setSharingMessage] = useState<UnifiedMessage | null>(null);
   const [shareNote, setShareNote] = useState("");
   const queryClient = useQueryClient();
+  const mainContentClass = useMainContentClass();
 
   const shareItemMutation = useMutation({
     mutationFn: async (data: { itemType: "email" | "slack"; itemId: string; title: string; preview: string; note?: string }) => {
@@ -176,7 +178,7 @@ export default function Inbox() {
       
       <UnifiedSidebar />
 
-      <main className="flex-1 ml-0 md:ml-64 relative z-10 flex flex-col">
+      <main className={`flex-1 ml-0 ${mainContentClass} relative z-10 flex flex-col transition-all duration-300`}>
         <TopBar />
         <div className="flex-1 p-8">
         <header className="flex justify-between items-center mb-8">

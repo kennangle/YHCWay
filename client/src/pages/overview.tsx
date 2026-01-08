@@ -18,6 +18,7 @@ import {
   Loader2
 } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
+import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 
 interface ServiceStatus {
   name: string;
@@ -109,6 +110,7 @@ const appCards = [
 ];
 
 export default function Overview() {
+  const mainContentClass = useMainContentClass();
   const { data: services, isLoading } = useQuery<ServiceStatus[]>({
     queryKey: ["/api/services"],
     queryFn: async () => {
@@ -167,7 +169,7 @@ export default function Overview() {
     >
       <UnifiedSidebar />
       
-      <main className="md:ml-64 min-h-screen">
+      <main className={`${mainContentClass} min-h-screen transition-all duration-300`}>
         <TopBar />
         
         <div className="p-6 md:p-8">

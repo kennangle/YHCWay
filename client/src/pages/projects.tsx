@@ -19,6 +19,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Progress } from "@/components/ui/progress";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 
 interface AsanaProject {
   id: string;
@@ -67,6 +68,7 @@ type ViewMode = "grid" | "list";
 
 export default function Projects() {
   const queryClient = useQueryClient();
+  const mainContentClass = useMainContentClass();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [newProject, setNewProject] = useState({ name: "", description: "", color: "#3b82f6" });
@@ -297,7 +299,7 @@ export default function Projects() {
       
       <UnifiedSidebar />
 
-      <main className="flex-1 md:ml-64 relative z-10 flex flex-col">
+      <main className={`flex-1 ${mainContentClass} relative z-10 flex flex-col transition-all duration-300`}>
         <TopBar />
         <div className="flex-1 p-4 md:p-8 pb-20 md:pb-8">
           <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">

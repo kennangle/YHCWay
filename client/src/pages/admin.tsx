@@ -11,6 +11,7 @@ import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_back
 import { useToast } from "@/hooks/use-toast";
 import { EmailEditor } from "@/components/email-editor";
 import { EmailBuilder } from "@/components/email-builder";
+import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 
 type TabType = "users" | "services" | "feed" | "emails";
 
@@ -31,6 +32,7 @@ interface EmailTemplate {
 
 export default function Admin() {
   const { user, isLoading: authLoading } = useAuth();
+  const mainContentClass = useMainContentClass();
   const [activeTab, setActiveTab] = useState<TabType>("users");
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [editingFeed, setEditingFeed] = useState<FeedItem | null>(null);
@@ -303,7 +305,7 @@ export default function Admin() {
       
       <UnifiedSidebar />
 
-      <main className="flex-1 ml-0 md:ml-64 relative z-10 flex flex-col">
+      <main className={`flex-1 ml-0 ${mainContentClass} relative z-10 flex flex-col transition-all duration-300`}>
         <TopBar />
         <div className="flex-1 p-8">
         <header className="mb-8">

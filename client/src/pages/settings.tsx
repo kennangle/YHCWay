@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
+import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 
 interface UserPreferences {
   googleCalendarColor: string;
@@ -1308,6 +1309,7 @@ export default function Settings() {
   const [mounted, setMounted] = useState(false);
   const { theme, setTheme } = useTheme();
   const queryClient = useQueryClient();
+  const mainContentClass = useMainContentClass();
 
   useEffect(() => {
     setMounted(true);
@@ -2270,7 +2272,7 @@ Your online status can be toggled in Privacy settings. When hidden, others won't
       
       <UnifiedSidebar />
 
-      <main className="flex-1 ml-0 md:ml-64 relative z-10 flex flex-col">
+      <main className={`flex-1 ml-0 ${mainContentClass} relative z-10 flex flex-col transition-all duration-300`}>
         <TopBar />
         <div className="flex-1 p-8">
         <header className="mb-8">

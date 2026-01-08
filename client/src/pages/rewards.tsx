@@ -5,6 +5,7 @@ import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_back
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { useState } from "react";
+import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 
 interface PerkvilleStatus {
   connected: boolean;
@@ -50,6 +51,7 @@ export default function Rewards() {
   const [searchedCustomer, setSearchedCustomer] = useState<PerkvilleCustomer | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const mainContentClass = useMainContentClass();
 
   const { data: status, isLoading: statusLoading } = useQuery<PerkvilleStatus>({
     queryKey: ["perkville-status"],
@@ -166,7 +168,7 @@ export default function Rewards() {
       
       <UnifiedSidebar />
 
-      <main className="flex-1 ml-0 md:ml-64 relative z-10 flex flex-col">
+      <main className={`flex-1 ml-0 ${mainContentClass} relative z-10 flex flex-col transition-all duration-300`}>
         <TopBar />
         <div className="flex-1 p-8">
           <header className="mb-8">

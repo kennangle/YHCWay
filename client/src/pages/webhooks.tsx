@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 
 interface WebhookType {
   id: number;
@@ -36,6 +37,7 @@ interface WebhookEvent {
 
 export default function Webhooks() {
   const queryClient = useQueryClient();
+  const mainContentClass = useMainContentClass();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingWebhook, setEditingWebhook] = useState<WebhookType | null>(null);
   const [viewDeliveriesId, setViewDeliveriesId] = useState<number | null>(null);
@@ -215,7 +217,7 @@ export default function Webhooks() {
         style={{ backgroundImage: `url(${generatedBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
       />
       <UnifiedSidebar />
-      <main className="flex-1 ml-0 md:ml-64 relative z-10 flex flex-col">
+      <main className={`flex-1 ml-0 ${mainContentClass} relative z-10 flex flex-col transition-all duration-300`}>
         <TopBar />
         <div className="flex-1 p-8 overflow-auto">
           <div className="max-w-4xl mx-auto">

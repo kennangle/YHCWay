@@ -8,6 +8,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { useLocation } from "wouter";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { CommandPalette } from "@/components/command-palette";
+import { useSidebarCollapse, SidebarProvider } from "@/hooks/useSidebarCollapse";
 
 type Theme = "light" | "dark";
 
@@ -165,13 +166,24 @@ function Router() {
   );
 }
 
+function SidebarContextWrapper({ children }: { children: ReactNode }) {
+  const sidebarState = useSidebarCollapse();
+  return (
+    <SidebarProvider value={sidebarState}>
+      {children}
+    </SidebarProvider>
+  );
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <TooltipProvider>
-          <Toaster />
-          <Router />
+          <SidebarContextWrapper>
+            <Toaster />
+            <Router />
+          </SidebarContextWrapper>
         </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>

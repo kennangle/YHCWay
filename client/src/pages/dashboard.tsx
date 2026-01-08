@@ -16,6 +16,7 @@ import { TimeTrackerWidget } from "@/components/time-tracker-widget";
 import { AIAssistantPanel } from "@/components/ai-assistant-panel";
 import { Brain } from "lucide-react";
 import { toast } from "sonner";
+import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 
 type FilterType = "all" | "mentions" | "unread";
 type ServiceFilter = "all" | "gmail" | "slack" | "zoom" | "calendar" | "intro-offer";
@@ -110,6 +111,7 @@ interface SlackMessage {
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const mainContentClass = useMainContentClass();
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const [serviceFilter, setServiceFilter] = useState<ServiceFilter>("all");
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -682,7 +684,7 @@ export default function Dashboard() {
       
       <UnifiedSidebar />
 
-      <main className="flex-1 ml-0 md:ml-64 relative z-10 flex flex-col">
+      <main className={`flex-1 ml-0 ${mainContentClass} relative z-10 flex flex-col transition-all duration-300`}>
         <TopBar />
         <div className="flex-1 p-4 md:p-8">
         <header className="flex justify-between items-end mb-8">

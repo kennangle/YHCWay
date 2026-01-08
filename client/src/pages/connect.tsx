@@ -7,6 +7,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 
 interface AppIntegration {
   id: string;
@@ -357,6 +358,7 @@ export default function Connect() {
   const [credentialsError, setCredentialsError] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const mainContentClass = useMainContentClass();
 
   const { data: connectionStatus = {} } = useQuery<Record<string, boolean>>({
     queryKey: ["connection-status"],
@@ -790,7 +792,7 @@ export default function Connect() {
       
       <UnifiedSidebar />
 
-      <main className="flex-1 ml-0 md:ml-64 relative z-10 flex flex-col">
+      <main className={`flex-1 ml-0 ${mainContentClass} relative z-10 flex flex-col transition-all duration-300`}>
         <TopBar />
         <div className="flex-1 p-8">
         <header className="mb-8">

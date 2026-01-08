@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { Widget } from "@typeform/embed-react";
+import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 
 interface TypeformForm {
   id: string;
@@ -43,6 +44,7 @@ interface TypeformResponse {
 export default function Typeform() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const mainContentClass = useMainContentClass();
   const [showNewFormDialog, setShowNewFormDialog] = useState(false);
   const [showResponsesDialog, setShowResponsesDialog] = useState(false);
   const [showPreviewDialog, setShowPreviewDialog] = useState(false);
@@ -61,7 +63,7 @@ export default function Typeform() {
           }}
         />
         <UnifiedSidebar />
-        <main className="flex-1 ml-0 md:ml-64 relative z-10 flex flex-col">
+        <main className={`flex-1 ml-0 ${mainContentClass} relative z-10 flex flex-col transition-all duration-300`}>
           <TopBar />
           <div className="flex-1 p-8 flex items-center justify-center">
             <div className="text-center">
@@ -190,7 +192,7 @@ export default function Typeform() {
       
       <UnifiedSidebar />
 
-      <main className="flex-1 ml-0 md:ml-64 relative z-10 flex flex-col">
+      <main className={`flex-1 ml-0 ${mainContentClass} relative z-10 flex flex-col transition-all duration-300`}>
         <TopBar />
         <div className="flex-1 p-8">
         <header className="flex justify-between items-center mb-8">
