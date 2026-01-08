@@ -14,7 +14,12 @@ import {
   ListTodo,
   Gift,
   Settings,
-  ExternalLink
+  ExternalLink,
+  QrCode,
+  Clock,
+  CalendarCheck,
+  Users,
+  FileText
 } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery } from "@tanstack/react-query";
@@ -27,6 +32,12 @@ interface ServiceStatus {
   appleCalendar: boolean;
   asana: boolean;
   mindbody: boolean;
+  perkville: boolean;
+  qrTiger: boolean;
+  yhctime: boolean;
+  calendly: boolean;
+  gusto: boolean;
+  typeform: boolean;
 }
 
 export default function SetupGuide() {
@@ -67,6 +78,36 @@ export default function SetupGuide() {
     retry: false,
   });
 
+  const { data: perkvilleStatus } = useQuery<{ connected: boolean }>({
+    queryKey: ["/api/perkville/status"],
+    retry: false,
+  });
+
+  const { data: qrTigerStatus } = useQuery<{ connected: boolean }>({
+    queryKey: ["/api/qr-tiger/status"],
+    retry: false,
+  });
+
+  const { data: yhctimeStatus } = useQuery<{ connected: boolean }>({
+    queryKey: ["/api/yhctime/status"],
+    retry: false,
+  });
+
+  const { data: calendlyStatus } = useQuery<{ connected: boolean }>({
+    queryKey: ["/api/calendly/status"],
+    retry: false,
+  });
+
+  const { data: gustoStatus } = useQuery<{ connected: boolean }>({
+    queryKey: ["/api/gusto/status"],
+    retry: false,
+  });
+
+  const { data: typeformStatus } = useQuery<{ connected: boolean }>({
+    queryKey: ["/api/typeform/status"],
+    retry: false,
+  });
+
   const serviceStatus: ServiceStatus = {
     gmail: gmailStatus?.connected || false,
     googleCalendar: calendarStatus?.connected || false,
@@ -75,10 +116,16 @@ export default function SetupGuide() {
     appleCalendar: appleCalendarStatus?.connected || false,
     asana: asanaStatus?.connected || false,
     mindbody: mindbodyStatus?.configured || false,
+    perkville: perkvilleStatus?.connected || false,
+    qrTiger: qrTigerStatus?.connected || false,
+    yhctime: yhctimeStatus?.connected || false,
+    calendly: calendlyStatus?.connected || false,
+    gusto: gustoStatus?.connected || false,
+    typeform: typeformStatus?.connected || false,
   };
 
   const completedSteps = Object.values(serviceStatus).filter(Boolean).length;
-  const totalSteps = 7;
+  const totalSteps = 13;
 
   if (authLoading) {
     return (
@@ -162,6 +209,66 @@ export default function SetupGuide() {
       href: "/intro-offers",
       color: "text-pink-500",
       bgColor: "bg-pink-100",
+    },
+    {
+      id: "perkville",
+      title: "Perkville Rewards",
+      description: "Track customer loyalty points and rewards. View business analytics and customer balances.",
+      icon: Gift,
+      connected: serviceStatus.perkville,
+      href: "/rewards",
+      color: "text-green-500",
+      bgColor: "bg-green-100",
+    },
+    {
+      id: "qr-tiger",
+      title: "QR Tiger",
+      description: "Create and manage dynamic QR codes with tracking and analytics.",
+      icon: QrCode,
+      connected: serviceStatus.qrTiger,
+      href: "/connect",
+      color: "text-indigo-500",
+      bgColor: "bg-indigo-100",
+    },
+    {
+      id: "yhctime",
+      title: "YHCTime",
+      description: "Track employee time entries and manage work hours for your team.",
+      icon: Clock,
+      connected: serviceStatus.yhctime,
+      href: "/time-tracking",
+      color: "text-teal-500",
+      bgColor: "bg-teal-100",
+    },
+    {
+      id: "calendly",
+      title: "Calendly",
+      description: "View your Calendly scheduled events alongside your calendar. Streamline appointment booking.",
+      icon: CalendarCheck,
+      connected: serviceStatus.calendly,
+      href: "/connect",
+      color: "text-blue-500",
+      bgColor: "bg-blue-100",
+    },
+    {
+      id: "gusto",
+      title: "Gusto HR",
+      description: "Access payroll, employee directory, and HR information from Gusto.",
+      icon: Users,
+      connected: serviceStatus.gusto,
+      href: "/connect",
+      color: "text-red-400",
+      bgColor: "bg-red-100",
+    },
+    {
+      id: "typeform",
+      title: "Typeform",
+      description: "View and analyze responses from your Typeform surveys and forms.",
+      icon: FileText,
+      connected: serviceStatus.typeform,
+      href: "/connect",
+      color: "text-violet-500",
+      bgColor: "bg-violet-100",
     },
   ];
 
