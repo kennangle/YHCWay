@@ -133,8 +133,12 @@ export function useGuidedTour() {
         },
       ],
       onDestroyStarted: () => {
-        markTourCompletedMutation.mutate();
+        // Destroy the tour first to ensure UI closes, then mark completed
         driverObj.destroy();
+      },
+      onDestroyed: () => {
+        // Mark tour as completed after tour is fully closed
+        markTourCompletedMutation.mutate();
       },
     });
 
