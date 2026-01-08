@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useSearch } from "wouter";
-import { Command, Lock, Loader2, ArrowLeft, CheckCircle, AlertCircle } from "lucide-react";
+import { Lock, Loader2, ArrowLeft, CheckCircle, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
+import yhcLogo from "@assets/logo_bug_1024_1767889616107.jpg";
 
 export default function ResetPassword() {
   const [, setLocation] = useLocation();
@@ -87,9 +88,7 @@ export default function ResetPassword() {
             <div className="text-center mb-8">
               <Link href="/">
                 <div className="inline-flex items-center gap-3 cursor-pointer">
-                  <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center text-white shadow-xl shadow-primary/30">
-                    <Command className="w-6 h-6" />
-                  </div>
+                  <img src={yhcLogo} alt="YHC Logo" className="w-14 h-14 rounded-2xl object-cover shadow-xl" />
                   <span className="font-display font-bold text-3xl">The YHC Way</span>
                 </div>
               </Link>
@@ -131,9 +130,7 @@ export default function ResetPassword() {
           <div className="text-center mb-8">
             <Link href="/">
               <div className="inline-flex items-center gap-3 cursor-pointer">
-                <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center text-white shadow-xl shadow-primary/30">
-                  <Command className="w-6 h-6" />
-                </div>
+                <img src={yhcLogo} alt="YHC Logo" className="w-14 h-14 rounded-2xl object-cover shadow-xl" />
                 <span className="font-display font-bold text-3xl">The YHC Way</span>
               </div>
             </Link>

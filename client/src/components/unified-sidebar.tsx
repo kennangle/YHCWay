@@ -10,7 +10,6 @@ import {
   FileText,
   Settings, 
   PlusCircle,
-  Command,
   Shield,
   Mail,
   Gift,
@@ -28,6 +27,7 @@ import {
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
+import yhcLogo from "@assets/logo_bug_1024_1767889616107.jpg";
 
 interface NavItem {
   icon: any;
@@ -171,9 +171,7 @@ export function UnifiedSidebar() {
       {/* Desktop Sidebar */}
       <div className="hidden md:flex w-64 h-screen glass-panel flex-col border-r border-white/20 fixed left-0 top-0 z-50">
         <div className="p-6 flex items-center gap-3" data-tour="sidebar-logo">
-          <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/30">
-            <Command className="w-4 h-4" />
-          </div>
+          <img src={yhcLogo} alt="YHC Logo" className="w-10 h-10 rounded-xl object-cover shadow-lg" />
           <span className="font-display font-bold text-xl tracking-tight text-foreground">
             The YHC Way
           </span>

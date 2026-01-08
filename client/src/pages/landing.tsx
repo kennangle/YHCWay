@@ -1,6 +1,6 @@
-import { Command } from "lucide-react";
 import { Link } from "wouter";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
+import yhcLogo from "@assets/logo_bug_1024_1767889616107.jpg";
 
 export default function Landing() {
   return (
@@ -17,9 +17,7 @@ export default function Landing() {
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4">
         <div className="text-center max-w-2xl">
           <div className="flex items-center justify-center gap-3 mb-8">
-            <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center text-white shadow-xl shadow-primary/30">
-              <Command className="w-7 h-7" />
-            </div>
+            <img src={yhcLogo} alt="YHC Logo" className="w-16 h-16 rounded-2xl object-cover shadow-xl" />
           </div>
           
           <h1 className="font-display font-bold text-5xl md:text-6xl mb-6 tracking-tight">
