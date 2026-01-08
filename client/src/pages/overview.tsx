@@ -63,15 +63,6 @@ const appCards = [
     serviceName: "Zoom"
   },
   {
-    id: "mindbody",
-    name: "Mindbody",
-    description: "Track intro offers and client engagement",
-    icon: Gift,
-    color: "#00B5AD",
-    href: "/intro-offers",
-    serviceName: "Mindbody"
-  },
-  {
     id: "projects",
     name: "Projects",
     description: "Native project and task management",

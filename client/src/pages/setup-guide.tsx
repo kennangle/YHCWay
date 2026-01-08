@@ -32,7 +32,6 @@ interface ServiceStatus {
   slack: boolean;
   appleCalendar: boolean;
   asana: boolean;
-  mindbody: boolean;
   perkville: boolean;
   qrTiger: boolean;
   yhctime: boolean;
@@ -75,11 +74,6 @@ export default function SetupGuide() {
     retry: false,
   });
 
-  const { data: mindbodyStatus } = useQuery<{ configured: boolean }>({
-    queryKey: ["/api/mindbody-analytics/status"],
-    retry: false,
-  });
-
   const { data: perkvilleStatus } = useQuery<{ connected: boolean }>({
     queryKey: ["/api/perkville/status"],
     retry: false,
@@ -117,7 +111,6 @@ export default function SetupGuide() {
     slack: slackStatus?.connected || false,
     appleCalendar: appleCalendarStatus?.connected || false,
     asana: asanaStatus?.connected || false,
-    mindbody: mindbodyStatus?.configured || false,
     perkville: perkvilleStatus?.connected || false,
     qrTiger: qrTigerStatus?.connected || false,
     yhctime: yhctimeStatus?.connected || false,
@@ -127,7 +120,7 @@ export default function SetupGuide() {
   };
 
   const completedSteps = Object.values(serviceStatus).filter(Boolean).length;
-  const totalSteps = 13;
+  const totalSteps = 12;
 
   if (authLoading) {
     return (
@@ -201,16 +194,6 @@ export default function SetupGuide() {
       href: "/connect",
       color: "text-orange-500",
       bgColor: "bg-orange-100",
-    },
-    {
-      id: "mindbody",
-      title: "Mindbody Analytics",
-      description: "View intro offers and student analytics from your Mindbody Analytics dashboard.",
-      icon: Gift,
-      connected: serviceStatus.mindbody,
-      href: "/intro-offers",
-      color: "text-pink-500",
-      bgColor: "bg-pink-100",
     },
     {
       id: "perkville",
