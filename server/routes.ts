@@ -22,7 +22,7 @@ import { getIntroOffers, getIntroOfferSummary, updateIntroOffer, getStudents, is
 import { generateEmailReplySuggestions, summarizeEmail } from "./ai-email";
 import { extractTasksFromContent, generateDailyBriefing, generateMeetingPrep, smartSearch, draftEmail, analyzeCalendar, prioritizeTasks } from "./ai-assistant";
 import { isQrTigerConfigured, createDynamicQRCode, createStaticQRCode, listQRCodes, getQRCodeAnalytics, deleteQRCode } from "./qr-tiger";
-import { isPerkvilleConfigured, authenticateWithPerkville, isUserPerkvilleConnected, getPerkvilleCustomerInfo, getPerkvillePoints, getPerkvilleRewards, getPerkvilleActivity, disconnectPerkville, getPerkvilleBusinesses, getPerkvilleCustomers, getPerkvilleConnectionBalances, searchPerkvilleCustomerByEmail, getPerkvilleCustomerById } from "./perkville";
+import { isPerkvilleConfigured, authenticateWithPerkville, isUserPerkvilleConnected, validatePerkvilleToken, getPerkvilleCustomerInfo, getPerkvillePoints, getPerkvilleRewards, getPerkvilleActivity, disconnectPerkville, getPerkvilleBusinesses, getPerkvilleCustomers, getPerkvilleConnectionBalances, searchPerkvilleCustomerByEmail, getPerkvilleCustomerById } from "./perkville";
 import { yhcTimeClient } from "./yhctime";
 import { getCalendlyEvents, getCalendlyEventsForMonth, isCalendlyConnected } from "./calendly";
 
@@ -2330,8 +2330,21 @@ export async function registerRoutes(
       if (!userId) {
         return res.json({ connected: false, configured: isPerkvilleConfigured() });
       }
-      const connected = await isUserPerkvilleConnected(userId);
-      res.json({ connected, configured: isPerkvilleConfigured() });
+      const hasToken = await isUserPerkvilleConnected(userId);
+      if (!hasToken) {
+        return res.json({ connected: false, configured: isPerkvilleConfigured() });
+      }
+      
+      // Validate the token is still valid with Perkville
+      const validation = await validatePerkvilleToken(userId);
+      if (!validation.valid) {
+        // Token is invalid - auto-disconnect so user sees correct status
+        console.log("[Perkville] Token invalid, auto-disconnecting:", validation.error);
+        await disconnectPerkville(userId);
+        return res.json({ connected: false, configured: isPerkvilleConfigured(), tokenExpired: true });
+      }
+      
+      res.json({ connected: true, configured: isPerkvilleConfigured() });
     } catch (error) {
       res.json({ connected: false, configured: isPerkvilleConfigured() });
     }

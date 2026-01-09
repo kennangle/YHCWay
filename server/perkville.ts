@@ -60,6 +60,36 @@ export async function isUserPerkvilleConnected(userId: string): Promise<boolean>
   return !!account?.accessToken;
 }
 
+export async function validatePerkvilleToken(userId: string): Promise<{ valid: boolean; error?: string }> {
+  const account = await storage.getOAuthAccount(userId, "perkville");
+  if (!account?.accessToken) {
+    return { valid: false, error: "No token stored" };
+  }
+
+  try {
+    const response = await fetch(`${PERKVILLE_API_BASE}/me/`, {
+      headers: {
+        "Authorization": `Bearer ${account.accessToken}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("[Perkville] Token validation failed:", errorText);
+      if (response.status === 401) {
+        return { valid: false, error: "Token expired or invalid" };
+      }
+      return { valid: false, error: `API error: ${response.status}` };
+    }
+
+    return { valid: true };
+  } catch (error: any) {
+    console.error("[Perkville] Token validation error:", error);
+    return { valid: false, error: error?.message || "Connection error" };
+  }
+}
+
 async function getPerkvilleAccessToken(userId: string): Promise<string | null> {
   const account = await storage.getOAuthAccount(userId, "perkville");
   return account?.accessToken || null;
