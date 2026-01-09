@@ -84,7 +84,7 @@ function setupEventListeners() {
 }
 
 function handleLogin() {
-  chrome.tabs.create({ url: `${API_BASE}/auth/login?extension=true` });
+  chrome.tabs.create({ url: `${API_BASE}/login` });
 }
 
 function openSettings() {
