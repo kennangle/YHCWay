@@ -170,10 +170,11 @@ export async function getPerkvilleBusinesses(userId: string): Promise<any[]> {
 export async function getPerkvilleCustomers(userId: string, businessId: number): Promise<any[]> {
   try {
     const allCustomers: any[] = [];
-    let nextUrl: string | null = `/connections/?business=${businessId}`;
+    let nextUrl: string | null = `/connections/?business=${businessId}&status=ACTIVE`;
     
     while (nextUrl) {
       const data = await perkvilleApiRequest(userId, nextUrl);
+      console.log("[Perkville] Raw connections response sample:", JSON.stringify(data.objects?.[0] || data.results?.[0] || {}).substring(0, 500));
       const results = data.objects || data.results || [];
       allCustomers.push(...results);
       nextUrl = data.next || null;

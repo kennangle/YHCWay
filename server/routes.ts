@@ -2471,21 +2471,24 @@ export async function registerRoutes(
       
       const normalized = customers.map((c: any) => {
         // Extract numeric connection ID from customer if needed
-        let custId = c.id;
+        let custId = c.id || c.connection_id;
         if (typeof custId === 'string' && custId.includes('/connections/')) {
           const match = custId.match(/\/connections\/(\d+)/);
           if (match) custId = parseInt(match[1]);
         }
+        // Get points from point_balance (V2 API) or balance or balanceMap
+        const points = c.point_balance ?? c.balance ?? balanceMap.get(custId) ?? c.points ?? 0;
         return {
-          id: c.id,
+          id: c.id || c.connection_id,
           connectionId: custId,
           userId: c.user?.id || c.user,
           firstName: c.user?.first_name || c.first_name || "",
           lastName: c.user?.last_name || c.last_name || "",
           email: c.user?.emails?.[0]?.email || c.email || "",
           status: c.status || "active",
-          joinDate: c.join_dt || c.created_at,
-          points: balanceMap.get(custId) || c.balance || c.points || 0,
+          joinDate: c.rewards_program_join_dt || c.join_dt || c.created_at,
+          points: points,
+          lifetimePoints: c.lifetime_earned_points || 0,
         };
       });
       res.json(normalized);
