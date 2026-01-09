@@ -102,7 +102,9 @@ import {
   taskProjects,
   taskStories,
   eventOutbox,
-  qrCodes
+  qrCodes,
+  extensionTokens,
+  ExtensionToken
 } from "@shared/schema";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq, desc, and, lt, isNull, sql, inArray, gte, lte, or, asc } from "drizzle-orm";
@@ -161,6 +163,13 @@ export interface IStorage {
   createPasswordResetToken(userId: string, token: string, expiresAt: Date): Promise<PasswordResetToken>;
   getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined>;
   markTokenAsUsed(token: string): Promise<void>;
+  
+  // Extension tokens
+  createExtensionToken(data: { userId: string; token: string; deviceLabel?: string; expiresAt: Date }): Promise<ExtensionToken>;
+  getExtensionToken(token: string): Promise<ExtensionToken | undefined>;
+  getExtensionTokenByUserId(userId: string): Promise<ExtensionToken | undefined>;
+  updateExtensionTokenLastUsed(token: string): Promise<void>;
+  deleteExtensionTokensForUser(userId: string): Promise<void>;
   
   // Integration API keys
   getIntegrationApiKey(userId: string, integrationName: string): Promise<IntegrationApiKey | undefined>;
@@ -749,6 +758,43 @@ export class DbStorage implements IStorage {
     await db.update(passwordResetTokens)
       .set({ usedAt: new Date() })
       .where(eq(passwordResetTokens.token, token));
+  }
+
+  async createExtensionToken(data: { userId: string; token: string; deviceLabel?: string; expiresAt: Date }): Promise<ExtensionToken> {
+    const [extToken] = await db.insert(extensionTokens)
+      .values({
+        userId: data.userId,
+        token: data.token,
+        deviceLabel: data.deviceLabel,
+        expiresAt: data.expiresAt,
+      })
+      .returning();
+    return extToken;
+  }
+
+  async getExtensionToken(token: string): Promise<ExtensionToken | undefined> {
+    const [extToken] = await db.select()
+      .from(extensionTokens)
+      .where(eq(extensionTokens.token, token));
+    return extToken;
+  }
+
+  async getExtensionTokenByUserId(userId: string): Promise<ExtensionToken | undefined> {
+    const [extToken] = await db.select()
+      .from(extensionTokens)
+      .where(eq(extensionTokens.userId, userId));
+    return extToken;
+  }
+
+  async updateExtensionTokenLastUsed(token: string): Promise<void> {
+    await db.update(extensionTokens)
+      .set({ lastUsedAt: new Date() })
+      .where(eq(extensionTokens.token, token));
+  }
+
+  async deleteExtensionTokensForUser(userId: string): Promise<void> {
+    await db.delete(extensionTokens)
+      .where(eq(extensionTokens.userId, userId));
   }
 
   async getIntegrationApiKey(userId: string, integrationName: string): Promise<IntegrationApiKey | undefined> {

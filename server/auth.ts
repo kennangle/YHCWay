@@ -334,6 +334,111 @@ export async function setupAuth(app: Express) {
       }
     );
   }
+
+  // Extension authentication endpoints
+  app.post("/api/auth/extension/generate-token", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const deviceLabel = req.body.deviceLabel || "Chrome Extension";
+      
+      // Generate a secure random token
+      const rawToken = crypto.randomBytes(32).toString('hex');
+      
+      // Hash the token before storing (store hash, return raw to user)
+      const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+      
+      // Token expires in 30 days
+      const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      
+      // Delete any existing tokens for this user (one token per user for simplicity)
+      await storage.deleteExtensionTokensForUser(userId);
+      
+      // Create new token with hashed value
+      await storage.createExtensionToken({
+        userId,
+        token: tokenHash,
+        deviceLabel,
+        expiresAt,
+      });
+      
+      // Return the raw token to the user (only time it's visible)
+      res.json({ token: rawToken, expiresAt });
+    } catch (error) {
+      console.error("Error generating extension token:", error);
+      res.status(500).json({ message: "Failed to generate token" });
+    }
+  });
+
+  app.post("/api/auth/extension/validate", async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ message: "No token provided" });
+      }
+      
+      const rawToken = authHeader.substring(7);
+      // Hash the incoming token to compare with stored hash
+      const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+      
+      const extensionToken = await storage.getExtensionToken(tokenHash);
+      
+      if (!extensionToken) {
+        return res.status(401).json({ message: "Invalid token" });
+      }
+      
+      if (new Date() > extensionToken.expiresAt) {
+        return res.status(401).json({ message: "Token expired" });
+      }
+      
+      // Update last used timestamp
+      await storage.updateExtensionTokenLastUsed(tokenHash);
+      
+      const user = await storage.getUser(extensionToken.userId);
+      if (!user) {
+        return res.status(401).json({ message: "User not found" });
+      }
+      
+      res.json({
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+      });
+    } catch (error) {
+      console.error("Error validating extension token:", error);
+      res.status(500).json({ message: "Failed to validate token" });
+    }
+  });
+
+  app.post("/api/auth/extension/revoke", isAuthenticated, async (req: any, res) => {
+    try {
+      await storage.deleteExtensionTokensForUser(req.user.id);
+      res.json({ message: "Extension token revoked" });
+    } catch (error) {
+      console.error("Error revoking extension token:", error);
+      res.status(500).json({ message: "Failed to revoke token" });
+    }
+  });
+
+  app.get("/api/auth/extension/status", isAuthenticated, async (req: any, res) => {
+    try {
+      const token = await storage.getExtensionTokenByUserId(req.user.id);
+      if (!token) {
+        return res.json({ connected: false });
+      }
+      
+      const isExpired = new Date() > token.expiresAt;
+      res.json({
+        connected: !isExpired,
+        deviceLabel: token.deviceLabel,
+        lastUsedAt: token.lastUsedAt,
+        expiresAt: token.expiresAt,
+      });
+    } catch (error) {
+      console.error("Error checking extension status:", error);
+      res.status(500).json({ message: "Failed to check status" });
+    }
+  });
 }
 
 export const isAuthenticated: RequestHandler = (req, res, next) => {

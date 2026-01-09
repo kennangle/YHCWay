@@ -124,7 +124,7 @@ const playNotificationSound = (soundType: string) => {
   oscillator.stop(audioContext.currentTime + 0.5);
 };
 
-type SettingsSection = "main" | "account" | "notifications" | "privacy" | "appearance" | "language" | "help" | "templates" | "webhooks" | "feedback" | "organization";
+type SettingsSection = "main" | "account" | "notifications" | "privacy" | "appearance" | "language" | "help" | "templates" | "webhooks" | "feedback" | "organization" | "extension";
 
 interface TaskTemplate {
   id: number;
@@ -1304,6 +1304,218 @@ function OrganizationSectionContent({ renderBackButton }: { renderBackButton: ()
   );
 }
 
+function ExtensionSectionContent({ renderBackButton }: { renderBackButton: () => React.ReactNode }) {
+  const [token, setToken] = useState<string | null>(null);
+  const [showToken, setShowToken] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const queryClient = useQueryClient();
+
+  const { data: status, isLoading } = useQuery<{ connected: boolean; deviceLabel?: string; lastUsedAt?: string; expiresAt?: string }>({
+    queryKey: ["/api/auth/extension/status"],
+    queryFn: async () => {
+      const res = await fetch("/api/auth/extension/status", { credentials: "include" });
+      if (!res.ok) return { connected: false };
+      return res.json();
+    },
+  });
+
+  const generateTokenMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/auth/extension/generate-token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deviceLabel: "Chrome Extension" }),
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to generate token");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      setToken(data.token);
+      setShowToken(true);
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/extension/status"] });
+      toast.success("Extension token generated!");
+    },
+    onError: () => {
+      toast.error("Failed to generate token");
+    },
+  });
+
+  const revokeTokenMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/auth/extension/revoke", {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to revoke token");
+      return res.json();
+    },
+    onSuccess: () => {
+      setToken(null);
+      setShowToken(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/extension/status"] });
+      toast.success("Extension disconnected");
+    },
+    onError: () => {
+      toast.error("Failed to revoke token");
+    },
+  });
+
+  const copyToken = () => {
+    if (token) {
+      navigator.clipboard.writeText(token);
+      setCopied(true);
+      toast.success("Token copied to clipboard!");
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  return (
+    <div className="max-w-2xl">
+      {renderBackButton()}
+      
+      <div className="space-y-6">
+        <div className="glass-card p-6 rounded-2xl">
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <ExternalLink className="w-5 h-5" />
+            Chrome Extension
+          </h2>
+          
+          <p className="text-muted-foreground mb-6">
+            Connect your Chrome extension to access The YHC Way directly from your browser. Quick capture tasks, view your calendar, track time, and more.
+          </p>
+
+          {isLoading ? (
+            <div className="text-muted-foreground">Loading...</div>
+          ) : status?.connected ? (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-green-600">
+                <Check className="w-5 h-5" />
+                <span className="font-medium">Extension Connected</span>
+              </div>
+              
+              <div className="text-sm text-muted-foreground space-y-1">
+                {status.deviceLabel && <p>Device: {status.deviceLabel}</p>}
+                {status.lastUsedAt && (
+                  <p>Last used: {new Date(status.lastUsedAt).toLocaleString()}</p>
+                )}
+                {status.expiresAt && (
+                  <p>Expires: {new Date(status.expiresAt).toLocaleDateString()}</p>
+                )}
+              </div>
+
+              <Button
+                variant="outline"
+                onClick={() => revokeTokenMutation.mutate()}
+                disabled={revokeTokenMutation.isPending}
+                className="text-red-600 border-red-300 hover:bg-red-50"
+                data-testid="button-revoke-extension"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Disconnect Extension
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {!token ? (
+                <Button
+                  onClick={() => generateTokenMutation.mutate()}
+                  disabled={generateTokenMutation.isPending}
+                  data-testid="button-generate-token"
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Generate Connection Token
+                </Button>
+              ) : (
+                <div className="space-y-4">
+                  <div className="p-4 bg-muted rounded-lg">
+                    <Label className="text-sm font-medium">Your Extension Token</Label>
+                    <div className="flex items-center gap-2 mt-2">
+                      <Input
+                        type={showToken ? "text" : "password"}
+                        value={token}
+                        readOnly
+                        className="font-mono text-sm"
+                      />
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setShowToken(!showToken)}
+                      >
+                        {showToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={copyToken}
+                      >
+                        {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg text-sm">
+                    <p className="font-medium mb-2">How to connect:</p>
+                    <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+                      <li>Copy the token above</li>
+                      <li>Click the YHC Way extension icon in Chrome</li>
+                      <li>Click "Connect" and paste your token</li>
+                    </ol>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="glass-card p-6 rounded-2xl">
+          <h3 className="font-semibold mb-3">Install the Extension</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Don't have the extension yet? Download it from the Chrome Web Store or install it manually.
+          </p>
+          <div className="flex gap-3">
+            <Button variant="outline" asChild>
+              <a href="https://chrome.google.com/webstore" target="_blank" rel="noopener noreferrer">
+                Chrome Web Store
+              </a>
+            </Button>
+          </div>
+        </div>
+
+        <div className="glass-card p-6 rounded-2xl">
+          <h3 className="font-semibold mb-3">Extension Features</h3>
+          <ul className="text-sm text-muted-foreground space-y-2">
+            <li className="flex items-start gap-2">
+              <Check className="w-4 h-4 mt-0.5 text-green-600" />
+              Quick task capture from any webpage
+            </li>
+            <li className="flex items-start gap-2">
+              <Check className="w-4 h-4 mt-0.5 text-green-600" />
+              View upcoming calendar events
+            </li>
+            <li className="flex items-start gap-2">
+              <Check className="w-4 h-4 mt-0.5 text-green-600" />
+              Start/stop time tracking
+            </li>
+            <li className="flex items-start gap-2">
+              <Check className="w-4 h-4 mt-0.5 text-green-600" />
+              AI assistant for quick questions
+            </li>
+            <li className="flex items-start gap-2">
+              <Check className="w-4 h-4 mt-0.5 text-green-600" />
+              Create tasks from Gmail emails
+            </li>
+            <li className="flex items-start gap-2">
+              <Check className="w-4 h-4 mt-0.5 text-green-600" />
+              Right-click context menu integration
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Settings() {
   const [activeSection, setActiveSection] = useState<SettingsSection>("main");
   const [mounted, setMounted] = useState(false);
@@ -1436,6 +1648,12 @@ export default function Settings() {
       icon: Building,
       title: "Organization",
       description: "Manage your team and organization settings",
+    },
+    {
+      id: "extension" as const,
+      icon: ExternalLink,
+      title: "Browser Extension",
+      description: "Connect the YHC Way Chrome extension",
     },
     {
       id: "help" as const,
@@ -2252,6 +2470,8 @@ Your online status can be toggled in Privacy settings. When hidden, others won't
         return renderFeedbackSection();
       case "organization":
         return <OrganizationSectionContent renderBackButton={renderBackButton} />;
+      case "extension":
+        return <ExtensionSectionContent renderBackButton={renderBackButton} />;
       case "help":
         return renderHelpSection();
       default:

@@ -284,6 +284,23 @@ export const resetPasswordSchema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
+// Extension access tokens table - for Chrome extension authentication
+export const extensionTokens = pgTable("extension_tokens", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  token: varchar("token").notNull().unique(),
+  deviceLabel: varchar("device_label"),
+  lastUsedAt: timestamp("last_used_at"),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_extension_token_user").on(table.userId),
+  index("idx_extension_token_token").on(table.token),
+]);
+
+export type ExtensionToken = typeof extensionTokens.$inferSelect;
+export type InsertExtensionToken = typeof extensionTokens.$inferInsert;
+
 // Integration API keys table - for Calendly, Typeform, etc.
 export const integrationApiKeys = pgTable("integration_api_keys", {
   id: serial("id").primaryKey(),

@@ -12,14 +12,26 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function checkAuth() {
   try {
-    const token = await chrome.storage.local.get('authToken');
-    if (token.authToken) {
-      const user = await fetchAPI('/api/auth/user');
-      if (user && user.id) {
-        currentUser = user;
-        showMainView();
-        loadData();
-        return;
+    const { authToken } = await chrome.storage.local.get('authToken');
+    if (authToken) {
+      const response = await fetch(`${API_BASE}/api/auth/extension/validate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        }
+      });
+      
+      if (response.ok) {
+        const user = await response.json();
+        if (user && user.id) {
+          currentUser = user;
+          showMainView();
+          loadData();
+          return;
+        }
+      } else {
+        await chrome.storage.local.remove('authToken');
       }
     }
     showLoginView();
@@ -50,6 +62,10 @@ function showMainView() {
 
 function setupEventListeners() {
   document.getElementById('login-btn').addEventListener('click', handleLogin);
+  document.getElementById('connect-btn').addEventListener('click', handleConnect);
+  document.getElementById('token-input').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') handleConnect();
+  });
   document.getElementById('refresh-btn').addEventListener('click', loadData);
   document.getElementById('settings-btn').addEventListener('click', openSettings);
   document.getElementById('open-app').addEventListener('click', () => chrome.tabs.create({ url: API_BASE }));
@@ -84,7 +100,49 @@ function setupEventListeners() {
 }
 
 function handleLogin() {
-  chrome.tabs.create({ url: `${API_BASE}/login` });
+  chrome.tabs.create({ url: `${API_BASE}/settings` });
+}
+
+async function handleConnect() {
+  const tokenInput = document.getElementById('token-input');
+  const token = tokenInput.value.trim();
+  
+  if (!token) {
+    alert('Please enter your connection token');
+    return;
+  }
+  
+  const connectBtn = document.getElementById('connect-btn');
+  connectBtn.disabled = true;
+  connectBtn.textContent = 'Connecting...';
+  
+  try {
+    const response = await fetch(`${API_BASE}/api/auth/extension/validate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (response.ok) {
+      const user = await response.json();
+      await chrome.storage.local.set({ authToken: token });
+      currentUser = user;
+      showMainView();
+      loadData();
+    } else {
+      const error = await response.json();
+      alert(error.message || 'Invalid token. Please check and try again.');
+      connectBtn.disabled = false;
+      connectBtn.textContent = 'Connect';
+    }
+  } catch (error) {
+    console.error('Connection failed:', error);
+    alert('Connection failed. Please try again.');
+    connectBtn.disabled = false;
+    connectBtn.textContent = 'Connect';
+  }
 }
 
 function openSettings() {

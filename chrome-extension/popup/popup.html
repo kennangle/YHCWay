@@ -19,8 +19,18 @@
         <h1>The YHC Way</h1>
       </div>
       <div class="content">
-        <p>Sign in to access your workspace</p>
-        <button id="login-btn" class="btn btn-primary">Sign In</button>
+        <p>Connect your extension to YHC Way</p>
+        <div id="token-entry" class="token-entry">
+          <input type="password" id="token-input" placeholder="Paste your connection token" class="token-input">
+          <button id="connect-btn" class="btn btn-primary">Connect</button>
+        </div>
+        <div class="divider">
+          <span>or</span>
+        </div>
+        <button id="login-btn" class="btn btn-secondary">Get Token from Settings</button>
+        <p class="help-text">
+          Go to Settings &gt; Browser Extension in YHC Way to generate a token
+        </p>
       </div>
     </div>
 
