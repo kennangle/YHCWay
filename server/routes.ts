@@ -2458,20 +2458,36 @@ export async function registerRoutes(
       
       const balanceMap = new Map<number, number>();
       for (const b of balances) {
-        const connId = b.connection || b.id;
-        balanceMap.set(connId, b.balance || b.points || 0);
+        // Extract numeric ID from connection path like "/v2/connections/6523892/"
+        let connId = b.connection || b.id;
+        if (typeof connId === 'string' && connId.includes('/connections/')) {
+          const match = connId.match(/\/connections\/(\d+)/);
+          if (match) connId = parseInt(match[1]);
+        }
+        if (typeof connId === 'number') {
+          balanceMap.set(connId, b.balance || b.points || 0);
+        }
       }
       
-      const normalized = customers.map((c: any) => ({
-        id: c.id,
-        userId: c.user?.id || c.user,
-        firstName: c.user?.first_name || c.first_name || "",
-        lastName: c.user?.last_name || c.last_name || "",
-        email: c.user?.emails?.[0]?.email || c.email || "",
-        status: c.status || "active",
-        joinDate: c.join_dt || c.created_at,
-        points: balanceMap.get(c.id) || c.points || 0,
-      }));
+      const normalized = customers.map((c: any) => {
+        // Extract numeric connection ID from customer if needed
+        let custId = c.id;
+        if (typeof custId === 'string' && custId.includes('/connections/')) {
+          const match = custId.match(/\/connections\/(\d+)/);
+          if (match) custId = parseInt(match[1]);
+        }
+        return {
+          id: c.id,
+          connectionId: custId,
+          userId: c.user?.id || c.user,
+          firstName: c.user?.first_name || c.first_name || "",
+          lastName: c.user?.last_name || c.last_name || "",
+          email: c.user?.emails?.[0]?.email || c.email || "",
+          status: c.status || "active",
+          joinDate: c.join_dt || c.created_at,
+          points: balanceMap.get(custId) || c.balance || c.points || 0,
+        };
+      });
       res.json(normalized);
     } catch (error: any) {
       console.error("Error fetching Perkville customers:", error);
