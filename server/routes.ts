@@ -2476,19 +2476,20 @@ export async function registerRoutes(
           const match = custId.match(/\/connections\/(\d+)/);
           if (match) custId = parseInt(match[1]);
         }
-        // Get points from point_balance (V2 API) or balance or balanceMap
-        const points = c.point_balance ?? c.balance ?? balanceMap.get(custId) ?? c.points ?? 0;
+        // Get points from V1 balance field, V2 point_balance, or balanceMap
+        const points = c.balance ?? c.point_balance ?? balanceMap.get(custId) ?? c.points ?? 0;
+        // V1 API has first_name/last_name/email at top level
         return {
           id: c.id || c.connection_id,
           connectionId: custId,
-          userId: c.user?.id || c.user,
-          firstName: c.user?.first_name || c.first_name || "",
-          lastName: c.user?.last_name || c.last_name || "",
-          email: c.user?.emails?.[0]?.email || c.email || "",
+          userId: c.user_id || c.user?.id || c.user,
+          firstName: c.first_name || c.user?.first_name || "",
+          lastName: c.last_name || c.user?.last_name || "",
+          email: c.email || c.user?.emails?.[0]?.email || "",
           status: c.status || "active",
           joinDate: c.rewards_program_join_dt || c.join_dt || c.created_at,
           points: points,
-          lifetimePoints: c.lifetime_earned_points || 0,
+          lifetimePoints: c.lifetime_earned_points || c.balance || 0,
         };
       });
       res.json(normalized);
