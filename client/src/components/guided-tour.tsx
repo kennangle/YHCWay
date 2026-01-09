@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
 import { useAuth } from '@/hooks/useAuth';
@@ -8,6 +8,9 @@ interface GuidedTourProps {
   onComplete?: () => void;
   autoStart?: boolean;
 }
+
+// Track globally if tour has been started/dismissed this session
+let tourStartedThisSession = false;
 
 export function useGuidedTour() {
   const queryClient = useQueryClient();
@@ -27,6 +30,10 @@ export function useGuidedTour() {
   });
 
   const startTour = useCallback(() => {
+    // Prevent tour from starting if already started this session
+    if (tourStartedThisSession) return;
+    tourStartedThisSession = true;
+    
     const driverObj = driver({
       showProgress: true,
       animate: true,
