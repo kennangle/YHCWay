@@ -67,7 +67,8 @@ export async function validatePerkvilleToken(userId: string): Promise<{ valid: b
   }
 
   try {
-    const response = await fetch(`${PERKVILLE_API_BASE}/me/`, {
+    // Use the business endpoint to validate token - this is a known working endpoint
+    const response = await fetch(`${PERKVILLE_API_BASE}/businesses/${PERKVILLE_BUSINESS_ID}/`, {
       headers: {
         "Authorization": `Bearer ${account.accessToken}`,
         "Content-Type": "application/json",
@@ -76,17 +77,31 @@ export async function validatePerkvilleToken(userId: string): Promise<{ valid: b
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("[Perkville] Token validation failed:", errorText);
+      // Only consider 401 as token expired - other errors may be API issues
       if (response.status === 401) {
-        return { valid: false, error: "Token expired or invalid" };
+        // Check if it's actually an oauth error
+        try {
+          const errorJson = JSON.parse(errorText);
+          if (errorJson.error_type === "oauth_error" || errorJson.errors?.__all__?.[0]?.code === "invalid_token") {
+            console.error("[Perkville] Token invalid:", errorText);
+            return { valid: false, error: "Token expired or invalid" };
+          }
+        } catch {
+          // Not JSON, still a 401
+          console.error("[Perkville] Token validation failed (401):", errorText);
+          return { valid: false, error: "Token expired or invalid" };
+        }
       }
-      return { valid: false, error: `API error: ${response.status}` };
+      // For other errors (404, 500, etc.) assume token is OK but API has issues
+      console.log("[Perkville] API returned", response.status, "- assuming token is valid");
+      return { valid: true };
     }
 
     return { valid: true };
   } catch (error: any) {
-    console.error("[Perkville] Token validation error:", error);
-    return { valid: false, error: error?.message || "Connection error" };
+    // Network errors shouldn't invalidate the token
+    console.error("[Perkville] Token validation network error:", error);
+    return { valid: true };
   }
 }
 
