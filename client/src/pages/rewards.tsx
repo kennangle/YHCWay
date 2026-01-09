@@ -174,9 +174,9 @@ export default function Rewards() {
           <header className="mb-8">
             <div className="flex items-center gap-3 mb-2">
               <Gift className="w-8 h-8 text-primary" />
-              <h1 className="font-display font-bold text-3xl">Rewards Program</h1>
+              <h1 className="font-display font-bold text-3xl">Perkville</h1>
             </div>
-            <p className="text-muted-foreground">Manage your Perkville rewards program and view customer points.</p>
+            <p className="text-muted-foreground">Manage your rewards program and view customer points.</p>
           </header>
 
           {isLoading ? (

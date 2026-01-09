@@ -106,8 +106,8 @@ export function UnifiedSidebar() {
         { icon: Gift, label: "Intro Offers", href: "/intro-offers", tourId: "nav-intro-offers" },
         { icon: QrCode, label: "QR Codes", href: "/qr-codes", tourId: "nav-qr-codes" },
         { icon: Mail, label: "Email Builder", href: "/email-builder", tourId: "nav-email-builder" },
-        { icon: BarChart3, label: "Email Activity", href: "/email-activity", tourId: "nav-email-activity" },
-        { icon: Star, label: "Rewards", href: "/rewards", tourId: "nav-rewards" },
+        { icon: BarChart3, label: "Brevo", href: "/email-activity", tourId: "nav-email-activity" },
+        { icon: Star, label: "Perkville", href: "/rewards", tourId: "nav-rewards" },
       ],
     },
     {

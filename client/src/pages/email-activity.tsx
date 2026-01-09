@@ -236,8 +236,8 @@ export default function EmailActivityPage() {
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Email Activity</h1>
-          <p className="text-gray-500">Monitor your transactional email performance via Brevo</p>
+          <h1 className="text-2xl font-bold text-gray-900">Brevo</h1>
+          <p className="text-gray-500">Monitor your transactional email performance</p>
         </div>
         <div className="flex items-center gap-3">
           <Select value={days} onValueChange={setDays}>
