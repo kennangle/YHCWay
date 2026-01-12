@@ -65,11 +65,11 @@ export const presentationSlides: Slide[] = [
     icon: "📅",
     features: [
       { name: "Google Calendar", desc: "View and manage all your appointments", navLabel: "Calendar", navPath: "/calendar" },
+      { name: "Calendly Integration", desc: "See your Calendly bookings alongside other events", navLabel: "Calendar", navPath: "/calendar" },
       { name: "Zoom Integration", desc: "Join meetings with one click", navLabel: "Calendar", navPath: "/calendar" },
-      { name: "Daily Briefing", desc: "Start your day with a summary of upcoming events", navLabel: "Dashboard", navPath: "/dashboard" },
-      { name: "Smart Scheduling", desc: "Find optimal times and manage your schedule", navLabel: "Calendar", navPath: "/calendar" },
+      { name: "Apple Calendar", desc: "Sync your personal Apple Calendar too", navLabel: "Settings", navPath: "/settings" },
     ],
-    benefit: "Stay organized and prepared for every day",
+    benefit: "All your calendars unified in one view",
   },
   {
     id: 5,
@@ -131,7 +131,7 @@ export const presentationSlides: Slide[] = [
       { icon: "⏱️", title: "Save Time", desc: "Stop switching between 10+ apps every day" },
       { icon: "🎯", title: "Stay Focused", desc: "Everything you need in one unified view" },
       { icon: "🔒", title: "Secure", desc: "Enterprise-grade security with role-based access" },
-      { icon: "📱", title: "Accessible", desc: "Work from anywhere on any device" },
+      { icon: "📱", title: "Accessible", desc: "Work from anywhere - web, mobile, or Chrome extension" },
       { icon: "🤝", title: "Team Aligned", desc: "Keep everyone on the same page" },
       { icon: "📈", title: "Data Driven", desc: "AI insights to work smarter" },
     ],
