@@ -1185,3 +1185,47 @@ export const insertQrCodeSchema = createInsertSchema(qrCodes).omit({
   id: true,
   createdAt: true,
 });
+
+// =============================================================================
+// CHANGELOG ENTRIES (Development Activity Tracking)
+// =============================================================================
+
+export const ChangelogEntryType = {
+  FEATURE: "feature",
+  FIX: "fix",
+  IMPROVEMENT: "improvement",
+  DOCS: "docs",
+  DEPLOY: "deploy",
+  OTHER: "other",
+} as const;
+export type ChangelogEntryTypeValue = typeof ChangelogEntryType[keyof typeof ChangelogEntryType];
+
+export const changelogEntries = pgTable("changelog_entries", {
+  id: serial("id").primaryKey(),
+  commitHash: varchar("commit_hash", { length: 40 }),
+  author: varchar("author"),
+  summary: text("summary").notNull(),
+  description: text("description"),
+  entryType: varchar("entry_type").default("other"),
+  entryDate: timestamp("entry_date").notNull(),
+  isManual: boolean("is_manual").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("changelog_by_date").on(table.entryDate),
+  index("changelog_by_hash").on(table.commitHash),
+]);
+
+export type ChangelogEntry = typeof changelogEntries.$inferSelect;
+export type InsertChangelogEntry = typeof changelogEntries.$inferInsert;
+
+export const insertChangelogEntrySchema = createInsertSchema(changelogEntries).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Changelog sync state - tracks last processed commit
+export const changelogSyncState = pgTable("changelog_sync_state", {
+  id: serial("id").primaryKey(),
+  lastCommitHash: varchar("last_commit_hash", { length: 40 }),
+  lastSyncAt: timestamp("last_sync_at").defaultNow(),
+});

@@ -64,6 +64,8 @@ import {
   type InsertEventOutbox,
   type QrCode,
   type InsertQrCode,
+  type ChangelogEntry,
+  type InsertChangelogEntry,
   users,
   services,
   feedItems,
@@ -104,7 +106,9 @@ import {
   eventOutbox,
   qrCodes,
   extensionTokens,
-  ExtensionToken
+  ExtensionToken,
+  changelogEntries,
+  changelogSyncState,
 } from "@shared/schema";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq, desc, and, lt, isNull, sql, inArray, gte, lte, or, asc } from "drizzle-orm";
@@ -170,6 +174,13 @@ export interface IStorage {
   getExtensionTokenByUserId(userId: string): Promise<ExtensionToken | undefined>;
   updateExtensionTokenLastUsed(token: string): Promise<void>;
   deleteExtensionTokensForUser(userId: string): Promise<void>;
+  
+  // Changelog entries
+  createChangelogEntry(entry: InsertChangelogEntry): Promise<ChangelogEntry>;
+  getChangelogEntries(from: Date, to: Date): Promise<ChangelogEntry[]>;
+  getChangelogEntryByHash(hash: string): Promise<ChangelogEntry | undefined>;
+  getLastSyncedCommitHash(): Promise<string | null>;
+  updateLastSyncedCommitHash(hash: string): Promise<void>;
   
   // Integration API keys
   getIntegrationApiKey(userId: string, integrationName: string): Promise<IntegrationApiKey | undefined>;
@@ -795,6 +806,44 @@ export class DbStorage implements IStorage {
   async deleteExtensionTokensForUser(userId: string): Promise<void> {
     await db.delete(extensionTokens)
       .where(eq(extensionTokens.userId, userId));
+  }
+
+  async createChangelogEntry(entry: InsertChangelogEntry): Promise<ChangelogEntry> {
+    const [created] = await db.insert(changelogEntries).values(entry).returning();
+    return created;
+  }
+
+  async getChangelogEntries(from: Date, to: Date): Promise<ChangelogEntry[]> {
+    return db.select()
+      .from(changelogEntries)
+      .where(and(
+        gte(changelogEntries.entryDate, from),
+        lte(changelogEntries.entryDate, to)
+      ))
+      .orderBy(desc(changelogEntries.entryDate));
+  }
+
+  async getChangelogEntryByHash(hash: string): Promise<ChangelogEntry | undefined> {
+    const [entry] = await db.select()
+      .from(changelogEntries)
+      .where(eq(changelogEntries.commitHash, hash));
+    return entry;
+  }
+
+  async getLastSyncedCommitHash(): Promise<string | null> {
+    const [state] = await db.select().from(changelogSyncState).limit(1);
+    return state?.lastCommitHash ?? null;
+  }
+
+  async updateLastSyncedCommitHash(hash: string): Promise<void> {
+    const [existing] = await db.select().from(changelogSyncState).limit(1);
+    if (existing) {
+      await db.update(changelogSyncState)
+        .set({ lastCommitHash: hash, lastSyncAt: new Date() })
+        .where(eq(changelogSyncState.id, existing.id));
+    } else {
+      await db.insert(changelogSyncState).values({ lastCommitHash: hash });
+    }
   }
 
   async getIntegrationApiKey(userId: string, integrationName: string): Promise<IntegrationApiKey | undefined> {
