@@ -5448,5 +5448,128 @@ export async function registerRoutes(
     }
   });
 
+  // =============================================================================
+  // CHANGELOG ROUTES
+  // =============================================================================
+
+  app.get("/api/changelog", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      if (!user?.isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const from = req.query.from ? new Date(req.query.from as string) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const to = req.query.to ? new Date(req.query.to as string) : new Date();
+      
+      const entries = await storage.getChangelogEntries(from, to);
+      res.json({ entries });
+    } catch (error) {
+      console.error('[Changelog] Error fetching entries:', error);
+      res.status(500).json({ error: 'Failed to fetch changelog entries' });
+    }
+  });
+
+  app.post("/api/changelog", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      if (!user?.isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const { summary, description, entryType, entryDate } = req.body;
+      if (!summary) {
+        return res.status(400).json({ error: "Summary is required" });
+      }
+
+      const entry = await storage.createChangelogEntry({
+        summary,
+        description,
+        entryType: entryType || 'other',
+        entryDate: entryDate ? new Date(entryDate) : new Date(),
+        isManual: true,
+        author: user.email || 'Admin',
+      });
+
+      res.json({ entry });
+    } catch (error) {
+      console.error('[Changelog] Error creating entry:', error);
+      res.status(500).json({ error: 'Failed to create changelog entry' });
+    }
+  });
+
+  app.post("/api/changelog/sync", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      if (!user?.isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const { exec } = await import('child_process');
+      const { promisify } = await import('util');
+      const execAsync = promisify(exec);
+
+      const lastHash = await storage.getLastSyncedCommitHash();
+      
+      let gitCommand = 'git log --format="%H|%an|%ad|%s" --date=iso-strict';
+      if (lastHash) {
+        gitCommand += ` ${lastHash}..HEAD`;
+      } else {
+        gitCommand += ' --since="30 days ago"';
+      }
+      gitCommand += ' 2>/dev/null || echo ""';
+
+      const { stdout } = await execAsync(gitCommand, { cwd: process.cwd() });
+      const lines = stdout.trim().split('\n').filter(l => l);
+      
+      let newEntries = 0;
+      let latestHash: string | null = null;
+
+      for (const line of lines) {
+        const [hash, author, date, ...summaryParts] = line.split('|');
+        const summary = summaryParts.join('|');
+        
+        if (!hash || !summary) continue;
+        if (!latestHash) latestHash = hash;
+
+        const existing = await storage.getChangelogEntryByHash(hash);
+        if (existing) continue;
+
+        let entryType = 'other';
+        const lowerSummary = summary.toLowerCase();
+        if (lowerSummary.startsWith('fix') || lowerSummary.includes('bug')) {
+          entryType = 'fix';
+        } else if (lowerSummary.startsWith('feat') || lowerSummary.includes('add')) {
+          entryType = 'feature';
+        } else if (lowerSummary.includes('improve') || lowerSummary.includes('update') || lowerSummary.includes('refactor')) {
+          entryType = 'improvement';
+        } else if (lowerSummary.includes('doc') || lowerSummary.includes('readme')) {
+          entryType = 'docs';
+        } else if (lowerSummary.includes('deploy') || lowerSummary.includes('publish')) {
+          entryType = 'deploy';
+        }
+
+        await storage.createChangelogEntry({
+          commitHash: hash,
+          author,
+          summary,
+          entryType,
+          entryDate: new Date(date),
+          isManual: false,
+        });
+        newEntries++;
+      }
+
+      if (latestHash) {
+        await storage.updateLastSyncedCommitHash(latestHash);
+      }
+
+      res.json({ synced: newEntries, message: `Synced ${newEntries} new commits` });
+    } catch (error) {
+      console.error('[Changelog] Error syncing commits:', error);
+      res.status(500).json({ error: 'Failed to sync commits' });
+    }
+  });
+
   return httpServer;
 }
