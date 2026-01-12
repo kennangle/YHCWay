@@ -149,7 +149,7 @@ export default function Changelog() {
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-2">
               <History className="w-6 h-6 text-primary" />
-              <h1 className="text-2xl font-bold text-gray-900">Development Activity</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Development Activity Log</h1>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-2 bg-white/80 backdrop-blur rounded-lg px-3 py-2 shadow-sm">

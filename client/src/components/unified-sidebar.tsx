@@ -124,7 +124,7 @@ export function UnifiedSidebar() {
         { icon: Settings, label: "Settings", href: "/settings", tourId: "nav-settings" },
         { icon: FileText, label: "Typeform", href: "/typeform", tourId: "nav-typeform", adminOnly: true },
         { icon: Shield, label: "Admin", href: "/admin", tourId: "nav-admin", adminOnly: true },
-        { icon: History, label: "Changelog", href: "/changelog", tourId: "nav-changelog", kenOnly: true },
+        { icon: History, label: "Development Log", href: "/changelog", tourId: "nav-changelog", kenOnly: true },
       ],
     },
   ];
