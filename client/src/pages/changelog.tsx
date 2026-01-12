@@ -67,7 +67,7 @@ export default function Changelog() {
       if (!res.ok) throw new Error("Failed to fetch changelog");
       return res.json();
     },
-    enabled: !!user?.isAdmin,
+    enabled: user?.email === "ken@yogahealthcenter.com",
   });
 
   const syncMutation = useMutation({
@@ -110,20 +110,11 @@ export default function Changelog() {
     return <Redirect to="/login" />;
   }
 
-  if (!user.isAdmin) {
+  if (user.email !== "ken@yogahealthcenter.com") {
     return <Redirect to="/dashboard" />;
   }
 
   const entries = changelogData?.entries || [];
-
-  const groupedEntries = entries.reduce((acc, entry) => {
-    const date = format(new Date(entry.entryDate), "yyyy-MM-dd");
-    if (!acc[date]) acc[date] = [];
-    acc[date].push(entry);
-    return acc;
-  }, {} as Record<string, ChangelogEntry[]>);
-
-  const sortedDates = Object.keys(groupedEntries).sort((a, b) => b.localeCompare(a));
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
@@ -261,52 +252,34 @@ export default function Changelog() {
               <p className="text-gray-500 mb-4">Click "Sync Commits" to import git history or add entries manually.</p>
             </div>
           ) : (
-            <div className="space-y-6">
-              {sortedDates.map((date) => (
-                <div key={date} className="bg-white/80 backdrop-blur rounded-xl shadow-lg overflow-hidden">
-                  <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-6 py-3 border-b">
-                    <h2 className="font-semibold text-gray-900">
-                      {format(new Date(date), "EEEE, MMMM d, yyyy")}
-                    </h2>
-                    <p className="text-sm text-gray-500">{groupedEntries[date].length} entries</p>
-                  </div>
-                  <div className="divide-y">
-                    {groupedEntries[date].map((entry) => (
-                      <div key={entry.id} className="px-6 py-4 hover:bg-gray-50 transition-colors" data-testid={`entry-${entry.id}`}>
-                        <div className="flex items-start gap-3">
-                          <div className="mt-1">
-                            {entryTypeIcons[entry.entryType || "other"]}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
-                                {entryTypeLabels[entry.entryType || "other"]}
-                              </span>
-                              {entry.isManual && (
-                                <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">
-                                  Manual
-                                </span>
-                              )}
-                              {entry.commitHash && (
-                                <span className="text-xs font-mono text-gray-400">
-                                  {entry.commitHash.substring(0, 7)}
-                                </span>
-                              )}
-                            </div>
-                            <p className="mt-1 font-medium text-gray-900">{entry.summary}</p>
-                            {entry.description && (
-                              <p className="mt-1 text-sm text-gray-600">{entry.description}</p>
-                            )}
-                            {entry.author && (
-                              <p className="mt-1 text-xs text-gray-400">by {entry.author}</p>
-                            )}
-                          </div>
-                        </div>
+            <div className="bg-white/80 backdrop-blur rounded-xl shadow-lg overflow-hidden">
+              <div className="divide-y">
+                {entries.map((entry) => (
+                  <div key={entry.id} className="px-6 py-4 hover:bg-gray-50 transition-colors" data-testid={`entry-${entry.id}`}>
+                    <div className="flex items-start gap-3">
+                      <div className="mt-0.5">
+                        {entryTypeIcons[entry.entryType || "other"]}
                       </div>
-                    ))}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                            {entryTypeLabels[entry.entryType || "other"]}
+                          </span>
+                          {entry.isManual && (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">
+                              Manual
+                            </span>
+                          )}
+                        </div>
+                        <p className="font-medium text-gray-900">{entry.summary}</p>
+                        {entry.description && (
+                          <p className="mt-1 text-sm text-gray-600">{entry.description}</p>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
         </div>
