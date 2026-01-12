@@ -5461,7 +5461,9 @@ export async function registerRoutes(
       }
 
       const from = req.query.from ? new Date(req.query.from as string) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-      const to = req.query.to ? new Date(req.query.to as string) : new Date();
+      let to = req.query.to ? new Date(req.query.to as string) : new Date();
+      // Include the entire "to" day by setting to end of day
+      to.setHours(23, 59, 59, 999);
       
       const entries = await storage.getChangelogEntries(from, to);
       res.json({ entries });
