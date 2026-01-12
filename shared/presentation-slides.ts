@@ -11,9 +11,14 @@ export interface SlideBenefit {
   desc: string;
 }
 
+export interface SlideStep {
+  step: string;
+  detail?: string;
+}
+
 export interface Slide {
   id: number;
-  type: "title" | "overview" | "feature" | "benefits" | "closing";
+  type: "title" | "overview" | "feature" | "benefits" | "closing" | "howto" | "detail";
   title: string;
   subtitle?: string;
   tagline?: string;
@@ -23,6 +28,9 @@ export interface Slide {
   benefits?: SlideBenefit[];
   benefit?: string;
   cta?: string;
+  steps?: SlideStep[];
+  tips?: string[];
+  navPath?: string;
 }
 
 export const presentationSlides: Slide[] = [
@@ -30,8 +38,8 @@ export const presentationSlides: Slide[] = [
     id: 1,
     type: "title",
     title: "The YHC Way",
-    subtitle: "Unified Workspace for Yoga Health Center",
-    tagline: "One platform. All your tools. Seamlessly connected.",
+    subtitle: "User Guide & Reference",
+    tagline: "Everything you need to know to get the most out of your unified workspace",
   },
   {
     id: 2,
@@ -41,107 +49,412 @@ export const presentationSlides: Slide[] = [
       "A unified workspace that brings all your business tools together",
       "Purpose-built for Yoga Health Center's unique workflow",
       "Eliminates app-switching and information silos",
-      "Modern, intuitive interface accessible from anywhere",
+      "Accessible from any device - desktop, mobile, or Chrome extension",
     ],
     benefit: "Save hours every week by working smarter, not harder",
   },
+
+  // GETTING STARTED
   {
     id: 3,
-    type: "feature",
-    title: "Communication Hub",
-    icon: "📬",
-    features: [
-      { name: "Unified Inbox", desc: "All emails, messages, and notifications in one place", navLabel: "Inbox", navPath: "/inbox" },
-      { name: "Gmail Integration", desc: "Read, compose, and manage emails without leaving the app", navLabel: "Inbox", navPath: "/inbox" },
-      { name: "Slack Channels", desc: "Stay connected with team conversations", navLabel: "Chat", navPath: "/chat" },
-      { name: "AI Email Drafting", desc: "Compose professional emails in seconds", navLabel: "Inbox", navPath: "/inbox" },
+    type: "howto",
+    title: "Getting Started",
+    icon: "🚀",
+    steps: [
+      { step: "Log in with your email and password", detail: "Use the credentials provided by your administrator" },
+      { step: "Complete the guided tour", detail: "First-time users will see a walkthrough of key features" },
+      { step: "Check your Dashboard", detail: "See your unified feed of emails, events, and tasks" },
+      { step: "Connect your accounts", detail: "Go to Settings to link Gmail, Calendar, and other services" },
     ],
-    benefit: "Never miss an important message again",
+    tips: ["Bookmark the app for quick access", "Install the Chrome extension for one-click access"],
+    navPath: "/dashboard",
   },
+
+  // DASHBOARD
   {
     id: 4,
-    type: "feature",
-    title: "Calendar & Scheduling",
-    icon: "📅",
-    features: [
-      { name: "Google Calendar", desc: "View and manage all your appointments", navLabel: "Calendar", navPath: "/calendar" },
-      { name: "Calendly Integration", desc: "See your Calendly bookings alongside other events", navLabel: "Calendar", navPath: "/calendar" },
-      { name: "Zoom Integration", desc: "Join meetings with one click", navLabel: "Calendar", navPath: "/calendar" },
-      { name: "Apple Calendar", desc: "Sync your personal Apple Calendar too", navLabel: "Settings", navPath: "/settings" },
+    type: "detail",
+    title: "Dashboard Overview",
+    icon: "📊",
+    subtitle: "Your daily command center",
+    points: [
+      "Unified Feed: See recent emails, Slack messages, and calendar events in one stream",
+      "Upcoming Events: Quick view of your next meetings and appointments",
+      "Task Summary: See your pending tasks and priorities at a glance",
+      "Quick Actions: Access common actions without navigating away",
     ],
-    benefit: "All your calendars unified in one view",
+    tips: ["Check Dashboard first thing in the morning", "Use the AI Daily Briefing button for a summary"],
+    navPath: "/dashboard",
   },
+
+  // UNIFIED INBOX
   {
     id: 5,
-    type: "feature",
-    title: "Projects & Tasks",
-    icon: "📋",
-    features: [
-      { name: "Kanban Boards", desc: "Visual project management with drag-and-drop", navLabel: "Projects", navPath: "/projects" },
-      { name: "Task Management", desc: "Subtasks, due dates, priorities, and assignments", navLabel: "Tasks", navPath: "/tasks" },
-      { name: "Asana Import", desc: "Seamlessly migrate existing projects", navLabel: "Projects", navPath: "/projects" },
-      { name: "AI Task Prioritization", desc: "Smart ranking of what matters most", navLabel: "Tasks", navPath: "/tasks" },
+    type: "howto",
+    title: "Using the Unified Inbox",
+    icon: "📬",
+    steps: [
+      { step: "Navigate to Unified Inbox", detail: "Click 'Unified Inbox' in the Workspace section of the sidebar" },
+      { step: "View all messages", detail: "Emails and Slack messages appear in a combined feed" },
+      { step: "Click any message to read", detail: "Full message content opens in a detail panel" },
+      { step: "Reply or compose", detail: "Use the compose button to write new emails" },
     ],
-    benefit: "Get more done with less effort",
+    tips: ["Messages are sorted by most recent first", "Gmail must be connected in Settings first"],
+    navPath: "/inbox",
   },
+
+  // EMAIL DETAILS
   {
     id: 6,
-    type: "feature",
-    title: "AI-Powered Assistant",
-    icon: "🤖",
-    features: [
-      { name: "Daily Briefing", desc: "Morning summary of tasks, meetings, and messages", navLabel: "Dashboard", navPath: "/dashboard" },
-      { name: "Smart Search", desc: "Natural language search across all your data", navLabel: "Cmd+K", navPath: "" },
-      { name: "Task Extraction", desc: "Auto-generate tasks from emails and messages", navLabel: "AI Button", navPath: "" },
-      { name: "Calendar Optimization", desc: "Find focus time and identify overloaded days", navLabel: "AI Button", navPath: "" },
+    type: "detail",
+    title: "Email Features",
+    icon: "✉️",
+    subtitle: "Read, compose, and manage emails",
+    points: [
+      "Read emails directly in the app - no need to open Gmail",
+      "Compose new emails with the 'Compose' button",
+      "AI Email Drafting: Click the AI button to generate professional email text",
+      "Reply to messages without leaving your workflow",
     ],
-    benefit: "Your intelligent productivity partner",
+    tips: ["Use AI drafting for quick professional responses", "Your sent emails appear in Gmail as normal"],
+    navPath: "/inbox",
   },
+
+  // CALENDAR
   {
     id: 7,
-    type: "feature",
-    title: "Client Engagement",
-    icon: "🎁",
-    features: [
-      { name: "Intro Offers Tracking", desc: "Monitor new client conversions via Mindbody", navLabel: "Intro Offers", navPath: "/intro-offers" },
-      { name: "Perkville Rewards", desc: "View and manage customer loyalty points", navLabel: "Rewards", navPath: "/rewards" },
-      { name: "QR Code Generator", desc: "Create trackable QR codes for marketing", navLabel: "QR Codes", navPath: "/qr-codes" },
-      { name: "Email Builder", desc: "Design beautiful email campaigns", navLabel: "Email Builder", navPath: "/email-builder" },
+    type: "howto",
+    title: "Using the Calendar",
+    icon: "📅",
+    steps: [
+      { step: "Navigate to Calendar", detail: "Click 'Calendar' in the Workspace section" },
+      { step: "View your events", detail: "See all Google Calendar, Apple Calendar, and Calendly events" },
+      { step: "Switch views", detail: "Toggle between month, week, and day views" },
+      { step: "Click an event for details", detail: "See meeting info, join links, and attendees" },
     ],
-    benefit: "Build lasting relationships with your clients",
+    tips: ["Zoom meetings show a 'Join' button for one-click access", "Calendly events appear with a blue badge"],
+    navPath: "/calendar",
   },
+
+  // CALENDAR DETAILS
   {
     id: 8,
-    type: "feature",
-    title: "HR & Operations",
-    icon: "👥",
-    features: [
-      { name: "Gusto HR & Payroll", desc: "Employee directory and payroll history at a glance", navLabel: "HR & Payroll", navPath: "/gusto" },
-      { name: "YHCTime Tracking", desc: "Track employee hours and manage time entries", navLabel: "Time Tracking", navPath: "/time-tracking" },
-      { name: "User Management", desc: "Control access with role-based permissions", navLabel: "Admin", navPath: "/admin" },
-      { name: "Audit Logs", desc: "Complete compliance trail for enterprise security", navLabel: "Admin", navPath: "/admin" },
+    type: "detail",
+    title: "Calendar Integrations",
+    icon: "🔗",
+    subtitle: "All your calendars in one place",
+    points: [
+      "Google Calendar: Primary calendar - connect via Settings",
+      "Calendly: Shows your booked appointments automatically",
+      "Apple Calendar: Connect with your Apple ID app-specific password",
+      "Zoom: Meeting links are extracted and shown as join buttons",
     ],
-    benefit: "Streamline your back-office operations",
+    tips: ["Connect additional calendars in Settings > Connections", "Color coding helps identify event sources"],
+    navPath: "/calendar",
   },
+
+  // PROJECTS
   {
     id: 9,
-    type: "benefits",
-    title: "Why Choose The YHC Way?",
-    benefits: [
-      { icon: "⏱️", title: "Save Time", desc: "Stop switching between 10+ apps every day" },
-      { icon: "🎯", title: "Stay Focused", desc: "Everything you need in one unified view" },
-      { icon: "🔒", title: "Secure", desc: "Enterprise-grade security with role-based access" },
-      { icon: "📱", title: "Accessible", desc: "Work from anywhere - web, mobile, or Chrome extension" },
-      { icon: "🤝", title: "Team Aligned", desc: "Keep everyone on the same page" },
-      { icon: "📈", title: "Data Driven", desc: "AI insights to work smarter" },
+    type: "howto",
+    title: "Managing Projects",
+    icon: "📋",
+    steps: [
+      { step: "Navigate to Projects", detail: "Click 'Projects' in the Workspace section" },
+      { step: "Create a new project", detail: "Click '+ New Project' and give it a name" },
+      { step: "Add columns", detail: "Create columns like 'To Do', 'In Progress', 'Done'" },
+      { step: "Add tasks to columns", detail: "Click '+' in any column to create a task" },
+      { step: "Drag and drop", detail: "Move tasks between columns by dragging them" },
     ],
+    tips: ["Double-click a task to edit its details", "You can import projects from Asana if migrating"],
+    navPath: "/projects",
   },
+
+  // PROJECT FEATURES
   {
     id: 10,
+    type: "detail",
+    title: "Project Features",
+    icon: "🎯",
+    subtitle: "Kanban-style project management",
+    points: [
+      "Kanban Boards: Visual columns for workflow stages",
+      "Drag & Drop: Move tasks by dragging between columns",
+      "Custom Columns: Create any columns that fit your workflow",
+      "Task Details: Click any task to see full details, subtasks, and comments",
+      "Asana Import: One-click migration from existing Asana projects",
+    ],
+    tips: ["Keep column names consistent across projects", "Archive completed projects to reduce clutter"],
+    navPath: "/projects",
+  },
+
+  // TASKS
+  {
+    id: 11,
+    type: "howto",
+    title: "Managing Tasks",
+    icon: "✅",
+    steps: [
+      { step: "Navigate to Tasks", detail: "Click 'Tasks' in the Workspace section" },
+      { step: "Create a task", detail: "Click '+ New Task' and enter a title" },
+      { step: "Set due date", detail: "Click the calendar icon to pick a deadline" },
+      { step: "Set priority", detail: "Choose Low, Medium, High, or Urgent" },
+      { step: "Add subtasks", detail: "Break down complex tasks into smaller steps" },
+      { step: "Mark complete", detail: "Check the box when finished" },
+    ],
+    tips: ["Use the AI button to auto-prioritize your tasks", "Recurring tasks can be set up for routine work"],
+    navPath: "/tasks",
+  },
+
+  // TASK FEATURES
+  {
+    id: 12,
+    type: "detail",
+    title: "Task Features",
+    icon: "📝",
+    subtitle: "Complete task management",
+    points: [
+      "Due Dates: Set deadlines and get reminders",
+      "Priorities: Low, Medium, High, Urgent levels",
+      "Subtasks: Break tasks into smaller actionable items",
+      "Assignments: Assign tasks to team members",
+      "Recurring Tasks: Set tasks to repeat daily, weekly, or monthly",
+      "Comments: Collaborate with notes on each task",
+    ],
+    tips: ["High priority tasks appear at the top of your list", "Overdue tasks are highlighted in red"],
+    navPath: "/tasks",
+  },
+
+  // SLACK / CHAT
+  {
+    id: 13,
+    type: "howto",
+    title: "Using Chat & Slack",
+    icon: "💬",
+    steps: [
+      { step: "Navigate to Chat", detail: "Click 'Chat' in the Engage & Automate section" },
+      { step: "View Slack messages", detail: "Recent messages from your followed channels appear here" },
+      { step: "Filter channels", detail: "Choose which Slack channels to follow in Settings" },
+      { step: "Read conversations", detail: "Click any message to see the full thread" },
+    ],
+    tips: ["Slack messages also appear in your Unified Inbox", "You can customize which channels to follow"],
+    navPath: "/chat",
+  },
+
+  // AI ASSISTANT
+  {
+    id: 14,
+    type: "howto",
+    title: "Using the AI Assistant",
+    icon: "🤖",
+    steps: [
+      { step: "Look for the AI button", detail: "It's the sparkle icon in the bottom-right corner" },
+      { step: "Click to open AI menu", detail: "See available AI actions" },
+      { step: "Try Daily Briefing", detail: "Get a summary of your day's tasks and meetings" },
+      { step: "Use Smart Search", detail: "Press Cmd+K (or Ctrl+K) to search across all your data" },
+      { step: "Extract tasks", detail: "AI can create tasks from emails or messages" },
+    ],
+    tips: ["Daily Briefing is great first thing in the morning", "AI suggestions get better over time"],
+    navPath: "/dashboard",
+  },
+
+  // AI FEATURES
+  {
+    id: 15,
+    type: "detail",
+    title: "AI Features",
+    icon: "✨",
+    subtitle: "Your intelligent productivity partner",
+    points: [
+      "Daily Briefing: Summary of meetings, tasks, and important messages",
+      "Smart Search: Natural language search - just ask a question",
+      "Email Drafting: Generate professional emails from simple prompts",
+      "Task Extraction: Create tasks automatically from emails or Slack",
+      "Calendar Optimization: Find focus time and identify busy days",
+      "Task Prioritization: AI ranks your tasks by importance",
+    ],
+    tips: ["Be specific with AI prompts for better results", "AI uses your actual data, not generic responses"],
+    navPath: "/dashboard",
+  },
+
+  // TIME TRACKING
+  {
+    id: 16,
+    type: "howto",
+    title: "Time Tracking",
+    icon: "⏱️",
+    steps: [
+      { step: "Navigate to Time Tracking", detail: "Click 'Time Tracking' in Operations section" },
+      { step: "Link your YHCTime account", detail: "First time: enter your YHCTime employee ID in Settings" },
+      { step: "Create a time entry", detail: "Click 'Enter Time' and fill in the details" },
+      { step: "Select date and hours", detail: "Choose the date and enter hours worked" },
+      { step: "Add notes (optional)", detail: "Describe what you worked on" },
+      { step: "Submit", detail: "Your entry is saved to YHCTime" },
+    ],
+    tips: ["You can edit or delete recent entries", "Managers can view team time entries"],
+    navPath: "/time-tracking",
+  },
+
+  // PERKVILLE REWARDS
+  {
+    id: 17,
+    type: "howto",
+    title: "Perkville Rewards",
+    icon: "⭐",
+    steps: [
+      { step: "Navigate to Perkville", detail: "Click 'Perkville' in Engage & Automate section" },
+      { step: "View your points", detail: "See your total, available, and pending points" },
+      { step: "Check activity", detail: "See how you've earned points recently" },
+      { step: "Staff: Look up customers", detail: "Search by email to find customer balances" },
+    ],
+    tips: ["Points are synced from Perkville automatically", "Staff can view analytics and top customers"],
+    navPath: "/rewards",
+  },
+
+  // INTRO OFFERS
+  {
+    id: 18,
+    type: "detail",
+    title: "Intro Offers Tracking",
+    icon: "🎁",
+    subtitle: "Monitor new client conversions",
+    points: [
+      "View intro offer performance from Mindbody",
+      "Track conversion rates for new clients",
+      "See which offers are most effective",
+      "Filter by date range and offer type",
+      "Export data for reporting",
+    ],
+    tips: ["Check weekly to spot trends", "Compare different offers to optimize marketing"],
+    navPath: "/intro-offers",
+  },
+
+  // QR CODES
+  {
+    id: 19,
+    type: "howto",
+    title: "Creating QR Codes",
+    icon: "📱",
+    steps: [
+      { step: "Navigate to QR Codes", detail: "Click 'QR Codes' in Engage & Automate section" },
+      { step: "Click 'Create QR Code'", detail: "Opens the creation form" },
+      { step: "Enter the destination URL", detail: "Where should the QR code link to?" },
+      { step: "Customize colors (optional)", detail: "Match your branding" },
+      { step: "Generate and download", detail: "Save the QR code image for printing" },
+    ],
+    tips: ["Use dynamic QR codes to change the link later", "Track scans in the QR Codes dashboard"],
+    navPath: "/qr-codes",
+  },
+
+  // EMAIL BUILDER
+  {
+    id: 20,
+    type: "howto",
+    title: "Email Builder",
+    icon: "📧",
+    steps: [
+      { step: "Navigate to Email Builder", detail: "Click 'Email Builder' in Engage & Automate section" },
+      { step: "Choose a template", detail: "Start with a pre-built template or blank" },
+      { step: "Edit content", detail: "Click sections to edit text, images, and buttons" },
+      { step: "Preview your email", detail: "See how it looks on desktop and mobile" },
+      { step: "Send or save", detail: "Send via Brevo or save as a template" },
+    ],
+    tips: ["Mobile preview ensures emails look good on phones", "Save templates for reuse"],
+    navPath: "/email-builder",
+  },
+
+  // SETTINGS
+  {
+    id: 21,
+    type: "detail",
+    title: "Settings & Connections",
+    icon: "⚙️",
+    subtitle: "Manage your account and integrations",
+    points: [
+      "Profile: Update your name and preferences",
+      "Gmail Connection: Link your Google account for email",
+      "Calendar Connections: Add Google, Apple, or Calendly calendars",
+      "Slack Preferences: Choose which channels to follow",
+      "YHCTime Link: Connect your employee ID for time tracking",
+      "Notification Preferences: Control what alerts you receive",
+    ],
+    tips: ["Re-connect services if you see authentication errors", "Each user manages their own connections"],
+    navPath: "/settings",
+  },
+
+  // CHROME EXTENSION
+  {
+    id: 22,
+    type: "detail",
+    title: "Chrome Extension",
+    icon: "🌐",
+    subtitle: "Quick access from your browser",
+    points: [
+      "Install the YHC Way Chrome extension for one-click access",
+      "See notifications without opening the full app",
+      "Quick links to Dashboard, Tasks, and Calendar",
+      "Works on any website - always accessible",
+      "Secure login with your existing credentials",
+    ],
+    tips: ["Pin the extension to your Chrome toolbar", "Click the icon anytime for quick access"],
+    navPath: "/settings",
+  },
+
+  // MOBILE ACCESS
+  {
+    id: 23,
+    type: "detail",
+    title: "Mobile Access",
+    icon: "📲",
+    subtitle: "Work from anywhere",
+    points: [
+      "The YHC Way works on any mobile browser",
+      "Responsive design adapts to your screen size",
+      "Add to Home Screen for app-like experience",
+      "All features available on mobile",
+      "Works on iPhone, iPad, and Android",
+    ],
+    tips: ["On iPhone: Safari > Share > Add to Home Screen", "On Android: Chrome > Menu > Add to Home Screen"],
+    navPath: "/",
+  },
+
+  // GETTING HELP
+  {
+    id: 24,
+    type: "detail",
+    title: "Getting Help",
+    icon: "❓",
+    subtitle: "Support and resources",
+    points: [
+      "Setup Guide: Step-by-step walkthrough in the app",
+      "This Presentation: Reference guide for all features",
+      "Contact Admin: Reach out to ken@yogahealthcenter.com for help",
+      "Report Issues: Let us know if something isn't working",
+    ],
+    tips: ["Check the Setup Guide first for common questions", "Screenshots help when reporting issues"],
+    navPath: "/setup-guide",
+  },
+
+  {
+    id: 25,
+    type: "benefits",
+    title: "Quick Reference",
+    benefits: [
+      { icon: "📬", title: "Inbox", desc: "All emails and messages in one place" },
+      { icon: "📅", title: "Calendar", desc: "Unified view of all your calendars" },
+      { icon: "📋", title: "Projects", desc: "Kanban boards for project management" },
+      { icon: "✅", title: "Tasks", desc: "To-dos with priorities and due dates" },
+      { icon: "🤖", title: "AI", desc: "Click the sparkle button for AI help" },
+      { icon: "⚙️", title: "Settings", desc: "Connect services and preferences" },
+    ],
+  },
+
+  {
+    id: 26,
     type: "closing",
-    title: "Ready to Transform Your Workflow?",
+    title: "You're Ready!",
     subtitle: "The YHC Way",
     tagline: "Work unified. Work smarter. Work the YHC way.",
-    cta: "Get Started Today",
+    cta: "Start Exploring",
   },
 ];

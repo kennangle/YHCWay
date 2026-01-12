@@ -163,6 +163,82 @@ export default function PresentationPage() {
           </div>
         );
 
+      case "howto":
+        return (
+          <div className="flex flex-col h-full px-10 py-6 overflow-auto">
+            <div className="flex items-center gap-4 mb-6">
+              <span className="text-4xl">{slide.icon}</span>
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-800">{slide.title}</h2>
+              {slide.navPath && (
+                <span className="text-xs font-medium px-3 py-1 bg-orange-100 text-orange-700 rounded-full ml-auto">
+                  {slide.navPath}
+                </span>
+              )}
+            </div>
+            <div className="flex-1 grid grid-cols-1 gap-3">
+              {slide.steps?.map((step, i) => (
+                <div key={i} className="flex items-start gap-4 bg-white/80 backdrop-blur rounded-xl p-4 shadow border border-gray-100">
+                  <span className="flex-shrink-0 w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center font-bold text-lg">
+                    {i + 1}
+                  </span>
+                  <div>
+                    <p className="text-lg font-semibold text-gray-800">{step.step}</p>
+                    {step.detail && <p className="text-gray-600">{step.detail}</p>}
+                  </div>
+                </div>
+              ))}
+            </div>
+            {slide.tips && slide.tips.length > 0 && (
+              <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
+                <p className="text-sm font-semibold text-blue-700 mb-2">💡 Tips:</p>
+                <ul className="space-y-1">
+                  {slide.tips.map((tip, i) => (
+                    <li key={i} className="text-sm text-blue-600">• {tip}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        );
+
+      case "detail":
+        return (
+          <div className="flex flex-col h-full px-10 py-6 overflow-auto">
+            <div className="flex items-center gap-4 mb-4">
+              <span className="text-4xl">{slide.icon}</span>
+              <div>
+                <h2 className="text-3xl md:text-4xl font-bold text-gray-800">{slide.title}</h2>
+                {slide.subtitle && <p className="text-lg text-gray-600">{slide.subtitle}</p>}
+              </div>
+              {slide.navPath && (
+                <span className="text-xs font-medium px-3 py-1 bg-orange-100 text-orange-700 rounded-full ml-auto">
+                  {slide.navPath}
+                </span>
+              )}
+            </div>
+            <div className="flex-1">
+              <ul className="space-y-3">
+                {slide.points?.map((point, i) => (
+                  <li key={i} className="flex items-start gap-3 bg-white/80 backdrop-blur rounded-xl p-4 shadow border border-gray-100">
+                    <span className="text-green-500 text-xl mt-0.5">✓</span>
+                    <span className="text-lg text-gray-700">{point}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            {slide.tips && slide.tips.length > 0 && (
+              <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
+                <p className="text-sm font-semibold text-blue-700 mb-2">💡 Tips:</p>
+                <ul className="space-y-1">
+                  {slide.tips.map((tip, i) => (
+                    <li key={i} className="text-sm text-blue-600">• {tip}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        );
+
       default:
         return null;
     }
