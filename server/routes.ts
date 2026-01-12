@@ -5449,14 +5449,15 @@ export async function registerRoutes(
   });
 
   // =============================================================================
-  // CHANGELOG ROUTES
+  // CHANGELOG ROUTES (Ken only)
   // =============================================================================
+  const CHANGELOG_ALLOWED_EMAIL = "ken@yogahealthcenter.com";
 
   app.get("/api/changelog", isAuthenticated, async (req: any, res) => {
     try {
       const user = await storage.getUser(req.user.id);
-      if (!user?.isAdmin) {
-        return res.status(403).json({ error: "Admin access required" });
+      if (user?.email !== CHANGELOG_ALLOWED_EMAIL) {
+        return res.status(403).json({ error: "Access denied" });
       }
 
       const from = req.query.from ? new Date(req.query.from as string) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
@@ -5473,8 +5474,8 @@ export async function registerRoutes(
   app.post("/api/changelog", isAuthenticated, async (req: any, res) => {
     try {
       const user = await storage.getUser(req.user.id);
-      if (!user?.isAdmin) {
-        return res.status(403).json({ error: "Admin access required" });
+      if (user?.email !== CHANGELOG_ALLOWED_EMAIL) {
+        return res.status(403).json({ error: "Access denied" });
       }
 
       const { summary, description, entryType, entryDate } = req.body;
@@ -5501,8 +5502,8 @@ export async function registerRoutes(
   app.post("/api/changelog/sync", isAuthenticated, async (req: any, res) => {
     try {
       const user = await storage.getUser(req.user.id);
-      if (!user?.isAdmin) {
-        return res.status(403).json({ error: "Admin access required" });
+      if (user?.email !== CHANGELOG_ALLOWED_EMAIL) {
+        return res.status(403).json({ error: "Access denied" });
       }
 
       const { exec } = await import('child_process');

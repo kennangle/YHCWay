@@ -45,6 +45,7 @@ interface NavItem {
   href: string;
   tourId?: string;
   adminOnly?: boolean;
+  kenOnly?: boolean;
 }
 
 interface NavGroup {
@@ -123,7 +124,7 @@ export function UnifiedSidebar() {
         { icon: Settings, label: "Settings", href: "/settings", tourId: "nav-settings" },
         { icon: FileText, label: "Typeform", href: "/typeform", tourId: "nav-typeform", adminOnly: true },
         { icon: Shield, label: "Admin", href: "/admin", tourId: "nav-admin", adminOnly: true },
-        { icon: History, label: "Changelog", href: "/changelog", tourId: "nav-changelog", adminOnly: true },
+        { icon: History, label: "Changelog", href: "/changelog", tourId: "nav-changelog", kenOnly: true },
       ],
     },
   ];
@@ -158,6 +159,7 @@ export function UnifiedSidebar() {
 
   const renderNavItem = (item: NavItem) => {
     if (item.adminOnly && !user?.isAdmin) return null;
+    if (item.kenOnly && user?.email !== "ken@yogahealthcenter.com") return null;
     
     const isActive = location === item.href;
     
