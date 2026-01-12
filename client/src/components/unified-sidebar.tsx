@@ -27,7 +27,8 @@ import {
   Building2,
   PanelLeftClose,
   PanelLeft,
-  History
+  History,
+  Presentation
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
@@ -96,6 +97,7 @@ export function UnifiedSidebar() {
         { icon: FolderKanban, label: "Projects", href: "/projects", tourId: "nav-projects" },
         { icon: ListTodo, label: "Tasks", href: "/tasks", tourId: "nav-tasks" },
         { icon: Rocket, label: "Setup Guide", href: "/setup-guide", tourId: "nav-setup-guide" },
+        { icon: Presentation, label: "Presentation", href: "/presentation", tourId: "nav-presentation", adminOnly: true },
       ],
     },
     {
