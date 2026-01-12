@@ -131,7 +131,22 @@ All AI features are user-scoped for security (data isolation per user). Note: Ca
   - Role-based access: Non-admins only see their own entries, admins see all
   - User linking: Users can link their account to a YHCTime employee ID in Settings
   - Dedicated `/time-tracking` page for managing time entries
-  - Requires `YHCTIME_API_KEY` environment variable
+
+### Development Changelog
+- **Automated Git Sync**: Ingests git commits and categorizes them by type (feature, fix, improvement, docs, deploy)
+- **Manual Entries**: Admins can add manual changelog entries for non-code work
+- **Date Filtering**: View changelog entries by date range
+- **Duplicate Prevention**: Tracks last synced commit hash to prevent re-importing
+- **Admin Only**: All changelog routes require admin access
+- **Database Tables**: `changelog_entries` (entries), `changelog_sync_state` (sync tracking)
+- **API Endpoints**:
+  - `GET /api/changelog?from=&to=` - Fetch entries by date range
+  - `POST /api/changelog` - Add manual entry
+  - `POST /api/changelog/sync` - Sync git commits to changelog
+- **UI**: Dedicated `/changelog` page accessible from sidebar (Operations > Changelog)
+
+### Other Integrations (continued)
+  - **YHCTime** requires `YHCTIME_API_KEY` environment variable
 - **QR Tiger**: API integration for dynamic QR code generation and tracking
   - Creates dynamic QR codes with customizable colors
   - Tracks scan analytics (requires valid QR Tiger ID)

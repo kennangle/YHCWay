@@ -26,7 +26,8 @@ import {
   BarChart3,
   Building2,
   PanelLeftClose,
-  PanelLeft
+  PanelLeft,
+  History
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
@@ -122,6 +123,7 @@ export function UnifiedSidebar() {
         { icon: Settings, label: "Settings", href: "/settings", tourId: "nav-settings" },
         { icon: FileText, label: "Typeform", href: "/typeform", tourId: "nav-typeform", adminOnly: true },
         { icon: Shield, label: "Admin", href: "/admin", tourId: "nav-admin", adminOnly: true },
+        { icon: History, label: "Changelog", href: "/changelog", tourId: "nav-changelog", adminOnly: true },
       ],
     },
   ];

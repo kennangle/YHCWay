@@ -86,6 +86,7 @@ import TimeTracking from "@/pages/time-tracking";
 import EmailActivity from "@/pages/email-activity";
 import Gusto from "@/pages/gusto";
 import Presentation from "@/pages/presentation";
+import Changelog from "@/pages/changelog";
 import { FloatingAIButton } from "@/components/floating-ai-button";
 import { GuidedTour } from "@/components/guided-tour";
 
@@ -158,6 +159,7 @@ function Router() {
         <Route path="/email-activity" component={EmailActivity} />
         <Route path="/gusto" component={Gusto} />
         <Route path="/presentation" component={Presentation} />
+        <Route path="/changelog" component={Changelog} />
         <Route path="/login">{() => <Redirect to="/dashboard" />}</Route>
         <Route path="/register">{() => <Redirect to="/dashboard" />}</Route>
         <Route component={NotFound} />
