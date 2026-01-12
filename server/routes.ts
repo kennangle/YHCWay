@@ -5580,5 +5580,53 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/changelog/summarize", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      if (user?.email !== CHANGELOG_ALLOWED_EMAIL) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      const today = new Date();
+      const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+      
+      const entries = await storage.getChangelogEntries(startOfToday, endOfToday);
+      
+      if (entries.length === 0) {
+        return res.json({ summary: "No activities logged for today yet." });
+      }
+
+      const activitiesList = entries.map(e => {
+        const type = e.entryType || 'other';
+        return `- [${type.toUpperCase()}] ${e.summary}${e.description ? `: ${e.description}` : ''}`;
+      }).join('\n');
+
+      const OpenAI = (await import('openai')).default;
+      const openai = new OpenAI({ apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY });
+
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a helpful assistant that summarizes development activities. Create a concise, professional summary suitable for sharing with stakeholders. Use bullet points and organize by category (Features, Fixes, Improvements, etc.). Keep it brief but informative.'
+          },
+          {
+            role: 'user',
+            content: `Please summarize these development activities from today:\n\n${activitiesList}`
+          }
+        ],
+        max_tokens: 500,
+      });
+
+      const summary = response.choices[0]?.message?.content || 'Unable to generate summary.';
+      res.json({ summary, count: entries.length });
+    } catch (error) {
+      console.error('[Changelog] Error generating summary:', error);
+      res.status(500).json({ error: 'Failed to generate summary' });
+    }
+  });
+
   return httpServer;
 }

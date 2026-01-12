@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Redirect } from "wouter";
-import { History, RefreshCw, Plus, GitCommit, FileText, Bug, Rocket, BookOpen, Wrench } from "lucide-react";
+import { History, RefreshCw, Plus, GitCommit, FileText, Bug, Rocket, BookOpen, Wrench, Sparkles, Copy, X, Check } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useMainContentClass } from "@/hooks/useSidebarCollapse";
@@ -51,6 +51,9 @@ export default function Changelog() {
     to: format(new Date(), "yyyy-MM-dd"),
   });
   const [showAddEntry, setShowAddEntry] = useState(false);
+  const [showSummary, setShowSummary] = useState(false);
+  const [summary, setSummary] = useState("");
+  const [copied, setCopied] = useState(false);
   const [newEntry, setNewEntry] = useState({
     summary: "",
     description: "",
@@ -97,6 +100,27 @@ export default function Changelog() {
       toast({ title: "Failed", description: "Could not add entry", variant: "destructive" });
     },
   });
+
+  const summarizeMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest("POST", "/api/changelog/summarize");
+    },
+    onSuccess: (data: any) => {
+      setSummary(data.summary);
+      setShowSummary(true);
+      setCopied(false);
+    },
+    onError: () => {
+      toast({ title: "Failed", description: "Could not generate summary", variant: "destructive" });
+    },
+  });
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(summary);
+    setCopied(true);
+    toast({ title: "Copied!", description: "Summary copied to clipboard" });
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   if (authLoading) {
     return (
@@ -163,8 +187,57 @@ export default function Changelog() {
                 <Plus className="w-4 h-4" />
                 Add Entry
               </button>
+              <button
+                onClick={() => summarizeMutation.mutate()}
+                disabled={summarizeMutation.isPending}
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors"
+                data-testid="button-summarize"
+              >
+                <Sparkles className={`w-4 h-4 ${summarizeMutation.isPending ? "animate-pulse" : ""}`} />
+                {summarizeMutation.isPending ? "Generating..." : "Summarize Today"}
+              </button>
             </div>
           </div>
+
+          {showSummary && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+                <div className="flex items-center justify-between px-6 py-4 border-b bg-gradient-to-r from-purple-50 to-purple-100">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-purple-600" />
+                    <h3 className="font-semibold text-lg text-gray-900">Today's Activity Summary</h3>
+                  </div>
+                  <button
+                    onClick={() => setShowSummary(false)}
+                    className="p-1 hover:bg-gray-200 rounded-lg transition-colors"
+                    data-testid="button-close-summary"
+                  >
+                    <X className="w-5 h-5 text-gray-500" />
+                  </button>
+                </div>
+                <div className="p-6 overflow-y-auto max-h-[60vh]">
+                  <pre className="whitespace-pre-wrap text-sm text-gray-700 font-sans leading-relaxed">{summary}</pre>
+                </div>
+                <div className="flex justify-end gap-3 px-6 py-4 border-t bg-gray-50">
+                  <button
+                    onClick={copyToClipboard}
+                    className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+                    data-testid="button-copy-summary"
+                  >
+                    {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    {copied ? "Copied!" : "Copy to Clipboard"}
+                  </button>
+                  <button
+                    onClick={() => setShowSummary(false)}
+                    className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                    data-testid="button-done"
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {showAddEntry && (
             <div className="bg-white/90 backdrop-blur rounded-xl shadow-lg p-6 mb-6">
