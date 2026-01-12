@@ -5435,6 +5435,88 @@ export async function registerRoutes(
             x: 0.5, y: 4, w: 9, h: 0.5,
             fontSize: 18, color: lightText, align: 'center', italic: true
           });
+        } else if (slide.type === 'howto') {
+          pptSlide.addText(`${slide.icon || ''} ${slide.title}`, {
+            x: 0.5, y: 0.3, w: 7, h: 0.6,
+            fontSize: 28, bold: true, color: darkText
+          });
+          if (slide.navPath) {
+            pptSlide.addText(slide.navPath, {
+              x: 7.5, y: 0.35, w: 2, h: 0.4,
+              fontSize: 11, color: primaryColor, align: 'right'
+            });
+          }
+          const steps = (slide as any).steps || [];
+          steps.forEach((step: any, i: number) => {
+            const yPos = 1.0 + i * 0.7;
+            pptSlide.addText(`${i + 1}.`, {
+              x: 0.5, y: yPos, w: 0.4, h: 0.5,
+              fontSize: 14, bold: true, color: primaryColor
+            });
+            pptSlide.addText(step.step, {
+              x: 1.0, y: yPos, w: 8.5, h: 0.35,
+              fontSize: 14, bold: true, color: darkText
+            });
+            if (step.detail) {
+              pptSlide.addText(step.detail, {
+                x: 1.0, y: yPos + 0.3, w: 8.5, h: 0.3,
+                fontSize: 11, color: lightText
+              });
+            }
+          });
+          const tips = (slide as any).tips || [];
+          if (tips.length > 0) {
+            const tipY = 1.0 + steps.length * 0.7 + 0.2;
+            pptSlide.addText('💡 Tips:', {
+              x: 0.5, y: tipY, w: 9, h: 0.3,
+              fontSize: 11, bold: true, color: '3B82F6'
+            });
+            tips.forEach((tip: string, i: number) => {
+              pptSlide.addText(`• ${tip}`, {
+                x: 0.7, y: tipY + 0.3 + i * 0.25, w: 8.5, h: 0.25,
+                fontSize: 10, color: '3B82F6'
+              });
+            });
+          }
+        } else if (slide.type === 'detail') {
+          pptSlide.addText(`${slide.icon || ''} ${slide.title}`, {
+            x: 0.5, y: 0.3, w: 7, h: 0.6,
+            fontSize: 28, bold: true, color: darkText
+          });
+          if (slide.subtitle) {
+            pptSlide.addText(slide.subtitle, {
+              x: 0.5, y: 0.85, w: 7, h: 0.35,
+              fontSize: 14, color: lightText
+            });
+          }
+          if (slide.navPath) {
+            pptSlide.addText(slide.navPath, {
+              x: 7.5, y: 0.35, w: 2, h: 0.4,
+              fontSize: 11, color: primaryColor, align: 'right'
+            });
+          }
+          const points = slide.points || [];
+          points.forEach((point: string, i: number) => {
+            const yPos = 1.3 + i * 0.55;
+            pptSlide.addText(`✓ ${point}`, {
+              x: 0.5, y: yPos, w: 9, h: 0.5,
+              fontSize: 13, color: darkText
+            });
+          });
+          const tips = (slide as any).tips || [];
+          if (tips.length > 0) {
+            const tipY = 1.3 + points.length * 0.55 + 0.2;
+            pptSlide.addText('💡 Tips:', {
+              x: 0.5, y: tipY, w: 9, h: 0.3,
+              fontSize: 11, bold: true, color: '3B82F6'
+            });
+            tips.forEach((tip: string, i: number) => {
+              pptSlide.addText(`• ${tip}`, {
+                x: 0.7, y: tipY + 0.3 + i * 0.25, w: 8.5, h: 0.25,
+                fontSize: 10, color: '3B82F6'
+              });
+            });
+          }
         }
       }
 
