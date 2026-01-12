@@ -103,7 +103,8 @@ export default function Changelog() {
 
   const summarizeMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest("POST", "/api/changelog/summarize");
+      const res = await apiRequest("POST", "/api/changelog/summarize");
+      return res.json();
     },
     onSuccess: (data: any) => {
       setSummary(data.summary);
