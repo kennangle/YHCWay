@@ -5508,7 +5508,15 @@ export async function registerRoutes(
 
       const { exec } = await import('child_process');
       const { promisify } = await import('util');
+      const { existsSync } = await import('fs');
       const execAsync = promisify(exec);
+
+      // Check if git is available (not in production deployment)
+      if (!existsSync('.git')) {
+        return res.status(400).json({ 
+          error: "Git history not available in production. Use 'Add Entry' to log activities manually, or sync from development environment." 
+        });
+      }
 
       const lastHash = await storage.getLastSyncedCommitHash();
       
