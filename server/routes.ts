@@ -5449,11 +5449,15 @@ export async function registerRoutes(
   });
 
   // =============================================================================
-  // CHANGELOG ROUTES (Ken only)
+  // CHANGELOG ROUTES (Ken only, Development only)
   // =============================================================================
   const CHANGELOG_ALLOWED_EMAIL = "ken@yogahealthcenter.com";
+  const isDevelopment = process.env.NODE_ENV !== 'production';
 
   app.get("/api/changelog", isAuthenticated, async (req: any, res) => {
+    if (!isDevelopment) {
+      return res.status(404).json({ error: "Not found" });
+    }
     try {
       const user = await storage.getUser(req.user.id);
       if (user?.email !== CHANGELOG_ALLOWED_EMAIL) {
@@ -5474,6 +5478,9 @@ export async function registerRoutes(
   });
 
   app.post("/api/changelog", isAuthenticated, async (req: any, res) => {
+    if (!isDevelopment) {
+      return res.status(404).json({ error: "Not found" });
+    }
     try {
       const user = await storage.getUser(req.user.id);
       if (user?.email !== CHANGELOG_ALLOWED_EMAIL) {
@@ -5502,6 +5509,9 @@ export async function registerRoutes(
   });
 
   app.post("/api/changelog/sync", isAuthenticated, async (req: any, res) => {
+    if (!isDevelopment) {
+      return res.status(404).json({ error: "Not found" });
+    }
     try {
       const user = await storage.getUser(req.user.id);
       if (user?.email !== CHANGELOG_ALLOWED_EMAIL) {
@@ -5583,6 +5593,9 @@ export async function registerRoutes(
   });
 
   app.post("/api/changelog/summarize", isAuthenticated, async (req: any, res) => {
+    if (!isDevelopment) {
+      return res.status(404).json({ error: "Not found" });
+    }
     try {
       const user = await storage.getUser(req.user.id);
       if (user?.email !== CHANGELOG_ALLOWED_EMAIL) {
