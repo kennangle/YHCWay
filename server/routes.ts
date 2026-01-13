@@ -27,6 +27,7 @@ import { yhcTimeClient } from "./yhctime";
 import { getCalendlyEvents, getCalendlyEventsForMonth, isCalendlyConnected } from "./calendly";
 import { isGoogleDocsConnected, listGoogleDocs, createGoogleDoc, getGoogleDocContent, updateGoogleDoc, deleteGoogleDoc } from "./google-docs";
 import { isGoogleSheetsConnected, listGoogleSheets, createGoogleSheet, getGoogleSheetContent, updateGoogleSheet, appendToGoogleSheet, deleteGoogleSheet } from "./google-sheets";
+import { isGoogleDriveConnected, listDriveFiles, listGoogleDocsViaDrive, listGoogleSheetsViaDrive, getDocContentViaDrive, getSheetContentViaDrive, getGoogleDriveClient, getGoogleDocsClientViaDrive, getGoogleSheetsClientViaDrive } from "./google-drive";
 
 const isAdmin: RequestHandler = async (req: any, res, next) => {
   try {
@@ -2672,8 +2673,13 @@ export async function registerRoutes(
 
   app.get("/api/google-docs/status", isAuthenticated, async (req: any, res) => {
     try {
-      const connected = await isGoogleDocsConnected();
-      res.json({ connected });
+      // Check Google Drive connection first (preferred), then fall back to Docs-only connection
+      const driveConnected = await isGoogleDriveConnected();
+      if (driveConnected) {
+        return res.json({ connected: true, source: 'drive' });
+      }
+      const docsConnected = await isGoogleDocsConnected();
+      res.json({ connected: docsConnected, source: 'docs' });
     } catch (error) {
       res.json({ connected: false });
     }
@@ -2681,7 +2687,14 @@ export async function registerRoutes(
 
   app.get("/api/google-docs", isAuthenticated, async (req: any, res) => {
     try {
-      const pageSize = parseInt(req.query.limit as string) || 20;
+      const pageSize = parseInt(req.query.limit as string) || 50;
+      // Try Drive connection first (has proper list permissions)
+      const driveConnected = await isGoogleDriveConnected();
+      if (driveConnected) {
+        const docs = await listGoogleDocsViaDrive(pageSize);
+        return res.json(docs);
+      }
+      // Fall back to Docs-only connection
       const docs = await listGoogleDocs(pageSize);
       res.json(docs);
     } catch (error: any) {
@@ -2742,13 +2755,46 @@ export async function registerRoutes(
   });
 
   // =============================================================================
+  // GOOGLE DRIVE INTEGRATION ENDPOINTS
+  // =============================================================================
+
+  app.get("/api/google-drive/status", isAuthenticated, async (req: any, res) => {
+    try {
+      const connected = await isGoogleDriveConnected();
+      res.json({ connected });
+    } catch (error) {
+      res.json({ connected: false });
+    }
+  });
+
+  app.get("/api/google-drive", isAuthenticated, async (req: any, res) => {
+    try {
+      const pageSize = parseInt(req.query.limit as string) || 50;
+      const folderId = req.query.folderId as string | undefined;
+      const mimeType = req.query.mimeType as string | undefined;
+      const pageToken = req.query.pageToken as string | undefined;
+      
+      const result = await listDriveFiles(pageSize, folderId, mimeType, pageToken);
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error listing Google Drive files:", error);
+      res.status(500).json({ error: error?.message || "Failed to list files" });
+    }
+  });
+
+  // =============================================================================
   // GOOGLE SHEETS INTEGRATION ENDPOINTS
   // =============================================================================
 
   app.get("/api/google-sheets/status", isAuthenticated, async (req: any, res) => {
     try {
-      const connected = await isGoogleSheetsConnected();
-      res.json({ connected });
+      // Check Google Drive connection first (preferred), then fall back to Sheets-only connection
+      const driveConnected = await isGoogleDriveConnected();
+      if (driveConnected) {
+        return res.json({ connected: true, source: 'drive' });
+      }
+      const sheetsConnected = await isGoogleSheetsConnected();
+      res.json({ connected: sheetsConnected, source: 'sheets' });
     } catch (error) {
       res.json({ connected: false });
     }
@@ -2756,7 +2802,14 @@ export async function registerRoutes(
 
   app.get("/api/google-sheets", isAuthenticated, async (req: any, res) => {
     try {
-      const pageSize = parseInt(req.query.limit as string) || 20;
+      const pageSize = parseInt(req.query.limit as string) || 50;
+      // Try Drive connection first (has proper list permissions)
+      const driveConnected = await isGoogleDriveConnected();
+      if (driveConnected) {
+        const sheets = await listGoogleSheetsViaDrive(pageSize);
+        return res.json(sheets);
+      }
+      // Fall back to Sheets-only connection
       const sheets = await listGoogleSheets(pageSize);
       res.json(sheets);
     } catch (error: any) {
