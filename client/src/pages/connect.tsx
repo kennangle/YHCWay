@@ -1,7 +1,7 @@
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { TopBar } from "@/components/top-bar";
 import { AppleCalendarConnect } from "@/components/apple-calendar-connect";
-import { Search, MessageCircle, Mail, Calendar, Video, CheckSquare, FileText, Clock, X, Gift, QrCode } from "lucide-react";
+import { Search, MessageCircle, Mail, Calendar, Video, CheckSquare, FileText, Clock, X, Gift, QrCode, FileSpreadsheet, File } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
@@ -109,6 +109,24 @@ const availableApps: AppIntegration[] = [
     connectType: "api-key",
     apiKeyLabel: "API Key",
     apiKeyHelp: "Get your API key from QR Tiger Settings > Plan section",
+  },
+  {
+    id: "google-docs",
+    name: "Google Docs",
+    description: "Access and manage your Google Docs documents",
+    icon: <File className="w-6 h-6" />,
+    colorClass: "bg-[#4285F4] text-white",
+    category: "productivity",
+    connectType: "configured",
+  },
+  {
+    id: "google-sheets",
+    name: "Google Sheets",
+    description: "Access and manage your Google Sheets spreadsheets",
+    icon: <FileSpreadsheet className="w-6 h-6" />,
+    colorClass: "bg-[#0F9D58] text-white",
+    category: "productivity",
+    connectType: "configured",
   },
 ];
 

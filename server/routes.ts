@@ -25,6 +25,8 @@ import { isQrTigerConfigured, createDynamicQRCode, createStaticQRCode, listQRCod
 import { isPerkvilleConfigured, authenticateWithPerkville, isUserPerkvilleConnected, validatePerkvilleToken, getPerkvilleCustomerInfo, getPerkvillePoints, getPerkvilleRewards, getPerkvilleActivity, disconnectPerkville, getPerkvilleBusinesses, getPerkvilleCustomers, getPerkvilleConnectionBalances, searchPerkvilleCustomerByEmail, getPerkvilleCustomerById } from "./perkville";
 import { yhcTimeClient } from "./yhctime";
 import { getCalendlyEvents, getCalendlyEventsForMonth, isCalendlyConnected } from "./calendly";
+import { getGoogleDocsClient, isGoogleDocsConnected } from "./google-docs";
+import { getGoogleSheetsClient, isGoogleSheetsConnected } from "./google-sheets";
 
 const isAdmin: RequestHandler = async (req: any, res, next) => {
   try {
@@ -2693,6 +2695,8 @@ export async function registerRoutes(
         asanaSystemConnected,
         asanaUserConnected,
         perkvilleConnected,
+        googleDocsConnected,
+        googleSheetsConnected,
         userIntegrations,
         disabledIntegrations
       ] = await Promise.all([
@@ -2705,6 +2709,8 @@ export async function registerRoutes(
         isAsanaConnected().catch(() => false),
         isUserAsanaConnected(userId).catch(() => false),
         isUserPerkvilleConnected(userId).catch(() => false),
+        isGoogleDocsConnected().catch(() => false),
+        isGoogleSheetsConnected().catch(() => false),
         storage.getUserIntegrations(userId).catch(() => []),
         storage.getUserDisabledIntegrations(userId).catch((): string[] => []),
       ]);
@@ -2727,6 +2733,8 @@ export async function registerRoutes(
         typeform: isEnabled('typeform', !!typeformKey),
         perkville: isEnabled('perkville', perkvilleConnected),
         "qr-tiger": isQrTigerConfigured(),
+        "google-docs": isEnabled('google-docs', googleDocsConnected),
+        "google-sheets": isEnabled('google-sheets', googleSheetsConnected),
       });
     } catch (error) {
       console.error("Error checking integration status:", error);
@@ -2741,6 +2749,8 @@ export async function registerRoutes(
         typeform: false,
         perkville: false,
         "qr-tiger": false,
+        "google-docs": false,
+        "google-sheets": false,
       });
     }
   });
