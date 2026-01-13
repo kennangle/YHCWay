@@ -113,7 +113,8 @@ export default function IntroOffers() {
       if (statusFilter !== "all" && statusFilter !== "needs_attention") {
         params.append("status", statusFilter);
       }
-      params.append("limit", "50");
+      // Use limit=100 to match dashboard and ensure accurate counts
+      params.append("limit", "100");
       const res = await fetch(`/api/mindbody-analytics/intro-offers?${params}`, { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch intro offers");
       return res.json();
