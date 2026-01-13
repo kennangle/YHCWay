@@ -667,6 +667,7 @@ export const tasks = pgTable("tasks", {
   recurrenceEndDate: timestamp("recurrence_end_date"),
   parentTaskId: integer("parent_task_id"),
   labels: text("labels").array(),
+  asanaTaskId: varchar("asana_task_id"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
@@ -676,6 +677,7 @@ export const tasks = pgTable("tasks", {
   index("idx_task_assignee").on(table.assigneeId),
   index("idx_task_due").on(table.dueDate),
   index("idx_task_start").on(table.startDate),
+  index("idx_task_asana").on(table.asanaTaskId),
 ]);
 
 export type Task = typeof tasks.$inferSelect;
