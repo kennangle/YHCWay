@@ -89,6 +89,7 @@ export function UnifiedSidebar() {
 
   const topNavItems: NavItem[] = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard", tourId: "nav-dashboard" },
+    { icon: Mail, label: "Unified Mailbox", href: "/inbox", tourId: "nav-inbox" },
     { icon: CalendarIcon, label: "Calendar", href: "/calendar", tourId: "nav-calendar" },
     { icon: Rocket, label: "Setup Guide", href: "/setup-guide", tourId: "nav-setup-guide" },
     { icon: Presentation, label: "Presentation", href: "/presentation", tourId: "nav-presentation", adminOnly: true },
@@ -101,7 +102,6 @@ export function UnifiedSidebar() {
       icon: FileText,
       defaultCollapsed: false,
       items: [
-        { icon: Mail, label: "Unified Mailbox", href: "/inbox", tourId: "nav-inbox" },
         { icon: FileSpreadsheet, label: "Google Sheets", href: "/google-sheets", tourId: "nav-google-sheets" },
         { icon: File, label: "Google Docs", href: "/google-docs", tourId: "nav-google-docs" },
       ],
