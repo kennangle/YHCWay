@@ -14,6 +14,7 @@ interface BoardColumnProps {
   onSelectTask: (taskId: number) => void;
   selectedTaskId: number | null;
   onCreateTask: (columnId: number, title: string) => void;
+  onToggleComplete?: (taskId: number, completed: boolean) => void;
 }
 
 export function BoardColumn({
@@ -22,6 +23,7 @@ export function BoardColumn({
   onSelectTask,
   selectedTaskId,
   onCreateTask,
+  onToggleComplete,
 }: BoardColumnProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState("");
@@ -68,6 +70,7 @@ export function BoardColumn({
               task={task}
               onClick={() => onSelectTask(task.id)}
               isSelected={selectedTaskId === task.id}
+              onToggleComplete={onToggleComplete}
             />
           ))}
         </SortableContext>

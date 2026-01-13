@@ -26,4 +26,10 @@ export const tasksApi = {
     dueDate?: string;
     assigneeId?: string;
   }) => http.post<Task>("/api/tasks", body),
+
+  toggleCompletion: (taskId: number, completed: boolean) =>
+    http.patch<{ task: Task; asanaSynced: boolean; asanaError: string | null }>(
+      `/api/tasks/${taskId}/complete`,
+      { completed }
+    ),
 };

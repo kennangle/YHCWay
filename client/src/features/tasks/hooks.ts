@@ -137,3 +137,44 @@ export function useCreateTask(projectId: number) {
     },
   });
 }
+
+export function useToggleTaskCompletion(projectId: number) {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ taskId, completed }: { taskId: number; completed: boolean }) =>
+      tasksApi.toggleCompletion(taskId, completed),
+
+    onMutate: async ({ taskId, completed }) => {
+      await qc.cancelQueries({ queryKey: projectKeys.board(projectId) });
+      const prev = qc.getQueryData<ProjectBoardResponse>(projectKeys.board(projectId));
+
+      qc.setQueryData<ProjectBoardResponse>(projectKeys.board(projectId), (old) => {
+        if (!old) return old;
+        const next = structuredClone(old);
+        for (const key of Object.keys(next.tasksByColumn)) {
+          const tasks = next.tasksByColumn[key];
+          const idx = tasks.findIndex((t) => t.id === taskId);
+          if (idx !== -1) {
+            tasks[idx].isCompleted = completed;
+            break;
+          }
+        }
+        return next;
+      });
+
+      return { prev };
+    },
+
+    onError: (_err, _input, ctx) => {
+      if (ctx?.prev) qc.setQueryData(projectKeys.board(projectId), ctx.prev);
+    },
+
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: projectKeys.board(projectId) });
+      if (data.asanaError) {
+        console.warn("Asana sync failed:", data.asanaError);
+      }
+    },
+  });
+}

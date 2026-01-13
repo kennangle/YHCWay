@@ -4,7 +4,7 @@ import { BoardColumn } from "./BoardColumn";
 import { TaskCard } from "./TaskCard";
 import { useBoardSensors } from "@/features/tasks/dnd/sensors";
 import { computePlacement, findInsertIndex } from "@/features/tasks/dnd/placement";
-import { useMovePlacement, useCreateTask } from "@/features/tasks/hooks";
+import { useMovePlacement, useCreateTask, useToggleTaskCompletion } from "@/features/tasks/hooks";
 import type { ProjectColumn, TaskLite } from "../types";
 
 interface ProjectBoardViewProps {
@@ -25,6 +25,7 @@ export function ProjectBoardView({
   const sensors = useBoardSensors();
   const movePlacement = useMovePlacement(projectId);
   const createTask = useCreateTask(projectId);
+  const toggleCompletion = useToggleTaskCompletion(projectId);
   const [activeTask, setActiveTask] = useState<TaskLite | null>(null);
 
   const handleDragStart = (event: { active: { id: string | number; data: { current?: { task?: TaskLite } } } }) => {
@@ -86,6 +87,10 @@ export function ProjectBoardView({
     createTask.mutate({ columnId, title, priority: "medium" });
   };
 
+  const handleToggleComplete = (taskId: number, completed: boolean) => {
+    toggleCompletion.mutate({ taskId, completed });
+  };
+
   const sortedColumns = [...columns].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
 
   return (
@@ -105,6 +110,7 @@ export function ProjectBoardView({
             onSelectTask={onSelectTask}
             selectedTaskId={selectedTaskId}
             onCreateTask={handleCreateTask}
+            onToggleComplete={handleToggleComplete}
           />
         ))}
       </div>

@@ -8,6 +8,7 @@ interface TaskCardProps {
   task: TaskLite;
   onClick: () => void;
   isSelected?: boolean;
+  onToggleComplete?: (taskId: number, completed: boolean) => void;
 }
 
 const PRIORITY_COLORS: Record<string, string> = {
@@ -17,7 +18,7 @@ const PRIORITY_COLORS: Record<string, string> = {
   urgent: "bg-red-100 text-red-600",
 };
 
-export function TaskCard({ task, onClick, isSelected }: TaskCardProps) {
+export function TaskCard({ task, onClick, isSelected, onToggleComplete }: TaskCardProps) {
   const {
     attributes,
     listeners,
@@ -76,7 +77,9 @@ export function TaskCard({ task, onClick, isSelected }: TaskCardProps) {
             className="mt-0.5 flex-shrink-0"
             onClick={(e) => {
               e.stopPropagation();
+              onToggleComplete?.(task.id, !task.isCompleted);
             }}
+            data-testid={`button-toggle-complete-${task.id}`}
           >
             {task.isCompleted ? (
               <CheckCircle2 className="w-4 h-4 text-green-500" />
