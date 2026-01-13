@@ -87,6 +87,173 @@ ${plainTextBody}`;
   }
 }
 
+interface ThreadMessage {
+  from: string;
+  date: string;
+  body: string;
+}
+
+interface ThreadSummary {
+  overview: string;
+  participants: string[];
+  keyDiscussionPoints: string[];
+  decisions: string[];
+  actionItems: string[];
+  timeline: string;
+}
+
+export async function summarizeEmailThread(
+  subject: string,
+  messages: ThreadMessage[]
+): Promise<ThreadSummary> {
+  const formattedMessages = messages.map((msg, idx) => {
+    const plainBody = msg.body
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&nbsp;/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 1500);
+    return `[Message ${idx + 1}] From: ${msg.from} | Date: ${msg.date}\n${plainBody}`;
+  }).join("\n\n---\n\n");
+
+  const systemPrompt = `You are an email thread summarization assistant. Analyze the entire email thread and provide a comprehensive summary.
+
+Respond in JSON format:
+{
+  "overview": "A comprehensive 3-5 sentence summary of what the thread is about and the current status",
+  "participants": ["List of people involved in the thread"],
+  "keyDiscussionPoints": ["Main topics discussed (up to 6 points)"],
+  "decisions": ["Any decisions that were made in the thread"],
+  "actionItems": ["Outstanding action items or next steps"],
+  "timeline": "Brief timeline of how the conversation evolved"
+}
+
+Focus on:
+- The main purpose and context of the thread
+- Key decisions made
+- Outstanding questions or action items
+- Who is responsible for what`;
+
+  const userPrompt = `Summarize this email thread:
+
+Subject: ${subject}
+Number of messages: ${messages.length}
+
+Thread content:
+${formattedMessages.slice(0, 12000)}`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4.1-mini",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      response_format: { type: "json_object" },
+      max_completion_tokens: 1500,
+    });
+
+    const content = response.choices[0]?.message?.content || "{}";
+    const parsed = JSON.parse(content);
+    
+    return {
+      overview: parsed.overview || "Unable to summarize thread.",
+      participants: Array.isArray(parsed.participants) ? parsed.participants : [],
+      keyDiscussionPoints: Array.isArray(parsed.keyDiscussionPoints) ? parsed.keyDiscussionPoints : [],
+      decisions: Array.isArray(parsed.decisions) ? parsed.decisions : [],
+      actionItems: Array.isArray(parsed.actionItems) ? parsed.actionItems : [],
+      timeline: parsed.timeline || "",
+    };
+  } catch (error) {
+    console.error("Error summarizing email thread:", error);
+    throw error;
+  }
+}
+
+interface MeetingTranscriptSummary {
+  overview: string;
+  attendees: string[];
+  topicsDiscussed: string[];
+  keyDecisions: string[];
+  actionItems: { owner: string; task: string; deadline?: string }[];
+  followUps: string[];
+}
+
+export async function summarizeMeetingTranscript(
+  meetingTitle: string,
+  transcript: string,
+  attendees?: string[]
+): Promise<MeetingTranscriptSummary> {
+  const cleanedTranscript = transcript
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 15000);
+
+  const systemPrompt = `You are a meeting notes assistant. Analyze the meeting transcript and provide a structured summary.
+
+Respond in JSON format:
+{
+  "overview": "A comprehensive 3-5 sentence summary of the meeting's purpose, key discussions, and outcomes",
+  "attendees": ["List of meeting participants mentioned or identified"],
+  "topicsDiscussed": ["Main topics covered (up to 8 points)"],
+  "keyDecisions": ["Decisions that were made during the meeting"],
+  "actionItems": [
+    {"owner": "Person responsible", "task": "What needs to be done", "deadline": "When (if mentioned)"}
+  ],
+  "followUps": ["Items that need follow-up or future discussion"]
+}
+
+Focus on:
+- Main purpose and outcomes of the meeting
+- Clear action items with owners
+- Key decisions and their context
+- Important discussion points
+- Next steps and follow-ups`;
+
+  const userPrompt = `Summarize this meeting:
+
+Meeting Title: ${meetingTitle}
+${attendees?.length ? `Known Attendees: ${attendees.join(", ")}` : ""}
+
+Transcript/Notes:
+${cleanedTranscript}`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4.1-mini",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      response_format: { type: "json_object" },
+      max_completion_tokens: 2000,
+    });
+
+    const content = response.choices[0]?.message?.content || "{}";
+    const parsed = JSON.parse(content);
+    
+    return {
+      overview: parsed.overview || "Unable to summarize meeting.",
+      attendees: Array.isArray(parsed.attendees) ? parsed.attendees : (attendees || []),
+      topicsDiscussed: Array.isArray(parsed.topicsDiscussed) ? parsed.topicsDiscussed : [],
+      keyDecisions: Array.isArray(parsed.keyDecisions) ? parsed.keyDecisions : [],
+      actionItems: Array.isArray(parsed.actionItems) 
+        ? parsed.actionItems.map((item: any) => ({
+            owner: item.owner || "Unassigned",
+            task: item.task || "",
+            deadline: item.deadline || undefined,
+          }))
+        : [],
+      followUps: Array.isArray(parsed.followUps) ? parsed.followUps : [],
+    };
+  } catch (error) {
+    console.error("Error summarizing meeting transcript:", error);
+    throw error;
+  }
+}
+
 export async function generateEmailReplySuggestions(
   email: EmailContext
 ): Promise<SuggestedReply[]> {
