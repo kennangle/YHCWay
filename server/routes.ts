@@ -19,7 +19,7 @@ import { sendInvitationEmail, getTemplateTypes, getDefaultTemplate, sendTaskAssi
 import { appleCalendarConnectSchema, slackPreferencesUpdateSchema, emailTemplateSchema, updateNotificationPrefsSchema, createTimeEntrySchema, updateTimeEntrySchema } from "@shared/schema";
 import { broadcastToUsers, generateWsAuthToken } from "./websocket";
 import { getIntroOffers, getIntroOfferSummary, updateIntroOffer, getStudents, isMindbodyAnalyticsConfigured } from "./mindbodyAnalytics";
-import { generateEmailReplySuggestions, summarizeEmail } from "./ai-email";
+import { generateEmailReplySuggestions, summarizeEmail, summarizeEmailThread, summarizeMeetingTranscript } from "./ai-email";
 import { extractTasksFromContent, generateDailyBriefing, generateMeetingPrep, smartSearch, draftEmail, analyzeCalendar, prioritizeTasks } from "./ai-assistant";
 import { isQrTigerConfigured, createDynamicQRCode, createStaticQRCode, listQRCodes, getQRCodeAnalytics, deleteQRCode } from "./qr-tiger";
 import { isPerkvilleConfigured, authenticateWithPerkville, isUserPerkvilleConnected, validatePerkvilleToken, getPerkvilleCustomerInfo, getPerkvillePoints, getPerkvilleRewards, getPerkvilleActivity, disconnectPerkville, getPerkvilleBusinesses, getPerkvilleCustomers, getPerkvilleConnectionBalances, searchPerkvilleCustomerByEmail, getPerkvilleCustomerById } from "./perkville";
@@ -1386,6 +1386,65 @@ export async function registerRoutes(
     } catch (error: any) {
       console.error("[AI] Error summarizing email:", error?.message);
       res.status(500).json({ error: error?.message || "Failed to summarize email" });
+    }
+  });
+
+  // AI Email Thread Summarization
+  app.post("/api/ai/thread-summarize", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const { threadId, subject, messages } = req.body;
+      
+      if (!messages || !Array.isArray(messages) || messages.length === 0) {
+        return res.status(400).json({ error: "Missing messages array" });
+      }
+      
+      const summary = await summarizeEmailThread(
+        subject || "Email Thread",
+        messages.map((msg: any) => ({
+          from: msg.from || "Unknown",
+          date: msg.date || new Date().toISOString(),
+          body: msg.body || "",
+        }))
+      );
+      
+      res.json(summary);
+    } catch (error: any) {
+      console.error("[AI] Error summarizing email thread:", error?.message);
+      res.status(500).json({ error: error?.message || "Failed to summarize thread" });
+    }
+  });
+
+  // AI Meeting Transcript Summarization
+  app.post("/api/ai/meeting-summarize", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const { title, transcript, attendees } = req.body;
+      
+      if (!transcript) {
+        return res.status(400).json({ error: "Missing transcript" });
+      }
+      
+      const summary = await summarizeMeetingTranscript(
+        title || "Meeting",
+        transcript,
+        attendees
+      );
+      
+      res.json(summary);
+    } catch (error: any) {
+      console.error("[AI] Error summarizing meeting:", error?.message);
+      res.status(500).json({ error: error?.message || "Failed to summarize meeting" });
     }
   });
 
