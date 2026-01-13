@@ -1,6 +1,6 @@
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { TopBar } from "@/components/top-bar";
-import { Search, Mail, MessageCircle, Users, MessageSquare, PenSquare, Loader2, Share2, Check } from "lucide-react";
+import { Search, Mail, MessageCircle, Users, MessageSquare, PenSquare, Loader2, Share2, Check, Trash2 } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SlackChannelConfig } from "@/components/slack-channel-config";
@@ -86,6 +86,24 @@ export default function Inbox() {
     },
     onError: () => {
       toast.error("Failed to share");
+    },
+  });
+
+  const deleteEmailMutation = useMutation({
+    mutationFn: async (messageId: string) => {
+      const res = await fetch(`/api/gmail/messages/${messageId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to delete email");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["gmail-messages"] });
+      toast.success("Email moved to trash");
+    },
+    onError: () => {
+      toast.error("Failed to delete email");
     },
   });
   
@@ -264,6 +282,15 @@ export default function Inbox() {
                 e.stopPropagation();
                 setSharingMessage(message);
               };
+
+              const handleDelete = (e: React.MouseEvent) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (message.type === 'gmail') {
+                  const gmailId = message.id.replace('gmail-', '');
+                  deleteEmailMutation.mutate(gmailId);
+                }
+              };
               
               return (
                 <div
@@ -308,6 +335,17 @@ export default function Inbox() {
                           >
                             <Share2 className="w-4 h-4" />
                           </button>
+                          {message.type === 'gmail' && (
+                            <button
+                              onClick={handleDelete}
+                              className="p-1.5 rounded-lg hover:bg-red-100 transition-colors text-muted-foreground hover:text-red-600"
+                              title="Delete email"
+                              disabled={deleteEmailMutation.isPending}
+                              data-testid={`button-delete-${message.id}`}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       </div>
                       {message.subtitle && message.type === 'gmail' && (
