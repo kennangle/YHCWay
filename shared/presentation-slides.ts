@@ -418,9 +418,42 @@ export const presentationSlides: Slide[] = [
     navPath: "/",
   },
 
-  // GETTING HELP
+  // REQUEST A FEATURE
   {
     id: 24,
+    type: "howto",
+    title: "Request a Feature",
+    icon: "💡",
+    steps: [
+      { step: "Think about what would help you work better", detail: "What's missing? What would save you time?" },
+      { step: "Write a clear description", detail: "Explain what the feature would do and why it's helpful" },
+      { step: "Email ken@yogahealthcenter.com", detail: "Use subject line: 'Feature Request: [Brief Title]'" },
+      { step: "Include examples if possible", detail: "Screenshots or examples of similar features help a lot" },
+    ],
+    tips: ["Be specific about the problem you're trying to solve", "Prioritize - mention if it's urgent or a nice-to-have"],
+    navPath: "Email",
+  },
+
+  // REPORT A BUG
+  {
+    id: 25,
+    type: "howto",
+    title: "Report a Bug",
+    icon: "🐛",
+    steps: [
+      { step: "Note what happened", detail: "What were you trying to do? What went wrong?" },
+      { step: "Take a screenshot", detail: "Capture any error messages or unexpected behavior" },
+      { step: "Note the steps to reproduce", detail: "What did you click before the problem appeared?" },
+      { step: "Email ken@yogahealthcenter.com", detail: "Use subject line: 'Bug Report: [Brief Description]'" },
+      { step: "Include browser info", detail: "Mention if you're using Chrome, Safari, or mobile" },
+    ],
+    tips: ["Screenshots are extremely helpful", "The more detail, the faster we can fix it"],
+    navPath: "Email",
+  },
+
+  // GETTING HELP
+  {
+    id: 26,
     type: "detail",
     title: "Getting Help",
     icon: "❓",
@@ -428,15 +461,16 @@ export const presentationSlides: Slide[] = [
     points: [
       "Setup Guide: Step-by-step walkthrough in the app",
       "This Presentation: Reference guide for all features",
-      "Contact Admin: Reach out to ken@yogahealthcenter.com for help",
-      "Report Issues: Let us know if something isn't working",
+      "Request a Feature: Email ken@yogahealthcenter.com with your idea",
+      "Report a Bug: Email ken@yogahealthcenter.com with details and screenshots",
+      "General Questions: Reach out to ken@yogahealthcenter.com anytime",
     ],
-    tips: ["Check the Setup Guide first for common questions", "Screenshots help when reporting issues"],
+    tips: ["Check the Setup Guide first for common questions", "Include screenshots when reporting issues"],
     navPath: "/setup-guide",
   },
 
   {
-    id: 25,
+    id: 27,
     type: "benefits",
     title: "Quick Reference",
     benefits: [
@@ -450,7 +484,7 @@ export const presentationSlides: Slide[] = [
   },
 
   {
-    id: 26,
+    id: 28,
     type: "closing",
     title: "You're Ready!",
     subtitle: "The YHC Way",
