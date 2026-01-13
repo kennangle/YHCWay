@@ -83,6 +83,7 @@ import PendingApproval from "@/pages/pending-approval";
 import QRCodes from "@/pages/qr-codes";
 import Rewards from "@/pages/rewards";
 import TimeTracking from "@/pages/time-tracking";
+import AISummarize from "@/pages/ai-summarize";
 import EmailActivity from "@/pages/email-activity";
 import Gusto from "@/pages/gusto";
 import Presentation from "@/pages/presentation";
@@ -164,6 +165,7 @@ function Router() {
         <Route path="/changelog" component={Changelog} />
         <Route path="/google-docs" component={GoogleDocs} />
         <Route path="/google-sheets" component={GoogleSheets} />
+        <Route path="/ai-summarize" component={AISummarize} />
         <Route path="/login">{() => <Redirect to="/dashboard" />}</Route>
         <Route path="/register">{() => <Redirect to="/dashboard" />}</Route>
         <Route component={NotFound} />

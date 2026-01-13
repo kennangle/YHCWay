@@ -104,6 +104,7 @@ export function UnifiedSidebar() {
       items: [
         { icon: FileSpreadsheet, label: "Google Sheets", href: "/google-sheets", tourId: "nav-google-sheets" },
         { icon: File, label: "Google Docs", href: "/google-docs", tourId: "nav-google-docs" },
+        { icon: Zap, label: "AI Summarize", href: "/ai-summarize", tourId: "nav-ai-summarize" },
       ],
     },
     {

@@ -1435,10 +1435,14 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Missing transcript" });
       }
       
+      const validAttendees = Array.isArray(attendees) 
+        ? attendees.filter((a: string) => a && a.trim()) 
+        : undefined;
+      
       const summary = await summarizeMeetingTranscript(
         title || "Meeting",
         transcript,
-        attendees
+        validAttendees?.length ? validAttendees : undefined
       );
       
       res.json(summary);
