@@ -7,7 +7,7 @@ import { tenantMiddleware, requireTenant, requireTenantRole } from "./tenantMidd
 import { z } from "zod";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
-import { getRecentEmails, isGmailConnected } from "./gmail";
+import { getRecentEmails, isGmailConnected, deleteEmail } from "./gmail";
 import { getGmailAuthUrl, handleGmailCallback, getRecentEmailsForUser, isGmailConnectedForUser, disconnectGmailForUser, getGmailClientForUser, getEmailById, sendEmail, deleteEmailById } from "./gmail-oauth";
 import { getUpcomingEvents, getEventsForMonth, isCalendarConnected, createCalendarEvent } from "./calendar";
 import { getUpcomingMeetings, isZoomConnected } from "./zoom";
@@ -1314,7 +1314,14 @@ export async function registerRoutes(
         return res.status(401).json({ error: "Unauthorized" });
       }
       
-      await deleteEmailById(userId, messageId);
+      // Try user-specific OAuth first, then fall back to connector
+      const isUserConnected = await isGmailConnectedForUser(userId);
+      if (isUserConnected) {
+        await deleteEmailById(userId, messageId);
+      } else {
+        // Fall back to connector-based delete
+        await deleteEmail(messageId);
+      }
       res.json({ success: true });
     } catch (error: any) {
       console.error("[Gmail] Error deleting email:", error?.message);

@@ -356,7 +356,7 @@ export default function Inbox() {
                       {message.userName && message.type !== 'gmail' && (
                         <p className="text-xs text-muted-foreground mb-1">{message.userName}</p>
                       )}
-                      <p className="text-xs text-muted-foreground line-clamp-2">{message.preview}</p>
+                      <p className="text-sm text-muted-foreground line-clamp-2 whitespace-normal break-words">{message.preview}</p>
                     </div>
                   </div>
                 </div>
