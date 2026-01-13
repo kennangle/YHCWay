@@ -91,10 +91,10 @@ export const presentationSlides: Slide[] = [
   {
     id: 5,
     type: "howto",
-    title: "Using the Unified Inbox",
+    title: "Using the Unified Mailbox",
     icon: "📬",
     steps: [
-      { step: "Navigate to Unified Inbox", detail: "Click 'Unified Inbox' in the Workspace section of the sidebar" },
+      { step: "Navigate to Unified Mailbox", detail: "Click 'Unified Mailbox' at the top of the sidebar" },
       { step: "View all messages", detail: "Emails and Slack messages appear in a combined feed" },
       { step: "Click any message to read", detail: "Full message content opens in a detail panel" },
       { step: "Reply or compose", detail: "Use the compose button to write new emails" },
@@ -127,7 +127,7 @@ export const presentationSlides: Slide[] = [
     title: "Using the Calendar",
     icon: "📅",
     steps: [
-      { step: "Navigate to Calendar", detail: "Click 'Calendar' in the Workspace section" },
+      { step: "Navigate to Calendar", detail: "Click 'Calendar' at the top of the sidebar" },
       { step: "View your events", detail: "See all Google Calendar, Apple Calendar, and Calendly events" },
       { step: "Switch views", detail: "Toggle between month, week, and day views" },
       { step: "Click an event for details", detail: "See meeting info, join links, and attendees" },
@@ -160,7 +160,7 @@ export const presentationSlides: Slide[] = [
     title: "Managing Projects",
     icon: "📋",
     steps: [
-      { step: "Navigate to Projects", detail: "Click 'Projects' in the Workspace section" },
+      { step: "Navigate to Projects", detail: "Click 'Projects' in the Collaboration section" },
       { step: "Create a new project", detail: "Click '+ New Project' and give it a name" },
       { step: "Add columns", detail: "Create columns like 'To Do', 'In Progress', 'Done'" },
       { step: "Add tasks to columns", detail: "Click '+' in any column to create a task" },
@@ -195,7 +195,7 @@ export const presentationSlides: Slide[] = [
     title: "Managing Tasks",
     icon: "✅",
     steps: [
-      { step: "Navigate to Tasks", detail: "Click 'Tasks' in the Workspace section" },
+      { step: "Navigate to Tasks", detail: "Click 'Tasks' in the Collaboration section" },
       { step: "Create a task", detail: "Click '+ New Task' and enter a title" },
       { step: "Set due date", detail: "Click the calendar icon to pick a deadline" },
       { step: "Set priority", detail: "Choose Low, Medium, High, or Urgent" },
@@ -229,15 +229,15 @@ export const presentationSlides: Slide[] = [
   {
     id: 13,
     type: "howto",
-    title: "Using Chat & Slack",
+    title: "Using Slack",
     icon: "💬",
     steps: [
-      { step: "Navigate to Chat", detail: "Click 'Chat' in the Engage & Automate section" },
+      { step: "Navigate to Slack", detail: "Click 'Slack' in the Collaboration section" },
       { step: "View Slack messages", detail: "Recent messages from your followed channels appear here" },
       { step: "Filter channels", detail: "Choose which Slack channels to follow in Settings" },
       { step: "Read conversations", detail: "Click any message to see the full thread" },
     ],
-    tips: ["Slack messages also appear in your Unified Inbox", "You can customize which channels to follow"],
+    tips: ["Slack messages also appear in your Unified Mailbox", "You can customize which channels to follow"],
     navPath: "/chat",
   },
 
@@ -272,9 +272,93 @@ export const presentationSlides: Slide[] = [
       "Task Extraction: Create tasks automatically from emails or Slack",
       "Calendar Optimization: Find focus time and identify busy days",
       "Task Prioritization: AI ranks your tasks by importance",
+      "AI Summarize: Summarize meeting transcripts and long emails",
     ],
     tips: ["Be specific with AI prompts for better results", "AI uses your actual data, not generic responses"],
     navPath: "/dashboard",
+  },
+
+  // AI SUMMARIZE
+  {
+    id: 29,
+    type: "howto",
+    title: "AI Summarize Tool",
+    icon: "⚡",
+    steps: [
+      { step: "Navigate to AI Summarize", detail: "Click 'AI Summarize' in the Productivity section" },
+      { step: "Choose content type", detail: "Select 'Meeting Transcript' or 'Email/Notes' tab" },
+      { step: "Paste your content", detail: "Paste meeting transcript, long email, or notes" },
+      { step: "Add context (optional)", detail: "Enter title and attendees for better results" },
+      { step: "Click Summarize", detail: "AI generates a structured summary in seconds" },
+    ],
+    tips: ["Works great for Zoom transcripts", "Extracts action items automatically", "Use for long email threads too"],
+    navPath: "/ai-summarize",
+  },
+
+  // GOOGLE DOCS
+  {
+    id: 30,
+    type: "howto",
+    title: "Google Docs",
+    icon: "📄",
+    steps: [
+      { step: "Navigate to Google Docs", detail: "Click 'Google Docs' in the Productivity section" },
+      { step: "View your documents", detail: "See all documents from connected Google account" },
+      { step: "Click to open", detail: "Documents open in a new tab in Google Docs" },
+      { step: "Create new document", detail: "Click '+ New' to create a new Google Doc" },
+    ],
+    tips: ["Documents are synced from your Google account", "Edits happen in Google Docs directly"],
+    navPath: "/google-docs",
+  },
+
+  // GOOGLE SHEETS
+  {
+    id: 31,
+    type: "howto",
+    title: "Google Sheets",
+    icon: "📊",
+    steps: [
+      { step: "Navigate to Google Sheets", detail: "Click 'Google Sheets' in the Productivity section" },
+      { step: "View your spreadsheets", detail: "See all spreadsheets from connected Google account" },
+      { step: "Click to open", detail: "Spreadsheets open in a new tab in Google Sheets" },
+      { step: "Create new spreadsheet", detail: "Click '+ New' to create a new Google Sheet" },
+    ],
+    tips: ["Spreadsheets are synced from your Google account", "Great for quick access to shared files"],
+    navPath: "/google-sheets",
+  },
+
+  // BREVO EMAIL ANALYTICS
+  {
+    id: 32,
+    type: "detail",
+    title: "Brevo Email Analytics",
+    icon: "📈",
+    subtitle: "Track your email campaigns",
+    points: [
+      "View sent email statistics and delivery rates",
+      "Track open rates and click-through rates",
+      "Monitor campaign performance over time",
+      "See which emails are performing best",
+    ],
+    tips: ["Check weekly for trends", "Use data to improve future emails"],
+    navPath: "/email-activity",
+  },
+
+  // TYPEFORM
+  {
+    id: 33,
+    type: "detail",
+    title: "Typeform Responses",
+    icon: "📝",
+    subtitle: "View and manage form submissions",
+    points: [
+      "See all Typeform responses in one place",
+      "View individual submission details",
+      "Track response trends over time",
+      "Export data for analysis",
+    ],
+    tips: ["Check regularly for new submissions", "Forms must be connected via Typeform"],
+    navPath: "/typeform",
   },
 
   // TIME TRACKING
@@ -302,7 +386,7 @@ export const presentationSlides: Slide[] = [
     title: "Perkville Rewards",
     icon: "⭐",
     steps: [
-      { step: "Navigate to Perkville", detail: "Click 'Perkville' in Engage & Automate section" },
+      { step: "Navigate to Perkville", detail: "Click 'Perkville' in the Marketing section" },
       { step: "View your points", detail: "See your total, available, and pending points" },
       { step: "Check activity", detail: "See how you've earned points recently" },
       { step: "Staff: Look up customers", detail: "Search by email to find customer balances" },
@@ -336,7 +420,7 @@ export const presentationSlides: Slide[] = [
     title: "Creating QR Codes",
     icon: "📱",
     steps: [
-      { step: "Navigate to QR Codes", detail: "Click 'QR Codes' in Engage & Automate section" },
+      { step: "Navigate to QR Codes", detail: "Click 'QR Codes' in the Engage & Automate section" },
       { step: "Click 'Create QR Code'", detail: "Opens the creation form" },
       { step: "Enter the destination URL", detail: "Where should the QR code link to?" },
       { step: "Customize colors (optional)", detail: "Match your branding" },
@@ -353,7 +437,7 @@ export const presentationSlides: Slide[] = [
     title: "Email Builder",
     icon: "📧",
     steps: [
-      { step: "Navigate to Email Builder", detail: "Click 'Email Builder' in Engage & Automate section" },
+      { step: "Navigate to Email Builder", detail: "Click 'Email Builder' in the Engage & Automate section" },
       { step: "Choose a template", detail: "Start with a pre-built template or blank" },
       { step: "Edit content", detail: "Click sections to edit text, images, and buttons" },
       { step: "Preview your email", detail: "See how it looks on desktop and mobile" },
@@ -472,14 +556,14 @@ export const presentationSlides: Slide[] = [
   {
     id: 27,
     type: "benefits",
-    title: "Quick Reference",
+    title: "Quick Reference - Navigation",
     benefits: [
-      { icon: "📬", title: "Inbox", desc: "All emails and messages in one place" },
-      { icon: "📅", title: "Calendar", desc: "Unified view of all your calendars" },
-      { icon: "📋", title: "Projects", desc: "Kanban boards for project management" },
-      { icon: "✅", title: "Tasks", desc: "To-dos with priorities and due dates" },
-      { icon: "🤖", title: "AI", desc: "Click the sparkle button for AI help" },
-      { icon: "⚙️", title: "Settings", desc: "Connect services and preferences" },
+      { icon: "📬", title: "Unified Mailbox", desc: "All emails and messages (top of sidebar)" },
+      { icon: "📅", title: "Calendar", desc: "All calendars unified (top of sidebar)" },
+      { icon: "⚡", title: "Productivity", desc: "Google Docs, Sheets, AI Summarize" },
+      { icon: "👥", title: "Collaboration", desc: "Slack, Tasks, Projects" },
+      { icon: "📢", title: "Marketing", desc: "Brevo, Perkville, Typeform" },
+      { icon: "🎯", title: "Engage & Automate", desc: "Intro Offers, QR Codes, Email Builder" },
     ],
   },
 
