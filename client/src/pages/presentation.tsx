@@ -170,21 +170,45 @@ export default function PresentationPage() {
               <span className="text-4xl">{slide.icon}</span>
               <h2 className="text-3xl md:text-4xl font-bold text-gray-800">{slide.title}</h2>
               {slide.navPath && (
-                <span className="text-xs font-medium px-3 py-1 bg-orange-100 text-orange-700 rounded-full ml-auto">
-                  {slide.navPath}
-                </span>
+                slide.navPath.startsWith("/") ? (
+                  <Link href={slide.navPath}>
+                    <span className="text-xs font-medium px-3 py-1 bg-orange-100 text-orange-700 rounded-full ml-auto hover:bg-orange-200 cursor-pointer transition-colors">
+                      {slide.navPath}
+                    </span>
+                  </Link>
+                ) : (
+                  <span className="text-xs font-medium px-3 py-1 bg-orange-100 text-orange-700 rounded-full ml-auto">
+                    {slide.navPath}
+                  </span>
+                )
               )}
             </div>
             <div className="flex-1 grid grid-cols-1 gap-3">
               {slide.steps?.map((step, i) => (
-                <div key={i} className="flex items-start gap-4 bg-white/80 backdrop-blur rounded-xl p-4 shadow border border-gray-100">
+                <div key={i} className={`flex items-start gap-4 bg-white/80 backdrop-blur rounded-xl p-4 shadow border border-gray-100 ${step.link ? 'hover:bg-orange-50 hover:border-orange-200 cursor-pointer transition-colors' : ''}`}>
                   <span className="flex-shrink-0 w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center font-bold text-lg">
                     {i + 1}
                   </span>
-                  <div>
-                    <p className="text-lg font-semibold text-gray-800">{step.step}</p>
-                    {step.detail && <p className="text-gray-600">{step.detail}</p>}
+                  <div className="flex-1">
+                    {step.link ? (
+                      <Link href={step.link}>
+                        <p className="text-lg font-semibold text-orange-600 hover:text-orange-700 underline decoration-orange-300 underline-offset-2">{step.step}</p>
+                        {step.detail && <p className="text-gray-600">{step.detail}</p>}
+                      </Link>
+                    ) : (
+                      <>
+                        <p className="text-lg font-semibold text-gray-800">{step.step}</p>
+                        {step.detail && <p className="text-gray-600">{step.detail}</p>}
+                      </>
+                    )}
                   </div>
+                  {step.link && (
+                    <Link href={step.link}>
+                      <span className="text-xs font-medium px-2 py-1 bg-orange-100 text-orange-600 rounded-full hover:bg-orange-200 transition-colors">
+                        Go →
+                      </span>
+                    </Link>
+                  )}
                 </div>
               ))}
             </div>

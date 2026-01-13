@@ -14,6 +14,7 @@ export interface SlideBenefit {
 export interface SlideStep {
   step: string;
   detail?: string;
+  link?: string;
 }
 
 export interface Slide {
@@ -94,7 +95,7 @@ export const presentationSlides: Slide[] = [
     title: "Using the Unified Mailbox",
     icon: "📬",
     steps: [
-      { step: "Navigate to Unified Mailbox", detail: "Click 'Unified Mailbox' at the top of the sidebar" },
+      { step: "Navigate to Unified Mailbox", detail: "Click 'Unified Mailbox' at the top of the sidebar", link: "/inbox" },
       { step: "View all messages", detail: "Emails and Slack messages appear in a combined feed" },
       { step: "Click any message to read", detail: "Full message content opens in a detail panel" },
       { step: "Reply or compose", detail: "Use the compose button to write new emails" },
@@ -127,7 +128,7 @@ export const presentationSlides: Slide[] = [
     title: "Using the Calendar",
     icon: "📅",
     steps: [
-      { step: "Navigate to Calendar", detail: "Click 'Calendar' at the top of the sidebar" },
+      { step: "Navigate to Calendar", detail: "Click 'Calendar' at the top of the sidebar", link: "/calendar" },
       { step: "View your events", detail: "See all Google Calendar, Apple Calendar, and Calendly events" },
       { step: "Switch views", detail: "Toggle between month, week, and day views" },
       { step: "Click an event for details", detail: "See meeting info, join links, and attendees" },
@@ -160,7 +161,7 @@ export const presentationSlides: Slide[] = [
     title: "Managing Projects",
     icon: "📋",
     steps: [
-      { step: "Navigate to Projects", detail: "Click 'Projects' in the Collaboration section" },
+      { step: "Navigate to Projects", detail: "Click 'Projects' in the Collaboration section", link: "/projects" },
       { step: "Create a new project", detail: "Click '+ New Project' and give it a name" },
       { step: "Add columns", detail: "Create columns like 'To Do', 'In Progress', 'Done'" },
       { step: "Add tasks to columns", detail: "Click '+' in any column to create a task" },
@@ -195,7 +196,7 @@ export const presentationSlides: Slide[] = [
     title: "Managing Tasks",
     icon: "✅",
     steps: [
-      { step: "Navigate to Tasks", detail: "Click 'Tasks' in the Collaboration section" },
+      { step: "Navigate to Tasks", detail: "Click 'Tasks' in the Collaboration section", link: "/tasks" },
       { step: "Create a task", detail: "Click '+ New Task' and enter a title" },
       { step: "Set due date", detail: "Click the calendar icon to pick a deadline" },
       { step: "Set priority", detail: "Choose Low, Medium, High, or Urgent" },
@@ -232,9 +233,9 @@ export const presentationSlides: Slide[] = [
     title: "Using Slack",
     icon: "💬",
     steps: [
-      { step: "Navigate to Slack", detail: "Click 'Slack' in the Collaboration section" },
+      { step: "Navigate to Slack", detail: "Click 'Slack' in the Collaboration section", link: "/chat" },
       { step: "View Slack messages", detail: "Recent messages from your followed channels appear here" },
-      { step: "Filter channels", detail: "Choose which Slack channels to follow in Settings" },
+      { step: "Filter channels", detail: "Choose which Slack channels to follow in Settings", link: "/settings" },
       { step: "Read conversations", detail: "Click any message to see the full thread" },
     ],
     tips: ["Slack messages also appear in your Unified Mailbox", "You can customize which channels to follow"],
@@ -285,7 +286,7 @@ export const presentationSlides: Slide[] = [
     title: "AI Summarize Tool",
     icon: "⚡",
     steps: [
-      { step: "Navigate to AI Summarize", detail: "Click 'AI Summarize' in the Productivity section" },
+      { step: "Navigate to AI Summarize", detail: "Click 'AI Summarize' in the Productivity section", link: "/ai-summarize" },
       { step: "Choose content type", detail: "Select 'Meeting Transcript' or 'Email/Notes' tab" },
       { step: "Paste your content", detail: "Paste meeting transcript, long email, or notes" },
       { step: "Add context (optional)", detail: "Enter title and attendees for better results" },
@@ -302,7 +303,7 @@ export const presentationSlides: Slide[] = [
     title: "Google Docs",
     icon: "📄",
     steps: [
-      { step: "Navigate to Google Docs", detail: "Click 'Google Docs' in the Productivity section" },
+      { step: "Navigate to Google Docs", detail: "Click 'Google Docs' in the Productivity section", link: "/google-docs" },
       { step: "View your documents", detail: "See all documents from connected Google account" },
       { step: "Click to open", detail: "Documents open in a new tab in Google Docs" },
       { step: "Create new document", detail: "Click '+ New' to create a new Google Doc" },
@@ -318,7 +319,7 @@ export const presentationSlides: Slide[] = [
     title: "Google Sheets",
     icon: "📊",
     steps: [
-      { step: "Navigate to Google Sheets", detail: "Click 'Google Sheets' in the Productivity section" },
+      { step: "Navigate to Google Sheets", detail: "Click 'Google Sheets' in the Productivity section", link: "/google-sheets" },
       { step: "View your spreadsheets", detail: "See all spreadsheets from connected Google account" },
       { step: "Click to open", detail: "Spreadsheets open in a new tab in Google Sheets" },
       { step: "Create new spreadsheet", detail: "Click '+ New' to create a new Google Sheet" },
@@ -368,8 +369,8 @@ export const presentationSlides: Slide[] = [
     title: "Time Tracking",
     icon: "⏱️",
     steps: [
-      { step: "Navigate to Time Tracking", detail: "Click 'Time Tracking' in Operations section" },
-      { step: "Link your YHCTime account", detail: "First time: enter your YHCTime employee ID in Settings" },
+      { step: "Navigate to Time Tracking", detail: "Click 'Time Tracking' in Operations section", link: "/time-tracking" },
+      { step: "Link your YHCTime account", detail: "First time: enter your YHCTime employee ID in Settings", link: "/settings" },
       { step: "Create a time entry", detail: "Click 'Enter Time' and fill in the details" },
       { step: "Select date and hours", detail: "Choose the date and enter hours worked" },
       { step: "Add notes (optional)", detail: "Describe what you worked on" },
@@ -386,7 +387,7 @@ export const presentationSlides: Slide[] = [
     title: "Perkville Rewards",
     icon: "⭐",
     steps: [
-      { step: "Navigate to Perkville", detail: "Click 'Perkville' in the Marketing section" },
+      { step: "Navigate to Perkville", detail: "Click 'Perkville' in the Marketing section", link: "/rewards" },
       { step: "View your points", detail: "See your total, available, and pending points" },
       { step: "Check activity", detail: "See how you've earned points recently" },
       { step: "Staff: Look up customers", detail: "Search by email to find customer balances" },
@@ -420,7 +421,7 @@ export const presentationSlides: Slide[] = [
     title: "Creating QR Codes",
     icon: "📱",
     steps: [
-      { step: "Navigate to QR Codes", detail: "Click 'QR Codes' in the Engage & Automate section" },
+      { step: "Navigate to QR Codes", detail: "Click 'QR Codes' in the Marketing section", link: "/qr-codes" },
       { step: "Click 'Create QR Code'", detail: "Opens the creation form" },
       { step: "Enter the destination URL", detail: "Where should the QR code link to?" },
       { step: "Customize colors (optional)", detail: "Match your branding" },
@@ -437,7 +438,7 @@ export const presentationSlides: Slide[] = [
     title: "Email Builder",
     icon: "📧",
     steps: [
-      { step: "Navigate to Email Builder", detail: "Click 'Email Builder' in the Engage & Automate section" },
+      { step: "Navigate to Email Builder", detail: "Click 'Email Builder' in the Engage & Automate section", link: "/email-builder" },
       { step: "Choose a template", detail: "Start with a pre-built template or blank" },
       { step: "Edit content", detail: "Click sections to edit text, images, and buttons" },
       { step: "Preview your email", detail: "See how it looks on desktop and mobile" },
