@@ -37,15 +37,21 @@ async function getAccessToken() {
   return accessToken;
 }
 
-export async function getGoogleDocsClient() {
+async function getOAuth2Client() {
   const accessToken = await getAccessToken();
-
   const oauth2Client = new google.auth.OAuth2();
-  oauth2Client.setCredentials({
-    access_token: accessToken
-  });
+  oauth2Client.setCredentials({ access_token: accessToken });
+  return oauth2Client;
+}
 
+export async function getGoogleDocsClient() {
+  const oauth2Client = await getOAuth2Client();
   return google.docs({ version: 'v1', auth: oauth2Client });
+}
+
+export async function getGoogleDriveClientForDocs() {
+  const oauth2Client = await getOAuth2Client();
+  return google.drive({ version: 'v3', auth: oauth2Client });
 }
 
 export async function isGoogleDocsConnected(): Promise<boolean> {
@@ -55,4 +61,147 @@ export async function isGoogleDocsConnected(): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+export interface GoogleDoc {
+  id: string;
+  name: string;
+  modifiedTime: string;
+  createdTime: string;
+  webViewLink: string;
+}
+
+export async function listGoogleDocs(pageSize: number = 20): Promise<GoogleDoc[]> {
+  const drive = await getGoogleDriveClientForDocs();
+  
+  const response = await drive.files.list({
+    q: "mimeType='application/vnd.google-apps.document' and trashed=false",
+    pageSize,
+    orderBy: 'modifiedTime desc',
+    fields: 'files(id, name, modifiedTime, createdTime, webViewLink)'
+  });
+
+  return (response.data.files || []).map(file => ({
+    id: file.id!,
+    name: file.name!,
+    modifiedTime: file.modifiedTime!,
+    createdTime: file.createdTime!,
+    webViewLink: file.webViewLink!
+  }));
+}
+
+export async function createGoogleDoc(title: string): Promise<GoogleDoc> {
+  const docs = await getGoogleDocsClient();
+  const drive = await getGoogleDriveClientForDocs();
+  
+  const response = await docs.documents.create({
+    requestBody: { title }
+  });
+
+  const docId = response.data.documentId!;
+  
+  const fileResponse = await drive.files.get({
+    fileId: docId,
+    fields: 'id, name, modifiedTime, createdTime, webViewLink'
+  });
+
+  return {
+    id: fileResponse.data.id!,
+    name: fileResponse.data.name!,
+    modifiedTime: fileResponse.data.modifiedTime!,
+    createdTime: fileResponse.data.createdTime!,
+    webViewLink: fileResponse.data.webViewLink!
+  };
+}
+
+export interface GoogleDocContent {
+  id: string;
+  title: string;
+  content: string;
+  webViewLink: string;
+}
+
+export async function getGoogleDocContent(documentId: string): Promise<GoogleDocContent> {
+  const docs = await getGoogleDocsClient();
+  const drive = await getGoogleDriveClientForDocs();
+  
+  const [docResponse, fileResponse] = await Promise.all([
+    docs.documents.get({ documentId }),
+    drive.files.get({ fileId: documentId, fields: 'webViewLink' })
+  ]);
+
+  let textContent = '';
+  const body = docResponse.data.body;
+  
+  if (body?.content) {
+    for (const element of body.content) {
+      if (element.paragraph?.elements) {
+        for (const textElement of element.paragraph.elements) {
+          if (textElement.textRun?.content) {
+            textContent += textElement.textRun.content;
+          }
+        }
+      }
+    }
+  }
+
+  return {
+    id: documentId,
+    title: docResponse.data.title || 'Untitled',
+    content: textContent,
+    webViewLink: fileResponse.data.webViewLink!
+  };
+}
+
+export async function updateGoogleDoc(documentId: string, newContent: string): Promise<void> {
+  if (newContent === undefined || newContent === null) {
+    throw new Error('Content is required');
+  }
+  
+  const docs = await getGoogleDocsClient();
+  
+  const docResponse = await docs.documents.get({ documentId });
+  const body = docResponse.data.body;
+  
+  let endIndex = 1;
+  if (body?.content) {
+    const lastElement = body.content[body.content.length - 1];
+    if (lastElement?.endIndex) {
+      endIndex = lastElement.endIndex - 1;
+    }
+  }
+
+  const requests: any[] = [];
+  
+  if (endIndex > 1) {
+    requests.push({
+      deleteContentRange: {
+        range: {
+          startIndex: 1,
+          endIndex: endIndex
+        }
+      }
+    });
+  }
+  
+  if (newContent) {
+    requests.push({
+      insertText: {
+        location: { index: 1 },
+        text: newContent
+      }
+    });
+  }
+
+  if (requests.length > 0) {
+    await docs.documents.batchUpdate({
+      documentId,
+      requestBody: { requests }
+    });
+  }
+}
+
+export async function deleteGoogleDoc(documentId: string): Promise<void> {
+  const drive = await getGoogleDriveClientForDocs();
+  await drive.files.delete({ fileId: documentId });
 }

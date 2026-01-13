@@ -87,6 +87,8 @@ import EmailActivity from "@/pages/email-activity";
 import Gusto from "@/pages/gusto";
 import Presentation from "@/pages/presentation";
 import Changelog from "@/pages/changelog";
+import GoogleDocs from "@/pages/google-docs";
+import GoogleSheets from "@/pages/google-sheets";
 import { FloatingAIButton } from "@/components/floating-ai-button";
 import { GuidedTour } from "@/components/guided-tour";
 
@@ -160,6 +162,8 @@ function Router() {
         <Route path="/gusto" component={Gusto} />
         <Route path="/presentation" component={Presentation} />
         <Route path="/changelog" component={Changelog} />
+        <Route path="/google-docs" component={GoogleDocs} />
+        <Route path="/google-sheets" component={GoogleSheets} />
         <Route path="/login">{() => <Redirect to="/dashboard" />}</Route>
         <Route path="/register">{() => <Redirect to="/dashboard" />}</Route>
         <Route component={NotFound} />

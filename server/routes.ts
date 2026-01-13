@@ -25,8 +25,8 @@ import { isQrTigerConfigured, createDynamicQRCode, createStaticQRCode, listQRCod
 import { isPerkvilleConfigured, authenticateWithPerkville, isUserPerkvilleConnected, validatePerkvilleToken, getPerkvilleCustomerInfo, getPerkvillePoints, getPerkvilleRewards, getPerkvilleActivity, disconnectPerkville, getPerkvilleBusinesses, getPerkvilleCustomers, getPerkvilleConnectionBalances, searchPerkvilleCustomerByEmail, getPerkvilleCustomerById } from "./perkville";
 import { yhcTimeClient } from "./yhctime";
 import { getCalendlyEvents, getCalendlyEventsForMonth, isCalendlyConnected } from "./calendly";
-import { getGoogleDocsClient, isGoogleDocsConnected } from "./google-docs";
-import { getGoogleSheetsClient, isGoogleSheetsConnected } from "./google-sheets";
+import { isGoogleDocsConnected, listGoogleDocs, createGoogleDoc, getGoogleDocContent, updateGoogleDoc, deleteGoogleDoc } from "./google-docs";
+import { isGoogleSheetsConnected, listGoogleSheets, createGoogleSheet, getGoogleSheetContent, updateGoogleSheet, appendToGoogleSheet, deleteGoogleSheet } from "./google-sheets";
 
 const isAdmin: RequestHandler = async (req: any, res, next) => {
   try {
@@ -2600,6 +2600,172 @@ export async function registerRoutes(
     } catch (error: any) {
       console.error("Error fetching Perkville customer:", error);
       res.status(500).json({ error: error?.message || "Failed to fetch customer" });
+    }
+  });
+
+  // =============================================================================
+  // GOOGLE DOCS INTEGRATION ENDPOINTS
+  // =============================================================================
+
+  app.get("/api/google-docs/status", isAuthenticated, async (req: any, res) => {
+    try {
+      const connected = await isGoogleDocsConnected();
+      res.json({ connected });
+    } catch (error) {
+      res.json({ connected: false });
+    }
+  });
+
+  app.get("/api/google-docs", isAuthenticated, async (req: any, res) => {
+    try {
+      const pageSize = parseInt(req.query.limit as string) || 20;
+      const docs = await listGoogleDocs(pageSize);
+      res.json(docs);
+    } catch (error: any) {
+      console.error("Error listing Google Docs:", error);
+      res.status(500).json({ error: error?.message || "Failed to list documents" });
+    }
+  });
+
+  app.post("/api/google-docs", isAuthenticated, async (req: any, res) => {
+    try {
+      const { title } = req.body;
+      if (!title) {
+        return res.status(400).json({ error: "Title is required" });
+      }
+      const doc = await createGoogleDoc(title);
+      res.json(doc);
+    } catch (error: any) {
+      console.error("Error creating Google Doc:", error);
+      res.status(500).json({ error: error?.message || "Failed to create document" });
+    }
+  });
+
+  app.get("/api/google-docs/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const content = await getGoogleDocContent(id);
+      res.json(content);
+    } catch (error: any) {
+      console.error("Error getting Google Doc:", error);
+      res.status(500).json({ error: error?.message || "Failed to get document" });
+    }
+  });
+
+  app.patch("/api/google-docs/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { content } = req.body;
+      if (content === undefined) {
+        return res.status(400).json({ error: "Content is required" });
+      }
+      await updateGoogleDoc(id, content);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error updating Google Doc:", error);
+      res.status(500).json({ error: error?.message || "Failed to update document" });
+    }
+  });
+
+  app.delete("/api/google-docs/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      await deleteGoogleDoc(id);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error deleting Google Doc:", error);
+      res.status(500).json({ error: error?.message || "Failed to delete document" });
+    }
+  });
+
+  // =============================================================================
+  // GOOGLE SHEETS INTEGRATION ENDPOINTS
+  // =============================================================================
+
+  app.get("/api/google-sheets/status", isAuthenticated, async (req: any, res) => {
+    try {
+      const connected = await isGoogleSheetsConnected();
+      res.json({ connected });
+    } catch (error) {
+      res.json({ connected: false });
+    }
+  });
+
+  app.get("/api/google-sheets", isAuthenticated, async (req: any, res) => {
+    try {
+      const pageSize = parseInt(req.query.limit as string) || 20;
+      const sheets = await listGoogleSheets(pageSize);
+      res.json(sheets);
+    } catch (error: any) {
+      console.error("Error listing Google Sheets:", error);
+      res.status(500).json({ error: error?.message || "Failed to list spreadsheets" });
+    }
+  });
+
+  app.post("/api/google-sheets", isAuthenticated, async (req: any, res) => {
+    try {
+      const { title } = req.body;
+      if (!title) {
+        return res.status(400).json({ error: "Title is required" });
+      }
+      const sheet = await createGoogleSheet(title);
+      res.json(sheet);
+    } catch (error: any) {
+      console.error("Error creating Google Sheet:", error);
+      res.status(500).json({ error: error?.message || "Failed to create spreadsheet" });
+    }
+  });
+
+  app.get("/api/google-sheets/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const sheetName = req.query.sheet as string;
+      const content = await getGoogleSheetContent(id, sheetName);
+      res.json(content);
+    } catch (error: any) {
+      console.error("Error getting Google Sheet:", error);
+      res.status(500).json({ error: error?.message || "Failed to get spreadsheet" });
+    }
+  });
+
+  app.patch("/api/google-sheets/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { data, sheetName } = req.body;
+      if (!data || !Array.isArray(data)) {
+        return res.status(400).json({ error: "Data array is required" });
+      }
+      await updateGoogleSheet(id, data, sheetName);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error updating Google Sheet:", error);
+      res.status(500).json({ error: error?.message || "Failed to update spreadsheet" });
+    }
+  });
+
+  app.post("/api/google-sheets/:id/append", isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { data, sheetName } = req.body;
+      if (!data || !Array.isArray(data)) {
+        return res.status(400).json({ error: "Data array is required" });
+      }
+      await appendToGoogleSheet(id, data, sheetName);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error appending to Google Sheet:", error);
+      res.status(500).json({ error: error?.message || "Failed to append to spreadsheet" });
+    }
+  });
+
+  app.delete("/api/google-sheets/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      await deleteGoogleSheet(id);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error deleting Google Sheet:", error);
+      res.status(500).json({ error: error?.message || "Failed to delete spreadsheet" });
     }
   });
 
