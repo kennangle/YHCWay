@@ -353,7 +353,8 @@ export default function Dashboard() {
   const { data: introOffersData } = useQuery<{ data: IntroOffer[] }>({
     queryKey: ["intro-offers-feed"],
     queryFn: async () => {
-      const res = await fetch("/api/mindbody-analytics/intro-offers?limit=10", { credentials: "include" });
+      // Fetch all offers for accurate dashboard counts (limit=100)
+      const res = await fetch("/api/mindbody-analytics/intro-offers?limit=100", { credentials: "include" });
       if (!res.ok) {
         console.warn("Mindbody Analytics not available");
         return { data: [] };
