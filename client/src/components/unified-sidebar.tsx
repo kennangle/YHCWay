@@ -30,7 +30,9 @@ import {
   PanelLeftClose,
   PanelLeft,
   History,
-  Presentation
+  Presentation,
+  Megaphone,
+  Users
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
@@ -94,28 +96,53 @@ export function UnifiedSidebar() {
       items: [
         { icon: LayoutDashboard, label: "Overview", href: "/", tourId: "nav-overview" },
         { icon: Inbox, label: "Dashboard", href: "/dashboard", tourId: "nav-dashboard" },
-        { icon: Mail, label: "Unified Inbox", href: "/inbox", tourId: "nav-inbox" },
         { icon: CalendarIcon, label: "Calendar", href: "/calendar", tourId: "nav-calendar" },
-        { icon: FolderKanban, label: "Projects", href: "/projects", tourId: "nav-projects" },
-        { icon: ListTodo, label: "Tasks", href: "/tasks", tourId: "nav-tasks" },
-        { icon: File, label: "Google Docs", href: "/google-docs", tourId: "nav-google-docs" },
-        { icon: FileSpreadsheet, label: "Google Sheets", href: "/google-sheets", tourId: "nav-google-sheets" },
         { icon: Rocket, label: "Setup Guide", href: "/setup-guide", tourId: "nav-setup-guide" },
         { icon: Presentation, label: "Presentation", href: "/presentation", tourId: "nav-presentation", adminOnly: true },
+      ],
+    },
+    {
+      id: 'productivity',
+      label: 'Productivity',
+      icon: FileText,
+      defaultCollapsed: false,
+      items: [
+        { icon: Mail, label: "Unified Mailbox", href: "/inbox", tourId: "nav-inbox" },
+        { icon: FileSpreadsheet, label: "Google Sheets", href: "/google-sheets", tourId: "nav-google-sheets" },
+        { icon: File, label: "Google Docs", href: "/google-docs", tourId: "nav-google-docs" },
+      ],
+    },
+    {
+      id: 'collaboration',
+      label: 'Collaboration',
+      icon: Users,
+      defaultCollapsed: false,
+      items: [
+        { icon: MessageCircle, label: "Slack", href: "/chat", tourId: "nav-chat" },
+        { icon: ListTodo, label: "Tasks", href: "/tasks", tourId: "nav-tasks" },
+        { icon: FolderKanban, label: "Projects", href: "/projects", tourId: "nav-projects" },
+      ],
+    },
+    {
+      id: 'marketing',
+      label: 'Marketing',
+      icon: Megaphone,
+      defaultCollapsed: false,
+      items: [
+        { icon: BarChart3, label: "Brevo", href: "/email-activity", tourId: "nav-email-activity" },
+        { icon: Star, label: "Perkville", href: "/rewards", tourId: "nav-rewards" },
+        { icon: FileText, label: "Typeform", href: "/typeform", tourId: "nav-typeform" },
       ],
     },
     {
       id: 'engage',
       label: 'Engage & Automate',
       icon: Zap,
-      defaultCollapsed: false,
+      defaultCollapsed: true,
       items: [
-        { icon: MessageCircle, label: "Chat", href: "/chat", tourId: "nav-chat" },
         { icon: Gift, label: "Intro Offers", href: "/intro-offers", tourId: "nav-intro-offers" },
         { icon: QrCode, label: "QR Codes", href: "/qr-codes", tourId: "nav-qr-codes" },
         { icon: Mail, label: "Email Builder", href: "/email-builder", tourId: "nav-email-builder" },
-        { icon: BarChart3, label: "Brevo", href: "/email-activity", tourId: "nav-email-activity" },
-        { icon: Star, label: "Perkville", href: "/rewards", tourId: "nav-rewards" },
       ],
     },
     {
@@ -128,7 +155,6 @@ export function UnifiedSidebar() {
         { icon: Building2, label: "HR & Payroll", href: "/gusto", tourId: "nav-gusto", adminOnly: true },
         { icon: PlusCircle, label: "Connect App", href: "/connect", tourId: "nav-connect" },
         { icon: Settings, label: "Settings", href: "/settings", tourId: "nav-settings" },
-        { icon: FileText, label: "Typeform", href: "/typeform", tourId: "nav-typeform", adminOnly: true },
         { icon: Shield, label: "Admin", href: "/admin", tourId: "nav-admin", adminOnly: true },
         ...(import.meta.env.DEV ? [{ icon: History, label: "Development Log", href: "/changelog", tourId: "nav-changelog", kenOnly: true }] : []),
       ],
