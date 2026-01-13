@@ -128,6 +128,7 @@ export function UnifiedSidebar() {
         { icon: BarChart3, label: "Brevo", href: "/email-activity", tourId: "nav-email-activity" },
         { icon: Star, label: "Perkville", href: "/rewards", tourId: "nav-rewards" },
         { icon: FileText, label: "Typeform", href: "/typeform", tourId: "nav-typeform" },
+        { icon: QrCode, label: "QR Codes", href: "/qr-codes", tourId: "nav-qr-codes" },
       ],
     },
     {
@@ -136,7 +137,6 @@ export function UnifiedSidebar() {
       icon: Zap,
       defaultCollapsed: true,
       items: [
-        { icon: QrCode, label: "QR Codes", href: "/qr-codes", tourId: "nav-qr-codes" },
         { icon: Mail, label: "Email Builder", href: "/email-builder", tourId: "nav-email-builder" },
       ],
     },
