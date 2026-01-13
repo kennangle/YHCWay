@@ -87,20 +87,14 @@ export function UnifiedSidebar() {
     }));
   };
 
+  const topNavItems: NavItem[] = [
+    { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard", tourId: "nav-dashboard" },
+    { icon: CalendarIcon, label: "Calendar", href: "/calendar", tourId: "nav-calendar" },
+    { icon: Rocket, label: "Setup Guide", href: "/setup-guide", tourId: "nav-setup-guide" },
+    { icon: Presentation, label: "Presentation", href: "/presentation", tourId: "nav-presentation", adminOnly: true },
+  ];
+
   const navGroups: NavGroup[] = [
-    {
-      id: 'workspace',
-      label: 'Workspace',
-      icon: LayoutDashboard,
-      defaultCollapsed: false,
-      items: [
-        { icon: LayoutDashboard, label: "Overview", href: "/", tourId: "nav-overview" },
-        { icon: Inbox, label: "Dashboard", href: "/dashboard", tourId: "nav-dashboard" },
-        { icon: CalendarIcon, label: "Calendar", href: "/calendar", tourId: "nav-calendar" },
-        { icon: Rocket, label: "Setup Guide", href: "/setup-guide", tourId: "nav-setup-guide" },
-        { icon: Presentation, label: "Presentation", href: "/presentation", tourId: "nav-presentation", adminOnly: true },
-      ],
-    },
     {
       id: 'productivity',
       label: 'Productivity',
@@ -247,6 +241,11 @@ export function UnifiedSidebar() {
         </div>
 
         <div className={cn("flex-1 py-4 space-y-4 overflow-y-auto", isCollapsed ? "px-2" : "px-3")}>
+          {/* Top-level navigation items */}
+          <div className="space-y-1">
+            {topNavItems.filter(item => !item.adminOnly || user?.isAdmin).map(renderNavItem)}
+          </div>
+
           {navGroups.map((group) => {
             const isGroupCollapsed = collapsedGroups[group.id] ?? group.defaultCollapsed;
             const visibleItems = group.items.filter(item => !item.adminOnly || user?.isAdmin);
