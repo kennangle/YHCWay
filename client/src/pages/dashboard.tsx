@@ -804,38 +804,47 @@ export default function Dashboard() {
             
             {calendarLoading ? (
               <div className="text-center text-muted-foreground py-4">Loading events...</div>
-            ) : calendarEvents.length === 0 ? (
-              <div className="text-center text-muted-foreground py-4">No upcoming events</div>
-            ) : (
-              <div className="flex gap-3 overflow-x-auto pb-2">
-                {calendarEvents.slice(0, 10).map((event) => {
-                  const isNow = isEventNow(event.start, event.end, event.isAllDay);
-                  const isCalendly = event.source === "calendly";
-                  return (
-                    <Link key={event.id} href="/calendar" data-testid={`upcoming-event-${event.id}`}>
-                      <div className={`flex-shrink-0 flex items-center gap-3 px-4 py-2 rounded-lg border transition-colors cursor-pointer ${isCalendly ? 'bg-blue-50/60 border-blue-200/50 hover:bg-blue-100/80' : 'bg-white/60 border-white/30 hover:bg-white/80'}`}>
-                        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isNow ? 'bg-primary animate-pulse' : isCalendly ? 'bg-blue-500' : 'bg-green-500'}`}></div>
-                        {isCalendly && (
-                          <span className="text-[10px] font-semibold text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded flex-shrink-0">
-                            Calendly
+            ) : (() => {
+              const sevenDaysFromNow = new Date();
+              sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+              const filteredEvents = calendarEvents.filter(event => {
+                const eventDate = new Date(event.start);
+                return eventDate <= sevenDaysFromNow;
+              });
+              
+              return filteredEvents.length === 0 ? (
+                <div className="text-center text-muted-foreground py-4">No upcoming events in the next 7 days</div>
+              ) : (
+                <div className="flex flex-wrap gap-3">
+                  {filteredEvents.map((event) => {
+                    const isNow = isEventNow(event.start, event.end, event.isAllDay);
+                    const isCalendly = event.source === "calendly";
+                    return (
+                      <Link key={event.id} href="/calendar" data-testid={`upcoming-event-${event.id}`}>
+                        <div className={`flex items-center gap-3 px-4 py-2 rounded-lg border transition-colors cursor-pointer ${isCalendly ? 'bg-blue-50/60 border-blue-200/50 hover:bg-blue-100/80' : 'bg-white/60 border-white/30 hover:bg-white/80'}`}>
+                          <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isNow ? 'bg-primary animate-pulse' : isCalendly ? 'bg-blue-500' : 'bg-green-500'}`}></div>
+                          {isCalendly && (
+                            <span className="text-[10px] font-semibold text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded flex-shrink-0">
+                              Calendly
+                            </span>
+                          )}
+                          <span className="text-xs font-medium text-primary/80 flex-shrink-0">
+                            {formatEventDate(event.start)}
                           </span>
-                        )}
-                        <span className="text-xs font-medium text-primary/80 flex-shrink-0">
-                          {formatEventDate(event.start)}
-                        </span>
-                        <span className={`text-xs font-semibold flex-shrink-0 ${isNow ? 'text-primary' : 'text-muted-foreground'}`}>
-                          {isNow ? 'NOW' : formatEventStartTime(event.start, event.isAllDay)}
-                        </span>
-                        <span className="font-medium text-foreground text-sm truncate max-w-48">{event.title}</span>
-                        <span className="text-xs text-muted-foreground flex-shrink-0">
-                          {formatEventTime(event.start, event.end, event.isAllDay)}
-                        </span>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
+                          <span className={`text-xs font-semibold flex-shrink-0 ${isNow ? 'text-primary' : 'text-muted-foreground'}`}>
+                            {isNow ? 'NOW' : formatEventStartTime(event.start, event.isAllDay)}
+                          </span>
+                          <span className="font-medium text-foreground text-sm truncate max-w-48">{event.title}</span>
+                          <span className="text-xs text-muted-foreground flex-shrink-0">
+                            {formatEventTime(event.start, event.end, event.isAllDay)}
+                          </span>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </div>
         )}
 
