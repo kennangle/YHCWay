@@ -116,8 +116,9 @@ export const presentationSlides: Slide[] = [
       "Compose new emails with the 'Compose' button",
       "AI Email Drafting: Click the AI button to generate professional email text",
       "Reply to messages without leaving your workflow",
+      "Delete emails: Click the trash icon to move emails to trash",
     ],
-    tips: ["Use AI drafting for quick professional responses", "Your sent emails appear in Gmail as normal"],
+    tips: ["Use AI drafting for quick professional responses", "Your sent emails appear in Gmail as normal", "Deleted emails go to Gmail trash and can be recovered there"],
     navPath: "/inbox",
   },
 
@@ -221,8 +222,9 @@ export const presentationSlides: Slide[] = [
       "Assignments: Assign tasks to team members",
       "Recurring Tasks: Set tasks to repeat daily, weekly, or monthly",
       "Comments: Collaborate with notes on each task",
+      "Asana Sync: Mark tasks complete and changes sync to Asana automatically",
     ],
-    tips: ["High priority tasks appear at the top of your list", "Overdue tasks are highlighted in red"],
+    tips: ["High priority tasks appear at the top of your list", "Overdue tasks are highlighted in red", "Tasks imported from Asana stay in sync"],
     navPath: "/tasks",
   },
 
@@ -326,6 +328,23 @@ export const presentationSlides: Slide[] = [
     ],
     tips: ["Spreadsheets are synced from your Google account", "Great for quick access to shared files"],
     navPath: "/google-sheets",
+  },
+
+  // GOOGLE DRIVE
+  {
+    id: 34,
+    type: "howto",
+    title: "Google Drive",
+    icon: "💾",
+    steps: [
+      { step: "Navigate to Google Drive", detail: "Click 'Google Drive' in the Productivity section", link: "/google-drive" },
+      { step: "Browse your files", detail: "See all files and folders from your Google Drive" },
+      { step: "Navigate folders", detail: "Click folders to browse inside, use breadcrumbs to go back" },
+      { step: "Open files", detail: "Click the open icon to view any file in Google" },
+      { step: "Search files", detail: "Use the search bar to find files by name" },
+    ],
+    tips: ["Files are sorted by most recently modified", "Supports Docs, Sheets, PDFs, images, and more"],
+    navPath: "/google-drive",
   },
 
   // BREVO EMAIL ANALYTICS
