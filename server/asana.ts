@@ -463,3 +463,34 @@ export async function getProjectTasksForImport(projectGid: string): Promise<Asan
 export async function getAsanaProjectsForImport(): Promise<AsanaProject[]> {
   return getProjects(100);
 }
+
+export async function updateAsanaTaskCompletion(asanaTaskId: string, completed: boolean): Promise<boolean> {
+  try {
+    const accessToken = await getAccessToken();
+    
+    const response = await fetch(`https://app.asana.com/api/1.0/tasks/${asanaTaskId}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({
+        data: {
+          completed: completed,
+        },
+      }),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json() as any;
+      console.error('Asana API error updating task:', errorData);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error updating Asana task completion:', error);
+    return false;
+  }
+}

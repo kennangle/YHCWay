@@ -13,7 +13,7 @@ import { getUpcomingEvents, getEventsForMonth, isCalendarConnected, createCalend
 import { getUpcomingMeetings, isZoomConnected } from "./zoom";
 import { getRecentMessages as getSlackMessages, getAllMessages as getAllSlackMessages, getDirectMessages as getSlackDMs, getThreadReplies as getSlackThreadReplies, isSlackConnected, getChannels as getSlackChannels, getRecentMessagesFiltered, isUserSlackConnected, getUserAllMessages, getUserDirectMessages, getUserChannels, sendSlackNotification, sendSlackBlockNotification, formatYHCWayNotification, sendUserSlackMessage } from "./slack";
 import { isAppleCalendarConnected, testAppleCalendarConnection, saveAppleCalendarCredentials, deleteAppleCalendarCredentials, getAppleCalendarEvents, getAppleCalendarEventsForMonth } from "./appleCalendar";
-import { isAsanaConnected, getMyTasks, getProjects, getUpcomingTasks, isUserAsanaConnected, getUserMyTasks, getUserProjects, getUserUpcomingTasks, getAsanaProjectsForImport, getProjectSections, getProjectTasksForImport } from "./asana";
+import { isAsanaConnected, getMyTasks, getProjects, getUpcomingTasks, isUserAsanaConnected, getUserMyTasks, getUserProjects, getUserUpcomingTasks, getAsanaProjectsForImport, getProjectSections, getProjectTasksForImport, updateAsanaTaskCompletion } from "./asana";
 import { getTypeformForms, getTypeformForm, createTypeformForm, updateTypeformForm, deleteTypeformForm, getTypeformResponses, isTypeformConfigured } from "./typeform";
 import { sendInvitationEmail, getTemplateTypes, getDefaultTemplate, sendTaskAssignedNotification } from "./email";
 import { appleCalendarConnectSchema, slackPreferencesUpdateSchema, emailTemplateSchema, updateNotificationPrefsSchema, createTimeEntrySchema, updateTimeEntrySchema } from "@shared/schema";
@@ -3871,6 +3871,7 @@ export async function registerRoutes(
           isCompleted: asanaTask.completed,
           creatorId: userId,
           tenantId,
+          asanaTaskId: asanaTask.id,
         });
         
         // Add task to project with placement (for board view)
@@ -4086,6 +4087,55 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error moving task:", error);
       res.status(500).json({ error: "Failed to move task" });
+    }
+  });
+
+  // Toggle task completion with Asana sync
+  app.patch("/api/tasks/:id/complete", isAuthenticated, async (req: any, res) => {
+    try {
+      const taskId = parseInt(req.params.id);
+      const { completed } = req.body;
+      
+      if (typeof completed !== 'boolean') {
+        return res.status(400).json({ error: "completed must be a boolean" });
+      }
+      
+      // Get task to check for Asana link
+      const task = await storage.getTask(taskId);
+      if (!task) {
+        return res.status(404).json({ error: "Task not found" });
+      }
+      
+      // Update local task
+      const updatedTask = await storage.updateTask(taskId, {
+        isCompleted: completed,
+        completedAt: completed ? new Date() : null,
+      });
+      
+      // Sync to Asana if task has asanaTaskId
+      let asanaSynced = false;
+      let asanaError: string | null = null;
+      
+      if (task.asanaTaskId) {
+        try {
+          asanaSynced = await updateAsanaTaskCompletion(task.asanaTaskId, completed);
+          if (!asanaSynced) {
+            asanaError = "Failed to sync with Asana";
+          }
+        } catch (error: any) {
+          console.error("Error syncing task completion to Asana:", error);
+          asanaError = error.message || "Failed to sync with Asana";
+        }
+      }
+      
+      res.json({
+        task: updatedTask,
+        asanaSynced,
+        asanaError,
+      });
+    } catch (error: any) {
+      console.error("Error toggling task completion:", error);
+      res.status(500).json({ error: "Failed to toggle task completion" });
     }
   });
 
