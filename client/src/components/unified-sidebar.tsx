@@ -91,6 +91,7 @@ export function UnifiedSidebar() {
     { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard", tourId: "nav-dashboard" },
     { icon: Mail, label: "Unified Mailbox", href: "/inbox", tourId: "nav-inbox" },
     { icon: CalendarIcon, label: "Calendar", href: "/calendar", tourId: "nav-calendar" },
+    { icon: Gift, label: "Intro Offers", href: "/intro-offers", tourId: "nav-intro-offers" },
     { icon: Rocket, label: "Setup Guide", href: "/setup-guide", tourId: "nav-setup-guide" },
     { icon: Presentation, label: "Presentation", href: "/presentation", tourId: "nav-presentation", adminOnly: true },
   ];
@@ -135,7 +136,6 @@ export function UnifiedSidebar() {
       icon: Zap,
       defaultCollapsed: true,
       items: [
-        { icon: Gift, label: "Intro Offers", href: "/intro-offers", tourId: "nav-intro-offers" },
         { icon: QrCode, label: "QR Codes", href: "/qr-codes", tourId: "nav-qr-codes" },
         { icon: Mail, label: "Email Builder", href: "/email-builder", tourId: "nav-email-builder" },
       ],
