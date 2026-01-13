@@ -90,6 +90,7 @@ import Presentation from "@/pages/presentation";
 import Changelog from "@/pages/changelog";
 import GoogleDocs from "@/pages/google-docs";
 import GoogleSheets from "@/pages/google-sheets";
+import GoogleDrive from "@/pages/google-drive";
 import { FloatingAIButton } from "@/components/floating-ai-button";
 import { GuidedTour } from "@/components/guided-tour";
 
@@ -163,6 +164,7 @@ function Router() {
         <Route path="/gusto" component={Gusto} />
         <Route path="/presentation" component={Presentation} />
         <Route path="/changelog" component={Changelog} />
+        <Route path="/google-drive" component={GoogleDrive} />
         <Route path="/google-docs" component={GoogleDocs} />
         <Route path="/google-sheets" component={GoogleSheets} />
         <Route path="/ai-summarize" component={AISummarize} />

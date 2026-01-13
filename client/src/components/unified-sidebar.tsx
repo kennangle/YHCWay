@@ -10,6 +10,7 @@ import {
   FileText,
   File,
   FileSpreadsheet,
+  HardDrive,
   Settings, 
   PlusCircle,
   Shield,
@@ -103,6 +104,7 @@ export function UnifiedSidebar() {
       icon: FileText,
       defaultCollapsed: false,
       items: [
+        { icon: HardDrive, label: "Google Drive", href: "/google-drive", tourId: "nav-google-drive" },
         { icon: FileSpreadsheet, label: "Google Sheets", href: "/google-sheets", tourId: "nav-google-sheets" },
         { icon: File, label: "Google Docs", href: "/google-docs", tourId: "nav-google-docs" },
         { icon: Zap, label: "AI Summarize", href: "/ai-summarize", tourId: "nav-ai-summarize" },
