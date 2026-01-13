@@ -109,7 +109,10 @@ export default function IntroOffers() {
     queryKey: ["/api/mindbody-analytics/intro-offers", statusFilter],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (statusFilter !== "all") params.append("status", statusFilter);
+      // Don't pass 'needs_attention' to API - it's a frontend-only filter that combines at_risk + lapsed
+      if (statusFilter !== "all" && statusFilter !== "needs_attention") {
+        params.append("status", statusFilter);
+      }
       params.append("limit", "50");
       const res = await fetch(`/api/mindbody-analytics/intro-offers?${params}`, { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch intro offers");
