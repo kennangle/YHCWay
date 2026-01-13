@@ -841,7 +841,7 @@ export default function Dashboard() {
 
         {/* Insights Section */}
         {isWidgetVisible("insights") && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8" style={{ order: getWidgetOrder("insights") }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8" style={{ order: getWidgetOrder("insights") }}>
             {/* At-Risk Students */}
             <Link href="/intro-offers?filter=needs_attention" className="block" data-testid="insight-at-risk">
             <div className="glass-panel p-5 rounded-xl border-l-4 border-l-amber-500 hover:bg-white/80 transition-colors cursor-pointer h-full">
