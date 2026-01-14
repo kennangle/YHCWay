@@ -40,27 +40,30 @@ interface MetricCardProps {
 
 function MetricCard({ title, value, subtitle, icon, color, bgColor, trend, trendValue, testId }: MetricCardProps) {
   return (
-    <div className="glass-panel p-5 rounded-xl h-full" data-testid={testId}>
-      <div className="flex items-start justify-between mb-3">
-        <div className={`w-12 h-12 rounded-xl ${bgColor} flex items-center justify-center`}>
+    <div className="glass-panel p-3 rounded-xl h-full" data-testid={testId}>
+      <div className="flex items-center gap-3">
+        <div className={`w-10 h-10 rounded-lg ${bgColor} flex items-center justify-center shrink-0`}>
           {icon}
         </div>
-        {trend && trendValue && (
-          <div className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${
-            trend === "up" ? "bg-green-100 text-green-700" :
-            trend === "down" ? "bg-red-100 text-red-700" :
-            "bg-gray-100 text-gray-600"
-          }`}>
-            {trend === "up" ? <ArrowUp className="w-3 h-3" /> :
-             trend === "down" ? <ArrowDown className="w-3 h-3" /> :
-             <Minus className="w-3 h-3" />}
-            {trendValue}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <p className={`text-2xl font-bold ${color}`} data-testid={`${testId}-value`}>{value}</p>
+            {trend && trendValue && (
+              <div className={`flex items-center gap-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
+                trend === "up" ? "bg-green-100 text-green-700" :
+                trend === "down" ? "bg-red-100 text-red-700" :
+                "bg-gray-100 text-gray-600"
+              }`}>
+                {trend === "up" ? <ArrowUp className="w-2.5 h-2.5" /> :
+                 trend === "down" ? <ArrowDown className="w-2.5 h-2.5" /> :
+                 <Minus className="w-2.5 h-2.5" />}
+                {trendValue}
+              </div>
+            )}
           </div>
-        )}
+          <h3 className="font-medium text-xs text-foreground truncate">{title}</h3>
+        </div>
       </div>
-      <p className={`text-3xl font-bold ${color} mb-1`} data-testid={`${testId}-value`}>{value}</p>
-      <h3 className="font-semibold text-sm text-foreground">{title}</h3>
-      {subtitle && <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>}
     </div>
   );
 }
@@ -135,18 +138,16 @@ export default function Scoreboard() {
       <main className={mainContentClass}>
         <TopBar />
 
-        <div className="p-6 md:p-8">
+        <div className="p-4 md:p-6">
           {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-orange-600 flex items-center justify-center">
-                  <BarChart3 className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h1 className="font-display text-2xl md:text-3xl font-bold">Weekly Scoreboard</h1>
-                  <p className="text-muted-foreground text-sm">8–12 metrics that show the health of the business</p>
-                </div>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-orange-600 flex items-center justify-center">
+                <BarChart3 className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <h1 className="font-display text-lg font-bold">Weekly Scoreboard</h1>
+                <p className="text-muted-foreground text-xs">Key metrics for business health</p>
               </div>
             </div>
             <Button 
@@ -154,10 +155,10 @@ export default function Scoreboard() {
               size="sm" 
               onClick={handleRefresh}
               disabled={isLoading}
-              className="gap-2"
+              className="gap-1 h-7 text-xs px-2"
               data-testid="button-refresh-scoreboard"
             >
-              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-3 h-3 ${isLoading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
           </div>
@@ -187,17 +188,17 @@ export default function Scoreboard() {
           ) : (
             <>
               {/* Primary Metrics - Member Movement */}
-              <div className="mb-8">
-                <h2 className="font-display font-semibold text-lg mb-4 flex items-center gap-2">
-                  <Users className="w-5 h-5 text-primary" />
+              <div className="mb-4">
+                <h2 className="font-display font-semibold text-sm mb-2 flex items-center gap-2">
+                  <Users className="w-4 h-4 text-primary" />
                   Member Movement
                 </h2>
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
                   <MetricCard
                     title="Active Members"
                     value={summary?.activeOffers || engagedCount + newCount}
                     subtitle="Currently engaged"
-                    icon={<Users className="w-6 h-6 text-blue-600" />}
+                    icon={<Users className="w-5 h-5 text-blue-600" />}
                     color="text-blue-600"
                     bgColor="bg-blue-100"
                     testId="metric-active-members"
@@ -206,7 +207,7 @@ export default function Scoreboard() {
                     title="New This Week"
                     value={newThisWeek}
                     subtitle="Last 7 days"
-                    icon={<UserPlus className="w-6 h-6 text-green-600" />}
+                    icon={<UserPlus className="w-5 h-5 text-green-600" />}
                     color="text-green-600"
                     bgColor="bg-green-100"
                     trend={newThisWeek > 0 ? "up" : "neutral"}
@@ -217,7 +218,7 @@ export default function Scoreboard() {
                     title="At Risk"
                     value={atRiskCount}
                     subtitle="Need follow-up"
-                    icon={<TrendingDown className="w-6 h-6 text-amber-600" />}
+                    icon={<TrendingDown className="w-5 h-5 text-amber-600" />}
                     color="text-amber-600"
                     bgColor="bg-amber-100"
                     testId="metric-at-risk"
@@ -226,7 +227,7 @@ export default function Scoreboard() {
                     title="Lapsed"
                     value={lapsedCount}
                     subtitle="Lost engagement"
-                    icon={<UserMinus className="w-6 h-6 text-red-600" />}
+                    icon={<UserMinus className="w-5 h-5 text-red-600" />}
                     color="text-red-600"
                     bgColor="bg-red-100"
                     testId="metric-lapsed"
@@ -235,7 +236,7 @@ export default function Scoreboard() {
                     title="Converted"
                     value={convertedCount}
                     subtitle="Became members"
-                    icon={<TrendingUp className="w-6 h-6 text-emerald-600" />}
+                    icon={<TrendingUp className="w-5 h-5 text-emerald-600" />}
                     color="text-emerald-600"
                     bgColor="bg-emerald-100"
                     trend="up"
@@ -246,7 +247,7 @@ export default function Scoreboard() {
                     title="Net Adds"
                     value={netAdds >= 0 ? `+${netAdds}` : netAdds}
                     subtitle="Growth this week"
-                    icon={netAdds >= 0 ? <TrendingUp className="w-6 h-6 text-primary" /> : <TrendingDown className="w-6 h-6 text-red-600" />}
+                    icon={netAdds >= 0 ? <TrendingUp className="w-5 h-5 text-primary" /> : <TrendingDown className="w-5 h-5 text-red-600" />}
                     color={netAdds >= 0 ? "text-primary" : "text-red-600"}
                     bgColor={netAdds >= 0 ? "bg-orange-100" : "bg-red-100"}
                     trend={netAdds > 0 ? "up" : netAdds < 0 ? "down" : "neutral"}
@@ -256,17 +257,17 @@ export default function Scoreboard() {
               </div>
 
               {/* Intro Offer Metrics */}
-              <div className="mb-8">
-                <h2 className="font-display font-semibold text-lg mb-4 flex items-center gap-2">
-                  <Gift className="w-5 h-5 text-purple-600" />
+              <div className="mb-4">
+                <h2 className="font-display font-semibold text-sm mb-2 flex items-center gap-2">
+                  <Gift className="w-4 h-4 text-purple-600" />
                   Intro Offer Pipeline
                 </h2>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   <MetricCard
                     title="Total Intro Offers"
                     value={summary?.totalOffers || offers.length}
                     subtitle="All time tracked"
-                    icon={<Gift className="w-6 h-6 text-purple-600" />}
+                    icon={<Gift className="w-5 h-5 text-purple-600" />}
                     color="text-purple-600"
                     bgColor="bg-purple-100"
                     testId="metric-total-intro-offers"
@@ -275,7 +276,7 @@ export default function Scoreboard() {
                     title="Intro Offers Sold"
                     value={newThisWeek}
                     subtitle="This week"
-                    icon={<Calendar className="w-6 h-6 text-indigo-600" />}
+                    icon={<Calendar className="w-5 h-5 text-indigo-600" />}
                     color="text-indigo-600"
                     bgColor="bg-indigo-100"
                     testId="metric-intro-offers-sold"
@@ -284,7 +285,7 @@ export default function Scoreboard() {
                     title="Conversion Rate"
                     value={`${summary?.conversionRate || conversionRate}%`}
                     subtitle="Intro → Member"
-                    icon={<Percent className="w-6 h-6 text-teal-600" />}
+                    icon={<Percent className="w-5 h-5 text-teal-600" />}
                     color="text-teal-600"
                     bgColor="bg-teal-100"
                     trend={conversionRate >= 50 ? "up" : conversionRate >= 25 ? "neutral" : "down"}
@@ -294,7 +295,7 @@ export default function Scoreboard() {
                     title="Awaiting First Class"
                     value={newCount}
                     subtitle="Not yet engaged"
-                    icon={<Users className="w-6 h-6 text-pink-600" />}
+                    icon={<Users className="w-5 h-5 text-pink-600" />}
                     color="text-pink-600"
                     bgColor="bg-pink-100"
                     testId="metric-awaiting-first-class"
@@ -303,50 +304,53 @@ export default function Scoreboard() {
               </div>
 
               {/* Financial Metrics (Placeholder) */}
-              <div className="mb-8">
-                <h2 className="font-display font-semibold text-lg mb-4 flex items-center gap-2">
-                  <DollarSign className="w-5 h-5 text-green-600" />
+              <div className="mb-4">
+                <h2 className="font-display font-semibold text-sm mb-2 flex items-center gap-2">
+                  <DollarSign className="w-4 h-4 text-green-600" />
                   Financial Health
-                  <span className="text-xs font-normal text-muted-foreground">(Coming Soon)</span>
+                  <span className="text-[10px] font-normal text-muted-foreground">(Coming Soon)</span>
                 </h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  <div className="glass-panel p-5 rounded-xl border-2 border-dashed border-gray-300 opacity-60">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
-                        <DollarSign className="w-6 h-6 text-green-600" />
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="glass-panel p-3 rounded-xl border border-dashed border-gray-300 opacity-60">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center shrink-0">
+                        <DollarSign className="w-5 h-5 text-green-600" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-gray-400">—</p>
+                        <h3 className="font-medium text-xs text-muted-foreground">Monthly Revenue</h3>
                       </div>
                     </div>
-                    <p className="text-3xl font-bold text-gray-400 mb-1">—</p>
-                    <h3 className="font-semibold text-sm text-muted-foreground">Monthly Revenue</h3>
-                    <p className="text-xs text-muted-foreground mt-1">Requires Mindbody integration</p>
                   </div>
-                  <div className="glass-panel p-5 rounded-xl border-2 border-dashed border-gray-300 opacity-60">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
-                        <DollarSign className="w-6 h-6 text-blue-600" />
+                  <div className="glass-panel p-3 rounded-xl border border-dashed border-gray-300 opacity-60">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
+                        <DollarSign className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-gray-400">—</p>
+                        <h3 className="font-medium text-xs text-muted-foreground">Autopay Total</h3>
                       </div>
                     </div>
-                    <p className="text-3xl font-bold text-gray-400 mb-1">—</p>
-                    <h3 className="font-semibold text-sm text-muted-foreground">Autopay Total</h3>
-                    <p className="text-xs text-muted-foreground mt-1">Requires Mindbody integration</p>
                   </div>
-                  <div className="glass-panel p-5 rounded-xl border-2 border-dashed border-gray-300 opacity-60">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
-                        <TrendingUp className="w-6 h-6 text-amber-600" />
+                  <div className="glass-panel p-3 rounded-xl border border-dashed border-gray-300 opacity-60">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
+                        <TrendingUp className="w-5 h-5 text-amber-600" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-gray-400">—</p>
+                        <h3 className="font-medium text-xs text-muted-foreground">Avg Attendance</h3>
                       </div>
                     </div>
-                    <p className="text-3xl font-bold text-gray-400 mb-1">—</p>
-                    <h3 className="font-semibold text-sm text-muted-foreground">Avg Class Attendance</h3>
-                    <p className="text-xs text-muted-foreground mt-1">Requires Mindbody integration</p>
                   </div>
                 </div>
               </div>
 
               {/* Quick Summary */}
-              <div className="glass-panel p-6 rounded-xl">
-                <h2 className="font-display font-semibold text-lg mb-4">This Week's Story</h2>
-                <div className="prose prose-sm max-w-none text-muted-foreground">
+              <div className="glass-panel p-4 rounded-xl">
+                <h2 className="font-display font-semibold text-sm mb-2">This Week's Story</h2>
+                <div className="text-xs text-muted-foreground">
                   <p>
                     {newThisWeek > 0 ? (
                       <>
