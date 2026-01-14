@@ -851,7 +851,7 @@ export default function Dashboard() {
 
         {/* Insights Section */}
         {isWidgetVisible("insights") && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8" style={{ order: getWidgetOrder("insights") }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8" style={{ order: getWidgetOrder("insights") }}>
             {/* At-Risk Students */}
             <Link href="/intro-offers?filter=needs_attention" className="block" data-testid="insight-at-risk">
             <div className="glass-panel p-5 rounded-xl border-l-4 border-l-amber-500 hover:bg-white/80 transition-colors cursor-pointer h-full">
@@ -916,6 +916,31 @@ export default function Dashboard() {
               </Link>
             </div>
           </div>
+
+          {/* Upcoming Tasks Card */}
+          <Link href="/projects" className="block" data-testid="insight-upcoming-tasks">
+            <div className="glass-panel p-5 rounded-xl border-l-4 border-l-blue-500 hover:bg-white/80 transition-colors cursor-pointer h-full">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                  <CheckSquare className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-sm">Upcoming Tasks</h3>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {upcomingTasks.length}
+                  </p>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {upcomingTasks.filter(t => t.dueDate && new Date(t.dueDate) < new Date()).length > 0 
+                  ? `${upcomingTasks.filter(t => t.dueDate && new Date(t.dueDate) < new Date()).length} overdue`
+                  : upcomingTasks.length > 0 
+                    ? `Next: ${upcomingTasks[0]?.title?.substring(0, 20)}${(upcomingTasks[0]?.title?.length || 0) > 20 ? '...' : ''}`
+                    : 'No tasks due'
+                }
+              </p>
+            </div>
+          </Link>
         </div>
         )}
 
@@ -983,43 +1008,6 @@ export default function Dashboard() {
           </div>
         )} */}
 
-        {/* Upcoming Tasks Section */}
-        {isWidgetVisible("upcoming-tasks") && upcomingTasks.length > 0 && (
-          <div className="glass-panel p-6 rounded-2xl mb-8" style={{ order: getWidgetOrder("upcoming-tasks") }}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-display font-semibold text-lg">Upcoming Tasks</h3>
-              <Link href="/projects">
-                <button className="text-sm text-primary hover:underline">View All</button>
-              </Link>
-            </div>
-            <div className="flex gap-3 overflow-x-auto pb-2">
-              {upcomingTasks.slice(0, 6).map((task) => {
-                const priorityColors: Record<string, string> = {
-                  low: "border-gray-300",
-                  medium: "border-blue-400",
-                  high: "border-orange-400",
-                  urgent: "border-red-500",
-                };
-                const dueDate = task.dueDate ? new Date(task.dueDate) : null;
-                const isOverdue = dueDate && dueDate < new Date() && !task.isCompleted;
-                return (
-                  <Link key={task.id} href="/projects" data-testid={`upcoming-task-${task.id}`}>
-                    <div className={`flex-shrink-0 px-4 py-3 rounded-lg bg-white/60 border-l-4 ${priorityColors[task.priority]} hover:bg-white/80 transition-colors cursor-pointer min-w-48`}>
-                      <p className={`font-medium text-sm ${task.isCompleted ? 'line-through text-muted-foreground' : ''}`}>
-                        {task.title}
-                      </p>
-                      {dueDate && (
-                        <p className={`text-xs mt-1 ${isOverdue ? 'text-red-600' : 'text-muted-foreground'}`}>
-                          {isOverdue ? 'Overdue: ' : 'Due: '}{dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                        </p>
-                      )}
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        )}
 
         {isWidgetVisible("service-summary") && (
         <div className="mb-8" style={{ order: getWidgetOrder("service-summary") }}>
