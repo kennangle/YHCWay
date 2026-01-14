@@ -88,6 +88,7 @@ import EmailActivity from "@/pages/email-activity";
 import Gusto from "@/pages/gusto";
 import Presentation from "@/pages/presentation";
 import Changelog from "@/pages/changelog";
+import Scoreboard from "@/pages/scoreboard";
 import GoogleDocs from "@/pages/google-docs";
 import GoogleSheets from "@/pages/google-sheets";
 import GoogleDrive from "@/pages/google-drive";
@@ -155,6 +156,7 @@ function Router() {
         <Route path="/admin" component={Admin} />
         <Route path="/email-builder" component={EmailBuilderPage} />
         <Route path="/intro-offers" component={IntroOffers} />
+        <Route path="/scoreboard" component={Scoreboard} />
         <Route path="/webhooks" component={Webhooks} />
         <Route path="/setup-guide" component={SetupGuide} />
         <Route path="/qr-codes" component={QRCodes} />
