@@ -61,7 +61,7 @@ function MetricCard({ title, value, subtitle, icon, color, bgColor, trend, trend
               </div>
             )}
           </div>
-          <h3 className="font-medium text-xs text-foreground truncate">{title}</h3>
+          <h3 className="font-medium text-sm text-foreground truncate">{title}</h3>
         </div>
       </div>
     </div>
@@ -349,8 +349,8 @@ export default function Scoreboard() {
 
               {/* Quick Summary */}
               <div className="glass-panel p-4 rounded-xl">
-                <h2 className="font-display font-semibold text-sm mb-2">This Week's Story</h2>
-                <div className="text-xs text-muted-foreground">
+                <h2 className="font-display font-semibold text-base mb-2">This Week's Story</h2>
+                <div className="text-sm text-muted-foreground leading-relaxed">
                   <p>
                     {newThisWeek > 0 ? (
                       <>
