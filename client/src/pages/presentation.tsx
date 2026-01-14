@@ -83,22 +83,48 @@ export default function PresentationPage() {
           </div>
         );
 
+      case "section":
+        return (
+          <div className="flex flex-col items-center justify-center h-full text-center px-8 bg-gradient-to-br from-orange-500 via-amber-500 to-orange-600">
+            <p className="text-2xl md:text-3xl text-white/80 font-medium mb-4">{slide.title}</p>
+            <h1 className="text-5xl md:text-7xl font-bold text-white">
+              {slide.subtitle}
+            </h1>
+          </div>
+        );
+
       case "overview":
         return (
           <div className="flex flex-col h-full px-12 py-8">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-12">{slide.title}</h2>
-            <div className="flex-1 flex flex-col justify-center">
-              <ul className="space-y-6">
-                {slide.points?.map((point, i) => (
-                  <li key={i} className="flex items-start gap-4">
-                    <span className="text-3xl text-orange-500">✓</span>
-                    <span className="text-2xl text-gray-700">{point}</span>
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-12 p-6 bg-gradient-to-r from-orange-100 to-amber-100 rounded-2xl">
-                <p className="text-2xl font-semibold text-orange-700">{slide.benefit}</p>
-              </div>
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-8">{slide.title}</h2>
+            <div className="flex-1 flex flex-col justify-center overflow-auto">
+              {slide.points && (
+                <ul className="space-y-4">
+                  {slide.points.map((point, i) => (
+                    <li key={i} className="flex items-start gap-4">
+                      <span className="text-2xl text-orange-500">✓</span>
+                      <span className="text-xl text-gray-700">{point}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {slide.features && (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {slide.features.map((feature, i) => (
+                    <Link key={i} href={feature.navPath || "/"}>
+                      <div className="bg-white/80 backdrop-blur rounded-xl p-4 shadow border border-gray-100 hover:bg-orange-50 hover:border-orange-200 cursor-pointer transition-colors">
+                        <h3 className="text-lg font-bold text-orange-600">{feature.name}</h3>
+                        <p className="text-sm text-gray-600">{feature.desc}</p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+              {slide.benefit && (
+                <div className="mt-8 p-5 bg-gradient-to-r from-orange-100 to-amber-100 rounded-2xl">
+                  <p className="text-xl font-semibold text-orange-700">{slide.benefit}</p>
+                </div>
+              )}
             </div>
           </div>
         );
@@ -133,17 +159,25 @@ export default function PresentationPage() {
 
       case "benefits":
         return (
-          <div className="flex flex-col h-full px-12 py-8">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-10 text-center">{slide.title}</h2>
-            <div className="flex-1 grid grid-cols-2 md:grid-cols-3 gap-6">
+          <div className="flex flex-col h-full px-12 py-6">
+            <div className="mb-6">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-800 text-center">{slide.title}</h2>
+              {slide.subtitle && <p className="text-lg text-gray-600 text-center mt-2">{slide.subtitle}</p>}
+            </div>
+            <div className="flex-1 grid grid-cols-2 md:grid-cols-3 gap-4 overflow-auto">
               {slide.benefits?.map((benefit, i) => (
-                <div key={i} className="bg-white/80 backdrop-blur rounded-2xl p-6 shadow-lg border border-gray-100 flex flex-col items-center text-center">
-                  <span className="text-4xl mb-3">{benefit.icon}</span>
-                  <h3 className="text-xl font-bold text-gray-800 mb-2">{benefit.title}</h3>
-                  <p className="text-gray-600">{benefit.desc}</p>
+                <div key={i} className="bg-white/80 backdrop-blur rounded-xl p-4 shadow border border-gray-100 flex flex-col items-center text-center">
+                  <span className="text-3xl mb-2">{benefit.icon}</span>
+                  <h3 className="text-lg font-bold text-gray-800 mb-1">{benefit.title}</h3>
+                  <p className="text-sm text-gray-600">{benefit.desc}</p>
                 </div>
               ))}
             </div>
+            {slide.benefit && (
+              <div className="mt-4 p-4 bg-gradient-to-r from-orange-100 to-amber-100 rounded-xl">
+                <p className="text-lg font-semibold text-orange-700 text-center">{slide.benefit}</p>
+              </div>
+            )}
           </div>
         );
 
@@ -151,36 +185,37 @@ export default function PresentationPage() {
         return (
           <div className="flex flex-col items-center justify-center h-full text-center px-8">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-8">{slide.title}</h2>
-            <div className="text-6xl md:text-7xl font-bold bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 bg-clip-text text-transparent mb-6">
-              {slide.subtitle}
-            </div>
-            <p className="text-2xl text-gray-600 mb-10 italic">{slide.tagline}</p>
-            <Link href="/">
-              <Button size="lg" className="text-xl px-8 py-6 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600">
-                {slide.cta}
-              </Button>
-            </Link>
+            {slide.subtitle && (
+              <div className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 bg-clip-text text-transparent mb-6">
+                {slide.subtitle}
+              </div>
+            )}
+            {slide.tagline && <p className="text-2xl text-gray-600 mb-10 italic">{slide.tagline}</p>}
+            {slide.cta && (
+              <Link href="/dashboard">
+                <Button size="lg" className="text-xl px-8 py-6 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600">
+                  {slide.cta}
+                </Button>
+              </Link>
+            )}
           </div>
         );
 
       case "howto":
         return (
           <div className="flex flex-col h-full px-10 py-6 overflow-auto">
-            <div className="flex items-center gap-4 mb-6">
+            <div className="flex items-center gap-4 mb-4">
               <span className="text-4xl">{slide.icon}</span>
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-800">{slide.title}</h2>
+              <div>
+                <h2 className="text-3xl md:text-4xl font-bold text-gray-800">{slide.title}</h2>
+                {slide.subtitle && <p className="text-lg text-gray-600">{slide.subtitle}</p>}
+              </div>
               {slide.navPath && (
-                slide.navPath.startsWith("/") ? (
-                  <Link href={slide.navPath}>
-                    <span className="text-xs font-medium px-3 py-1 bg-orange-100 text-orange-700 rounded-full ml-auto hover:bg-orange-200 cursor-pointer transition-colors">
-                      {slide.navPath}
-                    </span>
-                  </Link>
-                ) : (
-                  <span className="text-xs font-medium px-3 py-1 bg-orange-100 text-orange-700 rounded-full ml-auto">
-                    {slide.navPath}
+                <Link href={slide.navPath}>
+                  <span className="text-xs font-medium px-3 py-1 bg-orange-100 text-orange-700 rounded-full ml-auto hover:bg-orange-200 cursor-pointer transition-colors">
+                    {slide.navPath} →
                   </span>
-                )
+                </Link>
               )}
             </div>
             <div className="flex-1 grid grid-cols-1 gap-3">
@@ -212,6 +247,11 @@ export default function PresentationPage() {
                 </div>
               ))}
             </div>
+            {slide.benefit && (
+              <div className="mt-4 p-4 bg-gradient-to-r from-orange-100 to-amber-100 rounded-xl">
+                <p className="text-lg font-semibold text-orange-700">{slide.benefit}</p>
+              </div>
+            )}
             {slide.tips && slide.tips.length > 0 && (
               <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
                 <p className="text-sm font-semibold text-blue-700 mb-2">💡 Tips:</p>
@@ -235,9 +275,11 @@ export default function PresentationPage() {
                 {slide.subtitle && <p className="text-lg text-gray-600">{slide.subtitle}</p>}
               </div>
               {slide.navPath && (
-                <span className="text-xs font-medium px-3 py-1 bg-orange-100 text-orange-700 rounded-full ml-auto">
-                  {slide.navPath}
-                </span>
+                <Link href={slide.navPath}>
+                  <span className="text-xs font-medium px-3 py-1 bg-orange-100 text-orange-700 rounded-full ml-auto hover:bg-orange-200 cursor-pointer transition-colors">
+                    {slide.navPath} →
+                  </span>
+                </Link>
               )}
             </div>
             <div className="flex-1">
@@ -250,6 +292,11 @@ export default function PresentationPage() {
                 ))}
               </ul>
             </div>
+            {slide.benefit && (
+              <div className="mt-4 p-4 bg-gradient-to-r from-orange-100 to-amber-100 rounded-xl">
+                <p className="text-lg font-semibold text-orange-700">{slide.benefit}</p>
+              </div>
+            )}
             {slide.tips && slide.tips.length > 0 && (
               <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
                 <p className="text-sm font-semibold text-blue-700 mb-2">💡 Tips:</p>
