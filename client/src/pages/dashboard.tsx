@@ -1022,276 +1022,110 @@ export default function Dashboard() {
         )}
 
         {isWidgetVisible("service-summary") && (
-        <div className="grid grid-cols-12 gap-8" style={{ order: getWidgetOrder("service-summary") }}>
-          <div className="col-span-12">
-            <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-              <h2 className="font-display font-semibold text-xl">Recent Activity</h2>
-              <div className="flex gap-2 text-sm items-center flex-wrap">
-                <Select value={serviceFilter} onValueChange={(v) => setServiceFilter(v as ServiceFilter)}>
-                  <SelectTrigger className="w-[140px] h-8 text-xs bg-white/50" data-testid="select-service-filter">
-                    <SelectValue placeholder="All Services" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {serviceFilterOptions.map(opt => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label} {opt.count !== undefined && opt.count > 0 && `(${opt.count})`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <button 
-                  onClick={() => setActiveFilter("all")}
-                  className={`px-3 py-1.5 rounded-full transition-colors ${activeFilter === "all" ? "bg-white shadow-sm text-foreground font-medium" : "text-muted-foreground hover:bg-white/50"}`}
-                  data-testid="button-filter-all"
-                >
-                  All
-                </button>
-                <button 
-                  onClick={() => setActiveFilter("mentions")}
-                  className={`px-3 py-1.5 rounded-full transition-colors ${activeFilter === "mentions" ? "bg-white shadow-sm text-foreground font-medium" : "text-muted-foreground hover:bg-white/50"}`}
-                  data-testid="button-filter-mentions"
-                >
-                  Mentions {unifiedFeed.filter(i => i.hasMention).length > 0 && `(${unifiedFeed.filter(i => i.hasMention).length})`}
-                </button>
-                <button 
-                  onClick={() => setActiveFilter("unread")}
-                  className={`px-3 py-1.5 rounded-full transition-colors ${activeFilter === "unread" ? "bg-white shadow-sm text-foreground font-medium" : "text-muted-foreground hover:bg-white/50"}`}
-                  data-testid="button-filter-unread"
-                >
-                  Unread {unifiedFeed.filter(i => i.isUnread).length > 0 && `(${unifiedFeed.filter(i => i.isUnread).length})`}
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              {(feedLoading || gmailLoading || zoomLoading || slackLoading) ? (
-                <div className="text-center text-muted-foreground py-8">Loading activity...</div>
-              ) : filteredFeed.length === 0 ? (
-                <div className="text-center text-muted-foreground py-8">
-                  {activeFilter === "mentions" ? "No mentions found" : 
-                   activeFilter === "unread" ? "No unread items" : 
-                   "No recent activity"}
+        <div className="mb-8" style={{ order: getWidgetOrder("service-summary") }}>
+          <h2 className="font-display font-semibold text-xl mb-4">Recent Activity</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {/* Gmail Card */}
+            <Link href="/inbox" data-testid="card-gmail">
+              <div className="glass-panel p-5 rounded-xl hover:bg-white/80 transition-all cursor-pointer border-l-4 border-l-red-500 h-full">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                    <Mail className="w-6 h-6 text-red-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">Gmail</h3>
+                    <p className="text-xs text-muted-foreground">Unified Mailbox</p>
+                  </div>
                 </div>
-              ) : (
-                <>
-                  {filteredFeed.map((item) => {
-                    if (item.type === "zoom") {
-                      const meeting = item.data as ZoomMeeting;
-                      return (
-                        <a 
-                          key={item.id}
-                          href={meeting.joinUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="glass-panel p-4 rounded-xl hover:bg-white/80 transition-colors cursor-pointer block border-l-4 border-l-blue-500"
-                          data-testid={`feed-zoom-${meeting.id}`}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                              <Video className="w-5 h-5 text-blue-600" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between mb-1">
-                                <span className="text-sm font-semibold text-foreground">Zoom Meeting</span>
-                                <span className="text-xs text-muted-foreground">{formatZoomTime(meeting.startTime)}</span>
-                              </div>
-                              <h4 className="text-sm font-medium text-foreground mb-1">{meeting.topic}</h4>
-                              <p className="text-xs text-muted-foreground">{meeting.duration} minutes</p>
-                            </div>
-                          </div>
-                        </a>
-                      );
-                    }
-                    
-                    if (item.type === "gmail") {
-                      const email = item.data as GmailMessage;
-                      return (
-                        <div 
-                          key={item.id}
-                          className={`glass-panel p-4 rounded-xl hover:bg-white/80 transition-colors cursor-pointer ${email.isUnread ? 'border-l-4 border-l-red-500' : ''}`}
-                          data-testid={`feed-gmail-${email.id}`}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
-                              <Mail className="w-5 h-5 text-red-600" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between mb-1">
-                                <span className={`text-sm ${email.isUnread ? 'font-semibold text-foreground' : 'font-medium text-muted-foreground'}`}>
-                                  {extractSenderName(email.from)}
-                                </span>
-                                <span className="text-xs text-muted-foreground">{formatGmailTime(email.date)}</span>
-                              </div>
-                              <h4 className={`text-sm mb-1 ${email.isUnread ? 'font-semibold text-foreground' : 'text-foreground'}`}>
-                                {email.subject}
-                              </h4>
-                              <p className="text-xs text-muted-foreground line-clamp-2">{email.snippet}</p>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    }
-                    
-                    if (item.type === "slack") {
-                      const message = item.data as SlackMessage;
-                      const isReplyOpen = replyingToMessage === message.id;
-                      return (
-                        <div 
-                          key={item.id}
-                          className={`glass-panel p-4 rounded-xl hover:bg-white/80 transition-colors block border-l-4 ${message.isDm ? 'border-l-pink-500' : 'border-l-purple-500'}`}
-                          data-testid={`feed-slack-${message.id}`}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${message.isDm ? 'bg-pink-100' : 'bg-purple-100'}`}>
-                              {message.isDm ? (
-                                <Users className="w-5 h-5 text-pink-600" />
-                              ) : (
-                                <MessageCircle className="w-5 h-5 text-purple-600" />
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between mb-1">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm font-semibold text-foreground">
-                                    {message.isDm ? message.channelName : `#${message.channelName}`}
-                                  </span>
-                                  {message.isDm && (
-                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-pink-100 text-pink-700 font-medium">DM</span>
-                                  )}
-                                  {item.hasMention && !message.isDm && (
-                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-medium">@mention</span>
-                                  )}
-                                  {message.replyCount && message.replyCount > 0 && (
-                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 font-medium flex items-center gap-1">
-                                      <MessageSquare className="w-3 h-3" />
-                                      {message.replyCount}
-                                    </span>
-                                  )}
-                                </div>
-                                <span className="text-xs text-muted-foreground">{formatSlackTime(message.timestamp)}</span>
-                              </div>
-                              <p className="text-xs text-muted-foreground mb-1">{message.userName}</p>
-                              <p className="text-sm text-foreground line-clamp-2">{message.text}</p>
-                              
-                              {message.isDm && (
-                                <div className="mt-3 pt-3 border-t border-gray-200">
-                                  {isReplyOpen ? (
-                                    <div className="flex gap-2">
-                                      <Input
-                                        value={replyTexts[message.id] || ""}
-                                        onChange={(e) => setReplyTexts(prev => ({ ...prev, [message.id]: e.target.value }))}
-                                        placeholder={`Reply to ${message.channelName}...`}
-                                        className="flex-1 h-8 text-sm"
-                                        onKeyDown={(e) => {
-                                          const text = replyTexts[message.id] || "";
-                                          if (e.key === 'Enter' && !e.shiftKey && text.trim()) {
-                                            e.preventDefault();
-                                            slackReplyMutation.mutate({
-                                              channelId: message.channelId,
-                                              message: text.trim(),
-                                              threadTs: message.threadTs,
-                                            });
-                                          }
-                                          if (e.key === 'Escape') {
-                                            setReplyingToMessage(null);
-                                          }
-                                        }}
-                                        data-testid={`input-slack-reply-${message.id}`}
-                                        autoFocus
-                                      />
-                                      <button
-                                        onClick={() => {
-                                          const text = replyTexts[message.id] || "";
-                                          if (text.trim()) {
-                                            slackReplyMutation.mutate({
-                                              channelId: message.channelId,
-                                              message: text.trim(),
-                                              threadTs: message.threadTs,
-                                            });
-                                          }
-                                        }}
-                                        disabled={!(replyTexts[message.id] || "").trim() || slackReplyMutation.isPending}
-                                        className="h-8 px-3 bg-primary text-white rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 text-sm"
-                                        data-testid={`button-send-slack-reply-${message.id}`}
-                                      >
-                                        <Send className="w-3.5 h-3.5" />
-                                        {slackReplyMutation.isPending ? "..." : "Send"}
-                                      </button>
-                                      <button
-                                        onClick={() => setReplyingToMessage(null)}
-                                        className="h-8 px-2 text-muted-foreground hover:text-foreground"
-                                        data-testid={`button-cancel-slack-reply-${message.id}`}
-                                      >
-                                        <X className="w-4 h-4" />
-                                      </button>
-                                    </div>
-                                  ) : (
-                                    <button
-                                      onClick={() => setReplyingToMessage(message.id)}
-                                      className="text-xs text-primary hover:text-primary/80 font-medium flex items-center gap-1"
-                                      data-testid={`button-reply-slack-${message.id}`}
-                                    >
-                                      <MessageSquare className="w-3.5 h-3.5" />
-                                      Reply
-                                    </button>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    }
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-red-600">
+                    {gmailLoading ? "..." : gmailMessages.length}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {gmailMessages.filter(m => m.isUnread).length > 0 && (
+                      <span className="text-red-600 font-medium">
+                        ({gmailMessages.filter(m => m.isUnread).length} unread)
+                      </span>
+                    )}
+                  </span>
+                </div>
+              </div>
+            </Link>
 
-                    if (item.type === "feed") {
-                      const feedItem = item.data as FeedItemType;
-                      return (
-                        <FeedItem 
-                          key={item.id}
-                          type={feedItem.type as any}
-                          title={feedItem.title}
-                          subtitle={feedItem.subtitle || undefined}
-                          time={feedItem.time}
-                          sender={feedItem.sender || undefined}
-                          avatar={feedItem.avatar || undefined}
-                          urgent={feedItem.urgent}
-                        />
-                      );
-                    }
+            {/* Slack Card */}
+            <Link href="/connect" data-testid="card-slack">
+              <div className="glass-panel p-5 rounded-xl hover:bg-white/80 transition-all cursor-pointer border-l-4 border-l-purple-500 h-full">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
+                    <MessageCircle className="w-6 h-6 text-purple-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">Slack</h3>
+                    <p className="text-xs text-muted-foreground">Messages</p>
+                  </div>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-purple-600">
+                    {slackLoading ? "..." : slackMessages.length}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {slackMessages.filter(m => m.isDm).length > 0 && (
+                      <span className="text-pink-600 font-medium">
+                        ({slackMessages.filter(m => m.isDm).length} DMs)
+                      </span>
+                    )}
+                  </span>
+                </div>
+              </div>
+            </Link>
 
-                    if (item.type === "intro-offer") {
-                      const offer = item.data as IntroOffer;
-                      return (
-                        <Link
-                          key={item.id}
-                          href="/intro-offers"
-                          className="glass-panel p-4 rounded-xl hover:bg-white/80 transition-colors cursor-pointer block border-l-4 border-l-purple-500"
-                          data-testid={`feed-intro-offer-${offer.id}`}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
-                              <Gift className="w-5 h-5 text-purple-600" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between mb-1">
-                                <span className="text-sm font-semibold text-foreground">Intro Offer</span>
-                                <span className="text-xs text-muted-foreground">{formatGmailTime(offer.purchaseDate)}</span>
-                              </div>
-                              <h4 className="text-sm font-medium text-foreground mb-1">{offer.firstName} {offer.lastName}</h4>
-                              <p className="text-xs text-muted-foreground">
-                                {offer.offerName} - {offer.memberStatus} ({offer.classesAttendedSincePurchase} classes)
-                              </p>
-                            </div>
-                          </div>
-                        </Link>
-                      );
-                    }
-                    
-                    return null;
-                  })}
-                </>
-              )}
-            </div>
+            {/* Zoom Card */}
+            <Link href="/connect" data-testid="card-zoom">
+              <div className="glass-panel p-5 rounded-xl hover:bg-white/80 transition-all cursor-pointer border-l-4 border-l-blue-500 h-full">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                    <Video className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">Zoom</h3>
+                    <p className="text-xs text-muted-foreground">Meetings</p>
+                  </div>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-blue-600">
+                    {zoomLoading ? "..." : zoomMeetings.length}
+                  </span>
+                  <span className="text-sm text-muted-foreground">scheduled</span>
+                </div>
+              </div>
+            </Link>
+
+            {/* Intro Offers Card */}
+            <Link href="/intro-offers" data-testid="card-intro-offers">
+              <div className="glass-panel p-5 rounded-xl hover:bg-white/80 transition-all cursor-pointer border-l-4 border-l-amber-500 h-full">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
+                    <Gift className="w-6 h-6 text-amber-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">Intro Offers</h3>
+                    <p className="text-xs text-muted-foreground">New Students</p>
+                  </div>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-amber-600">
+                    {introOffers.length}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {introOffers.filter(o => o.memberStatus === "new" || o.memberStatus === "at_risk").length > 0 && (
+                      <span className="text-amber-600 font-medium">
+                        ({introOffers.filter(o => o.memberStatus === "new" || o.memberStatus === "at_risk").length} need attention)
+                      </span>
+                    )}
+                  </span>
+                </div>
+              </div>
+            </Link>
           </div>
         </div>
         )}
