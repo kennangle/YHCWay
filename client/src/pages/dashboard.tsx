@@ -892,31 +892,6 @@ export default function Dashboard() {
             </div>
           </Link>
 
-          {/* Quick Actions */}
-          <div className="glass-panel p-5 rounded-xl h-full">
-            <h3 className="font-semibold text-sm mb-3">Quick Actions</h3>
-            <div className="flex flex-wrap gap-2">
-              <Link href="/email-builder" data-testid="quick-action-email">
-                <button className="flex items-center gap-2 px-3 py-2 text-xs font-medium bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors">
-                  <Send className="w-3.5 h-3.5" />
-                  Compose Email
-                </button>
-              </Link>
-              <Link href="/calendar" data-testid="quick-action-event">
-                <button className="flex items-center gap-2 px-3 py-2 text-xs font-medium bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors">
-                  <CalendarPlus className="w-3.5 h-3.5" />
-                  New Event
-                </button>
-              </Link>
-              <Link href="/projects" data-testid="quick-action-task">
-                <button className="flex items-center gap-2 px-3 py-2 text-xs font-medium bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors">
-                  <Plus className="w-3.5 h-3.5" />
-                  View Projects
-                </button>
-              </Link>
-            </div>
-          </div>
-
           {/* Upcoming Tasks Card */}
           <Link href="/projects" className="block" data-testid="insight-upcoming-tasks">
             <div className="glass-panel p-5 rounded-xl border-l-4 border-l-blue-500 hover:bg-white/80 transition-colors cursor-pointer h-full">
@@ -941,6 +916,31 @@ export default function Dashboard() {
               </p>
             </div>
           </Link>
+
+          {/* Quick Actions */}
+          <div className="glass-panel p-5 rounded-xl h-full">
+            <h3 className="font-semibold text-sm mb-3">Quick Actions</h3>
+            <div className="flex flex-wrap gap-2">
+              <Link href="/email-builder" data-testid="quick-action-email">
+                <button className="flex items-center gap-2 px-3 py-2 text-xs font-medium bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors">
+                  <Send className="w-3.5 h-3.5" />
+                  Compose Email
+                </button>
+              </Link>
+              <Link href="/calendar" data-testid="quick-action-event">
+                <button className="flex items-center gap-2 px-3 py-2 text-xs font-medium bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors">
+                  <CalendarPlus className="w-3.5 h-3.5" />
+                  New Event
+                </button>
+              </Link>
+              <Link href="/projects" data-testid="quick-action-task">
+                <button className="flex items-center gap-2 px-3 py-2 text-xs font-medium bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors">
+                  <Plus className="w-3.5 h-3.5" />
+                  View Projects
+                </button>
+              </Link>
+            </div>
+          </div>
         </div>
         )}
 
