@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, CheckCircle2, Circle, Calendar, User, Flag, FolderOpen, Repeat, ChevronDown, Users, Plus, Trash2 } from "lucide-react";
+import { X, CheckCircle2, Circle, Calendar as CalendarIcon, User, Flag, FolderOpen, Repeat, ChevronDown, Users, Plus, Trash2 } from "lucide-react";
 import { useTask, useTaskProjects, useUpdateTask, useTaskCollaborators, useAddTaskCollaborator, useRemoveTaskCollaborator } from "../hooks";
 import { StoriesFeed } from "./StoriesFeed";
 import { CommentComposer } from "./CommentComposer";
@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
 import { useQuery } from "@tanstack/react-query";
 
 const RECURRENCE_OPTIONS = [
@@ -147,20 +148,98 @@ export function TaskPane({ taskId, onClose }: TaskPaneProps) {
       <div className="flex-1 overflow-y-auto">
         <div className="p-4 space-y-4">
           <div className="grid grid-cols-2 gap-4 text-sm">
-            <div className="flex items-center gap-2 text-gray-500">
-              <User className="w-4 h-4" />
-              <span>{task.assigneeId ? "Assigned" : "Unassigned"}</span>
-            </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="flex items-center gap-2 text-gray-500 hover:text-gray-700" data-testid="button-assignee">
+                  <User className="w-4 h-4" />
+                  <span className="truncate">
+                    {task.assigneeId 
+                      ? users.find(u => u.id === task.assigneeId)?.firstName || "Assigned"
+                      : "Unassigned"}
+                  </span>
+                  <ChevronDown className="w-3 h-3 flex-shrink-0" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-56 p-2" align="start">
+                <div className="space-y-1">
+                  <p className="text-xs font-medium text-gray-500 px-2 mb-2">Assign to</p>
+                  <button
+                    className={`w-full text-left px-2 py-1.5 text-sm rounded hover:bg-gray-100 ${!task.assigneeId ? "bg-gray-100 font-medium" : ""}`}
+                    onClick={() => updateTask.mutate({ taskId, data: { assigneeId: undefined } })}
+                    data-testid="option-unassigned"
+                  >
+                    Unassigned
+                  </button>
+                  {users.map(user => (
+                    <button
+                      key={user.id}
+                      className={`w-full text-left px-2 py-1.5 text-sm rounded hover:bg-gray-100 ${task.assigneeId === user.id ? "bg-blue-100 text-blue-700 font-medium" : ""}`}
+                      onClick={() => updateTask.mutate({ taskId, data: { assigneeId: user.id } })}
+                      data-testid={`option-assignee-${user.id}`}
+                    >
+                      {user.firstName} {user.lastName}
+                    </button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
 
-            <div className="flex items-center gap-2 text-gray-500">
-              <Calendar className="w-4 h-4" />
-              <span>{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : "No due date"}</span>
-            </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="flex items-center gap-2 text-gray-500 hover:text-gray-700" data-testid="button-due-date">
+                  <CalendarIcon className="w-4 h-4" />
+                  <span className="truncate">{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : "No due date"}</span>
+                  <ChevronDown className="w-3 h-3 flex-shrink-0" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={task.dueDate ? new Date(task.dueDate) : undefined}
+                  onSelect={(date) => updateTask.mutate({ taskId, data: { dueDate: date ? date.toISOString() : undefined } })}
+                  initialFocus
+                />
+                {task.dueDate && (
+                  <div className="p-2 border-t">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full text-red-500 hover:text-red-600"
+                      onClick={() => updateTask.mutate({ taskId, data: { dueDate: undefined } })}
+                      data-testid="button-clear-due-date"
+                    >
+                      Clear due date
+                    </Button>
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
 
-            <div className="flex items-center gap-2">
-              <Flag className={`w-4 h-4 ${priorityInfo.color}`} />
-              <span className={priorityInfo.color}>{priorityInfo.label}</span>
-            </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="flex items-center gap-2 hover:opacity-80" data-testid="button-priority">
+                  <Flag className={`w-4 h-4 ${priorityInfo.color}`} />
+                  <span className={priorityInfo.color}>{priorityInfo.label}</span>
+                  <ChevronDown className="w-3 h-3 text-gray-400" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-40 p-2" align="start">
+                <div className="space-y-1">
+                  <p className="text-xs font-medium text-gray-500 px-2 mb-2">Priority</p>
+                  {Object.entries(PRIORITY_LABELS).map(([value, info]) => (
+                    <button
+                      key={value}
+                      className={`w-full text-left px-2 py-1.5 text-sm rounded hover:bg-gray-100 flex items-center gap-2 ${task.priority === value ? "bg-gray-100 font-medium" : ""}`}
+                      onClick={() => updateTask.mutate({ taskId, data: { priority: value } })}
+                      data-testid={`option-priority-${value}`}
+                    >
+                      <Flag className={`w-3 h-3 ${info.color}`} />
+                      <span className={info.color}>{info.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
 
             <Popover>
               <PopoverTrigger asChild>
