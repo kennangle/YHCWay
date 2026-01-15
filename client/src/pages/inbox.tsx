@@ -60,6 +60,7 @@ type FilterType = 'all' | 'gmail' | 'slack' | 'dms';
 
 export default function Inbox() {
   const [filter, setFilter] = useState<FilterType>('all');
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedEmailId, setSelectedEmailId] = useState<string | null>(null);
   const [isComposing, setIsComposing] = useState(false);
   const [sharingMessage, setSharingMessage] = useState<UnifiedMessage | null>(null);
@@ -156,10 +157,21 @@ export default function Inbox() {
   ].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
   const filteredMessages = unifiedMessages.filter(msg => {
-    if (filter === 'all') return true;
-    if (filter === 'gmail') return msg.type === 'gmail';
-    if (filter === 'slack') return msg.type === 'slack';
-    if (filter === 'dms') return msg.type === 'slack-dm';
+    // First filter by type
+    if (filter === 'gmail' && msg.type !== 'gmail') return false;
+    if (filter === 'slack' && msg.type !== 'slack') return false;
+    if (filter === 'dms' && msg.type !== 'slack-dm') return false;
+    
+    // Then filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      return (
+        msg.title.toLowerCase().includes(query) ||
+        msg.subtitle.toLowerCase().includes(query) ||
+        msg.preview.toLowerCase().includes(query) ||
+        (msg.userName?.toLowerCase().includes(query) ?? false)
+      );
+    }
     return true;
   });
 
@@ -215,6 +227,8 @@ export default function Inbox() {
               <input 
                 type="text" 
                 placeholder="Search messages..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10 pr-4 py-2 rounded-full glass-panel border-0 w-64 focus:outline-none focus:ring-2 focus:ring-primary/20"
                 data-testid="input-search"
               />
