@@ -4246,6 +4246,36 @@ export async function registerRoutes(
     }
   });
 
+  // Archive task
+  app.post("/api/tasks/:id/archive", isAuthenticated, async (req: any, res) => {
+    try {
+      const taskId = parseInt(req.params.id);
+      const task = await storage.archiveTask(taskId);
+      if (!task) {
+        return res.status(404).json({ error: "Task not found" });
+      }
+      res.json(task);
+    } catch (error) {
+      console.error("Error archiving task:", error);
+      res.status(500).json({ error: "Failed to archive task" });
+    }
+  });
+
+  // Unarchive task
+  app.post("/api/tasks/:id/unarchive", isAuthenticated, async (req: any, res) => {
+    try {
+      const taskId = parseInt(req.params.id);
+      const task = await storage.unarchiveTask(taskId);
+      if (!task) {
+        return res.status(404).json({ error: "Task not found" });
+      }
+      res.json(task);
+    } catch (error) {
+      console.error("Error unarchiving task:", error);
+      res.status(500).json({ error: "Failed to unarchive task" });
+    }
+  });
+
   // =============================================================================
   // TASK PLACEMENT ROUTES (Asana-style multi-homing)
   // =============================================================================
@@ -4411,6 +4441,18 @@ export async function registerRoutes(
   // =============================================================================
   // PROJECT BOARD ROUTE (Placement-aware)
   // =============================================================================
+
+  // Get archived tasks for a project
+  app.get("/api/projects/:projectId/archived-tasks", isAuthenticated, async (req: any, res) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      const archivedTasks = await storage.getArchivedTasks(projectId);
+      res.json(archivedTasks);
+    } catch (error) {
+      console.error("Error fetching archived tasks:", error);
+      res.status(500).json({ error: "Failed to fetch archived tasks" });
+    }
+  });
 
   app.get("/api/projects/:projectId/board", isAuthenticated, async (req: any, res) => {
     try {

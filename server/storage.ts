@@ -2251,9 +2251,12 @@ export class DbStorage implements IStorage {
     sortOrder: number;
     orderKey: string | null;
   }>> {
-    const whereConditions = tenantId 
+    const baseCondition = tenantId 
       ? and(eq(taskProjects.tenantId, tenantId), eq(taskProjects.projectId, projectId))
       : eq(taskProjects.projectId, projectId);
+    
+    // Filter out archived tasks
+    const whereConditions = and(baseCondition, eq(tasks.isArchived, false));
       
     const rows = await db
       .select({
