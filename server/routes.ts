@@ -1,7 +1,7 @@
 import type { Express, RequestHandler } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertServiceSchema, insertFeedItemSchema, ADMIN_EMAIL, adminCreateUserSchema, integrationApiKeySchema, sendMessageSchema, createConversationSchema, createTenantSchema, inviteUserSchema, createProjectSchema, createTaskSchema, updateTaskSchema, createSubtaskSchema, createCommentSchema, type User } from "@shared/schema";
+import { insertServiceSchema, insertFeedItemSchema, ADMIN_EMAIL, adminCreateUserSchema, integrationApiKeySchema, sendMessageSchema, createConversationSchema, createTenantSchema, inviteUserSchema, createProjectSchema, createTaskSchema, updateTaskSchema, createSubtaskSchema, createCommentSchema, addCollaboratorSchema, type User } from "@shared/schema";
 import { setupAuth, isAuthenticated } from "./auth";
 import { tenantMiddleware, requireTenant, requireTenantRole } from "./tenantMiddleware";
 import { z } from "zod";
@@ -4531,6 +4531,130 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error deleting comment:", error);
       res.status(500).json({ error: "Failed to delete comment" });
+    }
+  });
+
+  // =============================================================================
+  // TASK COLLABORATOR ROUTES (Sharing tasks with team members)
+  // =============================================================================
+
+  // Helper to check if user can access a task (requires tenant scope)
+  async function canAccessTask(userId: string, task: any, tenantId: string | undefined, storage: any): Promise<boolean> {
+    if (!task) return false;
+    // Check tenant scope if provided - task must belong to the requester's tenant
+    if (tenantId && task.tenantId && task.tenantId !== tenantId) return false;
+    // Creator, assignee, or existing collaborator can access
+    if (task.creatorId === userId || task.assigneeId === userId) return true;
+    const collaborators = await storage.getTaskCollaborators(task.id);
+    return collaborators.some((c: any) => c.userId === userId);
+  }
+
+  app.get("/api/tasks/:id/collaborators", isAuthenticated, async (req: any, res) => {
+    try {
+      const taskId = parseInt(req.params.id);
+      const userId = req.user.claims?.sub || req.user.id;
+      const tenantId = req.tenantId;
+      
+      // Check if task exists and user has access
+      const task = await storage.getTask(taskId);
+      if (!task) {
+        return res.status(404).json({ error: "Task not found" });
+      }
+      
+      // Verify tenant scope
+      if (tenantId && task.tenantId && task.tenantId !== tenantId) {
+        return res.status(404).json({ error: "Task not found" });
+      }
+      
+      const hasAccess = await canAccessTask(userId, task, tenantId, storage);
+      if (!hasAccess) {
+        return res.status(403).json({ error: "Not authorized to view this task" });
+      }
+      
+      const collaborators = await storage.getTaskCollaborators(taskId);
+      res.json(collaborators);
+    } catch (error) {
+      console.error("Error fetching task collaborators:", error);
+      res.status(500).json({ error: "Failed to fetch collaborators" });
+    }
+  });
+
+  app.post("/api/tasks/:id/collaborators", isAuthenticated, async (req: any, res) => {
+    try {
+      const taskId = parseInt(req.params.id);
+      const userId = req.user.claims?.sub || req.user.id;
+      const tenantId = req.tenantId;
+      
+      // Validate request body
+      const validatedData = addCollaboratorSchema.parse({ ...req.body, taskId });
+      
+      // Check if task exists and user can manage collaborators (only creator/assignee can add)
+      const task = await storage.getTask(taskId);
+      if (!task) {
+        return res.status(404).json({ error: "Task not found" });
+      }
+      
+      // Verify tenant scope
+      if (tenantId && task.tenantId && task.tenantId !== tenantId) {
+        return res.status(404).json({ error: "Task not found" });
+      }
+      
+      if (task.creatorId !== userId && task.assigneeId !== userId) {
+        return res.status(403).json({ error: "Only task creator or assignee can add collaborators" });
+      }
+      
+      const collaborator = await storage.addTaskCollaborator(taskId, validatedData.userId, userId, validatedData.role);
+      res.status(201).json(collaborator);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: error.errors });
+      } else {
+        console.error("Error adding task collaborator:", error);
+        res.status(500).json({ error: "Failed to add collaborator" });
+      }
+    }
+  });
+
+  app.delete("/api/tasks/:taskId/collaborators/:userId", isAuthenticated, async (req: any, res) => {
+    try {
+      const taskId = parseInt(req.params.taskId);
+      const targetUserId = req.params.userId;
+      const requesterId = req.user.claims?.sub || req.user.id;
+      const tenantId = req.tenantId;
+      
+      // Check if task exists
+      const task = await storage.getTask(taskId);
+      if (!task) {
+        return res.status(404).json({ error: "Task not found" });
+      }
+      
+      // Verify tenant scope
+      if (tenantId && task.tenantId && task.tenantId !== tenantId) {
+        return res.status(404).json({ error: "Task not found" });
+      }
+      
+      // Allow self-removal, or creator/assignee can remove anyone
+      if (targetUserId !== requesterId && task.creatorId !== requesterId && task.assigneeId !== requesterId) {
+        return res.status(403).json({ error: "Not authorized to remove this collaborator" });
+      }
+      
+      await storage.removeTaskCollaborator(taskId, targetUserId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error removing task collaborator:", error);
+      res.status(500).json({ error: "Failed to remove collaborator" });
+    }
+  });
+
+  app.get("/api/my-shared-tasks", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const tenantId = req.tenantId;
+      const tasks = await storage.getSharedTasks(userId, tenantId);
+      res.json(tasks);
+    } catch (error) {
+      console.error("Error fetching shared tasks:", error);
+      res.status(500).json({ error: "Failed to fetch shared tasks" });
     }
   });
 

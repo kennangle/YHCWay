@@ -39,6 +39,7 @@ import {
   type InsertTaskSubtask,
   type TaskComment,
   type InsertTaskComment,
+  type TaskCollaborator,
   type ProjectMember,
   type NotificationPreference,
   type InsertNotificationPreference,
@@ -91,6 +92,7 @@ import {
   tasks,
   taskSubtasks,
   taskComments,
+  taskCollaborators,
   projectMembers,
   notificationPreferences,
   notificationLog,
@@ -301,6 +303,12 @@ export interface IStorage {
   createTaskComment(taskId: number, authorId: string, content: string): Promise<TaskComment>;
   updateTaskComment(id: number, content: string): Promise<TaskComment | undefined>;
   deleteTaskComment(id: number): Promise<void>;
+  
+  // Task collaborators (sharing tasks with team members)
+  getTaskCollaborators(taskId: number): Promise<(TaskCollaborator & { user: User })[]>;
+  addTaskCollaborator(taskId: number, userId: string, addedById: string, role?: string): Promise<TaskCollaborator>;
+  removeTaskCollaborator(taskId: number, userId: string): Promise<void>;
+  getSharedTasks(userId: string, tenantId?: string): Promise<Task[]>;
   
   // Notification preferences and logs
   getNotificationPreferences(userId: string): Promise<NotificationPreference | undefined>;
@@ -1560,13 +1568,36 @@ export class DbStorage implements IStorage {
   }
 
   async getAllUserTasks(userId: string, tenantId?: string): Promise<Task[]> {
+    // Get tasks where user is assignee or creator
     let conditions = [or(eq(tasks.assigneeId, userId), eq(tasks.creatorId, userId))];
     if (tenantId) {
       conditions.push(eq(tasks.tenantId, tenantId));
     }
-    return await db.select().from(tasks)
+    const ownedTasks = await db.select().from(tasks)
       .where(and(...conditions))
       .orderBy(tasks.dueDate, tasks.sortOrder);
+
+    // Get tasks shared with user (collaborator)
+    const sharedTasks = await this.getSharedTasks(userId, tenantId);
+    
+    // Merge and deduplicate by task id
+    const taskMap = new Map<number, Task>();
+    for (const task of ownedTasks) {
+      taskMap.set(task.id, task);
+    }
+    for (const task of sharedTasks) {
+      if (!taskMap.has(task.id)) {
+        taskMap.set(task.id, task);
+      }
+    }
+    
+    // Return sorted by due date
+    return Array.from(taskMap.values()).sort((a, b) => {
+      if (!a.dueDate && !b.dueDate) return 0;
+      if (!a.dueDate) return 1;
+      if (!b.dueDate) return -1;
+      return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+    });
   }
 
   async getUpcomingTasks(userId: string, days: number = 7): Promise<Task[]> {
@@ -1716,6 +1747,61 @@ export class DbStorage implements IStorage {
 
   async deleteTaskComment(id: number): Promise<void> {
     await db.delete(taskComments).where(eq(taskComments.id, id));
+  }
+
+  // Task collaborators
+  async getTaskCollaborators(taskId: number): Promise<(TaskCollaborator & { user: User })[]> {
+    const collaborators = await db.select()
+      .from(taskCollaborators)
+      .innerJoin(users, eq(taskCollaborators.userId, users.id))
+      .where(eq(taskCollaborators.taskId, taskId))
+      .orderBy(taskCollaborators.addedAt);
+    
+    return collaborators.map(c => ({
+      ...c.task_collaborators,
+      user: c.users,
+    }));
+  }
+
+  async addTaskCollaborator(taskId: number, userId: string, addedById: string, role: string = "viewer"): Promise<TaskCollaborator> {
+    // Check if already a collaborator
+    const [existing] = await db.select().from(taskCollaborators)
+      .where(and(eq(taskCollaborators.taskId, taskId), eq(taskCollaborators.userId, userId)));
+    
+    if (existing) {
+      // Update role if exists
+      const [updated] = await db.update(taskCollaborators)
+        .set({ role })
+        .where(eq(taskCollaborators.id, existing.id))
+        .returning();
+      return updated;
+    }
+    
+    const [collaborator] = await db.insert(taskCollaborators)
+      .values({ taskId, userId, addedById, role })
+      .returning();
+    return collaborator;
+  }
+
+  async removeTaskCollaborator(taskId: number, userId: string): Promise<void> {
+    await db.delete(taskCollaborators)
+      .where(and(eq(taskCollaborators.taskId, taskId), eq(taskCollaborators.userId, userId)));
+  }
+
+  async getSharedTasks(userId: string, tenantId?: string): Promise<Task[]> {
+    // Get tasks where user is a collaborator (not creator or assignee)
+    // Filter by tenant if provided
+    const conditions = [eq(taskCollaborators.userId, userId)];
+    if (tenantId) {
+      conditions.push(eq(tasks.tenantId, tenantId));
+    }
+    
+    const results = await db.select({ task: tasks })
+      .from(taskCollaborators)
+      .innerJoin(tasks, eq(taskCollaborators.taskId, tasks.id))
+      .where(and(...conditions));
+    
+    return results.map(r => r.task);
   }
 
   // Notification preferences

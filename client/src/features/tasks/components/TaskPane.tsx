@@ -1,10 +1,13 @@
-import { X, CheckCircle2, Circle, Calendar, User, Flag, FolderOpen, Repeat, ChevronDown } from "lucide-react";
-import { useTask, useTaskProjects, useUpdateTask } from "../hooks";
+import { useState } from "react";
+import { X, CheckCircle2, Circle, Calendar, User, Flag, FolderOpen, Repeat, ChevronDown, Users, Plus, Trash2 } from "lucide-react";
+import { useTask, useTaskProjects, useUpdateTask, useTaskCollaborators, useAddTaskCollaborator, useRemoveTaskCollaborator } from "../hooks";
 import { StoriesFeed } from "./StoriesFeed";
 import { CommentComposer } from "./CommentComposer";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useQuery } from "@tanstack/react-query";
 
 const RECURRENCE_OPTIONS = [
   { value: "daily", label: "Daily" },
@@ -25,10 +28,59 @@ const PRIORITY_LABELS: Record<string, { label: string; color: string }> = {
   urgent: { label: "Urgent", color: "text-red-500" },
 };
 
+interface User {
+  id: string;
+  email: string;
+  firstName?: string | null;
+  lastName?: string | null;
+}
+
+interface Collaborator {
+  id: number;
+  taskId: number;
+  userId: string;
+  role: string;
+  addedAt: string;
+  user: User;
+}
+
 export function TaskPane({ taskId, onClose }: TaskPaneProps) {
+  const [showAddCollaborator, setShowAddCollaborator] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string>("");
+  
   const { data: task, isLoading } = useTask(taskId);
   const { data: taskProjects = [] } = useTaskProjects(taskId);
+  const { data: collaborators = [] } = useTaskCollaborators(taskId) as { data: Collaborator[] };
   const updateTask = useUpdateTask();
+  const addCollaborator = useAddTaskCollaborator();
+  const removeCollaborator = useRemoveTaskCollaborator();
+
+  const { data: users = [] } = useQuery<User[]>({
+    queryKey: ["/api/users"],
+    queryFn: async () => {
+      const res = await fetch("/api/users", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch users");
+      return res.json();
+    },
+  });
+
+  const handleAddCollaborator = () => {
+    if (selectedUserId && taskId) {
+      addCollaborator.mutate({ taskId, collaboratorId: selectedUserId });
+      setSelectedUserId("");
+      setShowAddCollaborator(false);
+    }
+  };
+
+  const handleRemoveCollaborator = (userId: string) => {
+    if (taskId) {
+      removeCollaborator.mutate({ taskId, userId });
+    }
+  };
+
+  const availableUsers = users.filter(
+    (u) => !collaborators.some((c) => c.userId === u.id) && u.id !== task?.assigneeId
+  );
 
   const handleToggleComplete = () => {
     if (task) {
@@ -180,6 +232,82 @@ export function TaskPane({ taskId, onClose }: TaskPaneProps) {
               <p className="text-sm text-gray-700 whitespace-pre-wrap">{task.description}</p>
             </div>
           )}
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-medium text-gray-500 uppercase flex items-center gap-1">
+                <Users className="w-3 h-3" />
+                Shared with ({collaborators.length})
+              </p>
+              <Popover open={showAddCollaborator} onOpenChange={setShowAddCollaborator}>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-6 text-xs" data-testid="button-add-collaborator">
+                    <Plus className="w-3 h-3 mr-1" />
+                    Share
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-3" align="end">
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium">Share with team member</p>
+                    <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                      <SelectTrigger data-testid="select-collaborator">
+                        <SelectValue placeholder="Select a person" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableUsers.length === 0 ? (
+                          <div className="p-2 text-sm text-gray-500">No more team members available</div>
+                        ) : (
+                          availableUsers.map((user) => (
+                            <SelectItem key={user.id} value={user.id} data-testid={`collaborator-option-${user.id}`}>
+                              {user.firstName || user.email.split('@')[0]} {user.lastName || ''}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <Button 
+                      onClick={handleAddCollaborator} 
+                      disabled={!selectedUserId || addCollaborator.isPending}
+                      className="w-full"
+                      size="sm"
+                      data-testid="button-confirm-add-collaborator"
+                    >
+                      {addCollaborator.isPending ? "Adding..." : "Add"}
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {collaborators.length > 0 ? (
+              <div className="space-y-1">
+                {collaborators.map((collab) => (
+                  <div 
+                    key={collab.id} 
+                    className="flex items-center justify-between py-1.5 px-2 rounded bg-gray-50 text-sm"
+                    data-testid={`collaborator-${collab.userId}`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <User className="w-3.5 h-3.5 text-gray-400" />
+                      <span>{collab.user.firstName || collab.user.email.split('@')[0]} {collab.user.lastName || ''}</span>
+                      <span className="text-xs text-gray-400 capitalize">({collab.role})</span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => handleRemoveCollaborator(collab.userId)}
+                      data-testid={`button-remove-collaborator-${collab.userId}`}
+                    >
+                      <Trash2 className="w-3 h-3 text-gray-400 hover:text-red-500" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-gray-400 py-2">Not shared with anyone yet</p>
+            )}
+          </div>
 
           <Separator />
 

@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, serial, boolean, timestamp, integer, index, jsonb, primaryKey } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, serial, boolean, timestamp, integer, index, uniqueIndex, jsonb, primaryKey } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -766,6 +766,29 @@ export type InsertTaskComment = typeof taskComments.$inferInsert;
 export const createCommentSchema = z.object({
   taskId: z.number(),
   content: z.string().min(1, "Comment cannot be empty"),
+});
+
+// Task collaborators table - for sharing tasks with multiple team members
+export const taskCollaborators = pgTable("task_collaborators", {
+  id: serial("id").primaryKey(),
+  taskId: integer("task_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  role: varchar("role").default("viewer"), // "viewer" can view/comment, "editor" can edit
+  addedAt: timestamp("added_at").defaultNow(),
+  addedById: varchar("added_by_id").references(() => users.id, { onDelete: "set null" }),
+}, (table) => [
+  index("idx_collab_task").on(table.taskId),
+  index("idx_collab_user").on(table.userId),
+  uniqueIndex("idx_collab_unique").on(table.taskId, table.userId),
+]);
+
+export type TaskCollaborator = typeof taskCollaborators.$inferSelect;
+export type InsertTaskCollaborator = typeof taskCollaborators.$inferInsert;
+
+export const addCollaboratorSchema = z.object({
+  taskId: z.number(),
+  userId: z.string(),
+  role: z.enum(["viewer", "editor"]).default("viewer"),
 });
 
 // Task dependencies table for Gantt chart

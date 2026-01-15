@@ -178,3 +178,60 @@ export function useToggleTaskCompletion(projectId: number) {
     },
   });
 }
+
+export const collaboratorKeys = {
+  list: (taskId: number) => ["taskCollaborators", taskId] as const,
+};
+
+export function useTaskCollaborators(taskId: number | null) {
+  return useQuery({
+    queryKey: taskId ? collaboratorKeys.list(taskId) : ["taskCollaborators", "none"],
+    queryFn: async () => {
+      const res = await fetch(`/api/tasks/${taskId}/collaborators`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch collaborators");
+      return res.json();
+    },
+    enabled: !!taskId,
+  });
+}
+
+export function useAddTaskCollaborator() {
+  const qc = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ taskId, collaboratorId, role = "viewer" }: { 
+      taskId: number; 
+      collaboratorId: string; 
+      role?: string;
+    }) => {
+      const res = await fetch(`/api/tasks/${taskId}/collaborators`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ userId: collaboratorId, role }),
+      });
+      if (!res.ok) throw new Error("Failed to add collaborator");
+      return res.json();
+    },
+    onSuccess: (_, { taskId }) => {
+      qc.invalidateQueries({ queryKey: collaboratorKeys.list(taskId) });
+    },
+  });
+}
+
+export function useRemoveTaskCollaborator() {
+  const qc = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ taskId, userId }: { taskId: number; userId: string }) => {
+      const res = await fetch(`/api/tasks/${taskId}/collaborators/${userId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to remove collaborator");
+    },
+    onSuccess: (_, { taskId }) => {
+      qc.invalidateQueries({ queryKey: collaboratorKeys.list(taskId) });
+    },
+  });
+}

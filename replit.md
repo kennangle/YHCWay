@@ -63,6 +63,12 @@ The server handles both API routes and serves the static frontend in production.
 - **Tasks**: Full task management with subtasks, priorities, due dates, and recurring tasks
 - **Comments**: Task-level commenting system for collaboration
 - **Team Assignments**: Assign tasks and projects to team members
+- **Task Sharing**: Share tasks with multiple team members for visibility (viewer/editor roles)
+  - `task_collaborators` table tracks shared visibility
+  - Collaborators can view/comment on tasks shared with them
+  - Shared tasks appear in user's task views alongside their own tasks
+  - Authorization: Only task creator/assignee can add/remove collaborators
+  - API endpoints: `GET/POST/DELETE /api/tasks/:id/collaborators`
 - **Drag & Drop**: @dnd-kit for intuitive task management
 - **Asana Import**: One-time migration feature to import projects, sections (as columns), and tasks from Asana
   - Supports pagination for large projects (handles 100+ tasks)
