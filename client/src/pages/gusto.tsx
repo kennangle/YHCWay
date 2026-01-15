@@ -74,25 +74,30 @@ export default function GustoPage() {
     return <Redirect to="/" />;
   }
 
-  const { data: companies, isLoading: companiesLoading, refetch: refetchCompanies } = useQuery<Company[]>({
+  const { data: companies, isLoading: companiesLoading, isFetching: companiesFetching, refetch: refetchCompanies } = useQuery<Company[]>({
     queryKey: ['/api/gusto/companies'],
+    queryFn: async () => {
+      const res = await fetch('/api/gusto/companies', { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch companies');
+      return res.json();
+    },
     enabled: status?.connected === true,
   });
 
-  const { data: employees, isLoading: employeesLoading, refetch: refetchEmployees } = useQuery<Employee[]>({
+  const { data: employees, isLoading: employeesLoading, isFetching: employeesFetching, refetch: refetchEmployees } = useQuery<Employee[]>({
     queryKey: ['/api/gusto/companies', selectedCompany, 'employees'],
     queryFn: async () => {
-      const res = await fetch(`/api/gusto/companies/${selectedCompany}/employees`);
+      const res = await fetch(`/api/gusto/companies/${selectedCompany}/employees`, { credentials: 'include' });
       if (!res.ok) throw new Error('Failed to fetch employees');
       return res.json();
     },
     enabled: !!selectedCompany,
   });
 
-  const { data: payrolls, isLoading: payrollsLoading, refetch: refetchPayrolls } = useQuery<Payroll[]>({
+  const { data: payrolls, isLoading: payrollsLoading, isFetching: payrollsFetching, refetch: refetchPayrolls } = useQuery<Payroll[]>({
     queryKey: ['/api/gusto/companies', selectedCompany, 'payrolls'],
     queryFn: async () => {
-      const res = await fetch(`/api/gusto/companies/${selectedCompany}/payrolls`);
+      const res = await fetch(`/api/gusto/companies/${selectedCompany}/payrolls`, { credentials: 'include' });
       if (!res.ok) throw new Error('Failed to fetch payrolls');
       const data = await res.json();
       return data
@@ -101,6 +106,8 @@ export default function GustoPage() {
     },
     enabled: !!selectedCompany,
   });
+
+  const isRefreshing = companiesFetching || employeesFetching || payrollsFetching;
 
   // Auto-select first company
   if (companies && companies.length > 0 && !selectedCompany) {
@@ -182,9 +189,9 @@ export default function GustoPage() {
               </SelectContent>
             </Select>
           )}
-          <Button variant="outline" onClick={handleRefresh} data-testid="button-refresh">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
+          <Button variant="outline" onClick={handleRefresh} disabled={isRefreshing} data-testid="button-refresh">
+            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+            {isRefreshing ? 'Refreshing...' : 'Refresh'}
           </Button>
         </div>
       </div>
