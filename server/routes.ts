@@ -1296,7 +1296,15 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Missing required fields: to, subject, body" });
       }
       
-      await sendEmail(userId, to, subject, body, inReplyTo, threadId);
+      // Try user-specific OAuth first, then fall back to connector
+      const isUserConnected = await isGmailConnectedForUser(userId);
+      if (isUserConnected) {
+        await sendEmail(userId, to, subject, body, inReplyTo, threadId);
+      } else {
+        // Fall back to connector-based send
+        const { sendEmailViaConnector } = await import("./gmail");
+        await sendEmailViaConnector(to, subject, body, threadId);
+      }
       res.json({ success: true });
     } catch (error: any) {
       console.error("[Gmail] Error sending email:", error?.message);

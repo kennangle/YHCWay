@@ -122,3 +122,32 @@ export async function deleteEmail(messageId: string): Promise<boolean> {
   
   return true;
 }
+
+export async function sendEmailViaConnector(to: string, subject: string, body: string, threadId?: string): Promise<void> {
+  const gmail = await getGmailClient();
+  
+  // Build email message
+  const messageParts = [
+    `To: ${to}`,
+    `Subject: ${subject}`,
+    'Content-Type: text/html; charset=utf-8',
+    'MIME-Version: 1.0',
+    '',
+    body
+  ];
+  
+  const rawMessage = messageParts.join('\r\n');
+  const encodedMessage = Buffer.from(rawMessage)
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+  
+  await gmail.users.messages.send({
+    userId: 'me',
+    requestBody: {
+      raw: encodedMessage,
+      threadId: threadId,
+    },
+  });
+}
