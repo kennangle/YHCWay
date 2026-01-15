@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { X, Reply, Send, ArrowLeft, Loader2, Trash2, Sparkles, RefreshCw, FileText, ChevronDown, ChevronUp, AlertCircle, CheckCircle2, ListTodo } from "lucide-react";
+import { X, Reply, Send, ArrowLeft, Loader2, Trash2, Archive, Sparkles, RefreshCw, FileText, ChevronDown, ChevronUp, AlertCircle, CheckCircle2, ListTodo } from "lucide-react";
 import DOMPurify from "dompurify";
 
 interface EmailDetail {
@@ -135,6 +135,24 @@ export function EmailDetailPanel({ messageId, onClose }: EmailDetailPanelProps) 
     },
   });
 
+  const archiveMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/gmail/messages/${messageId}/archive`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to archive email");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["gmail-messages"] });
+      onClose();
+    },
+  });
+
   function extractEmail(fromHeader: string): string {
     const match = fromHeader.match(/<([^>]+)>/);
     return match ? match[1] : fromHeader;
@@ -210,7 +228,25 @@ export function EmailDetailPanel({ messageId, onClose }: EmailDetailPanelProps) 
             <button
               type="button"
               onClick={(e) => {
-                console.log('Delete button clicked!');
+                e.preventDefault();
+                e.stopPropagation();
+                archiveMutation.mutate();
+              }}
+              disabled={archiveMutation.isPending}
+              className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+              style={{ pointerEvents: 'auto', cursor: 'pointer' }}
+              data-testid="button-archive-email"
+            >
+              {archiveMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Archive className="w-4 h-4" />
+              )}
+              Archive
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 deleteMutation.mutate();

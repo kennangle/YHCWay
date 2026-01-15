@@ -319,3 +319,18 @@ export async function deleteEmailById(userId: string, messageId: string): Promis
   
   return true;
 }
+
+export async function archiveEmailById(userId: string, messageId: string): Promise<boolean> {
+  const gmail = await getGmailClientForUser(userId);
+  
+  // Archive = remove INBOX label
+  await gmail.users.messages.modify({
+    userId: 'me',
+    id: messageId,
+    requestBody: {
+      removeLabelIds: ['INBOX'],
+    },
+  });
+  
+  return true;
+}

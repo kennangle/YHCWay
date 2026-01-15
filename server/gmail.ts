@@ -123,6 +123,21 @@ export async function deleteEmail(messageId: string): Promise<boolean> {
   return true;
 }
 
+export async function archiveEmail(messageId: string): Promise<boolean> {
+  const gmail = await getGmailClient();
+  
+  // Archive = remove INBOX label
+  await gmail.users.messages.modify({
+    userId: 'me',
+    id: messageId,
+    requestBody: {
+      removeLabelIds: ['INBOX'],
+    },
+  });
+  
+  return true;
+}
+
 export async function sendEmailViaConnector(to: string, subject: string, body: string, threadId?: string): Promise<void> {
   const gmail = await getGmailClient();
   

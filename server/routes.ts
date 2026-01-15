@@ -1337,6 +1337,33 @@ export async function registerRoutes(
     }
   });
 
+  // Archive email (remove from inbox)
+  app.post("/api/gmail/messages/:id/archive", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      const messageId = req.params.id;
+      
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      // Try user-specific OAuth first, then fall back to connector
+      const isUserConnected = await isGmailConnectedForUser(userId);
+      if (isUserConnected) {
+        const { archiveEmailById } = await import("./gmail-oauth");
+        await archiveEmailById(userId, messageId);
+      } else {
+        // Fall back to connector-based archive
+        const { archiveEmail } = await import("./gmail");
+        await archiveEmail(messageId);
+      }
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("[Gmail] Error archiving email:", error?.message);
+      res.status(500).json({ error: error?.message || "Failed to archive email" });
+    }
+  });
+
   // AI Email Reply Suggestions
   app.post("/api/ai/email-suggestions", isAuthenticated, async (req: any, res) => {
     try {
