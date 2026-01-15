@@ -308,8 +308,8 @@ export default function ProjectPageV2() {
           </div>
         </div>
 
-        <div className="flex-1 flex overflow-hidden">
-          <div className={`flex-1 p-4 overflow-auto ${selectedTaskId ? "pr-0" : ""}`}>
+        <div className="flex-1 flex overflow-hidden min-h-0">
+          <div className={`flex-1 min-w-0 p-4 overflow-auto ${selectedTaskId ? "pr-0" : ""}`}>
             {viewMode === "board" && (
               <ProjectBoardView
                 projectId={projectId}
