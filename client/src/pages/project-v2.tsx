@@ -5,8 +5,9 @@ import { TopBar } from "@/components/top-bar";
 import { ProjectHeader } from "@/features/projects/components/ProjectHeader";
 import { ProjectBoardView } from "@/features/projects/components/ProjectBoardView";
 import { TaskPane } from "@/features/tasks/components/TaskPane";
+import { ArchivedTasksDrawer } from "@/features/tasks/components/ArchivedTasksDrawer";
 import { useProjectBoard, useProject } from "@/features/projects/hooks";
-import { RefreshCw, Filter, X } from "lucide-react";
+import { RefreshCw, Filter, X, Archive } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -39,6 +40,7 @@ export default function ProjectPageV2() {
     dueDate: null,
   });
   const [showFilters, setShowFilters] = useState(false);
+  const [showArchivedTasks, setShowArchivedTasks] = useState(false);
 
   useEffect(() => {
     const taskId = selectedTaskIdFromUrl ? parseInt(selectedTaskIdFromUrl) : null;
@@ -303,6 +305,17 @@ export default function ProjectPageV2() {
             </span>
           )}
 
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="gap-2"
+            onClick={() => setShowArchivedTasks(true)}
+            data-testid="button-view-archived"
+          >
+            <Archive className="w-4 h-4" />
+            Archived
+          </Button>
+
           <div className="ml-auto text-xs text-gray-400">
             Use arrow keys to navigate, Enter to select, Escape to close
           </div>
@@ -335,11 +348,21 @@ export default function ProjectPageV2() {
                 data-testid="overlay-backdrop"
               />
               <div className="relative z-10 bg-white rounded-lg shadow-2xl max-h-[90vh] overflow-hidden">
-                <TaskPane taskId={selectedTaskId} onClose={handleClosePane} />
+                <TaskPane taskId={selectedTaskId} projectId={projectId} onClose={handleClosePane} />
               </div>
             </div>
           )}
         </div>
+
+        <ArchivedTasksDrawer 
+          projectId={projectId}
+          isOpen={showArchivedTasks}
+          onClose={() => setShowArchivedTasks(false)}
+          onTaskClick={(taskId) => {
+            setShowArchivedTasks(false);
+            handleSelectTask(taskId);
+          }}
+        />
       </main>
     </div>
   );

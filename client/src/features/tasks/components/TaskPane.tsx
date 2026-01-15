@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { X, CheckCircle2, Circle, Calendar as CalendarIcon, User, Flag, FolderOpen, Repeat, ChevronDown, Users, Plus, Trash2 } from "lucide-react";
-import { useTask, useTaskProjects, useUpdateTask, useTaskCollaborators, useAddTaskCollaborator, useRemoveTaskCollaborator } from "../hooks";
+import { X, CheckCircle2, Circle, Calendar as CalendarIcon, User, Flag, FolderOpen, Repeat, ChevronDown, Users, Plus, Trash2, Archive, ArchiveRestore } from "lucide-react";
+import { useTask, useTaskProjects, useUpdateTask, useTaskCollaborators, useAddTaskCollaborator, useRemoveTaskCollaborator, useArchiveTask, useUnarchiveTask } from "../hooks";
 import { StoriesFeed } from "./StoriesFeed";
 import { CommentComposer } from "./CommentComposer";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ const RECURRENCE_OPTIONS = [
 
 interface TaskPaneProps {
   taskId: number;
+  projectId?: number;
   onClose: () => void;
 }
 
@@ -45,7 +46,7 @@ interface Collaborator {
   user: User;
 }
 
-export function TaskPane({ taskId, onClose }: TaskPaneProps) {
+export function TaskPane({ taskId, projectId, onClose }: TaskPaneProps) {
   const [showAddCollaborator, setShowAddCollaborator] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   
@@ -55,6 +56,8 @@ export function TaskPane({ taskId, onClose }: TaskPaneProps) {
   const updateTask = useUpdateTask();
   const addCollaborator = useAddTaskCollaborator();
   const removeCollaborator = useRemoveTaskCollaborator();
+  const archiveTask = useArchiveTask(projectId);
+  const unarchiveTask = useUnarchiveTask(projectId);
 
   const { data: users = [] } = useQuery<User[]>({
     queryKey: ["/api/users"],
@@ -87,6 +90,16 @@ export function TaskPane({ taskId, onClose }: TaskPaneProps) {
     if (task) {
       updateTask.mutate({ taskId, data: { isCompleted: !task.isCompleted } });
     }
+  };
+
+  const handleArchive = () => {
+    archiveTask.mutate(taskId, {
+      onSuccess: () => onClose(),
+    });
+  };
+
+  const handleUnarchive = () => {
+    unarchiveTask.mutate(taskId);
   };
 
   if (isLoading) {
@@ -140,9 +153,34 @@ export function TaskPane({ taskId, onClose }: TaskPaneProps) {
           </h2>
         </div>
 
-        <Button variant="ghost" size="icon" onClick={onClose} data-testid="button-close-pane">
-          <X className="w-4 h-4" />
-        </Button>
+        <div className="flex items-center gap-1">
+          {task.isArchived ? (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleUnarchive}
+              disabled={unarchiveTask.isPending}
+              title="Restore from archive"
+              data-testid="button-unarchive-task"
+            >
+              <ArchiveRestore className="w-4 h-4 text-gray-500" />
+            </Button>
+          ) : (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleArchive}
+              disabled={archiveTask.isPending}
+              title="Archive task"
+              data-testid="button-archive-task"
+            >
+              <Archive className="w-4 h-4 text-gray-500" />
+            </Button>
+          )}
+          <Button variant="ghost" size="icon" onClick={onClose} data-testid="button-close-pane">
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto">

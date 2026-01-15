@@ -32,4 +32,10 @@ export const tasksApi = {
       `/api/tasks/${taskId}/complete`,
       { completed }
     ),
+
+  archive: (taskId: number) =>
+    http.post<Task>(`/api/tasks/${taskId}/archive`, {}),
+
+  unarchive: (taskId: number) =>
+    http.post<Task>(`/api/tasks/${taskId}/unarchive`, {}),
 };

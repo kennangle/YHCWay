@@ -237,3 +237,45 @@ export function useRemoveTaskCollaborator() {
     },
   });
 }
+
+export function useArchiveTask(projectId?: number) {
+  const qc = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (taskId: number) => tasksApi.archive(taskId),
+    onSuccess: (_, taskId) => {
+      qc.invalidateQueries({ queryKey: taskKeys.detail(taskId) });
+      if (projectId) {
+        qc.invalidateQueries({ queryKey: projectKeys.board(projectId) });
+        qc.invalidateQueries({ queryKey: ["archivedTasks", projectId] });
+      }
+    },
+  });
+}
+
+export function useUnarchiveTask(projectId?: number) {
+  const qc = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (taskId: number) => tasksApi.unarchive(taskId),
+    onSuccess: (_, taskId) => {
+      qc.invalidateQueries({ queryKey: taskKeys.detail(taskId) });
+      if (projectId) {
+        qc.invalidateQueries({ queryKey: projectKeys.board(projectId) });
+        qc.invalidateQueries({ queryKey: ["archivedTasks", projectId] });
+      }
+    },
+  });
+}
+
+export function useArchivedTasks(projectId: number) {
+  return useQuery({
+    queryKey: ["archivedTasks", projectId],
+    queryFn: async () => {
+      const res = await fetch(`/api/projects/${projectId}/archived-tasks`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch archived tasks");
+      return res.json();
+    },
+    enabled: !!projectId,
+  });
+}

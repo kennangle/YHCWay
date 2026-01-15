@@ -3,6 +3,8 @@ export type Task = {
   title: string;
   description: string | null;
   isCompleted: boolean;
+  isArchived: boolean;
+  archivedAt: string | null;
   assigneeId: string | null;
   dueDate: string | null;
   priority: string;
