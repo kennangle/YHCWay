@@ -91,10 +91,10 @@ export function TaskPane({ taskId, onClose }: TaskPaneProps) {
 
   if (isLoading) {
     return (
-      <div className="w-[320px] min-w-[280px] flex-shrink-0 border-l border-gray-200 bg-white flex flex-col h-full">
+      <div className="w-[360px] min-w-[320px] flex-shrink-0 border-l border-gray-200 bg-white flex flex-col h-full">
         <div className="p-4 border-b border-gray-200 flex items-center justify-between">
           <div className="h-6 bg-gray-200 rounded w-32 animate-pulse" />
-          <Button variant="ghost" size="icon" onClick={onClose}>
+          <Button variant="ghost" size="icon" onClick={onClose} data-testid="button-close-pane-loading">
             <X className="w-4 h-4" />
           </Button>
         </div>
@@ -108,9 +108,9 @@ export function TaskPane({ taskId, onClose }: TaskPaneProps) {
 
   if (!task) {
     return (
-      <div className="w-[320px] min-w-[280px] flex-shrink-0 border-l border-gray-200 bg-white flex flex-col h-full items-center justify-center">
+      <div className="w-[360px] min-w-[320px] flex-shrink-0 border-l border-gray-200 bg-white flex flex-col h-full items-center justify-center">
         <p className="text-gray-500">Task not found</p>
-        <Button variant="ghost" onClick={onClose} className="mt-2">
+        <Button variant="ghost" onClick={onClose} className="mt-2" data-testid="button-close-pane-notfound">
           Close
         </Button>
       </div>
@@ -120,7 +120,7 @@ export function TaskPane({ taskId, onClose }: TaskPaneProps) {
   const priorityInfo = PRIORITY_LABELS[task.priority] || PRIORITY_LABELS.medium;
 
   return (
-    <div className="w-[320px] min-w-[280px] flex-shrink-0 border-l border-gray-200 bg-white flex flex-col h-full overflow-hidden">
+    <div className="w-[360px] min-w-[320px] flex-shrink-0 border-l border-gray-200 bg-white flex flex-col h-full overflow-hidden">
       <div className="p-4 border-b border-gray-200 flex items-start gap-3">
         <button
           onClick={handleToggleComplete}

@@ -308,8 +308,8 @@ export default function ProjectPageV2() {
           </div>
         </div>
 
-        <div className="flex-1 flex overflow-hidden min-h-0">
-          <div className={`flex-1 min-w-0 p-4 overflow-auto ${selectedTaskId ? "pr-0" : ""}`}>
+        <div className="flex-1 flex overflow-hidden min-h-0 relative">
+          <div className="flex-1 min-w-0 p-4 overflow-auto">
             {viewMode === "board" && (
               <ProjectBoardView
                 projectId={projectId}
@@ -328,7 +328,16 @@ export default function ProjectPageV2() {
           </div>
 
           {selectedTaskId && (
-            <TaskPane taskId={selectedTaskId} onClose={handleClosePane} />
+            <>
+              <div 
+                className="absolute inset-0 bg-black/10 z-10"
+                onClick={handleClosePane}
+                data-testid="overlay-backdrop"
+              />
+              <div className="absolute right-0 top-0 bottom-0 z-20 shadow-xl">
+                <TaskPane taskId={selectedTaskId} onClose={handleClosePane} />
+              </div>
+            </>
           )}
         </div>
       </main>
