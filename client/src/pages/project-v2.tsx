@@ -328,16 +328,16 @@ export default function ProjectPageV2() {
           </div>
 
           {selectedTaskId && (
-            <>
+            <div className="fixed inset-0 z-50 flex items-center justify-center">
               <div 
-                className="absolute inset-0 bg-black/10 z-10"
+                className="absolute inset-0 bg-black/30"
                 onClick={handleClosePane}
                 data-testid="overlay-backdrop"
               />
-              <div className="absolute right-0 top-0 bottom-0 z-20 shadow-xl">
+              <div className="relative z-10 bg-white rounded-lg shadow-2xl max-h-[90vh] overflow-hidden">
                 <TaskPane taskId={selectedTaskId} onClose={handleClosePane} />
               </div>
-            </>
+            </div>
           )}
         </div>
       </main>
