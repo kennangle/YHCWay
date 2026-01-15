@@ -660,6 +660,8 @@ export const tasks = pgTable("tasks", {
   sortOrder: integer("sort_order").notNull().default(0),
   isCompleted: boolean("is_completed").default(false),
   completedAt: timestamp("completed_at"),
+  isArchived: boolean("is_archived").default(false),
+  archivedAt: timestamp("archived_at"),
   // Recurrence settings
   isRecurring: boolean("is_recurring").default(false),
   recurrencePattern: varchar("recurrence_pattern"),
@@ -688,6 +690,7 @@ export const insertTaskSchema = createInsertSchema(tasks).omit({
   createdAt: true, 
   updatedAt: true,
   completedAt: true,
+  archivedAt: true,
 });
 
 export const createTaskSchema = z.object({
