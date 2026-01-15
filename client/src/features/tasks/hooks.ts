@@ -131,6 +131,8 @@ export function useCreateTask(projectId: number) {
       title: string;
       description?: string;
       priority?: string;
+      dueDate?: string;
+      assigneeId?: string;
     }) => tasksApi.create({ projectId, ...data }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: projectKeys.board(projectId) });
