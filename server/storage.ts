@@ -289,6 +289,9 @@ export interface IStorage {
   getUpcomingTasks(userId: string, days?: number): Promise<Task[]>;
   updateTask(id: number, data: Partial<InsertTask>): Promise<Task | undefined>;
   deleteTask(id: number): Promise<void>;
+  archiveTask(id: number): Promise<Task | undefined>;
+  unarchiveTask(id: number): Promise<Task | undefined>;
+  getArchivedTasks(projectId: number): Promise<Task[]>;
   moveTask(taskId: number, columnId: number, sortOrder: number): Promise<Task | undefined>;
   
   // Subtasks
@@ -1629,6 +1632,31 @@ export class DbStorage implements IStorage {
 
   async deleteTask(id: number): Promise<void> {
     await db.delete(tasks).where(eq(tasks.id, id));
+  }
+
+  async archiveTask(id: number): Promise<Task | undefined> {
+    const [task] = await db.update(tasks)
+      .set({ isArchived: true, archivedAt: new Date(), updatedAt: new Date() })
+      .where(eq(tasks.id, id))
+      .returning();
+    return task;
+  }
+
+  async unarchiveTask(id: number): Promise<Task | undefined> {
+    const [task] = await db.update(tasks)
+      .set({ isArchived: false, archivedAt: null, updatedAt: new Date() })
+      .where(eq(tasks.id, id))
+      .returning();
+    return task;
+  }
+
+  async getArchivedTasks(projectId: number): Promise<Task[]> {
+    return await db.select().from(tasks)
+      .where(and(
+        eq(tasks.projectId, projectId),
+        eq(tasks.isArchived, true)
+      ))
+      .orderBy(desc(tasks.archivedAt));
   }
 
   async moveTask(taskId: number, columnId: number, sortOrder: number): Promise<Task | undefined> {
