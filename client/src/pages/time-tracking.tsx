@@ -476,49 +476,50 @@ export default function TimeTrackingPage() {
               </Dialog>
 
               <Dialog open={isLinkOpen} onOpenChange={setIsLinkOpen}>
-                <DialogContent>
+                <DialogContent className="max-h-[80vh] overflow-hidden flex flex-col">
                   <DialogHeader>
                     <DialogTitle>Link to YHCTime Employee</DialogTitle>
                   </DialogHeader>
-                  <div className="space-y-4">
+                  <div className="space-y-4 overflow-y-auto flex-1">
                     <p className="text-sm text-muted-foreground">
-                      Link your account to your YHCTime employee profile. This will be used when creating time entries.
+                      Select the YHCTime employee profile to use for your time entries. 
+                      You can link to any employee, even if the email differs from your login.
                     </p>
-                    {(() => {
-                      const matchingEmployee = employees.find(emp => 
-                        emp.email?.toLowerCase() === user?.email?.toLowerCase()
-                      );
-                      
-                      if (!matchingEmployee) {
-                        return (
-                          <div className="text-center py-4">
-                            <p className="text-muted-foreground">No matching YHCTime account found.</p>
-                            <p className="text-sm text-muted-foreground mt-2">
-                              Your email ({user?.email}) doesn't match any employee in YHCTime.
-                            </p>
-                          </div>
-                        );
-                      }
-                      
-                      return (
-                        <Button
-                          variant="outline"
-                          className="w-full justify-start"
-                          onClick={() => linkMutation.mutate({ 
-                            employeeId: matchingEmployee.employeeId, 
-                            employeeName: matchingEmployee.employeeName 
-                          })}
-                          disabled={linkMutation.isPending}
-                          data-testid={`button-select-employee-${matchingEmployee.employeeId}`}
-                        >
-                          <Users className="w-4 h-4 mr-2" />
-                          {matchingEmployee.employeeName}
-                          <span className="ml-auto text-xs text-muted-foreground">
-                            {matchingEmployee.email}
-                          </span>
-                        </Button>
-                      );
-                    })()}
+                    {employees.length === 0 ? (
+                      <div className="text-center py-4">
+                        <p className="text-muted-foreground">No YHCTime employees found.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {employees.map((emp) => {
+                          const isMatch = emp.email?.toLowerCase() === user?.email?.toLowerCase();
+                          return (
+                            <Button
+                              key={emp.employeeId}
+                              variant="outline"
+                              className={`w-full justify-start ${isMatch ? 'border-primary bg-primary/5' : ''}`}
+                              onClick={() => linkMutation.mutate({ 
+                                employeeId: emp.employeeId, 
+                                employeeName: emp.employeeName 
+                              })}
+                              disabled={linkMutation.isPending}
+                              data-testid={`button-select-employee-${emp.employeeId}`}
+                            >
+                              <Users className="w-4 h-4 mr-2" />
+                              <div className="flex flex-col items-start text-left">
+                                <span>{emp.employeeName}</span>
+                                <span className="text-xs text-muted-foreground">{emp.email}</span>
+                              </div>
+                              {isMatch && (
+                                <span className="ml-auto text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                                  Your email
+                                </span>
+                              )}
+                            </Button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 </DialogContent>
               </Dialog>
@@ -545,19 +546,27 @@ export default function TimeTrackingPage() {
                       <Loader2 className="w-6 h-6 animate-spin" />
                     </div>
                   ) : (() => {
-                    const myEmployee = employees.find(emp => 
-                      emp.email?.toLowerCase() === user?.email?.toLowerCase()
-                    );
+                    // Use the explicitly linked employee from the database
+                    const myEmployee = linkedEmployee?.linked 
+                      ? employees.find(emp => emp.employeeId === linkedEmployee.employeeId)
+                      : employees.find(emp => emp.email?.toLowerCase() === user?.email?.toLowerCase());
                     
-                    if (!myEmployee) {
+                    const isDifferentEmail = myEmployee && myEmployee.email?.toLowerCase() !== user?.email?.toLowerCase();
+                    
+                    if (!myEmployee && !linkedEmployee?.linked) {
                       return (
                         <div className="text-center py-8">
                           <p className="text-muted-foreground mb-4">
-                            No matching YHCTime account found for {user?.email}
+                            No YHCTime account linked
                           </p>
-                          <p className="text-sm text-muted-foreground">
-                            You can still add time entries by linking to your YHCTime account.
+                          <p className="text-sm text-muted-foreground mb-4">
+                            Link your YHCTime account to track time. You can link to any employee profile, 
+                            even if the email differs from your login ({user?.email}).
                           </p>
+                          <Button onClick={() => setIsLinkOpen(true)} data-testid="button-link-profile">
+                            <Link2 className="w-4 h-4 mr-2" />
+                            Link YHCTime Account
+                          </Button>
                         </div>
                       );
                     }
@@ -566,20 +575,29 @@ export default function TimeTrackingPage() {
                       <div className="max-w-md">
                         <div 
                           className="p-6 rounded-xl bg-background/50 border border-border"
-                          data-testid={`card-employee-${myEmployee.employeeId}`}
+                          data-testid={`card-employee-${myEmployee?.employeeId || linkedEmployee?.employeeId}`}
                         >
                           <div className="flex items-center justify-between mb-3">
-                            <h3 className="font-medium text-lg">{myEmployee.employeeName}</h3>
+                            <h3 className="font-medium text-lg">{myEmployee?.employeeName || linkedEmployee?.employeeName}</h3>
                             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-500 text-white text-sm">
                               <CheckCircle className="w-4 h-4" />
                               <span>Linked</span>
                             </div>
                           </div>
-                          <p className="text-sm text-muted-foreground mb-3">{myEmployee.email}</p>
-                          <p className="text-sm text-muted-foreground mb-3 capitalize">Role: {myEmployee.role?.replace('_', ' ')}</p>
+                          {myEmployee?.email && (
+                            <p className="text-sm text-muted-foreground mb-1">{myEmployee.email}</p>
+                          )}
+                          {isDifferentEmail && (
+                            <p className="text-xs text-amber-600 mb-3">
+                              (Different from login: {user?.email})
+                            </p>
+                          )}
+                          {myEmployee?.role && (
+                            <p className="text-sm text-muted-foreground mb-3 capitalize">Role: {myEmployee.role?.replace('_', ' ')}</p>
+                          )}
                           
-                          <div className="border-t border-border pt-4 mt-4">
-                            <p className="text-sm text-muted-foreground mb-3">
+                          <div className="border-t border-border pt-4 mt-4 space-y-3">
+                            <p className="text-sm text-muted-foreground">
                               You can add time entries anytime using the "Add Time Entry" button above.
                             </p>
                             <Button 
@@ -589,6 +607,15 @@ export default function TimeTrackingPage() {
                             >
                               <Plus className="w-4 h-4 mr-2" />
                               Add Time Entry
+                            </Button>
+                            <Button 
+                              variant="outline"
+                              onClick={() => setIsLinkOpen(true)}
+                              className="w-full"
+                              data-testid="button-change-linked-account"
+                            >
+                              <Users className="w-4 h-4 mr-2" />
+                              Change Linked Account
                             </Button>
                           </div>
                         </div>
