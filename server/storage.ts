@@ -111,6 +111,9 @@ import {
   ExtensionToken,
   changelogEntries,
   changelogSyncState,
+  taskDependencies,
+  type TaskDependency,
+  type InsertTaskDependency,
 } from "@shared/schema";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq, desc, and, lt, isNull, sql, inArray, gte, lte, or, asc } from "drizzle-orm";
@@ -392,6 +395,24 @@ export interface IStorage {
     sortOrder: number;
     orderKey: string | null;
   }>>;
+  
+  // Task dependencies
+  getTaskDependencies(taskId: number): Promise<Array<{
+    id: number;
+    taskId: number;
+    dependsOnTaskId: number;
+    dependencyType: string;
+    dependsOnTask: Task;
+  }>>;
+  getTaskDependents(taskId: number): Promise<Array<{
+    id: number;
+    taskId: number;
+    dependsOnTaskId: number;
+    dependencyType: string;
+    dependentTask: Task;
+  }>>;
+  addTaskDependency(taskId: number, dependsOnTaskId: number, dependencyType?: string): Promise<{ id: number }>;
+  removeTaskDependency(id: number): Promise<void>;
   
   // Task stories (unified comments + activity)
   getTaskStories(taskId: number, tenantId: string | null): Promise<Array<{
@@ -2320,6 +2341,79 @@ export class DbStorage implements IStorage {
     }
 
     return result;
+  }
+
+  // Task dependencies
+  async getTaskDependencies(taskId: number): Promise<Array<{
+    id: number;
+    taskId: number;
+    dependsOnTaskId: number;
+    dependencyType: string;
+    dependsOnTask: Task;
+  }>> {
+    const deps = await db
+      .select()
+      .from(taskDependencies)
+      .where(eq(taskDependencies.taskId, taskId));
+    
+    const result = [];
+    for (const dep of deps) {
+      const task = await this.getTask(dep.dependsOnTaskId);
+      if (task) {
+        result.push({
+          id: dep.id,
+          taskId: dep.taskId,
+          dependsOnTaskId: dep.dependsOnTaskId,
+          dependencyType: dep.dependencyType || "finish_to_start",
+          dependsOnTask: task,
+        });
+      }
+    }
+    return result;
+  }
+
+  async getTaskDependents(taskId: number): Promise<Array<{
+    id: number;
+    taskId: number;
+    dependsOnTaskId: number;
+    dependencyType: string;
+    dependentTask: Task;
+  }>> {
+    const deps = await db
+      .select()
+      .from(taskDependencies)
+      .where(eq(taskDependencies.dependsOnTaskId, taskId));
+    
+    const result = [];
+    for (const dep of deps) {
+      const task = await this.getTask(dep.taskId);
+      if (task) {
+        result.push({
+          id: dep.id,
+          taskId: dep.taskId,
+          dependsOnTaskId: dep.dependsOnTaskId,
+          dependencyType: dep.dependencyType || "finish_to_start",
+          dependentTask: task,
+        });
+      }
+    }
+    return result;
+  }
+
+  async addTaskDependency(taskId: number, dependsOnTaskId: number, dependencyType: string = "finish_to_start"): Promise<{ id: number }> {
+    const [row] = await db
+      .insert(taskDependencies)
+      .values({
+        taskId,
+        dependsOnTaskId,
+        dependencyType,
+      })
+      .returning({ id: taskDependencies.id });
+    return row;
+  }
+
+  async removeTaskDependency(id: number): Promise<void> {
+    await db.delete(taskDependencies).where(eq(taskDependencies.id, id));
   }
 
   // Task stories (unified comments + activity)

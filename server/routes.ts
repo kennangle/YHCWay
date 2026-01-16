@@ -4415,6 +4415,94 @@ export async function registerRoutes(
   });
 
   // =============================================================================
+  // TASK DEPENDENCIES ROUTES
+  // =============================================================================
+
+  // Get dependencies (tasks this task depends on)
+  app.get("/api/tasks/:id/dependencies", isAuthenticated, async (req: any, res) => {
+    try {
+      const taskId = parseInt(req.params.id);
+      const dependencies = await storage.getTaskDependencies(taskId);
+      res.json(dependencies);
+    } catch (error) {
+      console.error("Error fetching task dependencies:", error);
+      res.status(500).json({ error: "Failed to fetch dependencies" });
+    }
+  });
+
+  // Get dependents (tasks that depend on this task)
+  app.get("/api/tasks/:id/dependents", isAuthenticated, async (req: any, res) => {
+    try {
+      const taskId = parseInt(req.params.id);
+      const dependents = await storage.getTaskDependents(taskId);
+      res.json(dependents);
+    } catch (error) {
+      console.error("Error fetching task dependents:", error);
+      res.status(500).json({ error: "Failed to fetch dependents" });
+    }
+  });
+
+  // Add a dependency
+  app.post("/api/tasks/:id/dependencies", isAuthenticated, async (req: any, res) => {
+    try {
+      const taskId = parseInt(req.params.id);
+      const { dependsOnTaskId, dependencyType } = req.body;
+
+      if (!dependsOnTaskId) {
+        return res.status(400).json({ error: "dependsOnTaskId is required" });
+      }
+
+      // Prevent self-dependency
+      if (taskId === dependsOnTaskId) {
+        return res.status(400).json({ error: "A task cannot depend on itself" });
+      }
+
+      // Verify both tasks exist and user has access
+      const task = await storage.getTask(taskId);
+      const dependsOnTask = await storage.getTask(dependsOnTaskId);
+      if (!task || !dependsOnTask) {
+        return res.status(404).json({ error: "Task not found" });
+      }
+
+      // Check for circular dependencies using graph traversal
+      const visitedSet = new Set<number>();
+      const checkCycle = async (currentTaskId: number): Promise<boolean> => {
+        if (currentTaskId === taskId) return true;
+        if (visitedSet.has(currentTaskId)) return false;
+        visitedSet.add(currentTaskId);
+        
+        const deps = await storage.getTaskDependencies(currentTaskId);
+        for (const dep of deps) {
+          if (await checkCycle(dep.dependsOnTaskId)) return true;
+        }
+        return false;
+      };
+      
+      if (await checkCycle(dependsOnTaskId)) {
+        return res.status(400).json({ error: "This would create a circular dependency" });
+      }
+
+      const result = await storage.addTaskDependency(taskId, dependsOnTaskId, dependencyType);
+      res.status(201).json(result);
+    } catch (error) {
+      console.error("Error adding task dependency:", error);
+      res.status(500).json({ error: "Failed to add dependency" });
+    }
+  });
+
+  // Remove a dependency
+  app.delete("/api/tasks/:taskId/dependencies/:depId", isAuthenticated, async (req: any, res) => {
+    try {
+      const depId = parseInt(req.params.depId);
+      await storage.removeTaskDependency(depId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error removing task dependency:", error);
+      res.status(500).json({ error: "Failed to remove dependency" });
+    }
+  });
+
+  // =============================================================================
   // TASK STORIES ROUTES (Unified comments + activity feed)
   // =============================================================================
 

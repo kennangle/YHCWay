@@ -951,6 +951,83 @@ export default function ProjectBoard() {
     enabled: !!selectedTask,
   });
 
+  // Task dependencies queries
+  const { data: taskDependencies = [], refetch: refetchDependencies } = useQuery<Array<{
+    id: number;
+    taskId: number;
+    dependsOnTaskId: number;
+    dependencyType: string;
+    dependsOnTask: Task;
+  }>>({
+    queryKey: ["task-dependencies", selectedTask?.id],
+    queryFn: async () => {
+      if (!selectedTask) return [];
+      const res = await fetch(`/api/tasks/${selectedTask.id}/dependencies`, { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!selectedTask,
+  });
+
+  const { data: taskDependents = [], refetch: refetchDependents } = useQuery<Array<{
+    id: number;
+    taskId: number;
+    dependsOnTaskId: number;
+    dependencyType: string;
+    dependentTask: Task;
+  }>>({
+    queryKey: ["task-dependents", selectedTask?.id],
+    queryFn: async () => {
+      if (!selectedTask) return [];
+      const res = await fetch(`/api/tasks/${selectedTask.id}/dependents`, { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!selectedTask,
+  });
+
+  const addDependencyMutation = useMutation({
+    mutationFn: async ({ taskId, dependsOnTaskId }: { taskId: number; dependsOnTaskId: number }) => {
+      const res = await fetch(`/api/tasks/${taskId}/dependencies`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ dependsOnTaskId }),
+      });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to add dependency");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      refetchDependencies();
+      refetchDependents();
+      toast({ title: "Dependency added", description: "Task dependency has been linked" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const removeDependencyMutation = useMutation({
+    mutationFn: async ({ taskId, depId }: { taskId: number; depId: number }) => {
+      const res = await fetch(`/api/tasks/${taskId}/dependencies/${depId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to remove dependency");
+    },
+    onSuccess: () => {
+      refetchDependencies();
+      refetchDependents();
+      toast({ title: "Dependency removed" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to remove dependency", variant: "destructive" });
+    },
+  });
+
   const createCommentMutation = useMutation({
     mutationFn: async (data: { taskId: number; content: string }) => {
       const res = await fetch(`/api/tasks/${data.taskId}/comments`, {
@@ -1699,6 +1776,105 @@ export default function ProjectBoard() {
                     </div>
                   )}
                 </div>
+
+                {/* Dependencies - Blocking this task */}
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <ArrowLeft className="w-4 h-4" />
+                    Blocked By ({taskDependencies.length})
+                  </Label>
+                  <div className="mt-2 space-y-2">
+                    {taskDependencies.map((dep) => (
+                      <div 
+                        key={dep.id}
+                        className={`flex items-center justify-between p-2 rounded-lg text-sm ${
+                          dep.dependsOnTask.isCompleted 
+                            ? "bg-green-50 border border-green-200" 
+                            : "bg-amber-50 border border-amber-200"
+                        }`}
+                        data-testid={`dependency-${dep.id}`}
+                      >
+                        <div className="flex items-center gap-2">
+                          {dep.dependsOnTask.isCompleted ? (
+                            <Check className="w-4 h-4 text-green-600" />
+                          ) : (
+                            <Clock className="w-4 h-4 text-amber-600" />
+                          )}
+                          <span className={dep.dependsOnTask.isCompleted ? "line-through text-green-700" : "text-amber-800"}>
+                            {dep.dependsOnTask.title}
+                          </span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                          onClick={() => selectedTask && removeDependencyMutation.mutate({ taskId: selectedTask.id, depId: dep.id })}
+                          data-testid={`remove-dependency-${dep.id}`}
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    ))}
+                    {taskDependencies.length === 0 && (
+                      <p className="text-xs text-muted-foreground">No blocking tasks</p>
+                    )}
+                    {project?.tasks && project.tasks.filter(t => 
+                      t.id !== selectedTask?.id && 
+                      !taskDependencies.some(d => d.dependsOnTaskId === t.id)
+                    ).length > 0 && (
+                      <Select
+                        value=""
+                        onValueChange={(value) => {
+                          if (selectedTask && value) {
+                            addDependencyMutation.mutate({ taskId: selectedTask.id, dependsOnTaskId: parseInt(value) });
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="w-full text-sm" data-testid="select-add-dependency">
+                          <SelectValue placeholder="Add blocking task..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {project?.tasks
+                            .filter(t => t.id !== selectedTask?.id && !taskDependencies.some(d => d.dependsOnTaskId === t.id))
+                            .map((t) => (
+                              <SelectItem key={t.id} value={t.id.toString()}>
+                                <div className="flex items-center gap-2">
+                                  {t.isCompleted ? (
+                                    <Check className="w-3 h-3 text-green-600" />
+                                  ) : (
+                                    <Square className="w-3 h-3" />
+                                  )}
+                                  {t.title}
+                                </div>
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                </div>
+
+                {/* Dependents - Tasks blocked by this task */}
+                {taskDependents.length > 0 && (
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                      <ChevronRight className="w-4 h-4" />
+                      Blocking ({taskDependents.length})
+                    </Label>
+                    <div className="mt-2 space-y-2">
+                      {taskDependents.map((dep) => (
+                        <div 
+                          key={dep.id}
+                          className="flex items-center gap-2 p-2 rounded-lg bg-red-50 border border-red-200 text-sm"
+                          data-testid={`dependent-${dep.id}`}
+                        >
+                          <Flag className="w-4 h-4 text-red-600" />
+                          <span className="text-red-800">{dep.dependentTask.title}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Activity & Comments */}
                 <div>
