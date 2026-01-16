@@ -110,6 +110,24 @@ const PRIORITY_COLORS: Record<string, string> = {
   urgent: "bg-red-100 text-red-700",
 };
 
+const PRIORITY_BORDER_COLORS: Record<string, string> = {
+  low: "border-l-gray-400",
+  medium: "border-l-blue-500",
+  high: "border-l-orange-500",
+  urgent: "border-l-red-500",
+};
+
+const getDueDateCardStyle = (dueDate: string | null, isCompleted: boolean) => {
+  if (isCompleted || !dueDate) return "";
+  const d = new Date(dueDate);
+  const now = new Date();
+  const diffDays = Math.ceil((d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  if (diffDays < 0) return "bg-red-50 border-red-200"; // Overdue
+  if (diffDays === 0) return "bg-amber-50 border-amber-200"; // Due today
+  if (diffDays === 1) return "bg-yellow-50 border-yellow-200"; // Due tomorrow
+  return "";
+};
+
 function TaskCard({ task, onClick, isExpanded, onToggleExpand, subtasks, onToggleSubtask }: { 
   task: Task; 
   onClick: () => void;
@@ -142,14 +160,16 @@ function TaskCard({ task, onClick, isExpanded, onToggleExpand, subtasks, onToggl
 
   const dueInfo = formatDueDate(task.dueDate);
   const hasSubtasks = (task.subtaskCount ?? 0) > 0;
+  const dueDateStyle = getDueDateCardStyle(task.dueDate, task.isCompleted);
+  const priorityBorder = PRIORITY_BORDER_COLORS[task.priority] || "border-l-gray-300";
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow group ${
-        task.isCompleted ? "opacity-60" : ""
-      }`}
+      className={`rounded-lg shadow-sm border hover:shadow-md transition-shadow group border-l-4 ${priorityBorder} ${
+        dueDateStyle || "bg-white border-gray-100"
+      } ${task.isCompleted ? "opacity-60" : ""}`}
       data-testid={`task-card-${task.id}`}
     >
       <div className="p-3 cursor-pointer" onClick={onClick}>
@@ -670,6 +690,8 @@ export default function ProjectBoard() {
   const [viewMode, setViewMode] = useState<"board" | "list" | "gantt" | "timeline">("board");
   const [searchQuery, setSearchQuery] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
+  const [assigneeFilter, setAssigneeFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [showCompleted, setShowCompleted] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState("");
@@ -1141,9 +1163,25 @@ export default function ProjectBoard() {
       if (!showCompleted && task.isCompleted) return false;
       if (searchQuery && !task.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
       if (priorityFilter !== "all" && task.priority !== priorityFilter) return false;
+      if (assigneeFilter !== "all" && (assigneeFilter === "unassigned" ? task.assigneeId !== null : task.assigneeId !== assigneeFilter)) return false;
+      if (statusFilter !== "all" && task.columnId?.toString() !== statusFilter) return false;
       return true;
     });
-  }, [project?.tasks, searchQuery, priorityFilter, showCompleted]);
+  }, [project?.tasks, searchQuery, priorityFilter, assigneeFilter, statusFilter, showCompleted]);
+
+  const activeFiltersCount = [
+    priorityFilter !== "all",
+    assigneeFilter !== "all",
+    statusFilter !== "all",
+    searchQuery.length > 0,
+  ].filter(Boolean).length;
+
+  const clearAllFilters = () => {
+    setPriorityFilter("all");
+    setAssigneeFilter("all");
+    setStatusFilter("all");
+    setSearchQuery("");
+  };
 
   const getColumnTasks = (columnId: number) => {
     return filteredTasks.filter(t => t.columnId === columnId);
@@ -1237,12 +1275,77 @@ export default function ProjectBoard() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Priorities</SelectItem>
-                  <SelectItem value="urgent">Urgent</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="urgent">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-red-500" />
+                      Urgent
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="high">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-orange-500" />
+                      High
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="medium">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-blue-500" />
+                      Medium
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="low">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-gray-400" />
+                      Low
+                    </div>
+                  </SelectItem>
                 </SelectContent>
               </Select>
+
+              <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
+                <SelectTrigger className="w-36 h-9 bg-white/80" data-testid="select-assignee-filter">
+                  <SelectValue placeholder="Assignee" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Assignees</SelectItem>
+                  <SelectItem value="unassigned">Unassigned</SelectItem>
+                  {users.map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.firstName || user.email.split('@')[0]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-32 h-9 bg-white/80" data-testid="select-status-filter">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  {project.columns.map((col) => (
+                    <SelectItem key={col.id} value={col.id.toString()}>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: col.color }} />
+                        {col.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {activeFiltersCount > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearAllFilters}
+                  className="h-9 text-muted-foreground hover:text-foreground"
+                  data-testid="button-clear-filters"
+                >
+                  <X className="w-4 h-4 mr-1" />
+                  Clear ({activeFiltersCount})
+                </Button>
+              )}
 
               <Button
                 variant={showCompleted ? "default" : "outline"}
