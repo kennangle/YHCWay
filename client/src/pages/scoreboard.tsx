@@ -1,10 +1,41 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { TopBar } from "@/components/top-bar";
 import { BarChart3, Users, UserPlus, UserMinus, TrendingUp, TrendingDown, Gift, Percent, Calendar, DollarSign, RefreshCw, ArrowUp, ArrowDown, Minus } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useMainContentClass } from "@/hooks/useSidebarCollapse";
+
+type DateRangeOption = 'last_week' | 'last_month' | 'last_quarter' | 'last_year' | 'this_year';
+
+const dateRangeLabels: Record<DateRangeOption, string> = {
+  last_week: 'Last Week',
+  last_month: 'Last Month',
+  last_quarter: 'Last Quarter',
+  last_year: 'Last Year',
+  this_year: 'This Year',
+};
+
+function getDateRangeDays(option: DateRangeOption): number {
+  const now = new Date();
+  switch (option) {
+    case 'last_week':
+      return 7;
+    case 'last_month':
+      return 30;
+    case 'last_quarter':
+      return 90;
+    case 'last_year':
+      return 365;
+    case 'this_year':
+      const startOfYear = new Date(now.getFullYear(), 0, 1);
+      return Math.ceil((now.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24));
+    default:
+      return 7;
+  }
+}
 
 interface IntroOffer {
   id: string;
@@ -70,6 +101,8 @@ function MetricCard({ title, value, subtitle, icon, color, bgColor, trend, trend
 
 export default function Scoreboard() {
   const mainContentClass = useMainContentClass();
+  const [dateRange, setDateRange] = useState<DateRangeOption>('last_week');
+  const rangeDays = getDateRangeDays(dateRange);
 
   const { data: statusData } = useQuery<{ configured: boolean }>({
     queryKey: ["/api/mindbody-analytics/status"],
@@ -102,22 +135,25 @@ export default function Scoreboard() {
 
   const offers = offersData?.data || [];
   
-  // Calculate metrics from available data
-  const newThisWeek = offers.filter(o => o.daysSincePurchase <= 7).length;
-  const convertedCount = offers.filter(o => o.hasConverted).length;
-  const atRiskCount = offers.filter(o => o.memberStatus === "at_risk").length;
-  const lapsedCount = offers.filter(o => o.memberStatus === "lapsed").length;
-  const lapsedThisWeek = offers.filter(o => o.memberStatus === "lapsed" && o.daysSincePurchase <= 7).length;
-  const engagedCount = offers.filter(o => o.memberStatus === "engaged").length;
-  const newCount = offers.filter(o => o.memberStatus === "new").length;
+  // Filter offers based on selected date range
+  const filteredOffers = offers.filter(o => o.daysSincePurchase <= rangeDays);
   
-  // Calculate conversion rate
-  const conversionRate = offers.length > 0 
-    ? Math.round((convertedCount / offers.length) * 100) 
+  // Calculate metrics from filtered data
+  const newInPeriod = filteredOffers.length;
+  const convertedCount = filteredOffers.filter(o => o.hasConverted).length;
+  const atRiskCount = filteredOffers.filter(o => o.memberStatus === "at_risk").length;
+  const lapsedCount = filteredOffers.filter(o => o.memberStatus === "lapsed").length;
+  const lapsedInPeriod = filteredOffers.filter(o => o.memberStatus === "lapsed").length;
+  const engagedCount = filteredOffers.filter(o => o.memberStatus === "engaged").length;
+  const newCount = filteredOffers.filter(o => o.memberStatus === "new").length;
+  
+  // Calculate conversion rate from filtered offers
+  const conversionRate = filteredOffers.length > 0 
+    ? Math.round((convertedCount / filteredOffers.length) * 100) 
     : 0;
 
-  // Net adds calculation: new this week minus lapsed this week (weekly time-bounded)
-  const netAdds = newThisWeek - lapsedThisWeek;
+  // Net adds calculation based on selected period
+  const netAdds = newInPeriod - lapsedInPeriod;
   
   const hasError = summaryError || offersError;
 
@@ -146,21 +182,36 @@ export default function Scoreboard() {
                 <BarChart3 className="w-4 h-4 text-white" />
               </div>
               <div>
-                <h1 className="font-display text-lg font-bold">Weekly Scoreboard</h1>
+                <h1 className="font-display text-lg font-bold">Business Scoreboard</h1>
                 <p className="text-muted-foreground text-xs">Key metrics for business health</p>
               </div>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleRefresh}
-              disabled={isLoading}
-              className="gap-1 h-7 text-xs px-2"
-              data-testid="button-refresh-scoreboard"
-            >
-              <RefreshCw className={`w-3 h-3 ${isLoading ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
+            <div className="flex items-center gap-2">
+              <Select value={dateRange} onValueChange={(value: DateRangeOption) => setDateRange(value)}>
+                <SelectTrigger className="w-[140px] h-7 text-xs" data-testid="select-date-range">
+                  <Calendar className="w-3 h-3 mr-1" />
+                  <SelectValue placeholder="Select period" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="last_week" data-testid="option-last-week">Last Week</SelectItem>
+                  <SelectItem value="last_month" data-testid="option-last-month">Last Month</SelectItem>
+                  <SelectItem value="last_quarter" data-testid="option-last-quarter">Last Quarter</SelectItem>
+                  <SelectItem value="last_year" data-testid="option-last-year">Last Year</SelectItem>
+                  <SelectItem value="this_year" data-testid="option-this-year">This Year</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleRefresh}
+                disabled={isLoading}
+                className="gap-1 h-7 text-xs px-2"
+                data-testid="button-refresh-scoreboard"
+              >
+                <RefreshCw className={`w-3 h-3 ${isLoading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+            </div>
           </div>
 
           {!statusData?.configured ? (
@@ -204,14 +255,14 @@ export default function Scoreboard() {
                     testId="metric-active-members"
                   />
                   <MetricCard
-                    title="New This Week"
-                    value={newThisWeek}
-                    subtitle="Last 7 days"
+                    title={`New ${dateRangeLabels[dateRange]}`}
+                    value={newInPeriod}
+                    subtitle={`Last ${rangeDays} days`}
                     icon={<UserPlus className="w-5 h-5 text-green-600" />}
                     color="text-green-600"
                     bgColor="bg-green-100"
-                    trend={newThisWeek > 0 ? "up" : "neutral"}
-                    trendValue={`+${newThisWeek}`}
+                    trend={newInPeriod > 0 ? "up" : "neutral"}
+                    trendValue={`+${newInPeriod}`}
                     testId="metric-new-this-week"
                   />
                   <MetricCard
@@ -246,7 +297,7 @@ export default function Scoreboard() {
                   <MetricCard
                     title="Net Adds"
                     value={netAdds >= 0 ? `+${netAdds}` : netAdds}
-                    subtitle="Growth this week"
+                    subtitle={`Growth ${dateRangeLabels[dateRange].toLowerCase()}`}
                     icon={netAdds >= 0 ? <TrendingUp className="w-5 h-5 text-primary" /> : <TrendingDown className="w-5 h-5 text-red-600" />}
                     color={netAdds >= 0 ? "text-primary" : "text-red-600"}
                     bgColor={netAdds >= 0 ? "bg-orange-100" : "bg-red-100"}
@@ -274,8 +325,8 @@ export default function Scoreboard() {
                   />
                   <MetricCard
                     title="Intro Offers Sold"
-                    value={newThisWeek}
-                    subtitle="This week"
+                    value={newInPeriod}
+                    subtitle={dateRangeLabels[dateRange]}
                     icon={<Calendar className="w-5 h-5 text-indigo-600" />}
                     color="text-indigo-600"
                     bgColor="bg-indigo-100"
@@ -349,15 +400,15 @@ export default function Scoreboard() {
 
               {/* Quick Summary */}
               <div className="glass-panel p-4 rounded-xl">
-                <h2 className="font-display font-semibold text-base mb-2">This Week's Story</h2>
+                <h2 className="font-display font-semibold text-base mb-2">{dateRangeLabels[dateRange]}'s Summary</h2>
                 <div className="text-sm text-muted-foreground leading-relaxed">
                   <p>
-                    {newThisWeek > 0 ? (
+                    {newInPeriod > 0 ? (
                       <>
-                        <strong className="text-green-600">{newThisWeek} new intro offers</strong> sold this week.{' '}
+                        <strong className="text-green-600">{newInPeriod} new intro offers</strong> sold {dateRangeLabels[dateRange].toLowerCase()}.{' '}
                       </>
                     ) : (
-                      <>No new intro offers this week. </>
+                      <>No new intro offers {dateRangeLabels[dateRange].toLowerCase()}. </>
                     )}
                     {convertedCount > 0 && (
                       <>
@@ -375,9 +426,9 @@ export default function Scoreboard() {
                       </>
                     )}
                     {netAdds >= 0 ? (
-                      <>Net growth: <strong className="text-primary">+{netAdds}</strong> this week.</>
+                      <>Net growth: <strong className="text-primary">+{netAdds}</strong> {dateRangeLabels[dateRange].toLowerCase()}.</>
                     ) : (
-                      <>Net change: <strong className="text-red-600">{netAdds}</strong> this week.</>
+                      <>Net change: <strong className="text-red-600">{netAdds}</strong> {dateRangeLabels[dateRange].toLowerCase()}.</>
                     )}
                   </p>
                 </div>
