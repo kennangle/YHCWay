@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { X, Reply, Send, ArrowLeft, Loader2, Trash2, Archive, Sparkles, RefreshCw, FileText, ChevronDown, ChevronUp, AlertCircle, CheckCircle2, ListTodo } from "lucide-react";
+import { toast } from "sonner";
 import DOMPurify from "dompurify";
 
 interface EmailDetail {
@@ -52,6 +53,15 @@ export function EmailDetailPanel({ messageId, onClose }: EmailDetailPanelProps) 
   const [replyBody, setReplyBody] = useState("");
   const [showSummary, setShowSummary] = useState(false);
   const queryClient = useQueryClient();
+  const replyPanelRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    if (isReplying && replyPanelRef.current) {
+      setTimeout(() => {
+        replyPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  }, [isReplying]);
 
   const { data: email, isLoading, isError } = useQuery<EmailDetail>({
     queryKey: ["gmail-message", messageId],
@@ -114,6 +124,10 @@ export function EmailDetailPanel({ messageId, onClose }: EmailDetailPanelProps) 
       setIsReplying(false);
       setReplyBody("");
       queryClient.invalidateQueries({ queryKey: ["gmail-messages"] });
+      toast.success("Reply sent successfully!");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to send reply");
     },
   });
 
@@ -131,7 +145,11 @@ export function EmailDetailPanel({ messageId, onClose }: EmailDetailPanelProps) 
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["gmail-messages"] });
+      toast.success("Email moved to trash");
       onClose();
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to delete email");
     },
   });
 
@@ -149,7 +167,11 @@ export function EmailDetailPanel({ messageId, onClose }: EmailDetailPanelProps) 
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["gmail-messages"] });
+      toast.success("Email archived");
       onClose();
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to archive email");
     },
   });
 
@@ -288,7 +310,6 @@ export function EmailDetailPanel({ messageId, onClose }: EmailDetailPanelProps) 
             <button
               type="button"
               onClick={(e) => {
-                console.log('Reply button clicked!');
                 e.preventDefault();
                 e.stopPropagation();
                 setIsReplying(!isReplying);
@@ -406,7 +427,7 @@ export function EmailDetailPanel({ messageId, onClose }: EmailDetailPanelProps) 
           </div>
 
           {isReplying && (
-            <div className="p-6 border-t bg-gray-50">
+            <div ref={replyPanelRef} className="p-6 border-t bg-gray-50">
               <div className="mb-4">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
