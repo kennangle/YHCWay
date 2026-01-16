@@ -1,6 +1,6 @@
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { TopBar } from "@/components/top-bar";
-import { Search, Mail, MessageCircle, Users, MessageSquare, PenSquare, Loader2, Share2, Check, Trash2 } from "lucide-react";
+import { Search, Mail, MessageCircle, Users, MessageSquare, PenSquare, Loader2, Share2, Check, Trash2, Archive } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SlackChannelConfig } from "@/components/slack-channel-config";
@@ -56,7 +56,7 @@ type UnifiedMessage = {
   replyCount?: number;
 };
 
-type FilterType = 'all' | 'gmail' | 'slack' | 'dms';
+type FilterType = 'all' | 'gmail' | 'slack' | 'dms' | 'archived';
 
 export default function Inbox() {
   const [filter, setFilter] = useState<FilterType>('all');
@@ -132,6 +132,17 @@ export default function Inbox() {
     retry: false,
   });
 
+  const { data: archivedEmails = [], isLoading: archivedLoading } = useQuery<GmailMessage[]>({
+    queryKey: ["gmail-archived"],
+    queryFn: async () => {
+      const res = await fetch("/api/gmail/archived", { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: filter === 'archived',
+    retry: false,
+  });
+
   const unifiedMessages: UnifiedMessage[] = [
     ...gmailMessages.map((email): UnifiedMessage => ({
       id: `gmail-${email.id}`,
@@ -156,11 +167,24 @@ export default function Inbox() {
     })),
   ].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
-  const filteredMessages = unifiedMessages.filter(msg => {
-    // First filter by type
-    if (filter === 'gmail' && msg.type !== 'gmail') return false;
-    if (filter === 'slack' && msg.type !== 'slack') return false;
-    if (filter === 'dms' && msg.type !== 'slack-dm') return false;
+  const archivedMessages: UnifiedMessage[] = archivedEmails.map((email): UnifiedMessage => ({
+    id: `gmail-archived-${email.id}`,
+    type: 'gmail',
+    title: extractSenderName(email.from),
+    subtitle: email.subject,
+    preview: email.snippet,
+    timestamp: new Date(email.date),
+    isUnread: email.isUnread,
+    link: `https://mail.google.com/mail/u/0/#all/${email.threadId}`,
+  })).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+  const filteredMessages = (filter === 'archived' ? archivedMessages : unifiedMessages).filter(msg => {
+    // First filter by type (skip for archived since we already have only archived)
+    if (filter !== 'archived') {
+      if (filter === 'gmail' && msg.type !== 'gmail') return false;
+      if (filter === 'slack' && msg.type !== 'slack') return false;
+      if (filter === 'dms' && msg.type !== 'slack-dm') return false;
+    }
     
     // Then filter by search query
     if (searchQuery.trim()) {
@@ -193,7 +217,7 @@ export default function Inbox() {
     return date.toLocaleDateString();
   }
 
-  const isLoading = gmailLoading || slackLoading;
+  const isLoading = filter === 'archived' ? archivedLoading : (gmailLoading || slackLoading);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex font-sans">
@@ -265,6 +289,13 @@ export default function Inbox() {
           >
             <Users className="w-4 h-4 inline mr-2" />DMs
           </button>
+          <button 
+            className={`px-4 py-2 rounded-full font-medium transition-colors ${filter === 'archived' ? 'bg-gray-200 text-gray-700 shadow-sm' : 'text-muted-foreground hover:bg-white/50'}`}
+            onClick={() => setFilter('archived')}
+            data-testid="button-filter-archived"
+          >
+            <Archive className="w-4 h-4 inline mr-2" />Archived
+          </button>
           <div className="ml-auto">
             <SlackChannelConfig />
           </div>
@@ -275,7 +306,7 @@ export default function Inbox() {
             <div className="text-center text-muted-foreground py-12">Loading messages...</div>
           ) : filteredMessages.length === 0 ? (
             <div className="text-center text-muted-foreground py-12">
-              {filter === 'all' ? 'No messages yet' : `No ${filter === 'gmail' ? 'emails' : filter === 'slack' ? 'channel messages' : 'direct messages'} found`}
+              {filter === 'all' ? 'No messages yet' : filter === 'archived' ? 'No archived emails' : `No ${filter === 'gmail' ? 'emails' : filter === 'slack' ? 'channel messages' : 'direct messages'} found`}
             </div>
           ) : (
             filteredMessages.map((message) => {
@@ -286,7 +317,7 @@ export default function Inbox() {
               const handleClick = (e: React.MouseEvent) => {
                 if (message.type === 'gmail') {
                   e.preventDefault();
-                  const gmailId = message.id.replace('gmail-', '');
+                  const gmailId = message.id.replace(/^gmail-(archived-)?/, '');
                   setSelectedEmailId(gmailId);
                 }
               };
@@ -301,7 +332,7 @@ export default function Inbox() {
                 e.preventDefault();
                 e.stopPropagation();
                 if (message.type === 'gmail') {
-                  const gmailId = message.id.replace('gmail-', '');
+                  const gmailId = message.id.replace(/^gmail-(archived-)?/, '');
                   deleteEmailMutation.mutate(gmailId);
                 }
               };
