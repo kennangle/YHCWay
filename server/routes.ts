@@ -1263,6 +1263,47 @@ export async function registerRoutes(
     }
   });
 
+  // Get archived emails
+  app.get("/api/gmail/archived", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      console.log("[Gmail Archived] Fetching for user:", userId);
+      
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      // Try custom OAuth first
+      const customConnected = await isGmailConnectedForUser(userId);
+      console.log("[Gmail Archived] Custom OAuth connected:", customConnected);
+      
+      if (customConnected) {
+        console.log("[Gmail Archived] Fetching emails via custom OAuth...");
+        try {
+          const { getArchivedEmailsForUser } = await import("./gmail-oauth");
+          const emails = await getArchivedEmailsForUser(userId, 20);
+          console.log("[Gmail Archived] Fetched", emails.length, "archived emails");
+          return res.json(emails);
+        } catch (emailError: any) {
+          console.error("[Gmail Archived] Error fetching via custom OAuth:", emailError?.message);
+          return res.status(500).json({ 
+            error: emailError?.message || "Failed to fetch archived emails",
+          });
+        }
+      }
+      
+      // Fall back to connector
+      console.log("[Gmail Archived] Falling back to connector...");
+      const { getArchivedEmails } = await import("./gmail");
+      const emails = await getArchivedEmails(20);
+      console.log("[Gmail Archived] Fetched", emails.length, "archived emails via connector");
+      res.json(emails);
+    } catch (error: any) {
+      console.error("[Gmail Archived] Error fetching archived emails:", error?.message || error);
+      res.status(500).json({ error: error?.message || "Failed to fetch archived emails" });
+    }
+  });
+
   // Get single email with full content
   app.get("/api/gmail/messages/:id", isAuthenticated, async (req: any, res) => {
     try {
