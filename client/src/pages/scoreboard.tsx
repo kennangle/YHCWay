@@ -7,8 +7,11 @@ import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_back
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useMainContentClass } from "@/hooks/useSidebarCollapse";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarPicker } from "@/components/ui/calendar";
+import { format, differenceInDays, subDays, startOfYear } from "date-fns";
 
-type DateRangeOption = 'last_week' | 'last_month' | 'last_quarter' | 'last_year' | 'this_year';
+type DateRangeOption = 'last_week' | 'last_month' | 'last_quarter' | 'last_year' | 'this_year' | 'custom';
 
 const dateRangeLabels: Record<DateRangeOption, string> = {
   last_week: 'Last Week',
@@ -16,24 +19,28 @@ const dateRangeLabels: Record<DateRangeOption, string> = {
   last_quarter: 'Last Quarter',
   last_year: 'Last Year',
   this_year: 'This Year',
+  custom: 'Custom Range',
 };
 
-function getDateRangeDays(option: DateRangeOption): number {
+function getDateRange(option: DateRangeOption, customStart?: Date, customEnd?: Date): { startDate: Date; endDate: Date } {
   const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  
   switch (option) {
     case 'last_week':
-      return 7;
+      return { startDate: subDays(today, 7), endDate: today };
     case 'last_month':
-      return 30;
+      return { startDate: subDays(today, 30), endDate: today };
     case 'last_quarter':
-      return 90;
+      return { startDate: subDays(today, 90), endDate: today };
     case 'last_year':
-      return 365;
+      return { startDate: subDays(today, 365), endDate: today };
     case 'this_year':
-      const startOfYear = new Date(now.getFullYear(), 0, 1);
-      return Math.ceil((now.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24));
+      return { startDate: startOfYear(today), endDate: today };
+    case 'custom':
+      return { startDate: customStart || subDays(today, 7), endDate: customEnd || today };
     default:
-      return 7;
+      return { startDate: subDays(today, 7), endDate: today };
   }
 }
 
@@ -47,14 +54,6 @@ interface IntroOffer {
   daysSincePurchase: number;
   hasConverted: boolean;
   memberStatus: string;
-}
-
-interface IntroOfferSummary {
-  totalOffers: number;
-  activeOffers: number;
-  convertedOffers: number;
-  expiredOffers: number;
-  conversionRate: number;
 }
 
 interface MetricCardProps {
@@ -102,7 +101,12 @@ function MetricCard({ title, value, subtitle, icon, color, bgColor, trend, trend
 export default function Scoreboard() {
   const mainContentClass = useMainContentClass();
   const [dateRange, setDateRange] = useState<DateRangeOption>('last_week');
-  const rangeDays = getDateRangeDays(dateRange);
+  const [customStartDate, setCustomStartDate] = useState<Date | undefined>(undefined);
+  const [customEndDate, setCustomEndDate] = useState<Date | undefined>(undefined);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  
+  const { startDate, endDate } = getDateRange(dateRange, customStartDate, customEndDate);
+  const rangeDays = differenceInDays(endDate, startDate) + 1;
 
   const { data: statusData } = useQuery<{ configured: boolean }>({
     queryKey: ["/api/mindbody-analytics/status"],
@@ -111,16 +115,6 @@ export default function Scoreboard() {
       if (!res.ok) return { configured: false };
       return res.json();
     },
-  });
-
-  const { data: summary, isLoading: summaryLoading, isError: summaryError, refetch: refetchSummary } = useQuery<IntroOfferSummary>({
-    queryKey: ["/api/mindbody-analytics/intro-offers/summary"],
-    queryFn: async () => {
-      const res = await fetch("/api/mindbody-analytics/intro-offers/summary", { credentials: "include" });
-      if (!res.ok) throw new Error("Failed to fetch summary");
-      return res.json();
-    },
-    enabled: statusData?.configured,
   });
 
   const { data: offersData, isLoading: offersLoading, isError: offersError, refetch: refetchOffers } = useQuery<{ data: IntroOffer[] }>({
@@ -135,10 +129,13 @@ export default function Scoreboard() {
 
   const offers = offersData?.data || [];
   
-  // Filter offers based on selected date range
-  const filteredOffers = offers.filter(o => o.daysSincePurchase <= rangeDays);
+  // Filter offers based on selected date range using actual purchase date
+  const filteredOffers = offers.filter(o => {
+    const purchaseDate = new Date(o.purchaseDate);
+    return purchaseDate >= startDate && purchaseDate <= endDate;
+  });
   
-  // Calculate metrics from filtered data
+  // Calculate metrics from filtered data only
   const newInPeriod = filteredOffers.length;
   const convertedCount = filteredOffers.filter(o => o.hasConverted).length;
   const atRiskCount = filteredOffers.filter(o => o.memberStatus === "at_risk").length;
@@ -146,6 +143,7 @@ export default function Scoreboard() {
   const lapsedInPeriod = filteredOffers.filter(o => o.memberStatus === "lapsed").length;
   const engagedCount = filteredOffers.filter(o => o.memberStatus === "engaged").length;
   const newCount = filteredOffers.filter(o => o.memberStatus === "new").length;
+  const activeCount = engagedCount + newCount;
   
   // Calculate conversion rate from filtered offers
   const conversionRate = filteredOffers.length > 0 
@@ -155,14 +153,13 @@ export default function Scoreboard() {
   // Net adds calculation based on selected period
   const netAdds = newInPeriod - lapsedInPeriod;
   
-  const hasError = summaryError || offersError;
+  const hasError = offersError;
 
   const handleRefresh = () => {
-    refetchSummary();
     refetchOffers();
   };
 
-  const isLoading = summaryLoading || offersLoading;
+  const isLoading = offersLoading;
 
   return (
     <div
@@ -186,11 +183,20 @@ export default function Scoreboard() {
                 <p className="text-muted-foreground text-xs">Key metrics for business health</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Select value={dateRange} onValueChange={(value: DateRangeOption) => setDateRange(value)}>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Select value={dateRange} onValueChange={(value: DateRangeOption) => {
+                setDateRange(value);
+                if (value === 'custom') {
+                  setIsCalendarOpen(true);
+                }
+              }}>
                 <SelectTrigger className="w-[140px] h-7 text-xs" data-testid="select-date-range">
                   <Calendar className="w-3 h-3 mr-1" />
-                  <SelectValue placeholder="Select period" />
+                  <SelectValue placeholder="Select period">
+                    {dateRange === 'custom' && customStartDate && customEndDate
+                      ? `${format(customStartDate, 'MMM d')} - ${format(customEndDate, 'MMM d')}`
+                      : dateRangeLabels[dateRange]}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="last_week" data-testid="option-last-week">Last Week</SelectItem>
@@ -198,8 +204,60 @@ export default function Scoreboard() {
                   <SelectItem value="last_quarter" data-testid="option-last-quarter">Last Quarter</SelectItem>
                   <SelectItem value="last_year" data-testid="option-last-year">Last Year</SelectItem>
                   <SelectItem value="this_year" data-testid="option-this-year">This Year</SelectItem>
+                  <SelectItem value="custom" data-testid="option-custom">Custom Range...</SelectItem>
                 </SelectContent>
               </Select>
+              
+              {dateRange === 'custom' && (
+                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-xs px-2 gap-1"
+                      data-testid="button-open-date-picker"
+                    >
+                      <Calendar className="w-3 h-3" />
+                      {customStartDate && customEndDate 
+                        ? `${format(customStartDate, 'MMM d')} - ${format(customEndDate, 'MMM d, yyyy')}`
+                        : 'Pick dates'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="end">
+                    <div className="p-3 space-y-3">
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-muted-foreground">Start Date</p>
+                        <CalendarPicker
+                          mode="single"
+                          selected={customStartDate}
+                          onSelect={(date) => setCustomStartDate(date)}
+                          disabled={(date) => date > new Date() || (customEndDate ? date > customEndDate : false)}
+                          initialFocus
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-muted-foreground">End Date</p>
+                        <CalendarPicker
+                          mode="single"
+                          selected={customEndDate}
+                          onSelect={(date) => setCustomEndDate(date)}
+                          disabled={(date) => date > new Date() || (customStartDate ? date < customStartDate : false)}
+                        />
+                      </div>
+                      <Button 
+                        size="sm" 
+                        className="w-full"
+                        onClick={() => setIsCalendarOpen(false)}
+                        disabled={!customStartDate || !customEndDate}
+                        data-testid="button-apply-dates"
+                      >
+                        Apply
+                      </Button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              )}
+              
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -247,8 +305,8 @@ export default function Scoreboard() {
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
                   <MetricCard
                     title="Active Members"
-                    value={summary?.activeOffers || engagedCount + newCount}
-                    subtitle="Currently engaged"
+                    value={activeCount}
+                    subtitle="In selected period"
                     icon={<Users className="w-5 h-5 text-blue-600" />}
                     color="text-blue-600"
                     bgColor="bg-blue-100"
@@ -316,8 +374,8 @@ export default function Scoreboard() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   <MetricCard
                     title="Total Intro Offers"
-                    value={summary?.totalOffers || offers.length}
-                    subtitle="All time tracked"
+                    value={filteredOffers.length}
+                    subtitle={dateRangeLabels[dateRange]}
                     icon={<Gift className="w-5 h-5 text-purple-600" />}
                     color="text-purple-600"
                     bgColor="bg-purple-100"
@@ -334,7 +392,7 @@ export default function Scoreboard() {
                   />
                   <MetricCard
                     title="Conversion Rate"
-                    value={`${summary?.conversionRate || conversionRate}%`}
+                    value={`${conversionRate}%`}
                     subtitle="Intro → Member"
                     icon={<Percent className="w-5 h-5 text-teal-600" />}
                     color="text-teal-600"
