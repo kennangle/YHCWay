@@ -33,7 +33,9 @@ import {
   History,
   Presentation,
   Megaphone,
-  Users
+  Users,
+  ExternalLink,
+  Dumbbell
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
@@ -52,6 +54,7 @@ interface NavItem {
   tourId?: string;
   adminOnly?: boolean;
   kenOnly?: boolean;
+  isExternal?: boolean;
 }
 
 interface NavGroup {
@@ -150,6 +153,7 @@ export function UnifiedSidebar() {
       defaultCollapsed: true,
       items: [
         { icon: Building2, label: "HR & Payroll", href: "/gusto", tourId: "nav-gusto", adminOnly: true },
+        { icon: Dumbbell, label: "NetGym", href: "https://netgym.com", tourId: "nav-netgym", isExternal: true },
         { icon: PlusCircle, label: "Connect App", href: "/connect", tourId: "nav-connect" },
         { icon: Settings, label: "Settings", href: "/settings", tourId: "nav-settings" },
         { icon: Shield, label: "Admin", href: "/admin", tourId: "nav-admin", adminOnly: true },
@@ -190,7 +194,7 @@ export function UnifiedSidebar() {
     if (item.adminOnly && !user?.isAdmin) return null;
     if (item.kenOnly && user?.email !== "ken@yogahealthcenter.com") return null;
     
-    const isActive = location === item.href;
+    const isActive = !item.isExternal && location === item.href;
     
     const navContent = (
       <div 
@@ -204,9 +208,34 @@ export function UnifiedSidebar() {
         data-tour={item.tourId}
       >
         <item.icon className={cn("w-4 h-4 flex-shrink-0", isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-foreground")} />
-        {!isCollapsed && <span className="text-sm font-medium">{item.label}</span>}
+        {!isCollapsed && (
+          <span className="text-sm font-medium flex items-center gap-1">
+            {item.label}
+            {item.isExternal && <ExternalLink className="w-3 h-3 opacity-50" />}
+          </span>
+        )}
       </div>
     );
+
+    if (item.isExternal) {
+      if (isCollapsed) {
+        return (
+          <Tooltip key={item.href}>
+            <TooltipTrigger asChild>
+              <a href={item.href} target="_blank" rel="noopener noreferrer">{navContent}</a>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <p>{item.label} (opens in new tab)</p>
+            </TooltipContent>
+          </Tooltip>
+        );
+      }
+      return (
+        <a key={item.href} href={item.href} target="_blank" rel="noopener noreferrer">
+          {navContent}
+        </a>
+      );
+    }
 
     if (isCollapsed) {
       return (
