@@ -40,6 +40,13 @@ interface Project {
   color: string;
 }
 
+interface User {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  email: string;
+}
+
 type FilterType = "all" | "today" | "upcoming" | "overdue" | "completed";
 
 export default function Tasks() {
@@ -50,7 +57,7 @@ export default function Tasks() {
   const [expandedProjects, setExpandedProjects] = useState<Set<number>>(new Set());
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
-  const [newTask, setNewTask] = useState({ title: "", description: "", priority: "medium", dueDate: "" });
+  const [newTask, setNewTask] = useState({ title: "", description: "", priority: "medium", dueDate: "", assigneeId: "" });
 
   const { data: tasks = [], isLoading: tasksLoading, isFetching, refetch } = useQuery<Task[]>({
     queryKey: ["all-tasks"],
@@ -65,6 +72,15 @@ export default function Tasks() {
     queryKey: ["projects"],
     queryFn: async () => {
       const res = await fetch("/api/projects", { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+
+  const { data: users = [] } = useQuery<User[]>({
+    queryKey: ["users"],
+    queryFn: async () => {
+      const res = await fetch("/api/users", { credentials: "include" });
       if (!res.ok) return [];
       return res.json();
     },
@@ -95,6 +111,7 @@ export default function Tasks() {
         body: JSON.stringify({
           ...data,
           dueDate: data.dueDate || undefined,
+          assigneeId: data.assigneeId || undefined,
         }),
       });
       if (!res.ok) throw new Error("Failed to create task");
@@ -103,7 +120,7 @@ export default function Tasks() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["all-tasks"] });
       setCreateDialogOpen(false);
-      setNewTask({ title: "", description: "", priority: "medium", dueDate: "" });
+      setNewTask({ title: "", description: "", priority: "medium", dueDate: "", assigneeId: "" });
       setSelectedProjectId(null);
     },
   });
@@ -534,6 +551,24 @@ export default function Tasks() {
                 placeholder="Add more details..."
                 data-testid="input-task-description"
               />
+            </div>
+            <div>
+              <Label htmlFor="task-assignee">Assignee (optional)</Label>
+              <Select value={newTask.assigneeId} onValueChange={(v) => setNewTask({ ...newTask, assigneeId: v })}>
+                <SelectTrigger data-testid="select-assignee">
+                  <SelectValue placeholder="Assign to someone" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Unassigned</SelectItem>
+                  {users.map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.firstName || user.lastName 
+                        ? `${user.firstName || ""} ${user.lastName || ""}`.trim()
+                        : user.email}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>

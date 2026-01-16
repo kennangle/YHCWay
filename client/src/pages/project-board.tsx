@@ -15,6 +15,7 @@ import { DndContext, DragEndEvent, DragOverEvent, DragStartEvent, PointerSensor,
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useMainContentClass } from "@/hooks/useSidebarCollapse";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProjectColumn {
   id: number;
@@ -649,6 +650,7 @@ export default function ProjectBoard() {
   const projectId = parseInt(params.id as string);
   const queryClient = useQueryClient();
   const mainContentClass = useMainContentClass();
+  const { toast } = useToast();
   
   const [createTaskDialogOpen, setCreateTaskDialogOpen] = useState(false);
   const [selectedColumnId, setSelectedColumnId] = useState<number | null>(null);
@@ -692,6 +694,15 @@ export default function ProjectBoard() {
     queryKey: ["/api/users"],
     queryFn: async () => {
       const res = await fetch("/api/users", { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+
+  const { data: allProjects = [] } = useQuery<{ id: number; name: string; color: string }[]>({
+    queryKey: ["all-projects"],
+    queryFn: async () => {
+      const res = await fetch("/api/projects", { credentials: "include" });
       if (!res.ok) return [];
       return res.json();
     },
@@ -814,6 +825,27 @@ export default function ProjectBoard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["project", projectId] });
       setSelectedTask(null);
+    },
+  });
+
+  const linkTaskMutation = useMutation({
+    mutationFn: async ({ taskId, projectId: targetProjectId }: { taskId: number; projectId: number }) => {
+      const res = await fetch(`/api/tasks/${taskId}/projects`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ projectId: targetProjectId }),
+      });
+      if (!res.ok) throw new Error("Failed to link task to project");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["task-projects", selectedTask?.id] });
+      refetchTaskProjects();
+      toast({ title: "Task linked", description: "Task added to another project" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to link task", variant: "destructive" });
     },
   });
 
@@ -1617,30 +1649,56 @@ export default function ProjectBoard() {
                 </div>
 
                 {/* Projects (Multi-homing) */}
-                {taskProjects.length > 1 && (
-                  <div>
-                    <Label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                      <LayoutGrid className="w-4 h-4" />
-                      Also in Projects ({taskProjects.length})
-                    </Label>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {taskProjects.map((tp) => (
-                        <div 
-                          key={tp.projectId}
-                          className={`text-xs px-2 py-1 rounded-full ${
-                            tp.projectId === projectId 
-                              ? "bg-primary/20 text-primary font-medium" 
-                              : "bg-gray-100 text-gray-600"
-                          }`}
-                          data-testid={`badge-project-${tp.projectId}`}
-                        >
-                          {tp.projectName}
-                          {tp.columnName && <span className="ml-1 opacity-70">({tp.columnName})</span>}
-                        </div>
-                      ))}
-                    </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <LayoutGrid className="w-4 h-4" />
+                    Projects ({taskProjects.length})
+                  </Label>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {taskProjects.map((tp) => (
+                      <div 
+                        key={tp.projectId}
+                        className={`text-xs px-2 py-1 rounded-full ${
+                          tp.projectId === projectId 
+                            ? "bg-primary/20 text-primary font-medium" 
+                            : "bg-gray-100 text-gray-600"
+                        }`}
+                        data-testid={`badge-project-${tp.projectId}`}
+                      >
+                        {tp.projectName}
+                        {tp.columnName && <span className="ml-1 opacity-70">({tp.columnName})</span>}
+                      </div>
+                    ))}
                   </div>
-                )}
+                  {allProjects.filter(p => !taskProjects.some(tp => tp.projectId === p.id)).length > 0 && (
+                    <div className="mt-3">
+                      <Select
+                        value=""
+                        onValueChange={(value) => {
+                          if (selectedTask && value) {
+                            linkTaskMutation.mutate({ taskId: selectedTask.id, projectId: parseInt(value) });
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="w-full" data-testid="select-link-project">
+                          <SelectValue placeholder="Add to another project..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {allProjects
+                            .filter(p => !taskProjects.some(tp => tp.projectId === p.id))
+                            .map((p) => (
+                              <SelectItem key={p.id} value={p.id.toString()}>
+                                <div className="flex items-center gap-2">
+                                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: p.color }} />
+                                  {p.name}
+                                </div>
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
 
                 {/* Activity & Comments */}
                 <div>
