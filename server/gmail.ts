@@ -103,6 +103,48 @@ export async function getRecentEmails(maxResults: number = 20): Promise<EmailMes
   return emails;
 }
 
+export async function getSentEmails(maxResults: number = 20): Promise<EmailMessage[]> {
+  const gmail = await getGmailClient();
+  
+  const response = await gmail.users.messages.list({
+    userId: 'me',
+    maxResults,
+    labelIds: ['SENT'],
+  });
+
+  if (!response.data.messages) {
+    return [];
+  }
+
+  const emails: EmailMessage[] = [];
+  
+  for (const msg of response.data.messages.slice(0, maxResults)) {
+    const detail = await gmail.users.messages.get({
+      userId: 'me',
+      id: msg.id!,
+      format: 'metadata',
+      metadataHeaders: ['Subject', 'From', 'To', 'Date'],
+    });
+
+    const headers = detail.data.payload?.headers || [];
+    const subject = headers.find(h => h.name === 'Subject')?.value || '(No Subject)';
+    const to = headers.find(h => h.name === 'To')?.value || 'Unknown';
+    const date = headers.find(h => h.name === 'Date')?.value || '';
+
+    emails.push({
+      id: msg.id!,
+      threadId: msg.threadId!,
+      subject,
+      from: `To: ${to}`,
+      snippet: detail.data.snippet || '',
+      date,
+      isUnread: false,
+    });
+  }
+
+  return emails;
+}
+
 export async function getArchivedEmails(maxResults: number = 20): Promise<EmailMessage[]> {
   const gmail = await getGmailClient();
   

@@ -1304,6 +1304,47 @@ export async function registerRoutes(
     }
   });
 
+  // Get sent emails
+  app.get("/api/gmail/sent", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      console.log("[Gmail Sent] Fetching for user:", userId);
+      
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      // Try custom OAuth first
+      const customConnected = await isGmailConnectedForUser(userId);
+      console.log("[Gmail Sent] Custom OAuth connected:", customConnected);
+      
+      if (customConnected) {
+        console.log("[Gmail Sent] Fetching emails via custom OAuth...");
+        try {
+          const { getSentEmailsForUser } = await import("./gmail-oauth");
+          const emails = await getSentEmailsForUser(userId, 20);
+          console.log("[Gmail Sent] Fetched", emails.length, "sent emails");
+          return res.json(emails);
+        } catch (emailError: any) {
+          console.error("[Gmail Sent] Error fetching via custom OAuth:", emailError?.message);
+          return res.status(500).json({ 
+            error: emailError?.message || "Failed to fetch sent emails",
+          });
+        }
+      }
+      
+      // Fall back to connector
+      console.log("[Gmail Sent] Falling back to connector...");
+      const { getSentEmails } = await import("./gmail");
+      const emails = await getSentEmails(20);
+      console.log("[Gmail Sent] Fetched", emails.length, "sent emails via connector");
+      res.json(emails);
+    } catch (error: any) {
+      console.error("[Gmail Sent] Error fetching sent emails:", error?.message || error);
+      res.status(500).json({ error: error?.message || "Failed to fetch sent emails" });
+    }
+  });
+
   // Get single email with full content
   app.get("/api/gmail/messages/:id", isAuthenticated, async (req: any, res) => {
     try {
