@@ -262,6 +262,29 @@ export const slackPreferencesUpdateSchema = z.object({
   channels: z.array(slackChannelPreferenceSchema),
 });
 
+// Slack DM preferences - which DM conversations each user wants to follow
+export const slackDmPreferences = pgTable("slack_dm_preferences", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  conversationId: varchar("conversation_id").notNull(),
+  conversationName: varchar("conversation_name").notNull(),
+  isEnabled: boolean("is_enabled").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type SlackDmPreference = typeof slackDmPreferences.$inferSelect;
+export type InsertSlackDmPreference = typeof slackDmPreferences.$inferInsert;
+
+export const slackDmPreferenceSchema = z.object({
+  conversationId: z.string(),
+  conversationName: z.string(),
+  isEnabled: z.boolean().default(true),
+});
+
+export const slackDmPreferencesUpdateSchema = z.object({
+  conversations: z.array(slackDmPreferenceSchema),
+});
+
 // Password reset tokens table
 export const passwordResetTokens = pgTable("password_reset_tokens", {
   id: serial("id").primaryKey(),

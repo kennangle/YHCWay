@@ -9,6 +9,8 @@ import {
   type InsertOAuthAccount,
   type SlackChannelPreference,
   type InsertSlackChannelPreference,
+  type SlackDmPreference,
+  type InsertSlackDmPreference,
   type PasswordResetToken,
   type InsertPasswordResetToken,
   type IntegrationApiKey,
@@ -72,6 +74,7 @@ import {
   feedItems,
   oauthAccounts,
   slackChannelPreferences,
+  slackDmPreferences,
   passwordResetTokens,
   integrationApiKeys,
   conversations,
@@ -167,6 +170,10 @@ export interface IStorage {
   // Slack channel preferences
   getSlackChannelPreferences(userId: string): Promise<SlackChannelPreference[]>;
   saveSlackChannelPreferences(userId: string, preferences: { channelId: string; channelName: string; isEnabled: boolean }[]): Promise<void>;
+  
+  // Slack DM preferences
+  getSlackDmPreferences(userId: string): Promise<SlackDmPreference[]>;
+  saveSlackDmPreferences(userId: string, preferences: { conversationId: string; conversationName: string; isEnabled: boolean }[]): Promise<void>;
   
   // Password reset tokens
   createPasswordResetToken(userId: string, token: string, expiresAt: Date): Promise<PasswordResetToken>;
@@ -778,6 +785,30 @@ export class DbStorage implements IStorage {
           userId,
           channelId: p.channelId,
           channelName: p.channelName,
+          isEnabled: p.isEnabled,
+        })));
+    }
+  }
+
+  async getSlackDmPreferences(userId: string): Promise<SlackDmPreference[]> {
+    return await db.select()
+      .from(slackDmPreferences)
+      .where(eq(slackDmPreferences.userId, userId));
+  }
+
+  async saveSlackDmPreferences(
+    userId: string, 
+    preferences: { conversationId: string; conversationName: string; isEnabled: boolean }[]
+  ): Promise<void> {
+    await db.delete(slackDmPreferences)
+      .where(eq(slackDmPreferences.userId, userId));
+    
+    if (preferences.length > 0) {
+      await db.insert(slackDmPreferences)
+        .values(preferences.map(p => ({
+          userId,
+          conversationId: p.conversationId,
+          conversationName: p.conversationName,
           isEnabled: p.isEnabled,
         })));
     }
