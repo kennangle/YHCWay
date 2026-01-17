@@ -178,7 +178,7 @@ export default function TimeTrackingPage() {
       });
 
   const linkMutation = useMutation({
-    mutationFn: async (employee: { employeeId: string; employeeName: string }) => {
+    mutationFn: async (employee: { employeeId: string; employeeName: string; employeeEmail?: string }) => {
       const res = await fetch("/api/yhctime/link-employee", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -500,7 +500,8 @@ export default function TimeTrackingPage() {
                               className={`w-full justify-start ${isMatch ? 'border-primary bg-primary/5' : ''}`}
                               onClick={() => linkMutation.mutate({ 
                                 employeeId: emp.employeeId, 
-                                employeeName: emp.employeeName 
+                                employeeName: emp.employeeName,
+                                employeeEmail: emp.email 
                               })}
                               disabled={linkMutation.isPending}
                               data-testid={`button-select-employee-${emp.employeeId}`}

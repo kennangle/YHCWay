@@ -15,7 +15,7 @@ import { getRecentMessages as getSlackMessages, getAllMessages as getAllSlackMes
 import { isAppleCalendarConnected, testAppleCalendarConnection, saveAppleCalendarCredentials, deleteAppleCalendarCredentials, getAppleCalendarEvents, getAppleCalendarEventsForMonth } from "./appleCalendar";
 import { isAsanaConnected, getMyTasks, getProjects, getUpcomingTasks, isUserAsanaConnected, getUserMyTasks, getUserProjects, getUserUpcomingTasks, getAsanaProjectsForImport, getProjectSections, getProjectTasksForImport, updateAsanaTaskCompletion } from "./asana";
 import { getTypeformForms, getTypeformForm, createTypeformForm, updateTypeformForm, deleteTypeformForm, getTypeformResponses, isTypeformConfigured } from "./typeform";
-import { sendInvitationEmail, getTemplateTypes, getDefaultTemplate, sendTaskAssignedNotification } from "./email";
+import { sendInvitationEmail, getTemplateTypes, getDefaultTemplate, sendTaskAssignedNotification, sendYHCTimeLinkChangeNotification } from "./email";
 import { appleCalendarConnectSchema, slackPreferencesUpdateSchema, emailTemplateSchema, updateNotificationPrefsSchema, createTimeEntrySchema, updateTimeEntrySchema } from "@shared/schema";
 import { broadcastToUsers, generateWsAuthToken } from "./websocket";
 import { getIntroOffers, getIntroOfferSummary, updateIntroOffer, getStudents, isMindbodyAnalyticsConfigured } from "./mindbodyAnalytics";
@@ -5621,7 +5621,7 @@ export async function registerRoutes(
       
       // Filter sessions to only show the user's own entries
       const userSessions = allSessions.filter(
-        session => session.employeeId === user.yhctimeEmployeeId
+        session => String(session.employeeId) === user.yhctimeEmployeeId
       );
       
       res.json({ sessions: userSessions });
@@ -5703,13 +5703,39 @@ export async function registerRoutes(
   app.post("/api/yhctime/link-employee", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.id;
-      const { employeeId, employeeName } = req.body;
+      const { employeeId, employeeName, employeeEmail } = req.body;
       
       if (!employeeId || !employeeName) {
         return res.status(400).json({ error: "Employee ID and name are required" });
       }
 
+      // Get the current user to check previous link and get user info
+      const currentUser = await storage.getUser(userId);
+      const previousEmployeeName = currentUser?.yhctimeEmployeeName || null;
+
       await storage.updateUserYHCTimeLink(userId, employeeId, employeeName);
+      
+      // Notify admins about the link change (async, don't wait)
+      const allUsers = await storage.getAllUsers();
+      const adminEmails = allUsers
+        .filter(u => u.isAdmin && u.email && u.id !== userId)
+        .map(u => u.email!);
+      
+      if (adminEmails.length > 0) {
+        const userName = currentUser?.firstName && currentUser?.lastName 
+          ? `${currentUser.firstName} ${currentUser.lastName}` 
+          : currentUser?.email || 'Unknown User';
+        
+        sendYHCTimeLinkChangeNotification(
+          adminEmails,
+          userName,
+          currentUser?.email || 'unknown',
+          previousEmployeeName,
+          employeeName,
+          employeeEmail || 'unknown'
+        ).catch(err => console.error('Failed to send admin notification:', err));
+      }
+      
       res.json({ success: true, employeeId, employeeName });
     } catch (error: any) {
       console.error("Error linking YHCTime employee:", error);

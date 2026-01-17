@@ -446,3 +446,72 @@ export async function sendCalendarConflictNotification(
     return false;
   }
 }
+
+// Admin notification for YHCTime account link changes
+const YHCTIME_LINK_CHANGE_HTML = `
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <h1 style="color: #FD971E; text-align: center;">The YHC Way</h1>
+  <h2 style="color: #666;">YHCTime Account Link Changed</h2>
+  <p style="color: #444; line-height: 1.6;">
+    A user has changed their linked YHCTime employee account:
+  </p>
+  <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+    <p style="margin: 5px 0;"><strong>User:</strong> {{userName}} ({{userEmail}})</p>
+    <p style="margin: 5px 0;"><strong>Previous Account:</strong> {{previousEmployee}}</p>
+    <p style="margin: 5px 0;"><strong>New Account:</strong> {{newEmployee}} ({{newEmployeeEmail}})</p>
+    <p style="margin: 5px 0;"><strong>Changed at:</strong> {{changedAt}}</p>
+  </div>
+  <p style="color: #666; font-size: 14px;">
+    This is an automated notification from The YHC Way time tracking system.
+  </p>
+  <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+  <p style="color: #999; font-size: 12px; text-align: center;">
+    The YHC Way - Your Unified Workspace
+  </p>
+</div>
+`;
+
+export async function sendYHCTimeLinkChangeNotification(
+  adminEmails: string[],
+  userName: string,
+  userEmail: string,
+  previousEmployee: string | null,
+  newEmployee: string,
+  newEmployeeEmail: string
+): Promise<boolean> {
+  if (adminEmails.length === 0) {
+    console.log('[Notification] No admin emails to notify about YHCTime link change');
+    return true;
+  }
+  
+  try {
+    const changedAt = new Date().toLocaleString('en-US', { 
+      timeZone: 'America/Los_Angeles',
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    });
+    
+    const variables = { 
+      userName, 
+      userEmail, 
+      previousEmployee: previousEmployee || 'None (first link)',
+      newEmployee,
+      newEmployeeEmail,
+      changedAt
+    };
+    const htmlContent = replaceTemplateVariables(YHCTIME_LINK_CHANGE_HTML, variables);
+    
+    const sendSmtpEmail = new brevo.SendSmtpEmail();
+    sendSmtpEmail.subject = `YHCTime Link Changed: ${userName}`;
+    sendSmtpEmail.htmlContent = htmlContent;
+    sendSmtpEmail.sender = { name: SENDER_NAME, email: SENDER_EMAIL };
+    sendSmtpEmail.to = adminEmails.map(email => ({ email }));
+
+    await apiInstance.sendTransacEmail(sendSmtpEmail);
+    console.log(`[Notification] YHCTime link change email sent to ${adminEmails.length} admin(s)`);
+    return true;
+  } catch (error) {
+    console.error("[Notification] Error sending YHCTime link change email:", error);
+    return false;
+  }
+}
