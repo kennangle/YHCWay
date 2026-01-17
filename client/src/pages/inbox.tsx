@@ -1,6 +1,6 @@
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { TopBar } from "@/components/top-bar";
-import { Search, Mail, MessageCircle, Users, MessageSquare, PenSquare, Loader2, Share2, Check, Trash2, Archive, Send, ExternalLink } from "lucide-react";
+import { Search, Mail, MessageCircle, Users, MessageSquare, PenSquare, Loader2, Share2, Check, Trash2, Archive, Send } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SlackChannelConfig } from "@/components/slack-channel-config";
@@ -56,7 +56,7 @@ type UnifiedMessage = {
   replyCount?: number;
 };
 
-type FilterType = 'all' | 'gmail' | 'slack' | 'dms' | 'sent' | 'archived';
+type FilterType = 'all' | 'gmail' | 'slack' | 'dms' | 'sent' | 'archived' | 'trash';
 
 export default function Inbox() {
   const [filter, setFilter] = useState<FilterType>('all');
@@ -154,6 +154,17 @@ export default function Inbox() {
     retry: false,
   });
 
+  const { data: trashedEmails = [], isLoading: trashLoading } = useQuery<GmailMessage[]>({
+    queryKey: ["gmail-trash"],
+    queryFn: async () => {
+      const res = await fetch("/api/gmail/trash", { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: filter === 'trash',
+    retry: false,
+  });
+
   const unifiedMessages: UnifiedMessage[] = [
     ...gmailMessages.map((email): UnifiedMessage => ({
       id: `gmail-${email.id}`,
@@ -200,15 +211,27 @@ export default function Inbox() {
     link: `https://mail.google.com/mail/u/0/#sent/${email.threadId}`,
   })).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
+  const trashMessages: UnifiedMessage[] = trashedEmails.map((email): UnifiedMessage => ({
+    id: `gmail-trash-${email.id}`,
+    type: 'gmail',
+    title: extractSenderName(email.from),
+    subtitle: email.subject,
+    preview: email.snippet,
+    timestamp: new Date(email.date),
+    isUnread: email.isUnread,
+    link: `https://mail.google.com/mail/u/0/#trash/${email.threadId}`,
+  })).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
   const getMessagesForFilter = () => {
     if (filter === 'archived') return archivedMessages;
     if (filter === 'sent') return sentMessages;
+    if (filter === 'trash') return trashMessages;
     return unifiedMessages;
   };
 
   const filteredMessages = getMessagesForFilter().filter(msg => {
-    // First filter by type (skip for archived/sent since we already have filtered lists)
-    if (filter !== 'archived' && filter !== 'sent') {
+    // First filter by type (skip for archived/sent/trash since we already have filtered lists)
+    if (filter !== 'archived' && filter !== 'sent' && filter !== 'trash') {
       if (filter === 'gmail' && msg.type !== 'gmail') return false;
       if (filter === 'slack' && msg.type !== 'slack') return false;
       if (filter === 'dms' && msg.type !== 'slack-dm') return false;
@@ -245,7 +268,7 @@ export default function Inbox() {
     return date.toLocaleDateString();
   }
 
-  const isLoading = filter === 'archived' ? archivedLoading : filter === 'sent' ? sentLoading : (gmailLoading || slackLoading);
+  const isLoading = filter === 'archived' ? archivedLoading : filter === 'sent' ? sentLoading : filter === 'trash' ? trashLoading : (gmailLoading || slackLoading);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex font-sans">
@@ -331,18 +354,14 @@ export default function Inbox() {
           >
             <Archive className="w-4 h-4 inline mr-2" />Archived
           </button>
-          <div className="ml-auto flex items-center gap-2">
-            <a 
-              href="https://mail.google.com/mail/u/0/#trash" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-              data-testid="link-gmail-trash"
-            >
-              <Trash2 className="w-4 h-4" />
-              Gmail Trash
-              <ExternalLink className="w-3 h-3" />
-            </a>
+          <button 
+            className={`px-4 py-2 rounded-full font-medium transition-colors ${filter === 'trash' ? 'bg-red-100 text-red-700 shadow-sm' : 'text-muted-foreground hover:bg-white/50'}`}
+            onClick={() => setFilter('trash')}
+            data-testid="button-filter-trash"
+          >
+            <Trash2 className="w-4 h-4 inline mr-2" />Trash
+          </button>
+          <div className="ml-auto">
             <SlackChannelConfig />
           </div>
         </div>
@@ -352,7 +371,7 @@ export default function Inbox() {
             <div className="text-center text-muted-foreground py-12">Loading messages...</div>
           ) : filteredMessages.length === 0 ? (
             <div className="text-center text-muted-foreground py-12">
-              {filter === 'all' ? 'No messages yet' : filter === 'archived' ? 'No archived emails' : filter === 'sent' ? 'No sent emails' : `No ${filter === 'gmail' ? 'emails' : filter === 'slack' ? 'channel messages' : 'direct messages'} found`}
+              {filter === 'all' ? 'No messages yet' : filter === 'archived' ? 'No archived emails' : filter === 'sent' ? 'No sent emails' : filter === 'trash' ? 'No trashed emails' : `No ${filter === 'gmail' ? 'emails' : filter === 'slack' ? 'channel messages' : 'direct messages'} found`}
             </div>
           ) : (
             filteredMessages.map((message) => {

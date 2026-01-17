@@ -1345,6 +1345,47 @@ export async function registerRoutes(
     }
   });
 
+  // Get trashed emails
+  app.get("/api/gmail/trash", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      console.log("[Gmail Trash] Fetching for user:", userId);
+      
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      // Try custom OAuth first
+      const customConnected = await isGmailConnectedForUser(userId);
+      console.log("[Gmail Trash] Custom OAuth connected:", customConnected);
+      
+      if (customConnected) {
+        console.log("[Gmail Trash] Fetching emails via custom OAuth...");
+        try {
+          const { getTrashedEmailsForUser } = await import("./gmail-oauth");
+          const emails = await getTrashedEmailsForUser(userId, 20);
+          console.log("[Gmail Trash] Fetched", emails.length, "trashed emails");
+          return res.json(emails);
+        } catch (emailError: any) {
+          console.error("[Gmail Trash] Error fetching via custom OAuth:", emailError?.message);
+          return res.status(500).json({ 
+            error: emailError?.message || "Failed to fetch trashed emails",
+          });
+        }
+      }
+      
+      // Fall back to connector
+      console.log("[Gmail Trash] Falling back to connector...");
+      const { getTrashedEmails } = await import("./gmail");
+      const emails = await getTrashedEmails(20);
+      console.log("[Gmail Trash] Fetched", emails.length, "trashed emails via connector");
+      res.json(emails);
+    } catch (error: any) {
+      console.error("[Gmail Trash] Error fetching trashed emails:", error?.message || error);
+      res.status(500).json({ error: error?.message || "Failed to fetch trashed emails" });
+    }
+  });
+
   // Get single email with full content
   app.get("/api/gmail/messages/:id", isAuthenticated, async (req: any, res) => {
     try {

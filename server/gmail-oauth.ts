@@ -256,6 +256,49 @@ export async function getArchivedEmailsForUser(userId: string, maxResults: numbe
   return emails;
 }
 
+export async function getTrashedEmailsForUser(userId: string, maxResults: number = 20): Promise<EmailMessage[]> {
+  const gmail = await getGmailClientForUser(userId);
+  
+  const response = await gmail.users.messages.list({
+    userId: 'me',
+    maxResults,
+    labelIds: ['TRASH'],
+  });
+
+  if (!response.data.messages) {
+    return [];
+  }
+
+  const emails: EmailMessage[] = [];
+  
+  for (const msg of response.data.messages.slice(0, maxResults)) {
+    const detail = await gmail.users.messages.get({
+      userId: 'me',
+      id: msg.id!,
+      format: 'metadata',
+      metadataHeaders: ['Subject', 'From', 'Date'],
+    });
+
+    const headers = detail.data.payload?.headers || [];
+    const subject = headers.find(h => h.name === 'Subject')?.value || '(No Subject)';
+    const from = headers.find(h => h.name === 'From')?.value || 'Unknown';
+    const date = headers.find(h => h.name === 'Date')?.value || '';
+    const isUnread = detail.data.labelIds?.includes('UNREAD') || false;
+
+    emails.push({
+      id: msg.id!,
+      threadId: msg.threadId!,
+      subject,
+      from,
+      snippet: detail.data.snippet || '',
+      date,
+      isUnread,
+    });
+  }
+
+  return emails;
+}
+
 export interface EmailDetail extends EmailMessage {
   body: string;
   to: string;
