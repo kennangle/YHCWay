@@ -1,0 +1,87 @@
+yhcway.com/:1 <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes">
+yhcway.com/:1 Error while trying to use the following icon from the Manifest: https://yhcway.com/favicon.png (Resource size is not correct - typo in the Manifest?)
+index-B4F9Q6xp.js:65 [tiptap warn]: Duplicate extension names found: ['link', 'underline']. This can lead to issues.
+SR @ index-B4F9Q6xp.js:65
+index-B4F9Q6xp.js:65 [tiptap warn]: Duplicate extension names found: ['link', 'underline']. This can lead to issues.
+SR @ index-B4F9Q6xp.js:65
+index-B4F9Q6xp.js:65 [tiptap warn]: Duplicate extension names found: ['link', 'underline']. This can lead to issues.
+SR @ index-B4F9Q6xp.js:65
+index-B4F9Q6xp.js:65 [tiptap warn]: Duplicate extension names found: ['link', 'underline']. This can lead to issues.
+SR @ index-B4F9Q6xp.js:65
+index-B4F9Q6xp.js:65 [tiptap warn]: Duplicate extension names found: ['link', 'underline']. This can lead to issues.
+SR @ index-B4F9Q6xp.js:65
+index-B4F9Q6xp.js:65 [tiptap warn]: Duplicate extension names found: ['link', 'underline']. This can lead to issues.
+SR @ index-B4F9Q6xp.js:65
+uy @ index-B4F9Q6xp.js:68
+createExtensionManager @ index-B4F9Q6xp.js:138
+hee @ index-B4F9Q6xp.js:138
+createEditor @ index-B4F9Q6xp.js:155
+getInitialEditor @ index-B4F9Q6xp.js:155
+QR @ index-B4F9Q6xp.js:155
+(anonymous) @ index-B4F9Q6xp.js:155
+$v @ index-B4F9Q6xp.js:8
+useState @ index-B4F9Q6xp.js:8
+Y$.ct.useState @ index-B4F9Q6xp.js:1
+hy @ index-B4F9Q6xp.js:155
+ire @ index-B4F9Q6xp.js:195
+Av @ index-B4F9Q6xp.js:8
+Jv @ index-B4F9Q6xp.js:8
+jC @ index-B4F9Q6xp.js:8
+JC @ index-B4F9Q6xp.js:8
+Qz @ index-B4F9Q6xp.js:8
+bb @ index-B4F9Q6xp.js:8
+VC @ index-B4F9Q6xp.js:8
+f2 @ index-B4F9Q6xp.js:8
+Hu @ index-B4F9Q6xp.js:8
+c2 @ index-B4F9Q6xp.js:8
+(anonymous) @ index-B4F9Q6xp.js:8
+index-B4F9Q6xp.js:65 [tiptap warn]: Duplicate extension names found: ['link', 'underline']. This can lead to issues.
+SR @ index-B4F9Q6xp.js:65
+uy @ index-B4F9Q6xp.js:68
+createExtensionManager @ index-B4F9Q6xp.js:138
+hee @ index-B4F9Q6xp.js:138
+createEditor @ index-B4F9Q6xp.js:155
+getInitialEditor @ index-B4F9Q6xp.js:155
+QR @ index-B4F9Q6xp.js:155
+(anonymous) @ index-B4F9Q6xp.js:155
+$v @ index-B4F9Q6xp.js:8
+useState @ index-B4F9Q6xp.js:8
+Y$.ct.useState @ index-B4F9Q6xp.js:1
+hy @ index-B4F9Q6xp.js:155
+ire @ index-B4F9Q6xp.js:195
+Av @ index-B4F9Q6xp.js:8
+Jv @ index-B4F9Q6xp.js:8
+jC @ index-B4F9Q6xp.js:8
+JC @ index-B4F9Q6xp.js:8
+Qz @ index-B4F9Q6xp.js:8
+bb @ index-B4F9Q6xp.js:8
+VC @ index-B4F9Q6xp.js:8
+f2 @ index-B4F9Q6xp.js:8
+Hu @ index-B4F9Q6xp.js:8
+c2 @ index-B4F9Q6xp.js:8
+(anonymous) @ index-B4F9Q6xp.js:8
+index-B4F9Q6xp.js:65 [tiptap warn]: Duplicate extension names found: ['link', 'underline']. This can lead to issues.
+SR @ index-B4F9Q6xp.js:65
+uy @ index-B4F9Q6xp.js:68
+createExtensionManager @ index-B4F9Q6xp.js:138
+hee @ index-B4F9Q6xp.js:138
+createEditor @ index-B4F9Q6xp.js:155
+getInitialEditor @ index-B4F9Q6xp.js:155
+QR @ index-B4F9Q6xp.js:155
+(anonymous) @ index-B4F9Q6xp.js:155
+$v @ index-B4F9Q6xp.js:8
+useState @ index-B4F9Q6xp.js:8
+Y$.ct.useState @ index-B4F9Q6xp.js:1
+hy @ index-B4F9Q6xp.js:155
+ire @ index-B4F9Q6xp.js:195
+Av @ index-B4F9Q6xp.js:8
+Jv @ index-B4F9Q6xp.js:8
+jC @ index-B4F9Q6xp.js:8
+JC @ index-B4F9Q6xp.js:8
+Qz @ index-B4F9Q6xp.js:8
+bb @ index-B4F9Q6xp.js:8
+VC @ index-B4F9Q6xp.js:8
+f2 @ index-B4F9Q6xp.js:8
+Hu @ index-B4F9Q6xp.js:8
+c2 @ index-B4F9Q6xp.js:8
+(anonymous) @ index-B4F9Q6xp.js:8

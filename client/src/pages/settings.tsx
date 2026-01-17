@@ -1662,12 +1662,6 @@ function SignatureRichTextEditor({ content, onChange, placeholder }: { content: 
     },
   });
 
-  useEffect(() => {
-    if (editor && content !== editor.getHTML()) {
-      editor.commands.setContent(content || '<p></p>');
-    }
-  }, [content, editor]);
-
   const setLink = useCallback(() => {
     if (!editor) return;
     const previousUrl = editor.getAttributes('link').href;
