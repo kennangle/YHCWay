@@ -11,12 +11,12 @@ import { getRecentEmails, isGmailConnected, deleteEmail } from "./gmail";
 import { getGmailAuthUrl, handleGmailCallback, getRecentEmailsForUser, isGmailConnectedForUser, disconnectGmailForUser, getGmailClientForUser, getEmailById, sendEmail, deleteEmailById } from "./gmail-oauth";
 import { getUpcomingEvents, getEventsForMonth, isCalendarConnected, createCalendarEvent } from "./calendar";
 import { getUpcomingMeetings, isZoomConnected } from "./zoom";
-import { getRecentMessages as getSlackMessages, getAllMessages as getAllSlackMessages, getDirectMessages as getSlackDMs, getThreadReplies as getSlackThreadReplies, isSlackConnected, getChannels as getSlackChannels, getRecentMessagesFiltered, isUserSlackConnected, getUserAllMessages, getUserDirectMessages, getUserChannels, sendSlackNotification, sendSlackBlockNotification, formatYHCWayNotification, sendUserSlackMessage } from "./slack";
+import { getRecentMessages as getSlackMessages, getAllMessages as getAllSlackMessages, getDirectMessages as getSlackDMs, getThreadReplies as getSlackThreadReplies, isSlackConnected, getChannels as getSlackChannels, getRecentMessagesFiltered, isUserSlackConnected, getUserAllMessages, getUserDirectMessages, getUserChannels, sendSlackNotification, sendSlackBlockNotification, formatYHCWayNotification, sendUserSlackMessage, getDmConversations, getUserDmConversations } from "./slack";
 import { isAppleCalendarConnected, testAppleCalendarConnection, saveAppleCalendarCredentials, deleteAppleCalendarCredentials, getAppleCalendarEvents, getAppleCalendarEventsForMonth } from "./appleCalendar";
 import { isAsanaConnected, getMyTasks, getProjects, getUpcomingTasks, isUserAsanaConnected, getUserMyTasks, getUserProjects, getUserUpcomingTasks, getAsanaProjectsForImport, getProjectSections, getProjectTasksForImport, updateAsanaTaskCompletion } from "./asana";
 import { getTypeformForms, getTypeformForm, createTypeformForm, updateTypeformForm, deleteTypeformForm, getTypeformResponses, isTypeformConfigured } from "./typeform";
 import { sendInvitationEmail, getTemplateTypes, getDefaultTemplate, sendTaskAssignedNotification, sendYHCTimeLinkChangeNotification } from "./email";
-import { appleCalendarConnectSchema, slackPreferencesUpdateSchema, emailTemplateSchema, updateNotificationPrefsSchema, createTimeEntrySchema, updateTimeEntrySchema } from "@shared/schema";
+import { appleCalendarConnectSchema, slackPreferencesUpdateSchema, slackDmPreferencesUpdateSchema, emailTemplateSchema, updateNotificationPrefsSchema, createTimeEntrySchema, updateTimeEntrySchema } from "@shared/schema";
 import { broadcastToUsers, generateWsAuthToken } from "./websocket";
 import { getIntroOffers, getIntroOfferSummary, updateIntroOffer, getStudents, isMindbodyAnalyticsConfigured } from "./mindbodyAnalytics";
 import { generateEmailReplySuggestions, summarizeEmail, summarizeEmailThread, summarizeMeetingTranscript } from "./ai-email";
@@ -2120,6 +2120,51 @@ export async function registerRoutes(
       } else {
         console.error("Error saving Slack preferences:", error?.message || error);
         res.status(500).json({ error: error?.message || "Failed to save Slack preferences" });
+      }
+    }
+  });
+
+  app.get("/api/slack/dm-conversations", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const userConnected = await isUserSlackConnected(userId);
+      
+      let conversations;
+      if (userConnected) {
+        conversations = await getUserDmConversations(userId);
+      } else {
+        conversations = await getDmConversations();
+      }
+      res.json(conversations);
+    } catch (error: any) {
+      console.error("Error fetching DM conversations:", error?.message || error);
+      res.status(500).json({ error: error?.message || "Failed to fetch DM conversations" });
+    }
+  });
+
+  app.get("/api/slack/dm-preferences", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const preferences = await storage.getSlackDmPreferences(userId);
+      res.json(preferences);
+    } catch (error: any) {
+      console.error("Error fetching DM preferences:", error?.message || error);
+      res.status(500).json({ error: error?.message || "Failed to fetch DM preferences" });
+    }
+  });
+
+  app.post("/api/slack/dm-preferences", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const validatedData = slackDmPreferencesUpdateSchema.parse(req.body);
+      await storage.saveSlackDmPreferences(userId, validatedData.conversations);
+      res.json({ success: true });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: error.errors[0]?.message || "Validation failed" });
+      } else {
+        console.error("Error saving DM preferences:", error?.message || error);
+        res.status(500).json({ error: error?.message || "Failed to save DM preferences" });
       }
     }
   });

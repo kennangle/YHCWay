@@ -106,6 +106,77 @@ export async function getChannels(): Promise<SlackChannel[]> {
   }));
 }
 
+export interface SlackDmConversation {
+  id: string;
+  name: string;
+  isOpen: boolean;
+}
+
+async function getUserNameCached(token: string, userId: string, cache: Record<string, string>): Promise<string> {
+  if (cache[userId]) return cache[userId];
+  try {
+    const response = await fetch(`https://slack.com/api/users.info?user=${userId}`, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+    });
+    const data = await response.json();
+    if (data.ok && data.user) {
+      cache[userId] = data.user.real_name || data.user.name || userId;
+    } else {
+      cache[userId] = userId;
+    }
+  } catch {
+    cache[userId] = userId;
+  }
+  return cache[userId];
+}
+
+export async function getDmConversations(userToken?: string): Promise<SlackDmConversation[]> {
+  const token = userToken || await getSlackToken();
+  
+  const response = await fetch('https://slack.com/api/conversations.list?types=im,mpim&limit=100', {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  });
+
+  const data = await response.json();
+
+  if (!data.ok) {
+    console.error('Slack DM conversations error:', data.error);
+    return [];
+  }
+
+  const conversations: SlackDmConversation[] = [];
+  const userNameCache: Record<string, string> = {};
+
+  for (const dm of (data.channels || [])) {
+    let name = dm.name || '';
+    
+    if (dm.is_im && dm.user) {
+      name = await getUserNameCached(token, dm.user, userNameCache);
+    } else if (dm.is_mpim) {
+      name = dm.name?.replace('mpdm-', '').replace(/-/g, ', ').replace('--', '') || 'Group DM';
+    }
+    
+    conversations.push({
+      id: dm.id,
+      name: name || dm.id,
+      isOpen: dm.is_open || false
+    });
+  }
+
+  return conversations;
+}
+
+export async function getUserDmConversations(userId: string): Promise<SlackDmConversation[]> {
+  const token = await getUserSlackToken(userId);
+  if (!token) {
+    return getDmConversations();
+  }
+  return getDmConversations(token);
+}
+
 export async function getDirectMessages(maxResults: number = 10, includeThreadReplies: boolean = true): Promise<SlackMessage[]> {
   const token = await getSlackToken();
   const effectiveMaxResults = includeThreadReplies ? maxResults * 3 : maxResults;
