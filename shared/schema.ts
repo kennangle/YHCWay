@@ -168,6 +168,8 @@ export const oauthAccounts = pgTable("oauth_accounts", {
   accessToken: text("access_token"),
   refreshToken: text("refresh_token"),
   expiresAt: timestamp("expires_at"),
+  label: varchar("label"),
+  isPrimary: boolean("is_primary").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

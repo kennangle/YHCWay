@@ -151,11 +151,18 @@ export interface IStorage {
   deleteUser(id: string): Promise<void>;
   
   getOAuthAccount(userId: string, provider: string): Promise<OAuthAccount | undefined>;
+  getOAuthAccountById(id: number): Promise<OAuthAccount | undefined>;
   getOAuthAccountByProvider(provider: string, providerAccountId: string): Promise<OAuthAccount | undefined>;
+  listOAuthAccounts(userId: string, provider: string): Promise<OAuthAccount[]>;
+  countOAuthAccounts(userId: string, provider: string): Promise<number>;
   createOAuthAccount(account: InsertOAuthAccount): Promise<OAuthAccount>;
   linkOAuthAccount(userId: string, account: Omit<InsertOAuthAccount, 'userId'>): Promise<OAuthAccount>;
   upsertOAuthAccount(account: InsertOAuthAccount): Promise<OAuthAccount>;
+  upsertOAuthAccountByProviderAccountId(account: InsertOAuthAccount): Promise<OAuthAccount>;
+  updateOAuthAccountLabel(id: number, label: string): Promise<OAuthAccount | undefined>;
+  setOAuthAccountPrimary(userId: string, provider: string, accountId: number): Promise<void>;
   deleteOAuthAccount(userId: string, provider: string): Promise<void>;
+  deleteOAuthAccountById(id: number): Promise<void>;
   
   getAllServices(): Promise<Service[]>;
   getService(id: number): Promise<Service | undefined>;
@@ -660,7 +667,17 @@ export class DbStorage implements IStorage {
           eq(oauthAccounts.userId, userId),
           eq(oauthAccounts.provider, provider)
         )
-      );
+      )
+      .orderBy(desc(oauthAccounts.isPrimary))
+      .limit(1);
+    return account;
+  }
+
+  async getOAuthAccountById(id: number): Promise<OAuthAccount | undefined> {
+    const [account] = await db
+      .select()
+      .from(oauthAccounts)
+      .where(eq(oauthAccounts.id, id));
     return account;
   }
 
@@ -675,6 +692,32 @@ export class DbStorage implements IStorage {
         )
       );
     return account;
+  }
+
+  async listOAuthAccounts(userId: string, provider: string): Promise<OAuthAccount[]> {
+    return await db
+      .select()
+      .from(oauthAccounts)
+      .where(
+        and(
+          eq(oauthAccounts.userId, userId),
+          eq(oauthAccounts.provider, provider)
+        )
+      )
+      .orderBy(desc(oauthAccounts.isPrimary), asc(oauthAccounts.createdAt));
+  }
+
+  async countOAuthAccounts(userId: string, provider: string): Promise<number> {
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(oauthAccounts)
+      .where(
+        and(
+          eq(oauthAccounts.userId, userId),
+          eq(oauthAccounts.provider, provider)
+        )
+      );
+    return Number(result[0]?.count || 0);
   }
 
   async createOAuthAccount(account: InsertOAuthAccount): Promise<OAuthAccount> {
@@ -719,6 +762,56 @@ export class DbStorage implements IStorage {
           eq(oauthAccounts.provider, provider)
         )
       );
+  }
+
+  async upsertOAuthAccountByProviderAccountId(account: InsertOAuthAccount): Promise<OAuthAccount> {
+    const existing = await this.getOAuthAccountByProvider(account.provider, account.providerAccountId);
+    
+    if (existing) {
+      const [updated] = await db
+        .update(oauthAccounts)
+        .set({
+          accessToken: account.accessToken,
+          refreshToken: account.refreshToken || existing.refreshToken,
+          expiresAt: account.expiresAt,
+          label: account.label || existing.label,
+        })
+        .where(eq(oauthAccounts.id, existing.id))
+        .returning();
+      return updated;
+    }
+    
+    return this.createOAuthAccount(account);
+  }
+
+  async updateOAuthAccountLabel(id: number, label: string): Promise<OAuthAccount | undefined> {
+    const [updated] = await db
+      .update(oauthAccounts)
+      .set({ label })
+      .where(eq(oauthAccounts.id, id))
+      .returning();
+    return updated;
+  }
+
+  async setOAuthAccountPrimary(userId: string, provider: string, accountId: number): Promise<void> {
+    await db
+      .update(oauthAccounts)
+      .set({ isPrimary: false })
+      .where(
+        and(
+          eq(oauthAccounts.userId, userId),
+          eq(oauthAccounts.provider, provider)
+        )
+      );
+    
+    await db
+      .update(oauthAccounts)
+      .set({ isPrimary: true })
+      .where(eq(oauthAccounts.id, accountId));
+  }
+
+  async deleteOAuthAccountById(id: number): Promise<void> {
+    await db.delete(oauthAccounts).where(eq(oauthAccounts.id, id));
   }
 
   async getAllServices(): Promise<Service[]> {

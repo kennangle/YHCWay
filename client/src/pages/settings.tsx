@@ -131,7 +131,7 @@ const playNotificationSound = (soundType: string) => {
   oscillator.stop(audioContext.currentTime + 0.5);
 };
 
-type SettingsSection = "main" | "account" | "notifications" | "privacy" | "appearance" | "language" | "help" | "templates" | "webhooks" | "feedback" | "organization" | "extension" | "email-signatures";
+type SettingsSection = "main" | "account" | "notifications" | "privacy" | "appearance" | "language" | "help" | "templates" | "webhooks" | "feedback" | "organization" | "extension" | "email-signatures" | "gmail-accounts";
 
 interface TaskTemplate {
   id: number;
@@ -1931,6 +1931,291 @@ function ExtensionSectionContent({ renderBackButton }: { renderBackButton: () =>
   );
 }
 
+interface GmailAccount {
+  id: number;
+  email: string;
+  label: string | null;
+  isPrimary: boolean | null;
+  createdAt: string;
+}
+
+function GmailAccountsSectionContent({ renderBackButton }: { renderBackButton: () => React.ReactNode }) {
+  const [isAdding, setIsAdding] = useState(false);
+  const [newLabel, setNewLabel] = useState("");
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editLabel, setEditLabel] = useState("");
+  const queryClient = useQueryClient();
+
+  const { data: accounts = [], isLoading } = useQuery<GmailAccount[]>({
+    queryKey: ["/api/gmail/accounts"],
+    queryFn: async () => {
+      const res = await fetch("/api/gmail/accounts", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch Gmail accounts");
+      return res.json();
+    },
+  });
+
+  const connectMutation = useMutation({
+    mutationFn: async (label?: string) => {
+      const url = label ? `/api/gmail/connect?label=${encodeURIComponent(label)}` : "/api/gmail/connect";
+      const res = await fetch(url, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to initiate Gmail connection");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      if (data.authUrl) {
+        window.location.href = data.authUrl;
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/gmail/accounts/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to remove account");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/gmail/accounts"] });
+      toast.success("Gmail account removed");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const updateLabelMutation = useMutation({
+    mutationFn: async ({ id, label }: { id: number; label: string }) => {
+      const res = await fetch(`/api/gmail/accounts/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ label }),
+      });
+      if (!res.ok) throw new Error("Failed to update label");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/gmail/accounts"] });
+      setEditingId(null);
+      toast.success("Label updated");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const setPrimaryMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/gmail/accounts/${id}/primary`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to set primary account");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/gmail/accounts"] });
+      toast.success("Primary account updated");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const handleAddAccount = () => {
+    connectMutation.mutate(newLabel || undefined);
+    setIsAdding(false);
+    setNewLabel("");
+  };
+
+  const startEditing = (account: GmailAccount) => {
+    setEditingId(account.id);
+    setEditLabel(account.label || account.email.split("@")[0]);
+  };
+
+  return (
+    <div className="max-w-2xl">
+      {renderBackButton()}
+      <div className="mb-8">
+        <h2 className="font-display font-bold text-2xl mb-2">Gmail Accounts</h2>
+        <p className="text-muted-foreground">
+          Connect multiple Gmail accounts to view all your emails in one unified inbox. You can add up to 10 accounts.
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        <div className="glass-card p-6 rounded-2xl">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold">Connected Accounts ({accounts.length}/10)</h3>
+            {accounts.length < 10 && (
+              <Button
+                onClick={() => setIsAdding(true)}
+                size="sm"
+                className="gap-2"
+                data-testid="button-add-gmail-account"
+              >
+                <Plus className="w-4 h-4" />
+                Add Account
+              </Button>
+            )}
+          </div>
+
+          {isAdding && (
+            <div className="mb-4 p-4 rounded-lg bg-white/50 border border-white/20">
+              <Label className="block mb-2">Account Label (optional)</Label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="e.g., Work, Personal"
+                  value={newLabel}
+                  onChange={(e) => setNewLabel(e.target.value)}
+                  data-testid="input-gmail-label"
+                />
+                <Button onClick={handleAddAccount} disabled={connectMutation.isPending} data-testid="button-connect-gmail">
+                  {connectMutation.isPending ? "Connecting..." : "Connect"}
+                </Button>
+                <Button variant="ghost" onClick={() => setIsAdding(false)} data-testid="button-cancel-add-gmail">
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {isLoading ? (
+            <div className="text-center py-8 text-muted-foreground">Loading...</div>
+          ) : accounts.length === 0 ? (
+            <div className="text-center py-8">
+              <Mail className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+              <p className="text-muted-foreground mb-4">No Gmail accounts connected yet.</p>
+              <Button onClick={() => setIsAdding(true)} data-testid="button-connect-first-gmail">
+                Connect Gmail Account
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {accounts.map((account) => (
+                <div
+                  key={account.id}
+                  className="flex items-center justify-between p-4 rounded-lg bg-white/30 border border-white/20"
+                  data-testid={`gmail-account-${account.id}`}
+                >
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
+                      <Mail className="w-5 h-5 text-red-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      {editingId === account.id ? (
+                        <div className="flex gap-2 items-center">
+                          <Input
+                            value={editLabel}
+                            onChange={(e) => setEditLabel(e.target.value)}
+                            className="h-8"
+                            data-testid={`input-edit-label-${account.id}`}
+                          />
+                          <Button
+                            size="sm"
+                            onClick={() => updateLabelMutation.mutate({ id: account.id, label: editLabel })}
+                            disabled={updateLabelMutation.isPending}
+                            data-testid={`button-save-label-${account.id}`}
+                          >
+                            Save
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setEditingId(null)}
+                            data-testid={`button-cancel-edit-${account.id}`}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium truncate">{account.label || account.email.split("@")[0]}</p>
+                            {account.isPrimary && (
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">Primary</span>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground truncate">{account.email}</p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  {editingId !== account.id && (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => startEditing(account)}
+                        data-testid={`button-edit-${account.id}`}
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      {!account.isPrimary && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setPrimaryMutation.mutate(account.id)}
+                          disabled={setPrimaryMutation.isPending}
+                          data-testid={`button-set-primary-${account.id}`}
+                        >
+                          Set Primary
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => removeMutation.mutate(account.id)}
+                        disabled={removeMutation.isPending}
+                        className="text-red-500 hover:text-red-600"
+                        data-testid={`button-remove-${account.id}`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="glass-card p-6 rounded-2xl">
+          <h3 className="font-semibold mb-3 flex items-center gap-2">
+            <Lightbulb className="w-5 h-5 text-yellow-500" />
+            How It Works
+          </h3>
+          <ul className="text-sm text-muted-foreground space-y-2">
+            <li className="flex items-start gap-2">
+              <Check className="w-4 h-4 mt-0.5 text-green-600" />
+              Emails from all connected accounts appear in one unified inbox
+            </li>
+            <li className="flex items-start gap-2">
+              <Check className="w-4 h-4 mt-0.5 text-green-600" />
+              Each email shows which account it belongs to
+            </li>
+            <li className="flex items-start gap-2">
+              <Check className="w-4 h-4 mt-0.5 text-green-600" />
+              Choose which account to send from when composing
+            </li>
+            <li className="flex items-start gap-2">
+              <Check className="w-4 h-4 mt-0.5 text-green-600" />
+              Your primary account is used by default for sending
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Settings() {
   const [activeSection, setActiveSection] = useState<SettingsSection>("main");
   const [mounted, setMounted] = useState(false);
@@ -2075,6 +2360,12 @@ export default function Settings() {
       icon: Mail,
       title: "Email Signatures",
       description: "Create and manage your email signatures",
+    },
+    {
+      id: "gmail-accounts" as const,
+      icon: Mail,
+      title: "Gmail Accounts",
+      description: "Manage your connected Gmail mailboxes",
     },
     {
       id: "help" as const,
@@ -2895,6 +3186,8 @@ Your online status can be toggled in Privacy settings. When hidden, others won't
         return <ExtensionSectionContent renderBackButton={renderBackButton} />;
       case "email-signatures":
         return <EmailSignaturesSectionContent renderBackButton={renderBackButton} />;
+      case "gmail-accounts":
+        return <GmailAccountsSectionContent renderBackButton={renderBackButton} />;
       case "help":
         return renderHelpSection();
       default:

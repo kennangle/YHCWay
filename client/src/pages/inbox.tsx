@@ -28,6 +28,9 @@ interface GmailMessage {
   snippet: string;
   date: string;
   isUnread: boolean;
+  accountId?: number;
+  accountEmail?: string;
+  accountLabel?: string | null;
 }
 
 interface SlackMessage {
@@ -55,6 +58,9 @@ type UnifiedMessage = {
   link?: string;
   userName?: string;
   replyCount?: number;
+  accountId?: number;
+  accountEmail?: string;
+  accountLabel?: string | null;
 };
 
 type FilterType = 'all' | 'gmail' | 'slack' | 'dms' | 'sent' | 'archived' | 'trash';
@@ -176,6 +182,9 @@ export default function Inbox() {
       timestamp: new Date(email.date),
       isUnread: email.isUnread,
       link: `https://mail.google.com/mail/u/0/#inbox/${email.threadId}`,
+      accountId: email.accountId,
+      accountEmail: email.accountEmail,
+      accountLabel: email.accountLabel,
     })),
     ...slackMessages.map((msg): UnifiedMessage => ({
       id: `slack-${msg.id}`,
@@ -429,6 +438,11 @@ export default function Inbox() {
                           </span>
                           {message.type === 'slack-dm' && (
                             <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-pink-100 text-pink-700 font-medium">DM</span>
+                          )}
+                          {message.type === 'gmail' && message.accountLabel && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 font-medium" title={message.accountEmail || ''}>
+                              {message.accountLabel}
+                            </span>
                           )}
                           {message.replyCount && message.replyCount > 0 && (
                             <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 font-medium flex items-center gap-1">

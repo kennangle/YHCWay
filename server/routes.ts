@@ -8,7 +8,7 @@ import { z } from "zod";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { getRecentEmails, isGmailConnected, deleteEmail } from "./gmail";
-import { getGmailAuthUrl, handleGmailCallback, getRecentEmailsForUser, isGmailConnectedForUser, disconnectGmailForUser, getGmailClientForUser, getEmailById, sendEmail, deleteEmailById } from "./gmail-oauth";
+import { getGmailAuthUrl, handleGmailCallback, getRecentEmailsForUser, getRecentEmailsFromAllAccounts, isGmailConnectedForUser, disconnectGmailForUser, getGmailClientForUser, getEmailById, sendEmail, deleteEmailById, signOAuthState, verifyOAuthState } from "./gmail-oauth";
 import { getUpcomingEvents, getEventsForMonth, isCalendarConnected, createCalendarEvent } from "./calendar";
 import { getUpcomingMeetings, isZoomConnected } from "./zoom";
 import { getRecentMessages as getSlackMessages, getAllMessages as getAllSlackMessages, getDirectMessages as getSlackDMs, getThreadReplies as getSlackThreadReplies, isSlackConnected, getChannels as getSlackChannels, getRecentMessagesFiltered, isUserSlackConnected, getUserAllMessages, getUserDirectMessages, getUserChannels, sendSlackNotification, sendSlackBlockNotification, formatYHCWayNotification, sendUserSlackMessage, getDmConversations, getUserDmConversations } from "./slack";
@@ -1101,7 +1101,10 @@ export async function registerRoutes(
       if (!userId) {
         return res.status(401).json({ error: "Unauthorized" });
       }
-      const authUrl = getGmailAuthUrl(userId);
+      const label = req.query.label as string | undefined;
+      // Create signed state for CSRF protection
+      const state = signOAuthState({ userId, label });
+      const authUrl = getGmailAuthUrl(state);
       res.json({ authUrl });
     } catch (error: any) {
       console.error("Error generating Gmail auth URL:", error);
@@ -1111,17 +1114,115 @@ export async function registerRoutes(
 
   app.get("/api/gmail/callback", async (req, res) => {
     try {
-      const { code, state: userId } = req.query;
+      const { code, state } = req.query;
       
-      if (!code || !userId || typeof code !== 'string' || typeof userId !== 'string') {
-        return res.redirect('/connect?error=invalid_callback');
+      if (!code || !state || typeof code !== 'string' || typeof state !== 'string') {
+        return res.redirect('/settings?error=invalid_callback');
       }
       
-      await handleGmailCallback(code, userId);
-      res.redirect('/connect?success=gmail');
+      // Verify signed state for CSRF protection
+      const stateData = verifyOAuthState(state);
+      if (!stateData) {
+        console.error("[Gmail OAuth] Invalid state signature");
+        return res.redirect('/settings?error=invalid_state');
+      }
+      
+      const { userId, label } = stateData;
+      
+      const result = await handleGmailCallback(code, userId, label);
+      res.redirect(`/settings?success=gmail&email=${encodeURIComponent(result.email)}`);
     } catch (error: any) {
       console.error("Error in Gmail OAuth callback:", error);
-      res.redirect('/connect?error=gmail_connection_failed');
+      const errorMsg = error?.message?.includes('Maximum') ? 'max_accounts' : 'gmail_connection_failed';
+      res.redirect(`/settings?error=${errorMsg}`);
+    }
+  });
+
+  // List all connected Gmail accounts
+  app.get("/api/gmail/accounts", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const accounts = await storage.listOAuthAccounts(userId, 'gmail');
+      res.json(accounts.map(a => ({
+        id: a.id,
+        email: a.providerAccountId,
+        label: a.label,
+        isPrimary: a.isPrimary,
+        createdAt: a.createdAt,
+      })));
+    } catch (error: any) {
+      console.error("Error listing Gmail accounts:", error);
+      res.status(500).json({ error: error?.message || "Failed to list Gmail accounts" });
+    }
+  });
+
+  // Remove a specific Gmail account
+  app.delete("/api/gmail/accounts/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const accountId = parseInt(req.params.id);
+      const account = await storage.getOAuthAccountById(accountId);
+      
+      if (!account || account.userId !== userId || account.provider !== 'gmail') {
+        return res.status(404).json({ error: "Account not found" });
+      }
+      
+      await storage.deleteOAuthAccountById(accountId);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error removing Gmail account:", error);
+      res.status(500).json({ error: error?.message || "Failed to remove Gmail account" });
+    }
+  });
+
+  // Update Gmail account label
+  app.patch("/api/gmail/accounts/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const accountId = parseInt(req.params.id);
+      const { label } = req.body;
+      
+      const account = await storage.getOAuthAccountById(accountId);
+      if (!account || account.userId !== userId || account.provider !== 'gmail') {
+        return res.status(404).json({ error: "Account not found" });
+      }
+      
+      const updated = await storage.updateOAuthAccountLabel(accountId, label);
+      res.json({ id: updated?.id, email: updated?.providerAccountId, label: updated?.label, isPrimary: updated?.isPrimary });
+    } catch (error: any) {
+      console.error("Error updating Gmail account:", error);
+      res.status(500).json({ error: error?.message || "Failed to update Gmail account" });
+    }
+  });
+
+  // Set primary Gmail account
+  app.post("/api/gmail/accounts/:id/primary", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const accountId = parseInt(req.params.id);
+      
+      const account = await storage.getOAuthAccountById(accountId);
+      if (!account || account.userId !== userId || account.provider !== 'gmail') {
+        return res.status(404).json({ error: "Account not found" });
+      }
+      
+      await storage.setOAuthAccountPrimary(userId, 'gmail', accountId);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error setting primary Gmail account:", error);
+      res.status(500).json({ error: error?.message || "Failed to set primary Gmail account" });
     }
   });
 
@@ -1143,17 +1244,22 @@ export async function registerRoutes(
     try {
       const userId = req.user?.id;
       if (!userId) {
-        return res.json({ connected: false });
+        return res.json({ connected: false, accounts: [] });
       }
-      // Check custom OAuth first, then fall back to connector
-      const customConnected = await isGmailConnectedForUser(userId);
-      if (customConnected) {
-        return res.json({ connected: true, type: 'custom' });
+      // Get all Gmail accounts for user
+      const accounts = await storage.listOAuthAccounts(userId, 'gmail');
+      if (accounts.length > 0) {
+        return res.json({ 
+          connected: true, 
+          type: 'custom',
+          accountCount: accounts.length,
+          accounts: accounts.map(a => ({ id: a.id, email: a.providerAccountId, label: a.label, isPrimary: a.isPrimary }))
+        });
       }
       const connectorConnected = await isGmailConnected();
-      res.json({ connected: connectorConnected, type: 'connector' });
+      res.json({ connected: connectorConnected, type: 'connector', accounts: [] });
     } catch (error) {
-      res.json({ connected: false });
+      res.json({ connected: false, accounts: [] });
     }
   });
 
@@ -1225,10 +1331,25 @@ export async function registerRoutes(
   app.get("/api/gmail/messages", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user?.id;
-      console.log("[Gmail Messages] Fetching for user:", userId);
+      const accountIdParam = req.query.accountId;
+      const accountId = accountIdParam ? parseInt(accountIdParam as string) : undefined;
+      console.log("[Gmail Messages] Fetching for user:", userId, "accountId:", accountId);
       
       if (!userId) {
         return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      // Validate accountId if provided
+      if (accountIdParam && (isNaN(accountId!) || accountId! <= 0)) {
+        return res.status(400).json({ error: "Invalid accountId" });
+      }
+      
+      if (accountId) {
+        // Verify account ownership
+        const account = await storage.getOAuthAccountById(accountId);
+        if (!account || account.userId !== userId || account.provider !== 'gmail') {
+          return res.status(404).json({ error: "Gmail account not found" });
+        }
       }
       
       // Try custom OAuth first
@@ -1238,7 +1359,15 @@ export async function registerRoutes(
       if (customConnected) {
         console.log("[Gmail Messages] Fetching emails via custom OAuth...");
         try {
-          const emails = await getRecentEmailsForUser(userId, 20);
+          const { getRecentEmailsForAccount } = await import("./gmail-oauth");
+          let emails;
+          if (accountId) {
+            // Fetch from specific account
+            emails = await getRecentEmailsForAccount(userId, accountId, 20);
+          } else {
+            // Fetch from all accounts
+            emails = await getRecentEmailsFromAllAccounts(userId, 20);
+          }
           console.log("[Gmail Messages] Fetched", emails.length, "emails");
           return res.json(emails);
         } catch (emailError: any) {
@@ -1413,7 +1542,7 @@ export async function registerRoutes(
         return res.status(401).json({ error: "Unauthorized" });
       }
       
-      const { to, subject, body, inReplyTo, threadId } = req.body;
+      const { to, subject, body, inReplyTo, threadId, accountId } = req.body;
       
       if (!to || !subject || !body) {
         return res.status(400).json({ error: "Missing required fields: to, subject, body" });
@@ -1422,7 +1551,14 @@ export async function registerRoutes(
       // Try user-specific OAuth first, then fall back to connector
       const isUserConnected = await isGmailConnectedForUser(userId);
       if (isUserConnected) {
-        await sendEmail(userId, to, subject, body, inReplyTo, threadId);
+        // If accountId is specified, verify ownership
+        if (accountId) {
+          const account = await storage.getOAuthAccountById(accountId);
+          if (!account || account.userId !== userId || account.provider !== 'gmail') {
+            return res.status(404).json({ error: "Gmail account not found" });
+          }
+        }
+        await sendEmail(userId, to, subject, body, inReplyTo, threadId, accountId);
       } else {
         // Fall back to connector-based send
         const { sendEmailViaConnector } = await import("./gmail");

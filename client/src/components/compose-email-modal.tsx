@@ -17,6 +17,13 @@ interface EmailSignature {
   isDefault: boolean;
 }
 
+interface GmailAccount {
+  id: number;
+  email: string;
+  label: string | null;
+  isPrimary: boolean | null;
+}
+
 interface ComposeEmailModalProps {
   onClose: () => void;
 }
@@ -28,9 +35,26 @@ export function ComposeEmailModal({ onClose }: ComposeEmailModalProps) {
   const [signatureAppended, setSignatureAppended] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
+
+  const { data: gmailAccounts = [] } = useQuery<GmailAccount[]>({
+    queryKey: ["/api/gmail/accounts"],
+    queryFn: async () => {
+      const res = await fetch("/api/gmail/accounts", { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+
+  useEffect(() => {
+    if (gmailAccounts.length > 0 && selectedAccountId === null) {
+      const primary = gmailAccounts.find(a => a.isPrimary);
+      setSelectedAccountId(primary?.id || gmailAccounts[0].id);
+    }
+  }, [gmailAccounts, selectedAccountId]);
 
   const { data: users = [] } = useQuery<User[]>({
     queryKey: ["/api/users"],
@@ -107,7 +131,7 @@ export function ComposeEmailModal({ onClose }: ComposeEmailModalProps) {
   };
 
   const sendMutation = useMutation({
-    mutationFn: async (data: { to: string; subject: string; body: string }) => {
+    mutationFn: async (data: { to: string; subject: string; body: string; accountId?: number }) => {
       const res = await fetch("/api/gmail/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -129,7 +153,7 @@ export function ComposeEmailModal({ onClose }: ComposeEmailModalProps) {
   function handleSend() {
     const bodyText = body.replace(/<[^>]*>/g, '').trim();
     if (!to.trim() || !subject.trim() || !bodyText) return;
-    sendMutation.mutate({ to, subject, body });
+    sendMutation.mutate({ to, subject, body, accountId: selectedAccountId || undefined });
   }
 
   const hasBodyContent = body.replace(/<[^>]*>/g, '').trim().length > 0;
@@ -159,6 +183,24 @@ export function ComposeEmailModal({ onClose }: ComposeEmailModalProps) {
         </div>
 
         <div className="p-4 space-y-4">
+          {gmailAccounts.length > 1 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">From</label>
+              <select
+                value={selectedAccountId || ''}
+                onChange={(e) => setSelectedAccountId(Number(e.target.value))}
+                className="w-full px-4 py-2 border border-gray-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                data-testid="select-from-account"
+              >
+                {gmailAccounts.map((account) => (
+                  <option key={account.id} value={account.id}>
+                    {account.label || account.email.split('@')[0]} ({account.email})
+                    {account.isPrimary ? ' - Primary' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="relative">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">To</label>
             <input

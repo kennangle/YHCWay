@@ -1,5 +1,6 @@
 // Custom Gmail OAuth implementation with proper email read scopes
 import { google } from 'googleapis';
+import crypto from 'crypto';
 import { storage } from './storage';
 
 const GMAIL_SCOPES = [
@@ -7,6 +8,37 @@ const GMAIL_SCOPES = [
   'https://www.googleapis.com/auth/gmail.send',
   'https://www.googleapis.com/auth/userinfo.email',
 ];
+
+// OAuth state signing for CSRF protection
+const getStateSecret = () => process.env.SESSION_SECRET || process.env.REPL_ID || 'default-gmail-oauth-secret';
+
+export function signOAuthState(data: { userId: string; label?: string }): string {
+  const payload = JSON.stringify(data);
+  const hmac = crypto.createHmac('sha256', getStateSecret());
+  hmac.update(payload);
+  const signature = hmac.digest('base64url');
+  return `${Buffer.from(payload).toString('base64url')}.${signature}`;
+}
+
+export function verifyOAuthState(state: string): { userId: string; label?: string } | null {
+  try {
+    const [payloadB64, signature] = state.split('.');
+    if (!payloadB64 || !signature) return null;
+    
+    const payload = Buffer.from(payloadB64, 'base64url').toString('utf-8');
+    const hmac = crypto.createHmac('sha256', getStateSecret());
+    hmac.update(payload);
+    const expectedSignature = hmac.digest('base64url');
+    
+    if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
+      return null;
+    }
+    
+    return JSON.parse(payload);
+  } catch {
+    return null;
+  }
+}
 
 function getOAuth2Client() {
   const clientId = process.env.GOOGLE_CLIENT_ID;
@@ -49,7 +81,7 @@ export function getGmailAuthUrl(state: string): string {
   });
 }
 
-export async function handleGmailCallback(code: string, userId: string): Promise<void> {
+export async function handleGmailCallback(code: string, userId: string, label?: string): Promise<{ email: string; isNew: boolean }> {
   const oauth2Client = getOAuth2Client();
   
   const { tokens } = await oauth2Client.getToken(code);
@@ -64,20 +96,49 @@ export async function handleGmailCallback(code: string, userId: string): Promise
   const userInfo = await oauth2.userinfo.get();
   const gmailEmail = userInfo.data.email || userId;
   
-  // Store tokens in oauth_accounts table
-  await storage.upsertOAuthAccount({
+  // Check if this account already exists for this user
+  const existingAccount = await storage.getOAuthAccountByProvider('gmail', gmailEmail);
+  const isNew = !existingAccount || existingAccount.userId !== userId;
+  
+  // Check if user has reached the 10-account limit
+  if (isNew) {
+    const count = await storage.countOAuthAccounts(userId, 'gmail');
+    if (count >= 10) {
+      throw new Error('Maximum of 10 Gmail accounts allowed');
+    }
+  }
+  
+  // Check if this is the first account (make it primary)
+  const currentCount = await storage.countOAuthAccounts(userId, 'gmail');
+  const isPrimary = currentCount === 0;
+  
+  // Store/update tokens in oauth_accounts table using providerAccountId to identify
+  await storage.upsertOAuthAccountByProviderAccountId({
     userId,
     provider: 'gmail',
     providerAccountId: gmailEmail,
     accessToken: tokens.access_token,
     refreshToken: tokens.refresh_token || null,
     expiresAt: tokens.expiry_date ? new Date(tokens.expiry_date) : null,
+    label: label || gmailEmail.split('@')[0],
+    isPrimary,
   });
+  
+  return { email: gmailEmail, isNew };
 }
 
-export async function getGmailClientForUser(userId: string) {
-  console.log("[Gmail OAuth] Getting client for user:", userId);
-  const account = await storage.getOAuthAccount(userId, 'gmail');
+export async function getGmailClientForUser(userId: string, accountId?: number) {
+  console.log("[Gmail OAuth] Getting client for user:", userId, "accountId:", accountId);
+  
+  let account;
+  if (accountId) {
+    account = await storage.getOAuthAccountById(accountId);
+    if (account && account.userId !== userId) {
+      throw new Error('Unauthorized access to Gmail account');
+    }
+  } else {
+    account = await storage.getOAuthAccount(userId, 'gmail');
+  }
   
   if (!account || !account.accessToken) {
     throw new Error('Gmail not connected');
@@ -96,8 +157,8 @@ export async function getGmailClientForUser(userId: string) {
     try {
       const { credentials } = await oauth2Client.refreshAccessToken();
       
-      // Update stored tokens
-      await storage.upsertOAuthAccount({
+      // Update stored tokens using providerAccountId
+      await storage.upsertOAuthAccountByProviderAccountId({
         userId,
         provider: 'gmail',
         providerAccountId: account.providerAccountId,
@@ -116,6 +177,58 @@ export async function getGmailClientForUser(userId: string) {
   return google.gmail({ version: 'v1', auth: oauth2Client });
 }
 
+export async function getGmailClientsForUser(userId: string): Promise<Array<{ accountId: number; email: string; label: string | null; isPrimary: boolean | null; client: ReturnType<typeof google.gmail> }>> {
+  const accounts = await storage.listOAuthAccounts(userId, 'gmail');
+  
+  if (accounts.length === 0) {
+    throw new Error('No Gmail accounts connected');
+  }
+  
+  const clients = [];
+  
+  for (const account of accounts) {
+    if (!account.accessToken) continue;
+    
+    const oauth2Client = getOAuth2Client();
+    oauth2Client.setCredentials({
+      access_token: account.accessToken,
+      refresh_token: account.refreshToken,
+      expiry_date: account.expiresAt?.getTime(),
+    });
+    
+    // Check if token needs refresh
+    if (account.expiresAt && new Date(account.expiresAt).getTime() < Date.now()) {
+      try {
+        const { credentials } = await oauth2Client.refreshAccessToken();
+        
+        await storage.upsertOAuthAccountByProviderAccountId({
+          userId,
+          provider: 'gmail',
+          providerAccountId: account.providerAccountId,
+          accessToken: credentials.access_token || account.accessToken,
+          refreshToken: credentials.refresh_token || account.refreshToken,
+          expiresAt: credentials.expiry_date ? new Date(credentials.expiry_date) : account.expiresAt,
+        });
+        
+        oauth2Client.setCredentials(credentials);
+      } catch (error) {
+        console.error(`Failed to refresh Gmail token for ${account.providerAccountId}:`, error);
+        continue;
+      }
+    }
+    
+    clients.push({
+      accountId: account.id,
+      email: account.providerAccountId,
+      label: account.label,
+      isPrimary: account.isPrimary,
+      client: google.gmail({ version: 'v1', auth: oauth2Client }),
+    });
+  }
+  
+  return clients;
+}
+
 export interface EmailMessage {
   id: string;
   threadId: string;
@@ -124,6 +237,9 @@ export interface EmailMessage {
   snippet: string;
   date: string;
   isUnread: boolean;
+  accountId?: number;
+  accountEmail?: string;
+  accountLabel?: string | null;
 }
 
 export async function getRecentEmailsForUser(userId: string, maxResults: number = 20): Promise<EmailMessage[]> {
@@ -163,6 +279,114 @@ export async function getRecentEmailsForUser(userId: string, maxResults: number 
       snippet: detail.data.snippet || '',
       date,
       isUnread,
+    });
+  }
+
+  return emails;
+}
+
+export async function getRecentEmailsFromAllAccounts(userId: string, maxResults: number = 20): Promise<EmailMessage[]> {
+  const clients = await getGmailClientsForUser(userId);
+  
+  if (clients.length === 0) {
+    return [];
+  }
+  
+  const allEmails: EmailMessage[] = [];
+  const perAccountLimit = Math.ceil(maxResults / clients.length);
+  
+  for (const { accountId, email: accountEmail, label: accountLabel, client: gmail } of clients) {
+    try {
+      const response = await gmail.users.messages.list({
+        userId: 'me',
+        maxResults: perAccountLimit,
+        labelIds: ['INBOX'],
+      });
+
+      if (!response.data.messages) continue;
+
+      for (const msg of response.data.messages.slice(0, perAccountLimit)) {
+        const detail = await gmail.users.messages.get({
+          userId: 'me',
+          id: msg.id!,
+          format: 'metadata',
+          metadataHeaders: ['Subject', 'From', 'Date'],
+        });
+
+        const headers = detail.data.payload?.headers || [];
+        const subject = headers.find(h => h.name === 'Subject')?.value || '(No Subject)';
+        const from = headers.find(h => h.name === 'From')?.value || 'Unknown';
+        const date = headers.find(h => h.name === 'Date')?.value || '';
+        const isUnread = detail.data.labelIds?.includes('UNREAD') || false;
+
+        allEmails.push({
+          id: msg.id!,
+          threadId: msg.threadId!,
+          subject,
+          from,
+          snippet: detail.data.snippet || '',
+          date,
+          isUnread,
+          accountId,
+          accountEmail,
+          accountLabel,
+        });
+      }
+    } catch (error) {
+      console.error(`Error fetching emails from ${accountEmail}:`, error);
+    }
+  }
+  
+  // Sort by date descending and limit
+  allEmails.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  return allEmails.slice(0, maxResults);
+}
+
+export async function getRecentEmailsForAccount(userId: string, accountId: number, maxResults: number = 20): Promise<EmailMessage[]> {
+  const account = await storage.getOAuthAccountById(accountId);
+  if (!account || account.userId !== userId || account.provider !== 'gmail') {
+    throw new Error('Gmail account not found');
+  }
+  
+  const gmail = await getGmailClientForUser(userId, accountId);
+  
+  const response = await gmail.users.messages.list({
+    userId: 'me',
+    maxResults,
+    labelIds: ['INBOX'],
+  });
+
+  if (!response.data.messages) {
+    return [];
+  }
+
+  const emails: EmailMessage[] = [];
+  
+  for (const msg of response.data.messages.slice(0, maxResults)) {
+    const detail = await gmail.users.messages.get({
+      userId: 'me',
+      id: msg.id!,
+      format: 'metadata',
+      metadataHeaders: ['Subject', 'From', 'Date'],
+    });
+
+    const headers = detail.data.payload?.headers || [];
+    const subject = headers.find(h => h.name === 'Subject')?.value || '(No Subject)';
+    const from = headers.find(h => h.name === 'From')?.value || 'Unknown';
+    const date = headers.find(h => h.name === 'Date')?.value || '';
+    const isUnread = detail.data.labelIds?.includes('UNREAD') || false;
+
+    emails.push({
+      id: msg.id!,
+      threadId: msg.threadId!,
+      subject,
+      from,
+      snippet: detail.data.snippet || '',
+      date,
+      isUnread,
+      accountId,
+      accountEmail: account.providerAccountId,
+      accountLabel: account.label,
     });
   }
 
@@ -384,12 +608,18 @@ export async function getEmailById(userId: string, messageId: string): Promise<E
   };
 }
 
-export async function sendEmail(userId: string, to: string, subject: string, body: string, inReplyTo?: string, threadId?: string): Promise<void> {
-  const gmail = await getGmailClientForUser(userId);
+export async function sendEmail(userId: string, to: string, subject: string, body: string, inReplyTo?: string, threadId?: string, accountId?: number): Promise<void> {
+  const gmail = await getGmailClientForUser(userId, accountId);
   
   // Get user's email for the From header
-  const account = await storage.getOAuthAccount(userId, 'gmail');
-  const fromEmail = account?.providerAccountId || 'me';
+  let fromEmail = 'me';
+  if (accountId) {
+    const account = await storage.getOAuthAccountById(accountId);
+    fromEmail = account?.providerAccountId || 'me';
+  } else {
+    const account = await storage.getOAuthAccount(userId, 'gmail');
+    fromEmail = account?.providerAccountId || 'me';
+  }
   
   // Build email message
   const messageParts = [
