@@ -4,6 +4,7 @@ import { Search, Mail, MessageCircle, Users, MessageSquare, PenSquare, Loader2, 
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SlackChannelConfig } from "@/components/slack-channel-config";
+import { SlackDmConfig } from "@/components/slack-dm-config";
 import { EmailDetailPanel } from "@/components/email-detail-panel";
 import { ComposeEmailModal } from "@/components/compose-email-modal";
 import { useState } from "react";
@@ -361,7 +362,8 @@ export default function Inbox() {
           >
             <Trash2 className="w-4 h-4 inline mr-2" />Trash
           </button>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-2">
+            <SlackDmConfig />
             <SlackChannelConfig />
           </div>
         </div>

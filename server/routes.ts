@@ -2172,10 +2172,14 @@ export async function registerRoutes(
   app.get("/api/slack/messages/filtered", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims?.sub || req.user.id;
-      const preferences = await storage.getSlackChannelPreferences(userId);
-      const enabledChannelIds = preferences
+      const channelPreferences = await storage.getSlackChannelPreferences(userId);
+      const dmPreferences = await storage.getSlackDmPreferences(userId);
+      const enabledChannelIds = channelPreferences
         .filter(p => p.isEnabled)
         .map(p => p.channelId);
+      const enabledDmIds = dmPreferences
+        .filter(p => p.isEnabled)
+        .map(p => p.conversationId);
       
       // Check if user has personal Slack OAuth connected
       const userConnected = await isUserSlackConnected(userId);
@@ -2188,14 +2192,34 @@ export async function registerRoutes(
         dmMessages = await getSlackDMs(15);
       }
       
-      if (preferences.length === 0) {
+      // Filter DMs based on preferences if any are set
+      if (dmPreferences.length > 0) {
+        dmMessages = dmMessages.filter(dm => enabledDmIds.includes(dm.channelId));
+      }
+      
+      if (channelPreferences.length === 0) {
         // No channel preferences set - return DMs only (or all messages if user connected)
         if (userConnected) {
           const allMessages = await getUserAllMessages(userId, 30);
-          res.json(allMessages);
+          // Filter DMs from all messages if DM preferences exist
+          if (dmPreferences.length > 0) {
+            const filteredMessages = allMessages.filter(msg => 
+              !msg.isDm || enabledDmIds.includes(msg.channelId)
+            );
+            res.json(filteredMessages);
+          } else {
+            res.json(allMessages);
+          }
         } else {
           const allMessages = await getAllSlackMessages(30);
-          res.json(allMessages);
+          if (dmPreferences.length > 0) {
+            const filteredMessages = allMessages.filter(msg => 
+              !msg.isDm || enabledDmIds.includes(msg.channelId)
+            );
+            res.json(filteredMessages);
+          } else {
+            res.json(allMessages);
+          }
         }
         return;
       }
