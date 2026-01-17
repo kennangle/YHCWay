@@ -1,6 +1,6 @@
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { TopBar } from "@/components/top-bar";
-import { Search, Mail, MessageCircle, Users, MessageSquare, PenSquare, Loader2, Share2, Check, Trash2, Archive, Send } from "lucide-react";
+import { Search, Mail, MessageCircle, Users, MessageSquare, PenSquare, Loader2, Share2, Check, Trash2, Archive, Send, ExternalLink } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SlackChannelConfig } from "@/components/slack-channel-config";
@@ -331,7 +331,18 @@ export default function Inbox() {
           >
             <Archive className="w-4 h-4 inline mr-2" />Archived
           </button>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-2">
+            <a 
+              href="https://mail.google.com/mail/u/0/#trash" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              data-testid="link-gmail-trash"
+            >
+              <Trash2 className="w-4 h-4" />
+              Gmail Trash
+              <ExternalLink className="w-3 h-3" />
+            </a>
             <SlackChannelConfig />
           </div>
         </div>

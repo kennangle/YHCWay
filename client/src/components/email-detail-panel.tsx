@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { X, Reply, Send, ArrowLeft, Loader2, Trash2, Archive, Sparkles, RefreshCw, FileText, ChevronDown, ChevronUp, AlertCircle, CheckCircle2, ListTodo } from "lucide-react";
+import { X, Reply, Send, ArrowLeft, Loader2, Trash2, Archive, Sparkles, RefreshCw, FileText, ChevronDown, ChevronUp, AlertCircle, CheckCircle2, ListTodo, Forward } from "lucide-react";
 import { toast } from "sonner";
 import DOMPurify from "dompurify";
 
@@ -51,9 +51,13 @@ const sentimentColors: Record<string, { bg: string; text: string; icon: React.Re
 export function EmailDetailPanel({ messageId, onClose }: EmailDetailPanelProps) {
   const [isReplying, setIsReplying] = useState(false);
   const [replyBody, setReplyBody] = useState("");
+  const [isForwarding, setIsForwarding] = useState(false);
+  const [forwardTo, setForwardTo] = useState("");
+  const [forwardBody, setForwardBody] = useState("");
   const [showSummary, setShowSummary] = useState(false);
   const queryClient = useQueryClient();
   const replyPanelRef = useRef<HTMLDivElement>(null);
+  const forwardPanelRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
     if (isReplying && replyPanelRef.current) {
@@ -175,6 +179,48 @@ export function EmailDetailPanel({ messageId, onClose }: EmailDetailPanelProps) 
     },
   });
 
+  const forwardMutation = useMutation({
+    mutationFn: async (data: { to: string; subject: string; body: string }) => {
+      const res = await fetch("/api/gmail/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to forward email");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      setIsForwarding(false);
+      setForwardTo("");
+      setForwardBody("");
+      queryClient.invalidateQueries({ queryKey: ["gmail-messages"] });
+      toast.success("Email forwarded successfully!");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to forward email");
+    },
+  });
+
+  useEffect(() => {
+    if (isForwarding && forwardPanelRef.current) {
+      setTimeout(() => {
+        forwardPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  }, [isForwarding]);
+
+  useEffect(() => {
+    if (isForwarding && email && !forwardBody) {
+      const originalHeader = `\n\n---------- Forwarded message ---------\nFrom: ${email.from}\nDate: ${formatDate(email.date)}\nSubject: ${email.subject}\nTo: ${email.to}\n\n`;
+      const plainBody = email.body.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+      setForwardBody(originalHeader + plainBody);
+    }
+  }, [isForwarding, email, forwardBody]);
+
   function extractEmail(fromHeader: string): string {
     const match = fromHeader.match(/<([^>]+)>/);
     return match ? match[1] : fromHeader;
@@ -209,6 +255,23 @@ export function EmailDetailPanel({ messageId, onClose }: EmailDetailPanelProps) 
 
   function handleUseSuggestion(text: string) {
     setReplyBody(text);
+  }
+
+  function handleSendForward() {
+    if (!email || !forwardTo.trim() || !forwardBody.trim()) return;
+    
+    const subject = email.subject.startsWith("Fwd:") ? email.subject : `Fwd: ${email.subject}`;
+    
+    forwardMutation.mutate({
+      to: forwardTo.trim(),
+      subject,
+      body: forwardBody,
+    });
+  }
+
+  function handleStartForward() {
+    setIsForwarding(true);
+    setIsReplying(false);
   }
 
   if (isLoading) {
@@ -312,7 +375,26 @@ export function EmailDetailPanel({ messageId, onClose }: EmailDetailPanelProps) 
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                handleStartForward();
+              }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                isForwarding 
+                  ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                  : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+              }`}
+              style={{ pointerEvents: 'auto', cursor: 'pointer' }}
+              data-testid="button-forward"
+            >
+              <Forward className="w-4 h-4" />
+              Forward
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 setIsReplying(!isReplying);
+                setIsForwarding(false);
               }}
               className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
               style={{ pointerEvents: 'auto', cursor: 'pointer' }}
@@ -528,6 +610,77 @@ export function EmailDetailPanel({ messageId, onClose }: EmailDetailPanelProps) 
               </div>
               {sendMutation.isError && (
                 <p className="text-red-500 text-sm mt-2">{sendMutation.error?.message}</p>
+              )}
+            </div>
+          )}
+
+          {isForwarding && (
+            <div ref={forwardPanelRef} className="p-6 border-t bg-blue-50">
+              <div className="mb-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Forward className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-900">Forward Email</span>
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <label className="text-sm text-gray-700 font-medium block mb-1">To:</label>
+                <input
+                  type="email"
+                  value={forwardTo}
+                  onChange={(e) => setForwardTo(e.target.value)}
+                  placeholder="Enter recipient email address..."
+                  className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  data-testid="input-forward-to"
+                />
+              </div>
+              
+              <div className="mb-2">
+                <label className="text-sm text-gray-700 font-medium block mb-1">Message:</label>
+              </div>
+              <textarea
+                value={forwardBody}
+                onChange={(e) => setForwardBody(e.target.value)}
+                placeholder="Add a message (optional)..."
+                className="w-full h-40 p-4 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-200"
+                data-testid="input-forward-body"
+              />
+              <div className="flex justify-end gap-2 mt-4">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsForwarding(false);
+                    setForwardTo("");
+                    setForwardBody("");
+                  }}
+                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                  data-testid="button-cancel-forward"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleSendForward();
+                  }}
+                  disabled={!forwardTo.trim() || !forwardBody.trim() || forwardMutation.isPending}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                  data-testid="button-send-forward"
+                >
+                  {forwardMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                  Forward
+                </button>
+              </div>
+              {forwardMutation.isError && (
+                <p className="text-red-500 text-sm mt-2">{forwardMutation.error?.message}</p>
               )}
             </div>
           )}
