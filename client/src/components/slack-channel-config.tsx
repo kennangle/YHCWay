@@ -116,13 +116,13 @@ export function SlackChannelConfig() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button 
-          variant="ghost" 
+          variant="outline" 
           size="sm" 
-          className="text-white/70 hover:text-white hover:bg-white/10"
+          className="text-gray-700 border-gray-300 hover:bg-gray-100 hover:text-gray-900"
           data-testid="button-slack-channel-config"
         >
           <Settings className="w-4 h-4 mr-1" />
-          Channels
+          Configure Channels
         </Button>
       </DialogTrigger>
       <DialogContent className="glass max-w-md">
