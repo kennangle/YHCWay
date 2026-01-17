@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { X, Reply, Send, ArrowLeft, Loader2, Trash2, Archive, Sparkles, RefreshCw, FileText, ChevronDown, ChevronUp, AlertCircle, CheckCircle2, ListTodo, Forward } from "lucide-react";
+import { X, Reply, Send, ArrowLeft, Loader2, Trash2, Archive, Sparkles, RefreshCw, FileText, ChevronDown, ChevronUp, AlertCircle, CheckCircle2, ListTodo, Forward, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import DOMPurify from "dompurify";
 
@@ -55,6 +55,7 @@ export function EmailDetailPanel({ messageId, onClose }: EmailDetailPanelProps) 
   const [forwardTo, setForwardTo] = useState("");
   const [forwardBody, setForwardBody] = useState("");
   const [showSummary, setShowSummary] = useState(false);
+  const [summaryCopied, setSummaryCopied] = useState(false);
   const queryClient = useQueryClient();
   const replyPanelRef = useRef<HTMLDivElement>(null);
   const forwardPanelRef = useRef<HTMLDivElement>(null);
@@ -423,15 +424,37 @@ export function EmailDetailPanel({ messageId, onClose }: EmailDetailPanelProps) 
                       </span>
                     )}
                   </div>
-                  <button
-                    onClick={() => refetchSummary()}
-                    disabled={isSummaryFetching}
-                    className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-800 transition-colors"
-                    data-testid="button-refresh-summary"
-                  >
-                    <RefreshCw className={`w-3 h-3 ${isSummaryFetching ? 'animate-spin' : ''}`} />
-                    Refresh
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {emailSummary && (
+                      <button
+                        onClick={() => {
+                          const summaryText = [
+                            emailSummary.summary,
+                            emailSummary.keyPoints.length > 0 ? `\n\nKey Points:\n${emailSummary.keyPoints.map(p => `• ${p}`).join('\n')}` : '',
+                            emailSummary.actionItems.length > 0 ? `\n\nAction Items:\n${emailSummary.actionItems.map(a => `→ ${a}`).join('\n')}` : ''
+                          ].join('');
+                          navigator.clipboard.writeText(summaryText);
+                          setSummaryCopied(true);
+                          toast.success("Summary copied to clipboard");
+                          setTimeout(() => setSummaryCopied(false), 2000);
+                        }}
+                        className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-800 transition-colors"
+                        data-testid="button-copy-summary"
+                      >
+                        {summaryCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                        {summaryCopied ? 'Copied' : 'Copy'}
+                      </button>
+                    )}
+                    <button
+                      onClick={() => refetchSummary()}
+                      disabled={isSummaryFetching}
+                      className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-800 transition-colors"
+                      data-testid="button-refresh-summary"
+                    >
+                      <RefreshCw className={`w-3 h-3 ${isSummaryFetching ? 'animate-spin' : ''}`} />
+                      Refresh
+                    </button>
+                  </div>
                 </div>
                 
                 {isSummaryError ? (
