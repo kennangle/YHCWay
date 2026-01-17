@@ -1,9 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTheme } from "@/App";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { TopBar } from "@/components/top-bar";
 import { User, Bell, Shield, Palette, HelpCircle, ChevronLeft, Check, Globe, Mail, MessageSquare, Calendar, Video, CheckSquare, MessageCircle, Volume2, Moon, Sun, ExternalLink, Trash2, Download, Eye, EyeOff, FileText, Plus, Pencil, Webhook, Bug, Play, CheckCircle, XCircle, Clock, RefreshCw, Edit2, Lightbulb, Building, Copy, Users, UserPlus, Bold, Italic, Underline as UnderlineIcon, Link as LinkIcon, AlignLeft, AlignCenter, AlignRight } from "lucide-react";
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Underline from '@tiptap/extension-underline';
+import Link from '@tiptap/extension-link';
+import TextAlign from '@tiptap/extension-text-align';
+import { TextStyle } from '@tiptap/extension-text-style';
+import { Color } from '@tiptap/extension-color';
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -1630,21 +1637,13 @@ function EmailSignaturesSectionContent({ renderBackButton }: { renderBackButton:
 }
 
 function SignatureRichTextEditor({ content, onChange, placeholder }: { content: string; onChange: (html: string) => void; placeholder?: string }) {
-  const { useEditor, EditorContent } = require('@tiptap/react');
-  const StarterKit = require('@tiptap/starter-kit').default;
-  const UnderlineExt = require('@tiptap/extension-underline').default;
-  const LinkExt = require('@tiptap/extension-link').default;
-  const TextAlign = require('@tiptap/extension-text-align').default;
-  const { TextStyle } = require('@tiptap/extension-text-style');
-  const { Color } = require('@tiptap/extension-color');
-
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
         heading: { levels: [1, 2, 3] },
       }),
-      UnderlineExt,
-      LinkExt.configure({
+      Underline,
+      Link.configure({
         openOnClick: false,
         HTMLAttributes: { style: 'color: #2563eb; text-decoration: underline;' },
       }),
@@ -1653,7 +1652,7 @@ function SignatureRichTextEditor({ content, onChange, placeholder }: { content: 
       Color,
     ],
     content: content || '<p></p>',
-    onUpdate: ({ editor }: any) => {
+    onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
     editorProps: {
@@ -1669,7 +1668,7 @@ function SignatureRichTextEditor({ content, onChange, placeholder }: { content: 
     }
   }, [content, editor]);
 
-  const setLink = () => {
+  const setLink = useCallback(() => {
     if (!editor) return;
     const previousUrl = editor.getAttributes('link').href;
     const url = window.prompt('URL', previousUrl);
@@ -1679,7 +1678,7 @@ function SignatureRichTextEditor({ content, onChange, placeholder }: { content: 
       return;
     }
     editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
-  };
+  }, [editor]);
 
   if (!editor) return null;
 
