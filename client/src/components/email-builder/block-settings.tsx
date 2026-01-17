@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { EmailBlock, BlockStyles } from './types';
+import { RichTextEditor } from './rich-text-editor';
 
 interface BlockSettingsProps {
   block: EmailBlock | null;
@@ -116,11 +117,10 @@ export function BlockSettings({ block, onUpdate }: BlockSettingsProps) {
         <div className="space-y-3 mb-4">
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Content</label>
-            <textarea
-              value={block.content.replace(/<[^>]*>/g, '')}
-              onChange={(e) => updateBlock({ content: `<p>${e.target.value}</p>` })}
-              className="w-full px-2 py-1 border rounded text-sm"
-              rows={4}
+            <RichTextEditor
+              content={block.content}
+              onChange={(html) => updateBlock({ content: html })}
+              placeholder="Enter your email text..."
             />
           </div>
         </div>
