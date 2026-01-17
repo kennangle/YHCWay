@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTheme } from "@/App";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
@@ -1637,6 +1637,8 @@ function EmailSignaturesSectionContent({ renderBackButton }: { renderBackButton:
 }
 
 function SignatureRichTextEditor({ content, onChange, placeholder }: { content: string; onChange: (html: string) => void; placeholder?: string }) {
+  const initialContentRef = useRef(content);
+  
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -1651,7 +1653,7 @@ function SignatureRichTextEditor({ content, onChange, placeholder }: { content: 
       TextStyle,
       Color,
     ],
-    content: content || '<p></p>',
+    content: initialContentRef.current || '<p></p>',
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
