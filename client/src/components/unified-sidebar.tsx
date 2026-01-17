@@ -35,7 +35,8 @@ import {
   Megaphone,
   Users,
   ExternalLink,
-  Dumbbell
+  Dumbbell,
+  GitBranch
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
@@ -123,6 +124,7 @@ export function UnifiedSidebar() {
         { icon: MessageCircle, label: "Slack", href: "/chat", tourId: "nav-chat" },
         { icon: ListTodo, label: "Tasks", href: "/tasks", tourId: "nav-tasks" },
         { icon: FolderKanban, label: "Projects", href: "/projects", tourId: "nav-projects" },
+        { icon: GitBranch, label: "Dependencies", href: "/dependency-tracker", tourId: "nav-dependencies" },
       ],
     },
     {

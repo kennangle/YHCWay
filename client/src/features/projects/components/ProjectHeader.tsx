@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, LayoutGrid, List, Users, RefreshCw, Trash2, UserPlus, X } from "lucide-react";
+import { ArrowLeft, LayoutGrid, List, Users, RefreshCw, Trash2, UserPlus, X, GitBranch } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -156,6 +156,13 @@ export function ProjectHeader({
           </TabsTrigger>
         </TabsList>
       </Tabs>
+
+      <Link href={`/dependency-tracker/${projectId}`}>
+        <Button variant="outline" size="sm" data-testid="button-dependencies">
+          <GitBranch className="w-4 h-4 mr-2" />
+          Dependencies
+        </Button>
+      </Link>
 
       <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
         <DialogTrigger asChild>

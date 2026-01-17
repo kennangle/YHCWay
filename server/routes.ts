@@ -4653,6 +4653,18 @@ export async function registerRoutes(
     }
   });
 
+  // Get all dependencies for a project (for dependency tracker visualization)
+  app.get("/api/projects/:projectId/dependencies", isAuthenticated, async (req: any, res) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      const dependencies = await storage.getProjectDependencies(projectId);
+      res.json(dependencies);
+    } catch (error) {
+      console.error("Error fetching project dependencies:", error);
+      res.status(500).json({ error: "Failed to fetch project dependencies" });
+    }
+  });
+
   // =============================================================================
   // TASK STORIES ROUTES (Unified comments + activity feed)
   // =============================================================================

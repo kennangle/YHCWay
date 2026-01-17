@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo } from "react";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { TopBar } from "@/components/top-bar";
-import { ArrowLeft, Plus, MoreVertical, Calendar, User, Clock, Flag, MessageSquare, CheckSquare, RefreshCw, GripVertical, Trash2, Edit, LayoutGrid, List, Search, Filter, X, Users, UserPlus, UserMinus, GanttChart, CalendarRange, ChevronRight, ChevronDown, Square, Check } from "lucide-react";
+import { ArrowLeft, Plus, MoreVertical, Calendar, User, Clock, Flag, MessageSquare, CheckSquare, RefreshCw, GripVertical, Trash2, Edit, LayoutGrid, List, Search, Filter, X, Users, UserPlus, UserMinus, GanttChart, CalendarRange, ChevronRight, ChevronDown, Square, Check, GitBranch } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "wouter";
@@ -1392,6 +1392,12 @@ export default function ProjectBoard() {
                   <CalendarRange className="w-4 h-4" />
                 </button>
               </div>
+              <Link href={`/dependency-tracker/${projectId}`}>
+                <Button variant="outline" size="sm" className="h-9" data-testid="button-dependency-tracker">
+                  <GitBranch className="w-4 h-4 mr-1" />
+                  <span className="hidden md:inline">Dependencies</span>
+                </Button>
+              </Link>
             </div>
           </header>
 

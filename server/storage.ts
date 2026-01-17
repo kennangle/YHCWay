@@ -418,6 +418,12 @@ export interface IStorage {
     dependencyType: string;
     dependentTask: Task;
   }>>;
+  getProjectDependencies(projectId: number): Promise<Array<{
+    id: number;
+    taskId: number;
+    dependsOnTaskId: number;
+    dependencyType: string;
+  }>>;
   addTaskDependency(taskId: number, dependsOnTaskId: number, dependencyType?: string): Promise<{ id: number }>;
   removeTaskDependency(id: number): Promise<void>;
   
@@ -2445,6 +2451,30 @@ export class DbStorage implements IStorage {
 
   async removeTaskDependency(id: number): Promise<void> {
     await db.delete(taskDependencies).where(eq(taskDependencies.id, id));
+  }
+
+  async getProjectDependencies(projectId: number): Promise<Array<{
+    id: number;
+    taskId: number;
+    dependsOnTaskId: number;
+    dependencyType: string;
+  }>> {
+    const projectTasks = await this.getProjectTasks(projectId);
+    const taskIds = projectTasks.map(t => t.id);
+    
+    if (taskIds.length === 0) return [];
+    
+    const deps = await db
+      .select()
+      .from(taskDependencies)
+      .where(inArray(taskDependencies.taskId, taskIds));
+    
+    return deps.map(dep => ({
+      id: dep.id,
+      taskId: dep.taskId,
+      dependsOnTaskId: dep.dependsOnTaskId,
+      dependencyType: dep.dependencyType || "finish_to_start",
+    }));
   }
 
   // Task stories (unified comments + activity)
