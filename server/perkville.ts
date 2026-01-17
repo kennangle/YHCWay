@@ -1,13 +1,25 @@
 import { storage } from "./storage";
 
-const PERKVILLE_CLIENT_ID = process.env.PERKVILLE_CLIENT_ID?.trim().replace(/\\n/g, '').replace(/[\r\n\-]+$/, '');
-const PERKVILLE_CLIENT_SECRET = process.env.PERKVILLE_CLIENT_SECRET?.trim().replace(/\\n/g, '').replace(/[\r\n\-]+$/, '');
-const PERKVILLE_BUSINESS_ID = process.env.PERKVILLE_BUSINESS_ID ? parseInt(process.env.PERKVILLE_BUSINESS_ID) : 7128;
 const PERKVILLE_TOKEN_URL = "https://www.perkville.com/api/token/";
 const PERKVILLE_API_BASE = "https://api.perkville.com/v2";
 
+function getPerkvilleClientId(): string | undefined {
+  return process.env.PERKVILLE_CLIENT_ID?.trim().replace(/\\n/g, '').replace(/[\r\n\-]+$/, '');
+}
+
+function getPerkvilleClientSecret(): string | undefined {
+  return process.env.PERKVILLE_CLIENT_SECRET?.trim().replace(/\\n/g, '').replace(/[\r\n\-]+$/, '');
+}
+
+function getPerkvilleBusinessId(): number {
+  return process.env.PERKVILLE_BUSINESS_ID ? parseInt(process.env.PERKVILLE_BUSINESS_ID) : 7128;
+}
+
 export function isPerkvilleConfigured(): boolean {
-  return !!(PERKVILLE_CLIENT_ID && PERKVILLE_CLIENT_SECRET);
+  const clientId = getPerkvilleClientId();
+  const clientSecret = getPerkvilleClientSecret();
+  console.log("[Perkville] Config check - Client ID exists:", !!clientId, "Secret exists:", !!clientSecret);
+  return !!(clientId && clientSecret);
 }
 
 export async function authenticateWithPerkville(username: string, password: string): Promise<{
@@ -15,21 +27,25 @@ export async function authenticateWithPerkville(username: string, password: stri
   token_type: string;
   scope?: string;
 }> {
-  if (!PERKVILLE_CLIENT_ID || !PERKVILLE_CLIENT_SECRET) {
+  const clientId = getPerkvilleClientId();
+  const clientSecret = getPerkvilleClientSecret();
+  
+  if (!clientId || !clientSecret) {
+    console.error("[Perkville] Missing credentials - Client ID:", !!clientId, "Secret:", !!clientSecret);
     throw new Error("Perkville client credentials not configured");
   }
 
-  console.log("[Perkville] Using Client ID:", PERKVILLE_CLIENT_ID);
-  console.log("[Perkville] Client Secret length:", PERKVILLE_CLIENT_SECRET?.length);
+  console.log("[Perkville] Using Client ID:", clientId);
+  console.log("[Perkville] Client Secret length:", clientSecret.length);
   console.log("[Perkville] Authenticating user:", username);
   
-  const credentials = Buffer.from(`${PERKVILLE_CLIENT_ID}:${PERKVILLE_CLIENT_SECRET}`).toString("base64");
+  const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
   
   const bodyParams = new URLSearchParams({
     grant_type: "password",
     username: username,
     password: password,
-    client_id: PERKVILLE_CLIENT_ID,
+    client_id: clientId,
   });
   
   console.log("[Perkville] Token URL:", PERKVILLE_TOKEN_URL);
@@ -83,7 +99,7 @@ export async function validatePerkvilleToken(userId: string): Promise<{ valid: b
 
   try {
     // Use the business endpoint to validate token - this is a known working endpoint
-    const response = await fetch(`${PERKVILLE_API_BASE}/businesses/${PERKVILLE_BUSINESS_ID}/`, {
+    const response = await fetch(`${PERKVILLE_API_BASE}/businesses/${getPerkvilleBusinessId()}/`, {
       headers: {
         "Authorization": `Bearer ${account.accessToken}`,
         "Content-Type": "application/json",
@@ -159,13 +175,13 @@ export async function getPerkvilleMe(userId: string): Promise<any | null> {
 }
 
 export function getDefaultPerkvilleBusinessId(): number {
-  return PERKVILLE_BUSINESS_ID;
+  return getPerkvilleBusinessId();
 }
 
 export async function getPerkvilleBusinesses(userId: string): Promise<any[]> {
   try {
     // Fetch the specific business by ID instead of all businesses
-    const data = await perkvilleApiRequest(userId, `/businesses/${PERKVILLE_BUSINESS_ID}/`);
+    const data = await perkvilleApiRequest(userId, `/businesses/${getPerkvilleBusinessId()}/`);
     
     if (data?.id || data?.business_id) {
       return [{
