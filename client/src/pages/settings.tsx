@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTheme } from "@/App";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { TopBar } from "@/components/top-bar";
-import { User, Bell, Shield, Palette, HelpCircle, ChevronLeft, Check, Globe, Mail, MessageSquare, Calendar, Video, CheckSquare, MessageCircle, Volume2, Moon, Sun, ExternalLink, Trash2, Download, Eye, EyeOff, FileText, Plus, Pencil, Webhook, Bug, Play, CheckCircle, XCircle, Clock, RefreshCw, Edit2, Lightbulb, Building, Copy, Users, UserPlus } from "lucide-react";
+import { User, Bell, Shield, Palette, HelpCircle, ChevronLeft, Check, Globe, Mail, MessageSquare, Calendar, Video, CheckSquare, MessageCircle, Volume2, Moon, Sun, ExternalLink, Trash2, Download, Eye, EyeOff, FileText, Plus, Pencil, Webhook, Bug, Play, CheckCircle, XCircle, Clock, RefreshCw, Edit2, Lightbulb, Building, Copy, Users, UserPlus, Bold, Italic, Underline as UnderlineIcon, Link as LinkIcon, AlignLeft, AlignCenter, AlignRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -124,7 +124,7 @@ const playNotificationSound = (soundType: string) => {
   oscillator.stop(audioContext.currentTime + 0.5);
 };
 
-type SettingsSection = "main" | "account" | "notifications" | "privacy" | "appearance" | "language" | "help" | "templates" | "webhooks" | "feedback" | "organization" | "extension";
+type SettingsSection = "main" | "account" | "notifications" | "privacy" | "appearance" | "language" | "help" | "templates" | "webhooks" | "feedback" | "organization" | "extension" | "email-signatures";
 
 interface TaskTemplate {
   id: number;
@@ -1304,6 +1304,428 @@ function OrganizationSectionContent({ renderBackButton }: { renderBackButton: ()
   );
 }
 
+interface EmailSignature {
+  id: number;
+  userId: string;
+  name: string;
+  htmlContent: string;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+function EmailSignaturesSectionContent({ renderBackButton }: { renderBackButton: () => React.ReactNode }) {
+  const [editingSignature, setEditingSignature] = useState<EmailSignature | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
+  const [signatureName, setSignatureName] = useState("");
+  const [signatureContent, setSignatureContent] = useState("");
+  const [isDefault, setIsDefault] = useState(false);
+  const queryClient = useQueryClient();
+
+  const { data: signatures = [], isLoading } = useQuery<EmailSignature[]>({
+    queryKey: ["/api/email-signatures"],
+    queryFn: async () => {
+      const res = await fetch("/api/email-signatures", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch signatures");
+      return res.json();
+    },
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: { name: string; htmlContent: string; isDefault: boolean }) => {
+      const res = await fetch("/api/email-signatures", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to create signature");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/email-signatures"] });
+      setIsCreating(false);
+      setSignatureName("");
+      setSignatureContent("");
+      setIsDefault(false);
+      toast.success("Signature created!");
+    },
+    onError: () => {
+      toast.error("Failed to create signature");
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, ...data }: { id: number; name?: string; htmlContent?: string; isDefault?: boolean }) => {
+      const res = await fetch(`/api/email-signatures/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to update signature");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/email-signatures"] });
+      setEditingSignature(null);
+      toast.success("Signature updated!");
+    },
+    onError: () => {
+      toast.error("Failed to update signature");
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/email-signatures/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to delete signature");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/email-signatures"] });
+      toast.success("Signature deleted!");
+    },
+    onError: () => {
+      toast.error("Failed to delete signature");
+    },
+  });
+
+  const setDefaultMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/email-signatures/${id}/set-default`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to set default signature");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/email-signatures"] });
+      toast.success("Default signature updated!");
+    },
+    onError: () => {
+      toast.error("Failed to set default signature");
+    },
+  });
+
+  const handleCreate = () => {
+    if (!signatureName.trim() || !signatureContent.trim()) {
+      toast.error("Please provide a name and content for your signature");
+      return;
+    }
+    createMutation.mutate({ name: signatureName, htmlContent: signatureContent, isDefault });
+  };
+
+  const handleUpdate = () => {
+    if (!editingSignature || !signatureName.trim() || !signatureContent.trim()) {
+      toast.error("Please provide a name and content for your signature");
+      return;
+    }
+    updateMutation.mutate({
+      id: editingSignature.id,
+      name: signatureName,
+      htmlContent: signatureContent,
+      isDefault,
+    });
+  };
+
+  const startEditing = (signature: EmailSignature) => {
+    setEditingSignature(signature);
+    setSignatureName(signature.name);
+    setSignatureContent(signature.htmlContent);
+    setIsDefault(signature.isDefault);
+    setIsCreating(false);
+  };
+
+  const startCreating = () => {
+    setIsCreating(true);
+    setEditingSignature(null);
+    setSignatureName("");
+    setSignatureContent("");
+    setIsDefault(signatures.length === 0);
+  };
+
+  const cancelEdit = () => {
+    setIsCreating(false);
+    setEditingSignature(null);
+    setSignatureName("");
+    setSignatureContent("");
+    setIsDefault(false);
+  };
+
+  const SignatureEditor = () => (
+    <div className="glass-card p-6 rounded-2xl space-y-4">
+      <h3 className="font-semibold text-lg">
+        {isCreating ? "Create New Signature" : "Edit Signature"}
+      </h3>
+      
+      <div>
+        <Label htmlFor="signature-name" className="mb-2 block">Signature Name</Label>
+        <Input
+          id="signature-name"
+          value={signatureName}
+          onChange={(e) => setSignatureName(e.target.value)}
+          placeholder="e.g., Work Signature"
+          data-testid="input-signature-name"
+        />
+      </div>
+
+      <div>
+        <Label className="mb-2 block">Signature Content</Label>
+        <div className="border rounded-lg bg-white dark:bg-slate-900 min-h-[200px]">
+          <SignatureRichTextEditor
+            content={signatureContent}
+            onChange={setSignatureContent}
+            placeholder="Create your email signature..."
+          />
+        </div>
+        <p className="text-xs text-muted-foreground mt-1">
+          Use the toolbar to add formatting, links, and more
+        </p>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Checkbox
+          id="is-default"
+          checked={isDefault}
+          onCheckedChange={(checked) => setIsDefault(!!checked)}
+          data-testid="checkbox-default-signature"
+        />
+        <Label htmlFor="is-default" className="text-sm cursor-pointer">
+          Set as default signature
+        </Label>
+      </div>
+
+      <div className="flex gap-2 pt-2">
+        <Button
+          onClick={isCreating ? handleCreate : handleUpdate}
+          disabled={createMutation.isPending || updateMutation.isPending}
+          data-testid="button-save-signature"
+        >
+          {(createMutation.isPending || updateMutation.isPending) ? (
+            <>
+              <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            <>
+              <Check className="w-4 h-4 mr-2" />
+              {isCreating ? "Create Signature" : "Save Changes"}
+            </>
+          )}
+        </Button>
+        <Button variant="outline" onClick={cancelEdit} data-testid="button-cancel-signature">
+          Cancel
+        </Button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="max-w-3xl">
+      {renderBackButton()}
+      
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Email Signatures</h2>
+          <p className="text-muted-foreground">Create and manage signatures for your emails</p>
+        </div>
+        {!isCreating && !editingSignature && (
+          <Button onClick={startCreating} data-testid="button-create-signature">
+            <Plus className="w-4 h-4 mr-2" />
+            New Signature
+          </Button>
+        )}
+      </div>
+
+      {(isCreating || editingSignature) && <SignatureEditor />}
+
+      {!isCreating && !editingSignature && (
+        <div className="space-y-4">
+          {isLoading ? (
+            <div className="glass-card p-8 rounded-2xl text-center">
+              <RefreshCw className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
+              <p className="text-muted-foreground mt-2">Loading signatures...</p>
+            </div>
+          ) : signatures.length === 0 ? (
+            <div className="glass-card p-8 rounded-2xl text-center">
+              <Mail className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
+              <h3 className="font-semibold mb-1">No signatures yet</h3>
+              <p className="text-muted-foreground text-sm mb-4">
+                Create a signature to automatically add to your emails
+              </p>
+              <Button onClick={startCreating} data-testid="button-create-first-signature">
+                <Plus className="w-4 h-4 mr-2" />
+                Create Your First Signature
+              </Button>
+            </div>
+          ) : (
+            signatures.map((signature) => (
+              <div
+                key={signature.id}
+                className="glass-card p-4 rounded-2xl"
+                data-testid={`signature-card-${signature.id}`}
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold">{signature.name}</h3>
+                    {signature.isDefault && (
+                      <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                        Default
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {!signature.isDefault && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDefaultMutation.mutate(signature.id)}
+                        disabled={setDefaultMutation.isPending}
+                        data-testid={`button-set-default-${signature.id}`}
+                      >
+                        <Check className="w-4 h-4 mr-1" />
+                        Set Default
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => startEditing(signature)}
+                      data-testid={`button-edit-signature-${signature.id}`}
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        if (confirm("Are you sure you want to delete this signature?")) {
+                          deleteMutation.mutate(signature.id);
+                        }
+                      }}
+                      disabled={deleteMutation.isPending}
+                      className="text-destructive hover:text-destructive"
+                      data-testid={`button-delete-signature-${signature.id}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div
+                  className="text-sm text-muted-foreground border-t pt-3 prose prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{ __html: signature.htmlContent }}
+                />
+              </div>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SignatureRichTextEditor({ content, onChange, placeholder }: { content: string; onChange: (html: string) => void; placeholder?: string }) {
+  const { useEditor, EditorContent } = require('@tiptap/react');
+  const StarterKit = require('@tiptap/starter-kit').default;
+  const UnderlineExt = require('@tiptap/extension-underline').default;
+  const LinkExt = require('@tiptap/extension-link').default;
+  const TextAlign = require('@tiptap/extension-text-align').default;
+  const { TextStyle } = require('@tiptap/extension-text-style');
+  const { Color } = require('@tiptap/extension-color');
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        heading: { levels: [1, 2, 3] },
+      }),
+      UnderlineExt,
+      LinkExt.configure({
+        openOnClick: false,
+        HTMLAttributes: { style: 'color: #2563eb; text-decoration: underline;' },
+      }),
+      TextAlign.configure({ types: ['heading', 'paragraph'] }),
+      TextStyle,
+      Color,
+    ],
+    content: content || '<p></p>',
+    onUpdate: ({ editor }: any) => {
+      onChange(editor.getHTML());
+    },
+    editorProps: {
+      attributes: {
+        class: 'prose prose-sm max-w-none focus:outline-none min-h-[150px] p-3',
+      },
+    },
+  });
+
+  useEffect(() => {
+    if (editor && content !== editor.getHTML()) {
+      editor.commands.setContent(content || '<p></p>');
+    }
+  }, [content, editor]);
+
+  const setLink = () => {
+    if (!editor) return;
+    const previousUrl = editor.getAttributes('link').href;
+    const url = window.prompt('URL', previousUrl);
+    if (url === null) return;
+    if (url === '') {
+      editor.chain().focus().extendMarkRange('link').unsetLink().run();
+      return;
+    }
+    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+  };
+
+  if (!editor) return null;
+
+  const ToolbarBtn = ({ onClick, active, children, title }: { onClick: () => void; active?: boolean; children: React.ReactNode; title?: string }) => (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 ${active ? 'bg-gray-200 dark:bg-gray-600' : ''}`}
+      title={title}
+    >
+      {children}
+    </button>
+  );
+
+  return (
+    <div>
+      <div className="flex flex-wrap gap-0.5 p-2 border-b bg-gray-50 dark:bg-slate-800 rounded-t-lg">
+        <ToolbarBtn onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive('bold')} title="Bold">
+          <Bold className="w-4 h-4" />
+        </ToolbarBtn>
+        <ToolbarBtn onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive('italic')} title="Italic">
+          <Italic className="w-4 h-4" />
+        </ToolbarBtn>
+        <ToolbarBtn onClick={() => editor.chain().focus().toggleUnderline().run()} active={editor.isActive('underline')} title="Underline">
+          <UnderlineIcon className="w-4 h-4" />
+        </ToolbarBtn>
+        <div className="w-px bg-gray-300 dark:bg-gray-600 mx-1" />
+        <ToolbarBtn onClick={setLink} active={editor.isActive('link')} title="Add Link">
+          <LinkIcon className="w-4 h-4" />
+        </ToolbarBtn>
+        <div className="w-px bg-gray-300 dark:bg-gray-600 mx-1" />
+        <ToolbarBtn onClick={() => editor.chain().focus().setTextAlign('left').run()} active={editor.isActive({ textAlign: 'left' })} title="Align Left">
+          <AlignLeft className="w-4 h-4" />
+        </ToolbarBtn>
+        <ToolbarBtn onClick={() => editor.chain().focus().setTextAlign('center').run()} active={editor.isActive({ textAlign: 'center' })} title="Align Center">
+          <AlignCenter className="w-4 h-4" />
+        </ToolbarBtn>
+        <ToolbarBtn onClick={() => editor.chain().focus().setTextAlign('right').run()} active={editor.isActive({ textAlign: 'right' })} title="Align Right">
+          <AlignRight className="w-4 h-4" />
+        </ToolbarBtn>
+      </div>
+      <EditorContent editor={editor} />
+    </div>
+  );
+}
+
 function ExtensionSectionContent({ renderBackButton }: { renderBackButton: () => React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [showToken, setShowToken] = useState(false);
@@ -1654,6 +2076,12 @@ export default function Settings() {
       icon: ExternalLink,
       title: "Browser Extension",
       description: "Connect the YHC Way Chrome extension",
+    },
+    {
+      id: "email-signatures" as const,
+      icon: Mail,
+      title: "Email Signatures",
+      description: "Create and manage your email signatures",
     },
     {
       id: "help" as const,
@@ -2472,6 +2900,8 @@ Your online status can be toggled in Privacy settings. When hidden, others won't
         return <OrganizationSectionContent renderBackButton={renderBackButton} />;
       case "extension":
         return <ExtensionSectionContent renderBackButton={renderBackButton} />;
+      case "email-signatures":
+        return <EmailSignaturesSectionContent renderBackButton={renderBackButton} />;
       case "help":
         return renderHelpSection();
       default:

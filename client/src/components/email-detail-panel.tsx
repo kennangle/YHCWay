@@ -30,6 +30,12 @@ interface EmailSummary {
   sentiment: "positive" | "neutral" | "negative" | "urgent";
 }
 
+interface EmailSignature {
+  id: number;
+  htmlContent: string;
+  isDefault: boolean;
+}
+
 interface EmailDetailPanelProps {
   messageId: string;
   onClose: () => void;
@@ -51,15 +57,34 @@ const sentimentColors: Record<string, { bg: string; text: string; icon: React.Re
 export function EmailDetailPanel({ messageId, onClose }: EmailDetailPanelProps) {
   const [isReplying, setIsReplying] = useState(false);
   const [replyBody, setReplyBody] = useState("");
+  const [replySignatureAppended, setReplySignatureAppended] = useState(false);
   const [isForwarding, setIsForwarding] = useState(false);
   const [forwardTo, setForwardTo] = useState("");
   const [forwardBody, setForwardBody] = useState("");
+  const [forwardSignatureAppended, setForwardSignatureAppended] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
   const [summaryCopied, setSummaryCopied] = useState(false);
   const queryClient = useQueryClient();
   const replyPanelRef = useRef<HTMLDivElement>(null);
   const forwardPanelRef = useRef<HTMLDivElement>(null);
   
+  const { data: defaultSignature } = useQuery<EmailSignature | null>({
+    queryKey: ["/api/email-signatures/default"],
+    queryFn: async () => {
+      const res = await fetch("/api/email-signatures/default", { credentials: "include" });
+      if (!res.ok) return null;
+      return res.json();
+    },
+  });
+
+  useEffect(() => {
+    if (isReplying && defaultSignature && !replySignatureAppended && !replyBody) {
+      const signatureHtml = `<p><br></p><p>--</p>${defaultSignature.htmlContent}`;
+      setReplyBody(signatureHtml);
+      setReplySignatureAppended(true);
+    }
+  }, [isReplying, defaultSignature, replySignatureAppended, replyBody]);
+
   useEffect(() => {
     if (isReplying && replyPanelRef.current) {
       setTimeout(() => {
@@ -128,6 +153,7 @@ export function EmailDetailPanel({ messageId, onClose }: EmailDetailPanelProps) 
     onSuccess: () => {
       setIsReplying(false);
       setReplyBody("");
+      setReplySignatureAppended(false);
       queryClient.invalidateQueries({ queryKey: ["gmail-messages"] });
       toast.success("Reply sent successfully!");
     },
@@ -606,6 +632,8 @@ export function EmailDetailPanel({ messageId, onClose }: EmailDetailPanelProps) 
                     e.preventDefault();
                     e.stopPropagation();
                     setIsReplying(false);
+                    setReplyBody("");
+                    setReplySignatureAppended(false);
                   }}
                   className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                   data-testid="button-cancel-reply"

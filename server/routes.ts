@@ -3837,6 +3837,139 @@ export async function registerRoutes(
   });
 
   // =============================================================================
+  // EMAIL SIGNATURE ROUTES
+  // =============================================================================
+
+  // Get all signatures for current user
+  app.get("/api/email-signatures", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const signatures = await storage.getUserEmailSignatures(userId);
+      res.json(signatures);
+    } catch (error) {
+      console.error("Error fetching email signatures:", error);
+      res.status(500).json({ error: "Failed to fetch email signatures" });
+    }
+  });
+
+  // Get default signature for current user
+  app.get("/api/email-signatures/default", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const signature = await storage.getDefaultEmailSignature(userId);
+      res.json(signature || null);
+    } catch (error) {
+      console.error("Error fetching default signature:", error);
+      res.status(500).json({ error: "Failed to fetch default signature" });
+    }
+  });
+
+  // Get a specific signature
+  app.get("/api/email-signatures/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const signatureId = parseInt(req.params.id);
+      const signature = await storage.getEmailSignature(signatureId);
+      
+      if (!signature || signature.userId !== userId) {
+        return res.status(404).json({ error: "Signature not found" });
+      }
+      
+      res.json(signature);
+    } catch (error) {
+      console.error("Error fetching signature:", error);
+      res.status(500).json({ error: "Failed to fetch signature" });
+    }
+  });
+
+  // Create a new signature
+  app.post("/api/email-signatures", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const { name, htmlContent, isDefault } = req.body;
+      
+      if (!name || !htmlContent) {
+        return res.status(400).json({ error: "Name and content are required" });
+      }
+      
+      const signature = await storage.createEmailSignature({
+        userId,
+        name,
+        htmlContent,
+        isDefault: isDefault || false,
+      });
+      
+      res.json(signature);
+    } catch (error) {
+      console.error("Error creating signature:", error);
+      res.status(500).json({ error: "Failed to create signature" });
+    }
+  });
+
+  // Update a signature
+  app.patch("/api/email-signatures/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const signatureId = parseInt(req.params.id);
+      const { name, htmlContent, isDefault } = req.body;
+      
+      const existing = await storage.getEmailSignature(signatureId);
+      if (!existing || existing.userId !== userId) {
+        return res.status(404).json({ error: "Signature not found" });
+      }
+      
+      const updates: Record<string, any> = {};
+      if (name !== undefined) updates.name = name;
+      if (htmlContent !== undefined) updates.htmlContent = htmlContent;
+      if (isDefault !== undefined) updates.isDefault = isDefault;
+      
+      const signature = await storage.updateEmailSignature(signatureId, updates);
+      res.json(signature);
+    } catch (error) {
+      console.error("Error updating signature:", error);
+      res.status(500).json({ error: "Failed to update signature" });
+    }
+  });
+
+  // Delete a signature
+  app.delete("/api/email-signatures/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const signatureId = parseInt(req.params.id);
+      
+      const existing = await storage.getEmailSignature(signatureId);
+      if (!existing || existing.userId !== userId) {
+        return res.status(404).json({ error: "Signature not found" });
+      }
+      
+      await storage.deleteEmailSignature(signatureId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting signature:", error);
+      res.status(500).json({ error: "Failed to delete signature" });
+    }
+  });
+
+  // Set a signature as default
+  app.post("/api/email-signatures/:id/set-default", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const signatureId = parseInt(req.params.id);
+      
+      const existing = await storage.getEmailSignature(signatureId);
+      if (!existing || existing.userId !== userId) {
+        return res.status(404).json({ error: "Signature not found" });
+      }
+      
+      await storage.setDefaultEmailSignature(userId, signatureId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error setting default signature:", error);
+      res.status(500).json({ error: "Failed to set default signature" });
+    }
+  });
+
+  // =============================================================================
   // PROJECT MANAGEMENT ROUTES
   // =============================================================================
 

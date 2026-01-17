@@ -11,6 +11,12 @@ interface User {
   profileImageUrl?: string;
 }
 
+interface EmailSignature {
+  id: number;
+  htmlContent: string;
+  isDefault: boolean;
+}
+
 interface ComposeEmailModalProps {
   onClose: () => void;
 }
@@ -19,6 +25,7 @@ export function ComposeEmailModal({ onClose }: ComposeEmailModalProps) {
   const [to, setTo] = useState("");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
+  const [signatureAppended, setSignatureAppended] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -28,6 +35,23 @@ export function ComposeEmailModal({ onClose }: ComposeEmailModalProps) {
   const { data: users = [] } = useQuery<User[]>({
     queryKey: ["/api/users"],
   });
+
+  const { data: defaultSignature } = useQuery<EmailSignature | null>({
+    queryKey: ["/api/email-signatures/default"],
+    queryFn: async () => {
+      const res = await fetch("/api/email-signatures/default", { credentials: "include" });
+      if (!res.ok) return null;
+      return res.json();
+    },
+  });
+
+  useEffect(() => {
+    if (defaultSignature && !signatureAppended && !body) {
+      const signatureHtml = `<p><br></p><p>--</p>${defaultSignature.htmlContent}`;
+      setBody(signatureHtml);
+      setSignatureAppended(true);
+    }
+  }, [defaultSignature, signatureAppended, body]);
 
   const filteredUsers = users.filter(user => {
     if (!to.trim()) return true; // Show all users when empty
