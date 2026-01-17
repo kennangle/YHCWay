@@ -494,6 +494,30 @@ export const insertEmailLayoutSchema = createInsertSchema(emailLayouts).omit({
 
 export type InsertEmailLayoutInput = z.infer<typeof insertEmailLayoutSchema>;
 
+// Email signatures table for user email signatures
+export const emailSignatures = pgTable("email_signatures", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  name: varchar("name").notNull(),
+  htmlContent: text("html_content").notNull(),
+  isDefault: boolean("is_default").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_email_signatures_user").on(table.userId),
+]);
+
+export type EmailSignature = typeof emailSignatures.$inferSelect;
+export type InsertEmailSignature = typeof emailSignatures.$inferInsert;
+
+export const insertEmailSignatureSchema = createInsertSchema(emailSignatures).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertEmailSignatureInput = z.infer<typeof insertEmailSignatureSchema>;
+
 // User preferences table for settings
 export const userPreferences = pgTable("user_preferences", {
   id: serial("id").primaryKey(),

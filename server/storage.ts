@@ -18,6 +18,8 @@ import {
   type ConversationParticipant,
   type Message,
   type EmailTemplate,
+  type EmailSignature,
+  type InsertEmailSignature,
   type UserPreference,
   type SlackUserCredential,
   type InsertSlackUserCredential,
@@ -81,6 +83,7 @@ import {
   conversationParticipants,
   messages,
   emailTemplates,
+  emailSignatures,
   userPreferences,
   slackUserCredentials,
   asanaUserCredentials,
@@ -218,6 +221,15 @@ export interface IStorage {
   getEmailTemplate(templateType: string): Promise<EmailTemplate | undefined>;
   getAllEmailTemplates(): Promise<EmailTemplate[]>;
   upsertEmailTemplate(templateType: string, subject: string, htmlContent: string): Promise<EmailTemplate>;
+  
+  // Email signatures
+  getUserEmailSignatures(userId: string): Promise<EmailSignature[]>;
+  getEmailSignature(id: number): Promise<EmailSignature | undefined>;
+  getDefaultEmailSignature(userId: string): Promise<EmailSignature | undefined>;
+  createEmailSignature(data: InsertEmailSignature): Promise<EmailSignature>;
+  updateEmailSignature(id: number, data: Partial<InsertEmailSignature>): Promise<EmailSignature | undefined>;
+  deleteEmailSignature(id: number): Promise<void>;
+  setDefaultEmailSignature(userId: string, signatureId: number): Promise<void>;
   
   // User preferences
   getUserPreferences(userId: string): Promise<UserPreference | undefined>;
@@ -1148,6 +1160,77 @@ export class DbStorage implements IStorage {
       })
       .returning();
     return template;
+  }
+
+  // Email signatures
+  async getUserEmailSignatures(userId: string): Promise<EmailSignature[]> {
+    return await db.select()
+      .from(emailSignatures)
+      .where(eq(emailSignatures.userId, userId))
+      .orderBy(desc(emailSignatures.isDefault), desc(emailSignatures.createdAt));
+  }
+
+  async getEmailSignature(id: number): Promise<EmailSignature | undefined> {
+    const [signature] = await db.select()
+      .from(emailSignatures)
+      .where(eq(emailSignatures.id, id));
+    return signature;
+  }
+
+  async getDefaultEmailSignature(userId: string): Promise<EmailSignature | undefined> {
+    const [signature] = await db.select()
+      .from(emailSignatures)
+      .where(and(eq(emailSignatures.userId, userId), eq(emailSignatures.isDefault, true)));
+    return signature;
+  }
+
+  async createEmailSignature(data: InsertEmailSignature): Promise<EmailSignature> {
+    // If this is the first signature or marked as default, ensure it's the only default
+    if (data.isDefault) {
+      await db.update(emailSignatures)
+        .set({ isDefault: false })
+        .where(eq(emailSignatures.userId, data.userId));
+    }
+    
+    const [signature] = await db.insert(emailSignatures)
+      .values(data)
+      .returning();
+    return signature;
+  }
+
+  async updateEmailSignature(id: number, data: Partial<InsertEmailSignature>): Promise<EmailSignature | undefined> {
+    const existing = await this.getEmailSignature(id);
+    if (!existing) return undefined;
+
+    // If setting as default, unset other defaults for this user
+    if (data.isDefault) {
+      await db.update(emailSignatures)
+        .set({ isDefault: false })
+        .where(eq(emailSignatures.userId, existing.userId));
+    }
+
+    const [updated] = await db.update(emailSignatures)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(emailSignatures.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteEmailSignature(id: number): Promise<void> {
+    await db.delete(emailSignatures)
+      .where(eq(emailSignatures.id, id));
+  }
+
+  async setDefaultEmailSignature(userId: string, signatureId: number): Promise<void> {
+    // Unset all defaults for this user
+    await db.update(emailSignatures)
+      .set({ isDefault: false })
+      .where(eq(emailSignatures.userId, userId));
+    
+    // Set the new default
+    await db.update(emailSignatures)
+      .set({ isDefault: true })
+      .where(and(eq(emailSignatures.id, signatureId), eq(emailSignatures.userId, userId)));
   }
 
   // User preferences
