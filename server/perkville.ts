@@ -46,8 +46,23 @@ export async function authenticateWithPerkville(username: string, password: stri
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error("[Perkville] Authentication failed:", errorText);
-    throw new Error("Invalid Perkville credentials");
+    console.error("[Perkville] Authentication failed - Status:", response.status);
+    console.error("[Perkville] Response:", errorText);
+    
+    let errorMessage = "Invalid Perkville credentials";
+    try {
+      const errorJson = JSON.parse(errorText);
+      if (errorJson.error_description) {
+        errorMessage = errorJson.error_description;
+      } else if (errorJson.error) {
+        errorMessage = `Perkville error: ${errorJson.error}`;
+      } else if (errorJson.detail) {
+        errorMessage = errorJson.detail;
+      }
+    } catch {
+      // Not JSON, use default message
+    }
+    throw new Error(errorMessage);
   }
 
   const tokenData = await response.json();
