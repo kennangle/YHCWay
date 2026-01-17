@@ -2650,6 +2650,24 @@ export async function registerRoutes(
     }
   });
 
+  // Diagnostic endpoint to check Perkville configuration in production
+  app.get("/api/perkville/debug-config", isAuthenticated, async (req: any, res) => {
+    // Only allow admin users
+    const user = req.user;
+    if (!user?.isAdmin) {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+    
+    const clientIdExists = !!process.env.PERKVILLE_CLIENT_ID;
+    const clientSecretExists = !!process.env.PERKVILLE_CLIENT_SECRET;
+    
+    res.json({
+      environment: process.env.NODE_ENV || "unknown",
+      configured: clientIdExists && clientSecretExists,
+      credentialsPresent: { clientId: clientIdExists, clientSecret: clientSecretExists },
+    });
+  });
+
   app.get("/api/perkville/me", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims?.sub || req.user.id;
