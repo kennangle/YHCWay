@@ -138,7 +138,7 @@ export interface IStorage {
   updateUserPassword(id: string, passwordHash: string): Promise<User | undefined>;
   updateUserApprovalStatus(id: string, status: string, approvedBy?: string): Promise<User | undefined>;
   updateUserProfile(id: string, firstName: string, lastName: string): Promise<User | undefined>;
-  updateUserYHCTimeLink(id: string, employeeId: number | null, employeeName: string | null): Promise<User | undefined>;
+  updateUserYHCTimeLink(id: string, employeeId: string | null, employeeName: string | null): Promise<User | undefined>;
   markTourCompleted(id: string): Promise<User | undefined>;
   recordUserLogin(id: string): Promise<User | undefined>;
   getActiveSessions(): Promise<string[]>;
@@ -553,7 +553,7 @@ export class DbStorage implements IStorage {
     return user;
   }
 
-  async updateUserYHCTimeLink(id: string, employeeId: number | null, employeeName: string | null): Promise<User | undefined> {
+  async updateUserYHCTimeLink(id: string, employeeId: string | null, employeeName: string | null): Promise<User | undefined> {
     const [user] = await db
       .update(users)
       .set({ 
