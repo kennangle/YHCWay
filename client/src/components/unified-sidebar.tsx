@@ -155,11 +155,20 @@ export function UnifiedSidebar() {
       defaultCollapsed: true,
       items: [
         { icon: Building2, label: "HR & Payroll", href: "/gusto", tourId: "nav-gusto", adminOnly: true },
-        { icon: Dumbbell, label: "NetGym", href: "https://netgym.com", tourId: "nav-netgym", isExternal: true },
         { icon: PlusCircle, label: "Connect App", href: "/connect", tourId: "nav-connect" },
         { icon: Settings, label: "Settings", href: "/settings", tourId: "nav-settings" },
         { icon: Shield, label: "Admin", href: "/admin", tourId: "nav-admin", adminOnly: true },
         ...(import.meta.env.DEV ? [{ icon: History, label: "Development Log", href: "/changelog", tourId: "nav-changelog", kenOnly: true }] : []),
+      ],
+    },
+    {
+      id: 'external',
+      label: 'External Sites',
+      icon: ExternalLink,
+      defaultCollapsed: true,
+      items: [
+        { icon: Dumbbell, label: "NetGym", href: "https://netgym.com", tourId: "nav-netgym", isExternal: true },
+        { icon: BarChart3, label: "Mindbody Analytics", href: "https://mindbodyanalytics.com", tourId: "nav-mindbody-analytics", isExternal: true },
       ],
     },
   ];
