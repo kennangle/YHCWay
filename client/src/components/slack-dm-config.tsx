@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Settings, Check, Loader2, MessageCircle, Users } from "lucide-react";
+import { Check, Loader2, MessageCircle, Users } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -79,7 +79,7 @@ export function SlackDmConfig() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["slack-dm-preferences"] });
-      queryClient.invalidateQueries({ queryKey: ["slack-dms"] });
+      queryClient.invalidateQueries({ queryKey: ["slack-messages"] });
       setOpen(false);
     },
   });

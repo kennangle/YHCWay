@@ -2129,12 +2129,12 @@ export async function registerRoutes(
       const userId = req.user.claims?.sub || req.user.id;
       const userConnected = await isUserSlackConnected(userId);
       
-      let conversations;
-      if (userConnected) {
-        conversations = await getUserDmConversations(userId);
-      } else {
-        conversations = await getDmConversations();
+      if (!userConnected) {
+        res.json([]);
+        return;
       }
+      
+      const conversations = await getUserDmConversations(userId);
       res.json(conversations);
     } catch (error: any) {
       console.error("Error fetching DM conversations:", error?.message || error);
