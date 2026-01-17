@@ -125,14 +125,14 @@ export function SlackChannelConfig() {
           Configure Channels
         </Button>
       </DialogTrigger>
-      <DialogContent className="glass max-w-md">
+      <DialogContent className="bg-white max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-white">Choose Slack Channels</DialogTitle>
+          <DialogTitle className="text-gray-900">Choose Slack Channels</DialogTitle>
         </DialogHeader>
         
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-6 h-6 animate-spin text-purple-400" />
+            <Loader2 className="w-6 h-6 animate-spin text-purple-600" />
           </div>
         ) : (
           <>
@@ -160,17 +160,17 @@ export function SlackChannelConfig() {
             <ScrollArea className="h-[300px] pr-4">
               {memberChannels.length > 0 && (
                 <div className="mb-4">
-                  <h4 className="text-sm font-medium text-white/70 mb-2">Your Channels</h4>
+                  <h4 className="text-sm font-medium text-gray-600 mb-2">Your Channels</h4>
                   <div className="space-y-2">
                     {memberChannels.map(channel => (
                       <div 
                         key={channel.id} 
-                        className="flex items-center justify-between p-2 rounded-lg bg-white/5 hover:bg-white/10"
+                        className="flex items-center justify-between p-2 rounded-lg bg-gray-50 hover:bg-gray-100"
                         data-testid={`channel-row-${channel.id}`}
                       >
                         <div className="flex items-center gap-2">
-                          <Hash className="w-4 h-4 text-purple-400" />
-                          <Label htmlFor={channel.id} className="text-white cursor-pointer">
+                          <Hash className="w-4 h-4 text-purple-600" />
+                          <Label htmlFor={channel.id} className="text-gray-900 cursor-pointer">
                             {channel.name}
                           </Label>
                         </div>
@@ -188,17 +188,17 @@ export function SlackChannelConfig() {
 
               {otherChannels.length > 0 && (
                 <div>
-                  <h4 className="text-sm font-medium text-white/40 mb-2">Other Channels</h4>
+                  <h4 className="text-sm font-medium text-gray-500 mb-2">Other Channels</h4>
                   <div className="space-y-2">
                     {otherChannels.map(channel => (
                       <div 
                         key={channel.id} 
-                        className="flex items-center justify-between p-2 rounded-lg bg-white/5 hover:bg-white/10 opacity-60"
+                        className="flex items-center justify-between p-2 rounded-lg bg-gray-50 hover:bg-gray-100"
                         data-testid={`channel-row-${channel.id}`}
                       >
                         <div className="flex items-center gap-2">
-                          <Hash className="w-4 h-4 text-white/40" />
-                          <Label htmlFor={channel.id} className="text-white/60 cursor-pointer">
+                          <Hash className="w-4 h-4 text-gray-400" />
+                          <Label htmlFor={channel.id} className="text-gray-600 cursor-pointer">
                             {channel.name}
                           </Label>
                         </div>
@@ -215,7 +215,7 @@ export function SlackChannelConfig() {
               )}
 
               {channels.length === 0 && (
-                <p className="text-white/50 text-center py-4">
+                <p className="text-gray-500 text-center py-4">
                   No channels found. Make sure the bot is invited to channels.
                 </p>
               )}
