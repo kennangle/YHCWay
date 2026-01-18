@@ -194,24 +194,47 @@ async function loadNotifications() {
       });
     }
     
+    container.textContent = '';
+    
     if (items.length === 0) {
-      container.innerHTML = '<div class="empty-state">No recent activity</div>';
+      const emptyState = document.createElement('div');
+      emptyState.className = 'empty-state';
+      emptyState.textContent = 'No recent activity';
+      container.appendChild(emptyState);
       return;
     }
     
-    container.innerHTML = items.map(item => `
-      <div class="list-item">
-        <div class="list-item-icon ${item.type}">
-          ${item.type === 'task' ? '✓' : '📅'}
-        </div>
-        <div class="list-item-content">
-          <div class="list-item-title">${escapeHtml(item.title)}</div>
-          <div class="list-item-subtitle">${escapeHtml(item.subtitle)}</div>
-        </div>
-      </div>
-    `).join('');
+    items.forEach(item => {
+      const listItem = document.createElement('div');
+      listItem.className = 'list-item';
+      
+      const icon = document.createElement('div');
+      icon.className = `list-item-icon ${item.type}`;
+      icon.textContent = item.type === 'task' ? '✓' : '📅';
+      
+      const content = document.createElement('div');
+      content.className = 'list-item-content';
+      
+      const title = document.createElement('div');
+      title.className = 'list-item-title';
+      title.textContent = item.title;
+      
+      const subtitle = document.createElement('div');
+      subtitle.className = 'list-item-subtitle';
+      subtitle.textContent = item.subtitle;
+      
+      content.appendChild(title);
+      content.appendChild(subtitle);
+      listItem.appendChild(icon);
+      listItem.appendChild(content);
+      container.appendChild(listItem);
+    });
   } catch (error) {
-    container.innerHTML = '<div class="empty-state">Unable to load notifications</div>';
+    container.textContent = '';
+    const emptyState = document.createElement('div');
+    emptyState.className = 'empty-state';
+    emptyState.textContent = 'Unable to load notifications';
+    container.appendChild(emptyState);
   }
 }
 
