@@ -39,27 +39,61 @@ function showCaptureModal(type, initialText = '') {
   
   const modal = document.createElement('div');
   modal.id = 'yhc-capture-modal';
-  modal.innerHTML = `
-    <div class="yhc-modal-overlay">
-      <div class="yhc-modal-content">
-        <div class="yhc-modal-header">
-          <img src="${chrome.runtime.getURL('icons/icon32.png')}" class="yhc-modal-logo">
-          <span class="yhc-modal-title">${type === 'task' ? 'Quick Task' : type === 'ai' ? 'Ask AI' : 'Capture'}</span>
-          <button class="yhc-modal-close">&times;</button>
-        </div>
-        <textarea class="yhc-modal-input" placeholder="${type === 'task' ? 'What needs to be done?' : 'Ask a question...'}">${initialText}</textarea>
-        <div class="yhc-modal-actions">
-          <button class="yhc-btn yhc-btn-secondary yhc-modal-cancel">Cancel</button>
-          <button class="yhc-btn yhc-btn-primary yhc-modal-submit">${type === 'task' ? 'Add Task' : 'Submit'}</button>
-        </div>
-      </div>
-    </div>
-  `;
+  
+  const overlay = document.createElement('div');
+  overlay.className = 'yhc-modal-overlay';
+  
+  const content = document.createElement('div');
+  content.className = 'yhc-modal-content';
+  
+  const header = document.createElement('div');
+  header.className = 'yhc-modal-header';
+  
+  const logo = document.createElement('img');
+  logo.src = chrome.runtime.getURL('icons/icon32.png');
+  logo.className = 'yhc-modal-logo';
+  
+  const title = document.createElement('span');
+  title.className = 'yhc-modal-title';
+  title.textContent = type === 'task' ? 'Quick Task' : type === 'ai' ? 'Ask AI' : 'Capture';
+  
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'yhc-modal-close';
+  closeBtn.textContent = '×';
+  
+  header.appendChild(logo);
+  header.appendChild(title);
+  header.appendChild(closeBtn);
+  
+  const input = document.createElement('textarea');
+  input.className = 'yhc-modal-input';
+  input.placeholder = type === 'task' ? 'What needs to be done?' : 'Ask a question...';
+  input.value = initialText;
+  
+  const actions = document.createElement('div');
+  actions.className = 'yhc-modal-actions';
+  
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'yhc-btn yhc-btn-secondary yhc-modal-cancel';
+  cancelBtn.textContent = 'Cancel';
+  
+  const submitBtn = document.createElement('button');
+  submitBtn.className = 'yhc-btn yhc-btn-primary yhc-modal-submit';
+  submitBtn.textContent = type === 'task' ? 'Add Task' : 'Submit';
+  
+  actions.appendChild(cancelBtn);
+  actions.appendChild(submitBtn);
+  
+  content.appendChild(header);
+  content.appendChild(input);
+  content.appendChild(actions);
+  
+  overlay.appendChild(content);
+  modal.appendChild(overlay);
   
   document.body.appendChild(modal);
   captureModal = modal;
   
-  const input = modal.querySelector('.yhc-modal-input');
   input.focus();
   input.setSelectionRange(input.value.length, input.value.length);
   
