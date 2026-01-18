@@ -10,6 +10,11 @@ export function serveStatic(app: Express) {
     );
   }
 
+  // Serve Google verification file with correct content type
+  app.get("/google13acfb3a8a3b0b48.html", (_req, res) => {
+    res.type("text/html").send("google-site-verification: google13acfb3a8a3b0b48.html");
+  });
+
   app.use(express.static(distPath));
 
   // fall through to index.html if the file doesn't exist
