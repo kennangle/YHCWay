@@ -62,6 +62,13 @@ export default function Landing() {
             </div>
           ))}
         </div>
+
+        <footer className="mt-16 pb-8 text-center text-sm text-muted-foreground">
+          <p>© {new Date().getFullYear()} Yoga Health Center. All rights reserved.</p>
+          <Link href="/privacy" className="hover:text-primary transition-colors underline">
+            Privacy Policy
+          </Link>
+        </footer>
       </div>
     </div>
   );
