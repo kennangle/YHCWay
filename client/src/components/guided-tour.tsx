@@ -3,6 +3,7 @@ import { driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
 import { useAuth } from '@/hooks/useAuth';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useLocation } from 'wouter';
 
 interface GuidedTourProps {
   onComplete?: () => void;
@@ -159,9 +160,13 @@ export function useGuidedTour() {
 export function GuidedTour({ onComplete, autoStart = false }: GuidedTourProps) {
   const { user } = useAuth();
   const { startTour } = useGuidedTour();
+  const [location] = useLocation();
 
   useEffect(() => {
     if (!autoStart || !user) return;
+    
+    // Don't show tour on pending-approval or other non-app pages
+    if (location === '/pending-approval') return;
     
     // Only show tour if hasCompletedTour is explicitly false (not undefined/null)
     // This ensures existing users who don't have this field yet don't see the tour
@@ -171,7 +176,7 @@ export function GuidedTour({ onComplete, autoStart = false }: GuidedTourProps) {
       }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [autoStart, startTour, user]);
+  }, [autoStart, startTour, user, location]);
 
   return null;
 }
