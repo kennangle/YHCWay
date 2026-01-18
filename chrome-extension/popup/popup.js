@@ -206,7 +206,7 @@ async function loadNotifications() {
         </div>
         <div class="list-item-content">
           <div class="list-item-title">${escapeHtml(item.title)}</div>
-          <div class="list-item-subtitle">${item.subtitle}</div>
+          <div class="list-item-subtitle">${escapeHtml(item.subtitle)}</div>
         </div>
       </div>
     `).join('');
@@ -230,7 +230,7 @@ async function loadTasks() {
         <div class="task-checkbox ${task.completed ? 'checked' : ''}"></div>
         <div class="list-item-content">
           <div class="list-item-title task-title ${task.completed ? 'completed' : ''}">${escapeHtml(task.title || task.name)}</div>
-          <div class="list-item-subtitle">${task.dueDate ? `Due ${formatDate(task.dueDate)}` : 'No due date'}</div>
+          <div class="list-item-subtitle">${escapeHtml(task.dueDate ? `Due ${formatDate(task.dueDate)}` : 'No due date')}</div>
         </div>
       </div>
     `).join('');
@@ -259,7 +259,7 @@ async function loadEvents() {
         <div class="list-item-icon event">📅</div>
         <div class="list-item-content">
           <div class="list-item-title">${escapeHtml(event.summary || event.title)}</div>
-          <div class="list-item-subtitle">${formatEventTime(event)}</div>
+          <div class="list-item-subtitle">${escapeHtml(formatEventTime(event))}</div>
         </div>
       </div>
     `).join('');
@@ -282,7 +282,7 @@ async function loadTimeSessions() {
       <div class="list-item">
         <div class="list-item-content">
           <div class="list-item-title">${escapeHtml(session.description || 'Time entry')}</div>
-          <div class="list-item-subtitle">${formatDuration(session.duration)} - ${formatDate(session.date)}</div>
+          <div class="list-item-subtitle">${escapeHtml(`${formatDuration(session.duration)} - ${formatDate(session.date)}`)}</div>
         </div>
       </div>
     `).join('');
