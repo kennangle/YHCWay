@@ -20,5 +20,6 @@
 - **Privacy Policy**: Stored in `site_settings` table with key 'privacy_policy', editable via /privacy page (admin only)
 - **Site Settings Pattern**: Generic key-value table with upsert operations, public GET, admin-only PUT
 
-### Pending/In Progress
-- Google OAuth verification for yhcway.com domain ownership (DNS verification needed)
+### Completed
+- Google Search Console domain verification for yhcway.com (HTML file method)
+- Fixed server to serve verification file correctly instead of React app HTML
