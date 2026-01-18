@@ -226,14 +226,19 @@ async function loadTasks() {
     }
     
     container.innerHTML = tasks.map(task => `
-      <div class="list-item" data-task-id="${task.id}">
-        <div class="task-checkbox ${task.completed ? 'checked' : ''}" onclick="toggleTask('${task.id}')"></div>
+      <div class="list-item" data-task-id="${escapeHtml(task.id)}">
+        <div class="task-checkbox ${task.completed ? 'checked' : ''}"></div>
         <div class="list-item-content">
           <div class="list-item-title task-title ${task.completed ? 'completed' : ''}">${escapeHtml(task.title || task.name)}</div>
           <div class="list-item-subtitle">${task.dueDate ? `Due ${formatDate(task.dueDate)}` : 'No due date'}</div>
         </div>
       </div>
     `).join('');
+    
+    // Use event delegation for task checkboxes
+    container.querySelectorAll('.task-checkbox').forEach((checkbox, index) => {
+      checkbox.addEventListener('click', () => toggleTask(tasks[index].id));
+    });
   } catch (error) {
     container.innerHTML = '<div class="empty-state">Unable to load tasks</div>';
   }
