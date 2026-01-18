@@ -278,14 +278,27 @@ async function loadTimeSessions() {
       return;
     }
     
-    container.innerHTML = sessions.slice(0, 5).map(session => `
-      <div class="list-item">
-        <div class="list-item-content">
-          <div class="list-item-title">${escapeHtml(session.description || 'Time entry')}</div>
-          <div class="list-item-subtitle">${escapeHtml(`${formatDuration(session.duration)} - ${formatDate(session.date)}`)}</div>
-        </div>
-      </div>
-    `).join('');
+    container.textContent = '';
+    sessions.slice(0, 5).forEach(session => {
+      const listItem = document.createElement('div');
+      listItem.className = 'list-item';
+      
+      const content = document.createElement('div');
+      content.className = 'list-item-content';
+      
+      const title = document.createElement('div');
+      title.className = 'list-item-title';
+      title.textContent = session.description || 'Time entry';
+      
+      const subtitle = document.createElement('div');
+      subtitle.className = 'list-item-subtitle';
+      subtitle.textContent = `${formatDuration(session.duration)} - ${formatDate(session.date)}`;
+      
+      content.appendChild(title);
+      content.appendChild(subtitle);
+      listItem.appendChild(content);
+      container.appendChild(listItem);
+    });
   } catch (error) {
     container.innerHTML = '<div class="empty-state">Unable to load time entries</div>';
   }
