@@ -83,6 +83,13 @@ function getAccountColor(accountId: number | undefined): { bg: string; text: str
   return ACCOUNT_COLORS[accountId % ACCOUNT_COLORS.length];
 }
 
+interface GmailAccount {
+  id: number;
+  email: string;
+  label: string | null;
+  isPrimary: boolean | null;
+}
+
 export default function Inbox() {
   const [filter, setFilter] = useState<FilterType>('all');
   const [searchQuery, setSearchQuery] = useState("");
@@ -90,8 +97,18 @@ export default function Inbox() {
   const [isComposing, setIsComposing] = useState(false);
   const [sharingMessage, setSharingMessage] = useState<UnifiedMessage | null>(null);
   const [shareNote, setShareNote] = useState("");
+  const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
   const queryClient = useQueryClient();
   const mainContentClass = useMainContentClass();
+
+  const { data: gmailAccounts = [] } = useQuery<GmailAccount[]>({
+    queryKey: ["/api/gmail/accounts"],
+    queryFn: async () => {
+      const res = await fetch("/api/gmail/accounts", { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
 
   const shareItemMutation = useMutation({
     mutationFn: async (data: { itemType: "email" | "slack"; itemId: string; title: string; preview: string; note?: string }) => {
@@ -265,6 +282,11 @@ export default function Inbox() {
       if (filter === 'dms' && msg.type !== 'slack-dm') return false;
     }
     
+    // Filter by selected account
+    if (selectedAccountId !== null && msg.type === 'gmail' && msg.accountId !== selectedAccountId) {
+      return false;
+    }
+    
     // Then filter by search query
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
@@ -389,6 +411,35 @@ export default function Inbox() {
           >
             <Trash2 className="w-4 h-4 inline mr-2" />Trash
           </button>
+          
+          {gmailAccounts.length > 1 && (
+            <>
+              <div className="w-px h-6 bg-gray-300 mx-2" />
+              <button
+                className={`px-3 py-2 rounded-full font-medium transition-colors ${selectedAccountId === null ? 'bg-gray-200 text-gray-700 shadow-sm' : 'text-muted-foreground hover:bg-white/50'}`}
+                onClick={() => setSelectedAccountId(null)}
+                data-testid="button-filter-account-all"
+              >
+                All Accounts
+              </button>
+              {gmailAccounts.map((account) => {
+                const color = getAccountColor(account.id);
+                const isSelected = selectedAccountId === account.id;
+                return (
+                  <button
+                    key={account.id}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-full font-medium transition-colors ${isSelected ? `${color.bg} ${color.text} shadow-sm` : 'text-muted-foreground hover:bg-white/50'}`}
+                    onClick={() => setSelectedAccountId(account.id)}
+                    data-testid={`button-filter-account-${account.id}`}
+                  >
+                    <span className={`w-2 h-2 rounded-full ${isSelected ? '' : color.bg.replace('-100', '-500')}`} style={{ backgroundColor: isSelected ? 'currentColor' : undefined }} />
+                    {account.label || account.email.split('@')[0]}
+                  </button>
+                );
+              })}
+            </>
+          )}
+          
           <div className="ml-auto flex items-center gap-2">
             <SlackDmConfig />
             <SlackChannelConfig />
