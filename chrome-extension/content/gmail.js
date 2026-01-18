@@ -201,31 +201,61 @@ function showSummaryModal(subject, summary) {
   const existing = document.querySelector('.yhc-summary-modal');
   if (existing) existing.remove();
   
+  // Create modal structure using safe DOM methods
   const modal = document.createElement('div');
   modal.className = 'yhc-summary-modal';
-  modal.innerHTML = `
-    <div class="yhc-summary-overlay">
-      <div class="yhc-summary-content">
-        <div class="yhc-summary-header">
-          <span>Email Summary</span>
-          <button class="yhc-summary-close">&times;</button>
-        </div>
-        <div class="yhc-summary-subject">${escapeHtml(subject)}</div>
-        <div class="yhc-summary-text">${escapeHtml(summary)}</div>
-        <div class="yhc-summary-actions">
-          <button class="yhc-summary-task">Create Task from Summary</button>
-        </div>
-      </div>
-    </div>
-  `;
+  
+  const overlay = document.createElement('div');
+  overlay.className = 'yhc-summary-overlay';
+  
+  const content = document.createElement('div');
+  content.className = 'yhc-summary-content';
+  
+  const header = document.createElement('div');
+  header.className = 'yhc-summary-header';
+  
+  const headerSpan = document.createElement('span');
+  headerSpan.textContent = 'Email Summary';
+  
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'yhc-summary-close';
+  closeBtn.innerHTML = '&times;';
+  
+  header.appendChild(headerSpan);
+  header.appendChild(closeBtn);
+  
+  const subjectDiv = document.createElement('div');
+  subjectDiv.className = 'yhc-summary-subject';
+  subjectDiv.textContent = subject;
+  
+  const summaryDiv = document.createElement('div');
+  summaryDiv.className = 'yhc-summary-text';
+  summaryDiv.textContent = summary;
+  
+  const actionsDiv = document.createElement('div');
+  actionsDiv.className = 'yhc-summary-actions';
+  
+  const taskBtn = document.createElement('button');
+  taskBtn.className = 'yhc-summary-task';
+  taskBtn.textContent = 'Create Task from Summary';
+  
+  actionsDiv.appendChild(taskBtn);
+  
+  content.appendChild(header);
+  content.appendChild(subjectDiv);
+  content.appendChild(summaryDiv);
+  content.appendChild(actionsDiv);
+  
+  overlay.appendChild(content);
+  modal.appendChild(overlay);
   
   document.body.appendChild(modal);
   
-  modal.querySelector('.yhc-summary-close').addEventListener('click', () => modal.remove());
-  modal.querySelector('.yhc-summary-overlay').addEventListener('click', (e) => {
+  closeBtn.addEventListener('click', () => modal.remove());
+  overlay.addEventListener('click', (e) => {
     if (e.target === e.currentTarget) modal.remove();
   });
-  modal.querySelector('.yhc-summary-task').addEventListener('click', async () => {
+  taskBtn.addEventListener('click', async () => {
     await createTaskWithText(`Review: ${subject}`, summary);
     modal.remove();
   });
@@ -263,12 +293,6 @@ function showGmailToast(message, isError = false) {
     toast.classList.remove('yhc-toast-visible');
     setTimeout(() => toast.remove(), 300);
   }, 3000);
-}
-
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text || '';
-  return div.innerHTML;
 }
 
 if (document.readyState === 'loading') {
