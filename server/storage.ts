@@ -71,6 +71,8 @@ import {
   type InsertQrCode,
   type ChangelogEntry,
   type InsertChangelogEntry,
+  type SiteSetting,
+  type InsertSiteSetting,
   users,
   services,
   feedItems,
@@ -117,6 +119,7 @@ import {
   ExtensionToken,
   changelogEntries,
   changelogSyncState,
+  siteSettings,
   taskDependencies,
   type TaskDependency,
   type InsertTaskDependency,
@@ -2879,6 +2882,23 @@ export class DbStorage implements IStorage {
     } catch (error) {
       console.error("[Migration] Error migrating task placements:", error);
     }
+  }
+
+  async getSiteSetting(key: string): Promise<SiteSetting | null> {
+    const [setting] = await db.select().from(siteSettings).where(eq(siteSettings.key, key));
+    return setting || null;
+  }
+
+  async upsertSiteSetting(key: string, value: string): Promise<SiteSetting> {
+    const [setting] = await db
+      .insert(siteSettings)
+      .values({ key, value, updatedAt: new Date() })
+      .onConflictDoUpdate({
+        target: siteSettings.key,
+        set: { value, updatedAt: new Date() },
+      })
+      .returning();
+    return setting;
   }
 }
 

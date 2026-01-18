@@ -415,28 +415,19 @@ export default function Inbox() {
           {gmailAccounts.length > 1 && (
             <>
               <div className="w-px h-6 bg-gray-300 mx-2" />
-              <button
-                className={`px-3 py-2 rounded-full font-medium transition-colors ${selectedAccountId === null ? 'bg-gray-200 text-gray-700 shadow-sm' : 'text-muted-foreground hover:bg-white/50'}`}
-                onClick={() => setSelectedAccountId(null)}
-                data-testid="button-filter-account-all"
+              <select
+                value={selectedAccountId ?? ''}
+                onChange={(e) => setSelectedAccountId(e.target.value === '' ? null : Number(e.target.value))}
+                className="px-3 py-2 rounded-full font-medium bg-white border border-gray-200 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
+                data-testid="select-account-filter"
               >
-                All Accounts
-              </button>
-              {gmailAccounts.map((account) => {
-                const color = getAccountColor(account.id);
-                const isSelected = selectedAccountId === account.id;
-                return (
-                  <button
-                    key={account.id}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-full font-medium transition-colors ${isSelected ? `${color.bg} ${color.text} shadow-sm` : 'text-muted-foreground hover:bg-white/50'}`}
-                    onClick={() => setSelectedAccountId(account.id)}
-                    data-testid={`button-filter-account-${account.id}`}
-                  >
-                    <span className={`w-2 h-2 rounded-full ${isSelected ? '' : color.bg.replace('-100', '-500')}`} style={{ backgroundColor: isSelected ? 'currentColor' : undefined }} />
-                    {account.label || account.email.split('@')[0]}
-                  </button>
-                );
-              })}
+                <option value="">All Accounts</option>
+                {gmailAccounts.map((account) => (
+                  <option key={account.id} value={account.id}>
+                    {account.label || account.email.split('@')[0]} ({account.email})
+                  </option>
+                ))}
+              </select>
             </>
           )}
           

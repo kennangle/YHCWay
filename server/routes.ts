@@ -6883,5 +6883,36 @@ export async function registerRoutes(
     }
   });
 
+  // ============== SITE SETTINGS ROUTES ==============
+  
+  app.get("/api/site-settings/:key", async (req, res) => {
+    try {
+      const { key } = req.params;
+      const setting = await storage.getSiteSetting(key);
+      if (!setting) {
+        return res.status(404).json({ error: "Setting not found" });
+      }
+      res.json(setting);
+    } catch (error) {
+      console.error("Error fetching site setting:", error);
+      res.status(500).json({ error: "Failed to fetch setting" });
+    }
+  });
+
+  app.put("/api/site-settings/:key", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { key } = req.params;
+      const { value } = req.body;
+      if (typeof value !== 'string') {
+        return res.status(400).json({ error: "Value must be a string" });
+      }
+      const setting = await storage.upsertSiteSetting(key, value);
+      res.json(setting);
+    } catch (error) {
+      console.error("Error saving site setting:", error);
+      res.status(500).json({ error: "Failed to save setting" });
+    }
+  });
+
   return httpServer;
 }
