@@ -98,6 +98,7 @@ export function UnifiedSidebar() {
     { icon: Mail, label: "Unified Mailbox", href: "/inbox", tourId: "nav-inbox" },
     { icon: CalendarIcon, label: "Calendar", href: "/calendar", tourId: "nav-calendar" },
     { icon: Gift, label: "Intro Offers", href: "/intro-offers", tourId: "nav-intro-offers" },
+    { icon: Zap, label: "AI Summarize", href: "/ai-summarize", tourId: "nav-ai-summarize" },
     { icon: Rocket, label: "Setup Guide", href: "/setup-guide", tourId: "nav-setup-guide" },
     { icon: Presentation, label: "Presentation", href: "/presentation", tourId: "nav-presentation", adminOnly: true },
   ];
@@ -116,7 +117,6 @@ export function UnifiedSidebar() {
         { icon: HardDrive, label: "Google Drive", href: "/google-drive", tourId: "nav-google-drive" },
         { icon: FileSpreadsheet, label: "Google Sheets", href: "/google-sheets", tourId: "nav-google-sheets" },
         { icon: File, label: "Google Docs", href: "/google-docs", tourId: "nav-google-docs" },
-        { icon: Zap, label: "AI Summarize", href: "/ai-summarize", tourId: "nav-ai-summarize" },
       ],
     },
     {
