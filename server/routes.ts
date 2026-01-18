@@ -1,5 +1,9 @@
 import type { Express, RequestHandler } from "express";
+import express from "express";
 import { createServer, type Server } from "http";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
 import { storage } from "./storage";
 import { insertServiceSchema, insertFeedItemSchema, ADMIN_EMAIL, adminCreateUserSchema, integrationApiKeySchema, sendMessageSchema, createConversationSchema, createTenantSchema, inviteUserSchema, createProjectSchema, createTaskSchema, updateTaskSchema, createSubtaskSchema, createCommentSchema, addCollaboratorSchema, type User } from "@shared/schema";
 import { setupAuth, isAuthenticated } from "./auth";
@@ -54,6 +58,62 @@ export async function registerRoutes(
   await setupAuth(app);
   
   app.use(tenantMiddleware);
+
+  // Configure multer for chat file uploads
+  const chatUploadsDir = path.join(process.cwd(), "uploads", "chat");
+  if (!fs.existsSync(chatUploadsDir)) {
+    fs.mkdirSync(chatUploadsDir, { recursive: true });
+  }
+
+  const chatUploadStorage = multer.diskStorage({
+    destination: (_req, _file, cb) => {
+      cb(null, chatUploadsDir);
+    },
+    filename: (_req, file, cb) => {
+      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+      const ext = path.extname(file.originalname);
+      cb(null, `${uniqueSuffix}${ext}`);
+    },
+  });
+
+  const allowedMimeTypes = [
+    "image/jpeg", "image/png", "image/gif", "image/webp",
+    "application/pdf",
+    "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "text/plain", "text/csv",
+  ];
+
+  const allowedExtensions = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".txt", ".csv"];
+
+  const chatUpload = multer({
+    storage: chatUploadStorage,
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max
+    fileFilter: (_req, file, cb) => {
+      const ext = path.extname(file.originalname).toLowerCase();
+      const mimeValid = allowedMimeTypes.includes(file.mimetype);
+      const extValid = allowedExtensions.includes(ext);
+      
+      if (mimeValid && extValid) {
+        cb(null, true);
+      } else {
+        cb(new Error("File type not allowed"));
+      }
+    },
+  });
+
+  // Serve uploaded files with authentication
+  app.get("/uploads/chat/:filename", isAuthenticated, (req: any, res) => {
+    const filename = req.params.filename;
+    const safeName = path.basename(filename);
+    const filePath = path.join(chatUploadsDir, safeName);
+    
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: "File not found" });
+    }
+    
+    res.sendFile(filePath);
+  });
 
   // =============================================================================
   // TENANT MANAGEMENT ROUTES
@@ -3669,7 +3729,7 @@ export async function registerRoutes(
   app.post("/api/chat/messages", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims?.sub || req.user.id;
-      const { conversationId, recipientId, parentId, content } = sendMessageSchema.parse(req.body);
+      const { conversationId, recipientId, parentId, content, fileUrl, fileName, fileType } = sendMessageSchema.parse(req.body);
       
       let targetConversationId = conversationId;
       
@@ -3692,7 +3752,7 @@ export async function registerRoutes(
         return res.status(403).json({ error: "Not a participant of this conversation" });
       }
       
-      const message = await storage.sendMessage(targetConversationId, userId, content, parentId);
+      const message = await storage.sendMessage(targetConversationId, userId, content, parentId, fileUrl, fileName, fileType);
       
       // Broadcast to all participants
       const participants = await storage.getConversationParticipants(targetConversationId);
@@ -3728,6 +3788,27 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error fetching thread replies:", error);
       res.status(500).json({ error: "Failed to fetch thread replies" });
+    }
+  });
+
+  // Upload file for chat
+  app.post("/api/chat/upload", isAuthenticated, chatUpload.single("file"), async (req: any, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded" });
+      }
+      const fileUrl = `/uploads/chat/${req.file.filename}`;
+      res.json({
+        fileUrl,
+        fileName: req.file.originalname,
+        fileType: req.file.mimetype,
+      });
+    } catch (error: any) {
+      console.error("Error uploading file:", error);
+      if (error.message === "File type not allowed") {
+        return res.status(400).json({ error: "File type not allowed" });
+      }
+      res.status(500).json({ error: "Failed to upload file" });
     }
   });
 

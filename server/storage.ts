@@ -221,7 +221,7 @@ export interface IStorage {
   getConversationParticipants(conversationId: number): Promise<User[]>;
   isUserInConversation(userId: string, conversationId: number): Promise<boolean>;
   
-  sendMessage(conversationId: number, senderId: string, content: string, parentId?: number): Promise<Message>;
+  sendMessage(conversationId: number, senderId: string, content: string, parentId?: number, fileUrl?: string, fileName?: string, fileType?: string): Promise<Message>;
   getConversationMessages(conversationId: number, limit?: number, before?: number): Promise<(Message & { replyCount?: number })[]>;
   getThreadReplies(parentId: number): Promise<Message[]>;
   markConversationRead(userId: string, conversationId: number): Promise<void>;
@@ -1161,9 +1161,9 @@ export class DbStorage implements IStorage {
     return !!participant;
   }
 
-  async sendMessage(conversationId: number, senderId: string, content: string, parentId?: number): Promise<Message> {
+  async sendMessage(conversationId: number, senderId: string, content: string, parentId?: number, fileUrl?: string, fileName?: string, fileType?: string): Promise<Message> {
     const [message] = await db.insert(messages)
-      .values({ conversationId, senderId, content, parentId })
+      .values({ conversationId, senderId, content, parentId, fileUrl, fileName, fileType })
       .returning();
     
     await db.update(conversations)

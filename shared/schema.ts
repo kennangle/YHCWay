@@ -419,6 +419,9 @@ export const messages = pgTable("messages", {
   senderId: varchar("sender_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   parentId: integer("parent_id"),
   content: text("content").notNull(),
+  fileUrl: varchar("file_url"),
+  fileName: varchar("file_name"),
+  fileType: varchar("file_type"),
   createdAt: timestamp("created_at").defaultNow(),
   editedAt: timestamp("edited_at"),
   deletedAt: timestamp("deleted_at"),
@@ -432,6 +435,9 @@ export const sendMessageSchema = z.object({
   recipientId: z.string().optional(),
   parentId: z.number().optional(),
   content: z.string().min(1, "Message cannot be empty"),
+  fileUrl: z.string().optional(),
+  fileName: z.string().optional(),
+  fileType: z.string().optional(),
 });
 
 export const createConversationSchema = z.object({

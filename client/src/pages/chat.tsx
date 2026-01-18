@@ -1,6 +1,6 @@
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { TopBar } from "@/components/top-bar";
-import { Search, Send, Plus, Users, MessageCircle, X, Reply, ChevronRight } from "lucide-react";
+import { Search, Send, Plus, Users, MessageCircle, X, Reply, ChevronRight, Paperclip, File, Image, FileText, Loader2 } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useRef } from "react";
@@ -22,8 +22,20 @@ interface Message {
   senderId: string;
   parentId?: number | null;
   content: string;
+  fileUrl?: string | null;
+  fileName?: string | null;
+  fileType?: string | null;
   createdAt: string;
   replyCount?: number;
+}
+
+interface AttachedFile {
+  file: File;
+  preview?: string;
+  uploading: boolean;
+  uploadedUrl?: string;
+  uploadedName?: string;
+  uploadedType?: string;
 }
 
 interface Conversation {
@@ -48,9 +60,13 @@ export default function Chat() {
   const [groupName, setGroupName] = useState("");
   const [activeThread, setActiveThread] = useState<Message | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [attachedFile, setAttachedFile] = useState<AttachedFile | null>(null);
+  const [threadAttachedFile, setThreadAttachedFile] = useState<AttachedFile | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const threadEndRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const threadFileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: conversations = [], isLoading: conversationsLoading } = useQuery<Conversation[]>({
     queryKey: ["conversations"],
@@ -81,8 +97,25 @@ export default function Chat() {
     enabled: !!selectedConversation,
   });
 
+  const uploadFileMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/chat/upload", {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to upload file");
+      }
+      return res.json();
+    },
+  });
+
   const sendMessageMutation = useMutation({
-    mutationFn: async (content: string) => {
+    mutationFn: async ({ content, fileUrl, fileName, fileType }: { content: string; fileUrl?: string; fileName?: string; fileType?: string }) => {
       const res = await fetch("/api/chat/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -90,6 +123,9 @@ export default function Chat() {
         body: JSON.stringify({
           conversationId: selectedConversation?.id,
           content,
+          fileUrl,
+          fileName,
+          fileType,
         }),
       });
       if (!res.ok) throw new Error("Failed to send message");
@@ -98,6 +134,7 @@ export default function Chat() {
     onSuccess: () => {
       refetchMessages();
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
+      setAttachedFile(null);
     },
   });
 
@@ -133,7 +170,7 @@ export default function Chat() {
   });
 
   const sendThreadReplyMutation = useMutation({
-    mutationFn: async (content: string) => {
+    mutationFn: async ({ content, fileUrl, fileName, fileType }: { content: string; fileUrl?: string; fileName?: string; fileType?: string }) => {
       const res = await fetch("/api/chat/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -142,6 +179,9 @@ export default function Chat() {
           conversationId: selectedConversation?.id,
           parentId: activeThread?.id,
           content,
+          fileUrl,
+          fileName,
+          fileType,
         }),
       });
       if (!res.ok) throw new Error("Failed to send reply");
@@ -150,6 +190,7 @@ export default function Chat() {
     onSuccess: () => {
       refetchThread();
       refetchMessages();
+      setThreadAttachedFile(null);
     },
   });
 
@@ -225,17 +266,63 @@ export default function Chat() {
     threadEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [threadReplies]);
 
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>, isThread: boolean = false) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const setFile = isThread ? setThreadAttachedFile : setAttachedFile;
+    
+    const preview = file.type.startsWith("image/") ? URL.createObjectURL(file) : undefined;
+    setFile({ file, preview, uploading: true });
+    
+    try {
+      const result = await uploadFileMutation.mutateAsync(file);
+      setFile(prev => prev ? { 
+        ...prev, 
+        uploading: false, 
+        uploadedUrl: result.fileUrl,
+        uploadedName: result.fileName,
+        uploadedType: result.fileType,
+      } : null);
+    } catch (error) {
+      console.error("Upload failed:", error);
+      setFile(null);
+    }
+    
+    e.target.value = "";
+  };
+
+  const handleRemoveAttachment = (isThread: boolean = false) => {
+    if (isThread) {
+      if (threadAttachedFile?.preview) URL.revokeObjectURL(threadAttachedFile.preview);
+      setThreadAttachedFile(null);
+    } else {
+      if (attachedFile?.preview) URL.revokeObjectURL(attachedFile.preview);
+      setAttachedFile(null);
+    }
+  };
+
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!messageInput.trim() || !selectedConversation) return;
-    sendMessageMutation.mutate(messageInput.trim());
+    if ((!messageInput.trim() && !attachedFile?.uploadedUrl) || !selectedConversation) return;
+    sendMessageMutation.mutate({
+      content: messageInput.trim() || (attachedFile?.uploadedName ? `Sent a file: ${attachedFile.uploadedName}` : "Sent a file"),
+      fileUrl: attachedFile?.uploadedUrl,
+      fileName: attachedFile?.uploadedName,
+      fileType: attachedFile?.uploadedType,
+    });
     setMessageInput("");
   };
 
   const handleSendThreadReply = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!threadInput.trim() || !activeThread) return;
-    sendThreadReplyMutation.mutate(threadInput.trim());
+    if ((!threadInput.trim() && !threadAttachedFile?.uploadedUrl) || !activeThread) return;
+    sendThreadReplyMutation.mutate({
+      content: threadInput.trim() || (threadAttachedFile?.uploadedName ? `Sent a file: ${threadAttachedFile.uploadedName}` : "Sent a file"),
+      fileUrl: threadAttachedFile?.uploadedUrl,
+      fileName: threadAttachedFile?.uploadedName,
+      fileType: threadAttachedFile?.uploadedType,
+    });
     setThreadInput("");
   };
 
@@ -536,6 +623,31 @@ export default function Chat() {
                                 : "bg-muted"
                             }`}
                           >
+                            {msg.fileUrl && (
+                              <div className="mb-2">
+                                {msg.fileType?.startsWith("image/") ? (
+                                  <a href={msg.fileUrl} target="_blank" rel="noopener noreferrer">
+                                    <img 
+                                      src={msg.fileUrl} 
+                                      alt={msg.fileName || "Attached image"} 
+                                      className="max-w-full max-h-48 rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                                    />
+                                  </a>
+                                ) : (
+                                  <a 
+                                    href={msg.fileUrl} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className={`flex items-center gap-2 p-2 rounded-lg ${
+                                      isOwnMessage ? "bg-white/10 hover:bg-white/20" : "bg-background/50 hover:bg-background/80"
+                                    } transition-colors`}
+                                  >
+                                    <FileText className="w-5 h-5 flex-shrink-0" />
+                                    <span className="text-sm truncate">{msg.fileName || "Download file"}</span>
+                                  </a>
+                                )}
+                              </div>
+                            )}
                             <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                           </div>
                           <div className="flex items-center gap-2 mt-1">
@@ -570,7 +682,55 @@ export default function Chat() {
               </div>
 
               <form onSubmit={handleSendMessage} className="p-4 border-t border-border/50 glass-panel">
+                {attachedFile && (
+                  <div className="mb-2 p-2 bg-muted/50 rounded-lg flex items-center gap-2">
+                    {attachedFile.preview ? (
+                      <img src={attachedFile.preview} alt="Preview" className="w-12 h-12 object-cover rounded" />
+                    ) : (
+                      <div className="w-12 h-12 bg-muted rounded flex items-center justify-center">
+                        <FileText className="w-6 h-6 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{attachedFile.file.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {attachedFile.uploading ? "Uploading..." : "Ready to send"}
+                      </p>
+                    </div>
+                    {attachedFile.uploading ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveAttachment(false)}
+                        className="p-1 hover:bg-muted rounded"
+                        data-testid="button-remove-attachment"
+                      >
+                        <X className="w-4 h-4 text-muted-foreground" />
+                      </button>
+                    )}
+                  </div>
+                )}
                 <div className="flex gap-2">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={(e) => handleFileSelect(e, false)}
+                    className="hidden"
+                    accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv"
+                    data-testid="input-file"
+                  />
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    className="rounded-full"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={!!attachedFile}
+                    data-testid="button-attach-file"
+                  >
+                    <Paperclip className="w-4 h-4" />
+                  </Button>
                   <input
                     type="text"
                     value={messageInput}
@@ -583,7 +743,7 @@ export default function Chat() {
                     type="submit"
                     size="icon"
                     className="rounded-full"
-                    disabled={!messageInput.trim() || sendMessageMutation.isPending}
+                    disabled={(!messageInput.trim() && !attachedFile?.uploadedUrl) || sendMessageMutation.isPending || attachedFile?.uploading}
                     data-testid="button-send-message"
                   >
                     <Send className="w-4 h-4" />
@@ -655,6 +815,29 @@ export default function Chat() {
                           </span>
                           <span className="text-[10px] text-muted-foreground">{formatTime(reply.createdAt)}</span>
                         </div>
+                        {reply.fileUrl && (
+                          <div className="mt-1 mb-1">
+                            {reply.fileType?.startsWith("image/") ? (
+                              <a href={reply.fileUrl} target="_blank" rel="noopener noreferrer">
+                                <img 
+                                  src={reply.fileUrl} 
+                                  alt={reply.fileName || "Attached image"} 
+                                  className="max-w-full max-h-32 rounded cursor-pointer hover:opacity-90 transition-opacity"
+                                />
+                              </a>
+                            ) : (
+                              <a 
+                                href={reply.fileUrl} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 p-2 rounded bg-muted/50 hover:bg-muted transition-colors"
+                              >
+                                <FileText className="w-4 h-4 flex-shrink-0" />
+                                <span className="text-xs truncate">{reply.fileName || "Download file"}</span>
+                              </a>
+                            )}
+                          </div>
+                        )}
                         <p className="text-sm mt-0.5">{reply.content}</p>
                       </div>
                     </div>
@@ -665,7 +848,55 @@ export default function Chat() {
             </div>
 
             <form onSubmit={handleSendThreadReply} className="p-4 border-t border-border/50">
+              {threadAttachedFile && (
+                <div className="mb-2 p-2 bg-muted/50 rounded-lg flex items-center gap-2">
+                  {threadAttachedFile.preview ? (
+                    <img src={threadAttachedFile.preview} alt="Preview" className="w-10 h-10 object-cover rounded" />
+                  ) : (
+                    <div className="w-10 h-10 bg-muted rounded flex items-center justify-center">
+                      <FileText className="w-5 h-5 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium truncate">{threadAttachedFile.file.name}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {threadAttachedFile.uploading ? "Uploading..." : "Ready"}
+                    </p>
+                  </div>
+                  {threadAttachedFile.uploading ? (
+                    <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveAttachment(true)}
+                      className="p-1 hover:bg-muted rounded"
+                      data-testid="button-thread-remove-attachment"
+                    >
+                      <X className="w-3 h-3 text-muted-foreground" />
+                    </button>
+                  )}
+                </div>
+              )}
               <div className="flex gap-2">
+                <input
+                  type="file"
+                  ref={threadFileInputRef}
+                  onChange={(e) => handleFileSelect(e, true)}
+                  className="hidden"
+                  accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv"
+                  data-testid="input-thread-file"
+                />
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className="rounded-full h-9 w-9"
+                  onClick={() => threadFileInputRef.current?.click()}
+                  disabled={!!threadAttachedFile}
+                  data-testid="button-thread-attach-file"
+                >
+                  <Paperclip className="w-3 h-3" />
+                </Button>
                 <input
                   type="text"
                   value={threadInput}
@@ -678,7 +909,7 @@ export default function Chat() {
                   type="submit"
                   size="icon"
                   className="rounded-full h-9 w-9"
-                  disabled={!threadInput.trim() || sendThreadReplyMutation.isPending}
+                  disabled={(!threadInput.trim() && !threadAttachedFile?.uploadedUrl) || sendThreadReplyMutation.isPending || threadAttachedFile?.uploading}
                   data-testid="button-send-thread-reply"
                 >
                   <Send className="w-3 h-3" />
