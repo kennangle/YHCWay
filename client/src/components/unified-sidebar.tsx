@@ -109,22 +109,14 @@ export function UnifiedSidebar() {
       icon: FileText,
       defaultCollapsed: false,
       items: [
-        { icon: HardDrive, label: "Google Drive", href: "/google-drive", tourId: "nav-google-drive" },
-        { icon: FileSpreadsheet, label: "Google Sheets", href: "/google-sheets", tourId: "nav-google-sheets" },
-        { icon: File, label: "Google Docs", href: "/google-docs", tourId: "nav-google-docs" },
-        { icon: Zap, label: "AI Summarize", href: "/ai-summarize", tourId: "nav-ai-summarize" },
-      ],
-    },
-    {
-      id: 'collaboration',
-      label: 'Collaboration',
-      icon: Users,
-      defaultCollapsed: false,
-      items: [
         { icon: MessageCircle, label: "Slack", href: "/chat", tourId: "nav-chat" },
         { icon: ListTodo, label: "Tasks", href: "/tasks", tourId: "nav-tasks" },
         { icon: FolderKanban, label: "Projects", href: "/projects", tourId: "nav-projects" },
         { icon: GitBranch, label: "Dependencies", href: "/dependency-tracker", tourId: "nav-dependencies" },
+        { icon: HardDrive, label: "Google Drive", href: "/google-drive", tourId: "nav-google-drive" },
+        { icon: FileSpreadsheet, label: "Google Sheets", href: "/google-sheets", tourId: "nav-google-sheets" },
+        { icon: File, label: "Google Docs", href: "/google-docs", tourId: "nav-google-docs" },
+        { icon: Zap, label: "AI Summarize", href: "/ai-summarize", tourId: "nav-ai-summarize" },
       ],
     },
     {
