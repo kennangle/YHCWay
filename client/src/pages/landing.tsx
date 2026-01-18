@@ -48,6 +48,9 @@ export default function Landing() {
           <p className="mt-6 text-sm text-muted-foreground">
             Sign in with Google or email
           </p>
+          <Link href="/privacy" className="mt-4 inline-block text-sm text-muted-foreground hover:text-primary transition-colors underline">
+            Privacy Policy
+          </Link>
         </div>
 
         <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl w-full">
