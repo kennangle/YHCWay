@@ -265,7 +265,7 @@ export default function Calendar() {
       
       <UnifiedSidebar />
 
-      <main className={`flex-1 ml-0 ${mainContentClass} relative z-10 flex flex-col pb-20 md:pb-0 transition-all duration-300`}>
+      <main className={`flex-1 min-w-0 ml-0 ${mainContentClass} relative z-10 flex flex-col pb-20 md:pb-0 transition-all duration-300 overflow-x-hidden`}>
         <TopBar />
         <div className="flex-1 p-4 md:p-8">
         <header className="flex justify-between items-end mb-6 md:mb-8">
