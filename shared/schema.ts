@@ -1306,3 +1306,19 @@ export const changelogSyncState = pgTable("changelog_sync_state", {
   lastCommitHash: varchar("last_commit_hash", { length: 40 }),
   lastSyncAt: timestamp("last_sync_at").defaultNow(),
 });
+
+// =============================================================================
+// SITE SETTINGS (Privacy Policy, Terms of Service, etc.)
+// =============================================================================
+
+export const siteSettings = pgTable("site_settings", {
+  id: serial("id").primaryKey(),
+  key: varchar("key").notNull().unique(),
+  value: text("value").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  uniqueIndex("site_settings_key").on(table.key),
+]);
+
+export type SiteSetting = typeof siteSettings.$inferSelect;
+export type InsertSiteSetting = typeof siteSettings.$inferInsert;

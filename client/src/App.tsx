@@ -93,6 +93,7 @@ import GoogleDocs from "@/pages/google-docs";
 import GoogleSheets from "@/pages/google-sheets";
 import GoogleDrive from "@/pages/google-drive";
 import DependencyTracker from "@/pages/dependency-tracker";
+import Privacy from "@/pages/privacy";
 import { FloatingAIButton } from "@/components/floating-ai-button";
 import { GuidedTour } from "@/components/guided-tour";
 
@@ -129,6 +130,7 @@ function Router() {
         <Route path="/register" component={Register} />
         <Route path="/forgot-password" component={ForgotPassword} />
         <Route path="/reset-password" component={ResetPassword} />
+        <Route path="/privacy" component={Privacy} />
         <Route path="/dashboard">{() => <Redirect to="/login" />}</Route>
         <Route component={NotFound} />
       </Switch>
