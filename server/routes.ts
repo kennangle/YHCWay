@@ -1304,22 +1304,43 @@ export async function registerRoutes(
     try {
       const userId = req.user?.id;
       if (!userId) {
-        return res.json({ connected: false, accounts: [] });
+        return res.json({ connected: false, accounts: [], needsReconnect: false });
       }
       // Get all Gmail accounts for user
       const accounts = await storage.listOAuthAccounts(userId, 'gmail');
       if (accounts.length > 0) {
+        // Check if any accounts have expired tokens without refresh tokens
+        const now = Date.now();
+        const accountDetails = accounts.map(a => {
+          const isExpired = a.expiresAt ? new Date(a.expiresAt).getTime() < now : false;
+          const hasRefreshToken = !!a.refreshToken;
+          const needsReconnect = isExpired && !hasRefreshToken;
+          return { 
+            id: a.id, 
+            email: a.providerAccountId, 
+            label: a.label, 
+            isPrimary: a.isPrimary,
+            isExpired,
+            hasRefreshToken,
+            needsReconnect
+          };
+        });
+        
+        const anyNeedsReconnect = accountDetails.some(a => a.needsReconnect);
+        
         return res.json({ 
           connected: true, 
           type: 'custom',
           accountCount: accounts.length,
-          accounts: accounts.map(a => ({ id: a.id, email: a.providerAccountId, label: a.label, isPrimary: a.isPrimary }))
+          accounts: accountDetails,
+          needsReconnect: anyNeedsReconnect,
+          message: anyNeedsReconnect ? 'Some Gmail accounts need to be reconnected in Settings' : null
         });
       }
       const connectorConnected = await isGmailConnected();
-      res.json({ connected: connectorConnected, type: 'connector', accounts: [] });
+      res.json({ connected: connectorConnected, type: 'connector', accounts: [], needsReconnect: false });
     } catch (error) {
-      res.json({ connected: false, accounts: [] });
+      res.json({ connected: false, accounts: [], needsReconnect: false });
     }
   });
 
@@ -1433,10 +1454,8 @@ export async function registerRoutes(
         } catch (emailError: any) {
           console.error("[Gmail Messages] Error fetching via custom OAuth:", emailError?.message);
           console.error("[Gmail Messages] Error details:", emailError?.response?.data || emailError);
-          return res.status(500).json({ 
-            error: emailError?.message || "Failed to fetch emails",
-            details: emailError?.response?.data?.error || null
-          });
+          // Fall through to connector fallback instead of returning error
+          console.log("[Gmail Messages] OAuth failed, trying connector fallback...");
         }
       }
       
@@ -1475,9 +1494,8 @@ export async function registerRoutes(
           return res.json(emails);
         } catch (emailError: any) {
           console.error("[Gmail Archived] Error fetching via custom OAuth:", emailError?.message);
-          return res.status(500).json({ 
-            error: emailError?.message || "Failed to fetch archived emails",
-          });
+          // Fall through to connector fallback instead of returning error
+          console.log("[Gmail Archived] OAuth failed, trying connector fallback...");
         }
       }
       
@@ -1516,9 +1534,8 @@ export async function registerRoutes(
           return res.json(emails);
         } catch (emailError: any) {
           console.error("[Gmail Sent] Error fetching via custom OAuth:", emailError?.message);
-          return res.status(500).json({ 
-            error: emailError?.message || "Failed to fetch sent emails",
-          });
+          // Fall through to connector fallback instead of returning error
+          console.log("[Gmail Sent] OAuth failed, trying connector fallback...");
         }
       }
       
@@ -1557,9 +1574,8 @@ export async function registerRoutes(
           return res.json(emails);
         } catch (emailError: any) {
           console.error("[Gmail Trash] Error fetching via custom OAuth:", emailError?.message);
-          return res.status(500).json({ 
-            error: emailError?.message || "Failed to fetch trashed emails",
-          });
+          // Fall through to connector fallback instead of returning error
+          console.log("[Gmail Trash] OAuth failed, trying connector fallback...");
         }
       }
       

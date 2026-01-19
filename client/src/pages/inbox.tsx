@@ -1,6 +1,6 @@
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { TopBar } from "@/components/top-bar";
-import { Search, Mail, MessageCircle, Users, MessageSquare, PenSquare, Loader2, Share2, Check, Trash2, Archive, Send, RefreshCw } from "lucide-react";
+import { Search, Mail, MessageCircle, Users, MessageSquare, PenSquare, Loader2, Share2, Check, Trash2, Archive, Send, RefreshCw, AlertTriangle, Settings } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SlackChannelConfig } from "@/components/slack-channel-config";
@@ -88,6 +88,15 @@ interface GmailAccount {
   email: string;
   label: string | null;
   isPrimary: boolean | null;
+  needsReconnect?: boolean;
+}
+
+interface GmailStatus {
+  connected: boolean;
+  type?: 'custom' | 'connector';
+  accounts: GmailAccount[];
+  needsReconnect: boolean;
+  message?: string | null;
 }
 
 export default function Inbox() {
@@ -106,6 +115,15 @@ export default function Inbox() {
     queryFn: async () => {
       const res = await fetch("/api/gmail/accounts", { credentials: "include" });
       if (!res.ok) return [];
+      return res.json();
+    },
+  });
+
+  const { data: gmailStatus } = useQuery<GmailStatus>({
+    queryKey: ["/api/gmail/status"],
+    queryFn: async () => {
+      const res = await fetch("/api/gmail/status", { credentials: "include" });
+      if (!res.ok) return { connected: false, accounts: [], needsReconnect: false };
       return res.json();
     },
   });
@@ -376,6 +394,26 @@ export default function Inbox() {
             </div>
           </div>
         </header>
+
+        {gmailStatus?.needsReconnect && (
+          <div 
+            className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-3"
+            data-testid="alert-gmail-reconnect"
+          >
+            <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0" />
+            <span className="text-sm text-amber-800">
+              Some Gmail accounts need to be reconnected to continue syncing.
+            </span>
+            <a 
+              href="/settings" 
+              className="ml-auto flex items-center gap-1 text-sm font-medium text-amber-700 hover:text-amber-900"
+              data-testid="link-reconnect-gmail"
+            >
+              <Settings className="w-4 h-4" />
+              Go to Settings
+            </a>
+          </div>
+        )}
 
         <div className="flex gap-2 mb-6 items-center">
           <button 
