@@ -2161,7 +2161,7 @@ export async function registerRoutes(
       const { signOAuthState, getZoomAuthUrl } = await import("./zoom-oauth");
       const state = signOAuthState({ userId });
       const authUrl = getZoomAuthUrl(state);
-      res.redirect(authUrl);
+      res.json({ authUrl });
     } catch (error: any) {
       console.error("[Zoom] Error initiating OAuth:", error);
       res.status(500).json({ error: error?.message || "Failed to initiate Zoom connection" });
