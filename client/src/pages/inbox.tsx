@@ -453,7 +453,7 @@ export default function Inbox() {
               const handleClick = (e: React.MouseEvent) => {
                 if (message.type === 'gmail') {
                   e.preventDefault();
-                  const gmailId = message.id.replace(/^gmail-(archived-|sent-)?/, '');
+                  const gmailId = message.id.replace(/^gmail-(archived-|sent-|trash-)?/, '');
                   setSelectedEmailId(gmailId);
                 }
               };
@@ -468,7 +468,7 @@ export default function Inbox() {
                 e.preventDefault();
                 e.stopPropagation();
                 if (message.type === 'gmail') {
-                  const gmailId = message.id.replace(/^gmail-(archived-|sent-)?/, '');
+                  const gmailId = message.id.replace(/^gmail-(archived-|sent-|trash-)?/, '');
                   deleteEmailMutation.mutate(gmailId);
                 }
               };
