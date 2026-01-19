@@ -8,7 +8,13 @@ const ZOOM_SCOPES = [
   'user:read',
 ];
 
-const getStateSecret = () => process.env.SESSION_SECRET || process.env.REPL_ID || 'default-zoom-oauth-secret';
+const getStateSecret = () => {
+  const secret = process.env.SESSION_SECRET || process.env.REPL_ID;
+  if (!secret) {
+    throw new Error('SESSION_SECRET or REPL_ID must be configured for Zoom OAuth');
+  }
+  return secret;
+};
 
 export function signOAuthState(data: { userId: string }): string {
   const payload = JSON.stringify(data);
@@ -191,8 +197,9 @@ async function getValidAccessToken(userId: string): Promise<string> {
     throw new Error('Zoom not connected');
   }
   
-  if (account.expiresAt && new Date(account.expiresAt).getTime() < Date.now() - 60000) {
-    console.log('[Zoom] Token expired, refreshing...');
+  // Refresh token if it expires within the next 5 minutes (300000ms)
+  if (account.expiresAt && new Date(account.expiresAt).getTime() < Date.now() + 300000) {
+    console.log('[Zoom] Token expiring soon, refreshing...');
     return await refreshZoomToken(account);
   }
   

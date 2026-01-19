@@ -131,7 +131,7 @@ const playNotificationSound = (soundType: string) => {
   oscillator.stop(audioContext.currentTime + 0.5);
 };
 
-type SettingsSection = "main" | "account" | "notifications" | "privacy" | "appearance" | "language" | "help" | "templates" | "webhooks" | "feedback" | "organization" | "extension" | "email-signatures" | "gmail-accounts";
+type SettingsSection = "main" | "account" | "notifications" | "privacy" | "appearance" | "language" | "help" | "templates" | "webhooks" | "feedback" | "organization" | "extension" | "email-signatures" | "gmail-accounts" | "zoom";
 
 interface TaskTemplate {
   id: number;
@@ -1933,6 +1933,147 @@ function ExtensionSectionContent({ renderBackButton }: { renderBackButton: () =>
   );
 }
 
+interface ZoomStatus {
+  connected: boolean;
+  email?: string;
+  label?: string;
+  needsReconnect: boolean;
+}
+
+function ZoomSectionContent({ renderBackButton }: { renderBackButton: () => React.ReactNode }) {
+  const queryClient = useQueryClient();
+
+  const { data: status, isLoading } = useQuery<ZoomStatus>({
+    queryKey: ["/api/zoom/status"],
+    queryFn: async () => {
+      const res = await fetch("/api/zoom/status", { credentials: "include" });
+      if (!res.ok) return { connected: false, needsReconnect: false };
+      return res.json();
+    },
+  });
+
+  const disconnectMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/zoom/disconnect", {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to disconnect Zoom");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/zoom/status"] });
+      toast.success("Zoom disconnected");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const handleConnect = () => {
+    window.location.href = "/api/zoom/connect";
+  };
+
+  return (
+    <div className="max-w-2xl">
+      {renderBackButton()}
+      <div className="mb-8">
+        <h2 className="font-display font-bold text-2xl mb-2">Zoom</h2>
+        <p className="text-muted-foreground">
+          Connect your Zoom account to schedule and manage video meetings directly from The YHC Way.
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        <div className="glass-card p-6 rounded-2xl">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold">Zoom Account</h3>
+          </div>
+
+          {isLoading ? (
+            <div className="text-center py-4">
+              <RefreshCw className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
+            </div>
+          ) : status?.connected ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 rounded-lg bg-white/50 border border-white/20">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                    <Video className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium">{status.label || status.email}</p>
+                    <p className="text-sm text-muted-foreground">{status.email}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">
+                    Connected
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => disconnectMutation.mutate()}
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    disabled={disconnectMutation.isPending}
+                    data-testid="button-disconnect-zoom"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {status.needsReconnect && (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-amber-600" />
+                  <span className="text-sm text-amber-800">
+                    Your Zoom connection has expired. Please reconnect.
+                  </span>
+                  <Button
+                    size="sm"
+                    onClick={handleConnect}
+                    className="ml-auto"
+                    data-testid="button-reconnect-zoom"
+                  >
+                    Reconnect
+                  </Button>
+                </div>
+              )}
+
+              <div className="mt-6 pt-4 border-t border-white/20">
+                <h4 className="font-medium mb-2">What you can do:</h4>
+                <ul className="text-sm text-muted-foreground space-y-1">
+                  <li className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-green-600" />
+                    View upcoming Zoom meetings
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-green-600" />
+                    Schedule new meetings
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-green-600" />
+                    Get meeting links to share
+                  </li>
+                </ul>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <Video className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+              <p className="text-muted-foreground mb-4">No Zoom account connected yet.</p>
+              <Button onClick={handleConnect} className="gap-2" data-testid="button-connect-zoom">
+                <Plus className="w-4 h-4" />
+                Connect Zoom Account
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 interface GmailAccount {
   id: number;
   email: string;
@@ -2368,6 +2509,12 @@ export default function Settings() {
       icon: Mail,
       title: "Gmail Accounts",
       description: "Manage your connected Gmail mailboxes",
+    },
+    {
+      id: "zoom" as const,
+      icon: Video,
+      title: "Zoom",
+      description: "Connect Zoom for video meetings",
     },
     {
       id: "help" as const,
@@ -3190,6 +3337,8 @@ Your online status can be toggled in Privacy settings. When hidden, others won't
         return <EmailSignaturesSectionContent renderBackButton={renderBackButton} />;
       case "gmail-accounts":
         return <GmailAccountsSectionContent renderBackButton={renderBackButton} />;
+      case "zoom":
+        return <ZoomSectionContent renderBackButton={renderBackButton} />;
       case "help":
         return renderHelpSection();
       default:

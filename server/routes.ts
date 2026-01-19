@@ -14,7 +14,8 @@ import bcrypt from "bcryptjs";
 import { getRecentEmails, isGmailConnected, deleteEmail } from "./gmail";
 import { getGmailAuthUrl, handleGmailCallback, getRecentEmailsForUser, getRecentEmailsFromAllAccounts, isGmailConnectedForUser, disconnectGmailForUser, getGmailClientForUser, getEmailById, sendEmail, deleteEmailById, signOAuthState, verifyOAuthState } from "./gmail-oauth";
 import { getUpcomingEvents, getEventsForMonth, isCalendarConnected, createCalendarEvent } from "./calendar";
-import { getUpcomingMeetings, isZoomConnected } from "./zoom";
+import { getUpcomingMeetings } from "./zoom";
+import { isZoomConnectedForUser as isZoomUserConnected } from "./zoom-oauth";
 import { getRecentMessages as getSlackMessages, getAllMessages as getAllSlackMessages, getDirectMessages as getSlackDMs, getThreadReplies as getSlackThreadReplies, isSlackConnected, getChannels as getSlackChannels, getRecentMessagesFiltered, isUserSlackConnected, getUserAllMessages, getUserDirectMessages, getUserChannels, sendSlackNotification, sendSlackBlockNotification, formatYHCWayNotification, sendUserSlackMessage, getDmConversations, getUserDmConversations } from "./slack";
 import { isAppleCalendarConnected, testAppleCalendarConnection, saveAppleCalendarCredentials, deleteAppleCalendarCredentials, getAppleCalendarEvents, getAppleCalendarEventsForMonth } from "./appleCalendar";
 import { isAsanaConnected, getMyTasks, getProjects, getUpcomingTasks, isUserAsanaConnected, getUserMyTasks, getUserProjects, getUserUpcomingTasks, getAsanaProjectsForImport, getProjectSections, getProjectTasksForImport, updateAsanaTaskCompletion } from "./asana";
@@ -2149,6 +2150,158 @@ export async function registerRoutes(
     }
   });
 
+  // Zoom integration endpoints
+  app.get("/api/zoom/connect", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const { signOAuthState, getZoomAuthUrl } = await import("./zoom-oauth");
+      const state = signOAuthState({ userId });
+      const authUrl = getZoomAuthUrl(state);
+      res.redirect(authUrl);
+    } catch (error: any) {
+      console.error("[Zoom] Error initiating OAuth:", error);
+      res.status(500).json({ error: error?.message || "Failed to initiate Zoom connection" });
+    }
+  });
+
+  app.get("/api/zoom/callback", async (req, res) => {
+    try {
+      const { code, state, error: oauthError } = req.query;
+      
+      if (oauthError) {
+        console.error("[Zoom] OAuth error:", oauthError);
+        return res.redirect("/settings?zoom_error=oauth_denied");
+      }
+      
+      if (!code || !state) {
+        return res.redirect("/settings?zoom_error=missing_params");
+      }
+      
+      const { verifyOAuthState, handleZoomCallback } = await import("./zoom-oauth");
+      const stateData = verifyOAuthState(state as string);
+      
+      if (!stateData) {
+        return res.redirect("/settings?zoom_error=invalid_state");
+      }
+      
+      const { email } = await handleZoomCallback(code as string, stateData.userId);
+      console.log("[Zoom] Successfully connected account:", email);
+      res.redirect("/settings?zoom_connected=true");
+    } catch (error: any) {
+      console.error("[Zoom] Callback error:", error);
+      res.redirect("/settings?zoom_error=" + encodeURIComponent(error?.message || "unknown"));
+    }
+  });
+
+  app.get("/api/zoom/status", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.json({ connected: false, needsReconnect: false });
+      }
+      
+      const { getZoomStatus } = await import("./zoom-oauth");
+      const status = await getZoomStatus(userId);
+      res.json(status);
+    } catch (error) {
+      res.json({ connected: false, needsReconnect: false });
+    }
+  });
+
+  app.post("/api/zoom/disconnect", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const { disconnectZoomForUser } = await import("./zoom-oauth");
+      await disconnectZoomForUser(userId);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("[Zoom] Error disconnecting:", error);
+      res.status(500).json({ error: error?.message || "Failed to disconnect Zoom" });
+    }
+  });
+
+  app.get("/api/zoom/meetings", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const { listZoomMeetings } = await import("./zoom-oauth");
+      const meetings = await listZoomMeetings(userId);
+      res.json(meetings);
+    } catch (error: any) {
+      console.error("[Zoom] Error listing meetings:", error);
+      res.status(500).json({ error: error?.message || "Failed to fetch Zoom meetings" });
+    }
+  });
+
+  app.post("/api/zoom/meetings", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const { topic, start_time, duration, timezone, agenda } = req.body;
+      
+      if (!topic) {
+        return res.status(400).json({ error: "Meeting topic is required" });
+      }
+      
+      const { createZoomMeeting } = await import("./zoom-oauth");
+      const meeting = await createZoomMeeting(userId, { topic, start_time, duration, timezone, agenda });
+      res.json(meeting);
+    } catch (error: any) {
+      console.error("[Zoom] Error creating meeting:", error);
+      res.status(500).json({ error: error?.message || "Failed to create Zoom meeting" });
+    }
+  });
+
+  app.get("/api/zoom/meetings/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      const meetingId = req.params.id;
+      
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const { getZoomMeeting } = await import("./zoom-oauth");
+      const meeting = await getZoomMeeting(userId, meetingId);
+      res.json(meeting);
+    } catch (error: any) {
+      console.error("[Zoom] Error fetching meeting:", error);
+      res.status(500).json({ error: error?.message || "Failed to fetch meeting" });
+    }
+  });
+
+  app.delete("/api/zoom/meetings/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      const meetingId = req.params.id;
+      
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const { deleteZoomMeeting } = await import("./zoom-oauth");
+      await deleteZoomMeeting(userId, meetingId);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("[Zoom] Error deleting meeting:", error);
+      res.status(500).json({ error: error?.message || "Failed to delete meeting" });
+    }
+  });
+
   // Google Calendar integration endpoints
   app.get("/api/calendar/status", isAuthenticated, async (req, res) => {
     try {
@@ -2164,9 +2317,36 @@ export async function registerRoutes(
       const userId = req.user?.id;
       const googleEvents = await getUpcomingEvents(10).catch(() => []);
       const calendlyEvents = userId ? await getCalendlyEvents(userId, 10).catch(() => []) : [];
-      const mergedEvents = [...googleEvents.map(e => ({ ...e, source: "google" as const })), ...calendlyEvents]
+      
+      // Fetch Zoom meetings if user has connected Zoom
+      let zoomEvents: any[] = [];
+      if (userId) {
+        try {
+          const { isZoomConnectedForUser, listZoomMeetings } = await import("./zoom-oauth");
+          if (await isZoomConnectedForUser(userId)) {
+            const zoomMeetings = await listZoomMeetings(userId);
+            zoomEvents = zoomMeetings.map(m => ({
+              id: `zoom-${m.id}`,
+              title: m.topic,
+              start: m.start_time,
+              end: m.start_time ? new Date(new Date(m.start_time).getTime() + (m.duration || 60) * 60000).toISOString() : m.start_time,
+              location: m.join_url,
+              source: "zoom" as const,
+              zoomJoinUrl: m.join_url,
+            }));
+          }
+        } catch (e) {
+          console.log("[Calendar] Zoom not available:", e);
+        }
+      }
+      
+      const mergedEvents = [
+        ...googleEvents.map(e => ({ ...e, source: "google" as const })), 
+        ...calendlyEvents,
+        ...zoomEvents
+      ]
         .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
-        .slice(0, 15);
+        .slice(0, 20);
       res.json(mergedEvents);
     } catch (error) {
       console.error("Error fetching calendar events:", error);
@@ -2181,7 +2361,43 @@ export async function registerRoutes(
       const month = parseInt(req.params.month);
       const googleEvents = await getEventsForMonth(year, month).catch(() => []);
       const calendlyEvents = userId ? await getCalendlyEventsForMonth(userId, year, month).catch(() => []) : [];
-      const mergedEvents = [...googleEvents.map(e => ({ ...e, source: "google" as const })), ...calendlyEvents]
+      
+      // Fetch Zoom meetings if user has connected Zoom
+      let zoomEvents: any[] = [];
+      if (userId) {
+        try {
+          const { isZoomConnectedForUser, listZoomMeetings } = await import("./zoom-oauth");
+          if (await isZoomConnectedForUser(userId)) {
+            const zoomMeetings = await listZoomMeetings(userId);
+            // Filter to only meetings in the requested month
+            const startOfMonth = new Date(year, month - 1, 1);
+            const endOfMonth = new Date(year, month, 0, 23, 59, 59);
+            zoomEvents = zoomMeetings
+              .filter(m => {
+                if (!m.start_time) return false;
+                const meetingDate = new Date(m.start_time);
+                return meetingDate >= startOfMonth && meetingDate <= endOfMonth;
+              })
+              .map(m => ({
+                id: `zoom-${m.id}`,
+                title: m.topic,
+                start: m.start_time,
+                end: m.start_time ? new Date(new Date(m.start_time).getTime() + (m.duration || 60) * 60000).toISOString() : m.start_time,
+                location: m.join_url,
+                source: "zoom" as const,
+                zoomJoinUrl: m.join_url,
+              }));
+          }
+        } catch (e) {
+          console.log("[Calendar Month] Zoom not available:", e);
+        }
+      }
+      
+      const mergedEvents = [
+        ...googleEvents.map(e => ({ ...e, source: "google" as const })), 
+        ...calendlyEvents,
+        ...zoomEvents
+      ]
         .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
       res.json(mergedEvents);
     } catch (error) {
@@ -2201,26 +2417,6 @@ export async function registerRoutes(
     } catch (error: any) {
       console.error("Error creating calendar event:", error);
       res.status(500).json({ error: error?.message || "Failed to create calendar event" });
-    }
-  });
-
-  // Zoom integration endpoints
-  app.get("/api/zoom/status", isAuthenticated, async (req, res) => {
-    try {
-      const connected = await isZoomConnected();
-      res.json({ connected });
-    } catch (error) {
-      res.json({ connected: false });
-    }
-  });
-
-  app.get("/api/zoom/meetings", isAuthenticated, async (req, res) => {
-    try {
-      const meetings = await getUpcomingMeetings(10);
-      res.json(meetings);
-    } catch (error) {
-      console.error("Error fetching Zoom meetings:", error);
-      res.json([]);
     }
   });
 
@@ -3461,7 +3657,7 @@ export async function registerRoutes(
       ] = await Promise.all([
         isGmailConnectedForUser(userId).catch(() => false),
         isCalendarConnected().catch(() => false),
-        isZoomConnected().catch(() => false),
+        isZoomUserConnected(userId).catch(() => false),
         isSlackConnected().catch(() => false),
         isUserSlackConnected(userId).catch(() => false),
         isAppleCalendarConnected(userId).catch(() => false),
