@@ -2674,8 +2674,8 @@ export async function registerRoutes(
         return res.status(500).json({ error: "Slack OAuth not configured" });
       }
       
-      const host = req.get('host') || 'localhost:5000';
-      const redirectUri = `${req.protocol}://${host}/api/slack/callback`;
+      const appUrl = process.env.APP_URL || 'https://yhcway.com';
+      const redirectUri = `${appUrl}/api/slack/callback`;
       
       // User scopes for accessing their own messages
       const userScopes = [
@@ -2714,8 +2714,8 @@ export async function registerRoutes(
         return res.redirect('/connect?error=slack_not_configured');
       }
       
-      const host = req.get('host') || 'localhost:5000';
-      const redirectUri = `${req.protocol}://${host}/api/slack/callback`;
+      const appUrl = process.env.APP_URL || 'https://yhcway.com';
+      const redirectUri = `${appUrl}/api/slack/callback`;
       
       // Exchange code for tokens
       const tokenResponse = await fetch('https://slack.com/api/oauth.v2.access', {
