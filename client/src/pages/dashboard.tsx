@@ -1022,7 +1022,7 @@ export default function Dashboard() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-lg">Gmail</h3>
-                    <p className="text-xs text-muted-foreground">Unified Mailbox</p>
+                    <p className="text-xs text-muted-foreground">Mailbox</p>
                   </div>
                 </div>
                 <div className="flex items-baseline gap-2">

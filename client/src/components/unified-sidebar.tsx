@@ -96,7 +96,7 @@ export function UnifiedSidebar() {
     { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard", tourId: "nav-dashboard" },
     { icon: BarChart3, label: "Scoreboard", href: "/scoreboard", tourId: "nav-scoreboard" },
     { icon: Gift, label: "Intro Offers", href: "/intro-offers", tourId: "nav-intro-offers" },
-    { icon: Mail, label: "Unified Mailbox", href: "/inbox", tourId: "nav-inbox" },
+    { icon: Mail, label: "Mailbox", href: "/inbox", tourId: "nav-inbox" },
     { icon: CalendarIcon, label: "Calendar", href: "/calendar", tourId: "nav-calendar" },
     { icon: Zap, label: "AI Summarize", href: "/ai-summarize", tourId: "nav-ai-summarize" },
     { icon: Rocket, label: "Setup Guide", href: "/setup-guide", tourId: "nav-setup-guide" },

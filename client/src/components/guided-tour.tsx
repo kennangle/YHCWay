@@ -80,7 +80,7 @@ export function useGuidedTour() {
         {
           element: '[data-tour="nav-inbox"]',
           popover: {
-            title: 'Unified Inbox',
+            title: 'Mailbox',
             description: 'All your messages from different platforms in one place. Never miss an important message again.',
             side: 'right',
             align: 'start',

@@ -355,7 +355,7 @@ export default function Inbox() {
         <TopBar />
         <div className="flex-1 p-8">
         <header className="flex justify-between items-center mb-8">
-          <h1 className="font-display font-bold text-3xl">Unified Inbox</h1>
+          <h1 className="font-display font-bold text-3xl">Mailbox</h1>
           <div className="flex gap-4">
             <button
               onClick={() => setIsComposing(true)}
