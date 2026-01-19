@@ -241,6 +241,95 @@ export async function isGmailConnected(): Promise<boolean> {
   }
 }
 
+export interface EmailDetail {
+  id: string;
+  threadId: string;
+  subject: string;
+  from: string;
+  to: string;
+  cc?: string;
+  replyTo?: string;
+  snippet: string;
+  date: string;
+  isUnread: boolean;
+  body: string;
+}
+
+function decodeBase64Url(data: string): string {
+  const base64 = data.replace(/-/g, '+').replace(/_/g, '/');
+  return Buffer.from(base64, 'base64').toString('utf-8');
+}
+
+function extractEmailBody(payload: any): string {
+  if (!payload) return '';
+  
+  if (payload.body?.data) {
+    return decodeBase64Url(payload.body.data);
+  }
+  
+  if (payload.parts) {
+    const htmlPart = payload.parts.find((p: any) => p.mimeType === 'text/html');
+    if (htmlPart?.body?.data) {
+      return decodeBase64Url(htmlPart.body.data);
+    }
+    
+    const textPart = payload.parts.find((p: any) => p.mimeType === 'text/plain');
+    if (textPart?.body?.data) {
+      return decodeBase64Url(textPart.body.data);
+    }
+    
+    for (const part of payload.parts) {
+      if (part.parts) {
+        const nestedHtml = part.parts.find((p: any) => p.mimeType === 'text/html');
+        if (nestedHtml?.body?.data) {
+          return decodeBase64Url(nestedHtml.body.data);
+        }
+        const nestedText = part.parts.find((p: any) => p.mimeType === 'text/plain');
+        if (nestedText?.body?.data) {
+          return decodeBase64Url(nestedText.body.data);
+        }
+      }
+    }
+  }
+  
+  return '';
+}
+
+export async function getEmailByIdViaConnector(messageId: string): Promise<EmailDetail> {
+  const gmail = await getGmailClient();
+  
+  const response = await gmail.users.messages.get({
+    userId: 'me',
+    id: messageId,
+    format: 'full',
+  });
+  
+  const headers = response.data.payload?.headers || [];
+  const subject = headers.find(h => h.name === 'Subject')?.value || '(No Subject)';
+  const from = headers.find(h => h.name === 'From')?.value || 'Unknown';
+  const to = headers.find(h => h.name === 'To')?.value || '';
+  const cc = headers.find(h => h.name === 'Cc')?.value || undefined;
+  const date = headers.find(h => h.name === 'Date')?.value || '';
+  const replyTo = headers.find(h => h.name === 'Reply-To')?.value || undefined;
+  const isUnread = response.data.labelIds?.includes('UNREAD') || false;
+  
+  const body = extractEmailBody(response.data.payload);
+  
+  return {
+    id: messageId,
+    threadId: response.data.threadId!,
+    subject,
+    from,
+    to,
+    cc,
+    replyTo,
+    snippet: response.data.snippet || '',
+    date,
+    isUnread,
+    body,
+  };
+}
+
 export async function deleteEmail(messageId: string): Promise<boolean> {
   const gmail = await getGmailClient();
   

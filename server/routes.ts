@@ -1585,7 +1585,20 @@ export async function registerRoutes(
         return res.status(401).json({ error: "Unauthorized" });
       }
       
-      const email = await getEmailById(userId, messageId);
+      // Try user-specific OAuth first, then fall back to connector
+      const isUserConnected = await isGmailConnectedForUser(userId);
+      if (isUserConnected) {
+        try {
+          const email = await getEmailById(userId, messageId);
+          return res.json(email);
+        } catch (oauthError: any) {
+          console.log("[Gmail] OAuth fetch failed, trying connector:", oauthError?.message);
+        }
+      }
+      
+      // Fall back to connector
+      const { getEmailByIdViaConnector } = await import("./gmail");
+      const email = await getEmailByIdViaConnector(messageId);
       res.json(email);
     } catch (error: any) {
       console.error("[Gmail] Error fetching email:", error?.message);
