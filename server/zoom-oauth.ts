@@ -3,9 +3,10 @@ import crypto from 'crypto';
 import { storage } from './storage';
 
 const ZOOM_SCOPES = [
-  'meeting:read',
-  'meeting:write',
-  'user:read',
+  'meeting:read:list_meetings',
+  'meeting:read:meeting',
+  'meeting:write:meeting',
+  'user:read:user',
 ];
 
 const getStateSecret = () => {
