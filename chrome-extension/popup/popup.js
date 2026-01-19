@@ -244,26 +244,47 @@ async function loadTasks() {
     const tasks = await fetchAPI('/api/tasks?limit=10&completed=false');
     
     if (!tasks || tasks.length === 0) {
-      container.innerHTML = '<div class="empty-state">No tasks yet</div>';
+      container.textContent = '';
+      const emptyState = document.createElement('div');
+      emptyState.className = 'empty-state';
+      emptyState.textContent = 'No tasks yet';
+      container.appendChild(emptyState);
       return;
     }
     
-    container.innerHTML = tasks.map(task => `
-      <div class="list-item" data-task-id="${escapeHtml(task.id)}">
-        <div class="task-checkbox ${task.completed ? 'checked' : ''}"></div>
-        <div class="list-item-content">
-          <div class="list-item-title task-title ${task.completed ? 'completed' : ''}">${escapeHtml(task.title || task.name)}</div>
-          <div class="list-item-subtitle">${escapeHtml(task.dueDate ? `Due ${formatDate(task.dueDate)}` : 'No due date')}</div>
-        </div>
-      </div>
-    `).join('');
-    
-    // Use event delegation for task checkboxes
-    container.querySelectorAll('.task-checkbox').forEach((checkbox, index) => {
-      checkbox.addEventListener('click', () => toggleTask(tasks[index].id));
+    container.textContent = '';
+    tasks.forEach(task => {
+      const listItem = document.createElement('div');
+      listItem.className = 'list-item';
+      listItem.setAttribute('data-task-id', task.id);
+      
+      const checkbox = document.createElement('div');
+      checkbox.className = `task-checkbox${task.completed ? ' checked' : ''}`;
+      checkbox.addEventListener('click', () => toggleTask(task.id));
+      
+      const content = document.createElement('div');
+      content.className = 'list-item-content';
+      
+      const title = document.createElement('div');
+      title.className = `list-item-title task-title${task.completed ? ' completed' : ''}`;
+      title.textContent = task.title || task.name;
+      
+      const subtitle = document.createElement('div');
+      subtitle.className = 'list-item-subtitle';
+      subtitle.textContent = task.dueDate ? `Due ${formatDate(task.dueDate)}` : 'No due date';
+      
+      content.appendChild(title);
+      content.appendChild(subtitle);
+      listItem.appendChild(checkbox);
+      listItem.appendChild(content);
+      container.appendChild(listItem);
     });
   } catch (error) {
-    container.innerHTML = '<div class="empty-state">Unable to load tasks</div>';
+    container.textContent = '';
+    const emptyState = document.createElement('div');
+    emptyState.className = 'empty-state';
+    emptyState.textContent = 'Unable to load tasks';
+    container.appendChild(emptyState);
   }
 }
 
@@ -273,21 +294,46 @@ async function loadEvents() {
     const events = await fetchAPI('/api/calendar/events?limit=5');
     
     if (!events || events.length === 0) {
-      container.innerHTML = '<div class="empty-state">No upcoming events</div>';
+      container.textContent = '';
+      const emptyState = document.createElement('div');
+      emptyState.className = 'empty-state';
+      emptyState.textContent = 'No upcoming events';
+      container.appendChild(emptyState);
       return;
     }
     
-    container.innerHTML = events.map(event => `
-      <div class="list-item">
-        <div class="list-item-icon event">📅</div>
-        <div class="list-item-content">
-          <div class="list-item-title">${escapeHtml(event.summary || event.title)}</div>
-          <div class="list-item-subtitle">${escapeHtml(formatEventTime(event))}</div>
-        </div>
-      </div>
-    `).join('');
+    container.textContent = '';
+    events.forEach(event => {
+      const listItem = document.createElement('div');
+      listItem.className = 'list-item';
+      
+      const icon = document.createElement('div');
+      icon.className = 'list-item-icon event';
+      icon.textContent = '📅';
+      
+      const content = document.createElement('div');
+      content.className = 'list-item-content';
+      
+      const title = document.createElement('div');
+      title.className = 'list-item-title';
+      title.textContent = event.summary || event.title;
+      
+      const subtitle = document.createElement('div');
+      subtitle.className = 'list-item-subtitle';
+      subtitle.textContent = formatEventTime(event);
+      
+      content.appendChild(title);
+      content.appendChild(subtitle);
+      listItem.appendChild(icon);
+      listItem.appendChild(content);
+      container.appendChild(listItem);
+    });
   } catch (error) {
-    container.innerHTML = '<div class="empty-state">Unable to load events</div>';
+    container.textContent = '';
+    const emptyState = document.createElement('div');
+    emptyState.className = 'empty-state';
+    emptyState.textContent = 'Unable to load events';
+    container.appendChild(emptyState);
   }
 }
 
@@ -522,12 +568,6 @@ async function fetchAPI(endpoint, options = {}) {
   }
   
   return response.json();
-}
-
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text || '';
-  return div.innerHTML;
 }
 
 function formatDate(dateStr) {
