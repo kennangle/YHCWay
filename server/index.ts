@@ -8,6 +8,22 @@ import { startOutboxWorkerInBackground } from "./outboxWorker";
 const app = express();
 const httpServer = createServer(app);
 
+// OWASP Security Headers middleware (required for Zoom integration)
+app.use((_req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  
+  // CSP varies by environment - stricter in production
+  const isDev = process.env.NODE_ENV !== 'production';
+  const csp = isDev
+    ? "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https: wss:; frame-ancestors 'self';"
+    : "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https: wss: *.google.com *.googleapis.com *.zoom.us *.slack.com; frame-src 'self' accounts.google.com; frame-ancestors 'self';";
+  res.setHeader('Content-Security-Policy', csp);
+  next();
+});
+
 // Setup WebSocket server for real-time messaging
 setupWebSocket(httpServer);
 
