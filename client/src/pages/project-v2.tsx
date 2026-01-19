@@ -7,8 +7,9 @@ import { ProjectBoardView } from "@/features/projects/components/ProjectBoardVie
 import { TaskPane } from "@/features/tasks/components/TaskPane";
 import { ArchivedTasksDrawer } from "@/features/tasks/components/ArchivedTasksDrawer";
 import { useProjectBoard, useProject } from "@/features/projects/hooks";
-import { RefreshCw, Filter, X, Archive } from "lucide-react";
+import { RefreshCw, Filter, X, Archive, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { TaskLite } from "@/features/projects/types";
@@ -41,6 +42,7 @@ export default function ProjectPageV2() {
   });
   const [showFilters, setShowFilters] = useState(false);
   const [showArchivedTasks, setShowArchivedTasks] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     const taskId = selectedTaskIdFromUrl ? parseInt(selectedTaskIdFromUrl) : null;
@@ -56,6 +58,7 @@ export default function ProjectPageV2() {
   }, [boardData]);
 
   const filterTask = useCallback((task: TaskLite): boolean => {
+    if (searchQuery && !task.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     if (filters.assignee && task.assigneeId !== filters.assignee) return false;
     if (filters.priority && task.priority !== filters.priority) return false;
     if (filters.dueDate) {
@@ -82,11 +85,11 @@ export default function ProjectPageV2() {
       }
     }
     return true;
-  }, [filters]);
+  }, [filters, searchQuery]);
 
   const filteredTasksByColumn = useMemo(() => {
     if (!boardData) return {};
-    const hasFilters = filters.assignee || filters.priority || filters.dueDate;
+    const hasFilters = filters.assignee || filters.priority || filters.dueDate || searchQuery;
     if (!hasFilters) return boardData.tasksByColumn;
     
     const result: Record<string, TaskLite[]> = {};
@@ -94,7 +97,7 @@ export default function ProjectPageV2() {
       result[colId] = tasks.filter(filterTask);
     }
     return result;
-  }, [boardData, filterTask, filters]);
+  }, [boardData, filterTask, filters, searchQuery]);
 
   const activeFilterCount = [filters.assignee, filters.priority, filters.dueDate].filter(Boolean).length;
 
@@ -231,6 +234,17 @@ export default function ProjectPageV2() {
         />
 
         <div className="px-4 py-2 border-b bg-white flex items-center gap-2">
+          <div className="relative w-64">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search tasks..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8 h-8"
+              data-testid="input-search-tasks"
+            />
+          </div>
+
           <Popover open={showFilters} onOpenChange={setShowFilters}>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm" className="gap-2" data-testid="button-filter">
@@ -299,9 +313,9 @@ export default function ProjectPageV2() {
             </PopoverContent>
           </Popover>
 
-          {activeFilterCount > 0 && (
+          {(activeFilterCount > 0 || searchQuery) && (
             <span className="text-xs text-gray-500">
-              Showing filtered results
+              {searchQuery ? `Searching for "${searchQuery}"` : "Showing filtered results"}
             </span>
           )}
 
