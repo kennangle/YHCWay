@@ -57,7 +57,7 @@ const availableApps: AppIntegration[] = [
     icon: <Video className="w-6 h-6" />,
     colorClass: "bg-[#2D8CFF] text-white",
     category: "communication",
-    connectType: "configured",
+    connectType: "oauth",
   },
   {
     id: "asana",
@@ -576,6 +576,58 @@ export default function Connect() {
     },
   });
 
+  const zoomConnectMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/zoom/connect", { credentials: "include" });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to initiate Zoom connection");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      if (data.authUrl) {
+        window.location.href = data.authUrl;
+      }
+    },
+    onError: (error: Error) => {
+      setConnectingApp(null);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const zoomDisconnectMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/zoom/disconnect", {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to disconnect Zoom");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Disconnected",
+        description: "Zoom has been disconnected.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["connection-status"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const perkvilleConnectMutation = useMutation({
     mutationFn: async ({ username, password }: { username: string; password: string }) => {
       const res = await fetch("/api/perkville/connect", {
@@ -680,6 +732,8 @@ export default function Connect() {
         slackConnectMutation.mutate();
       } else if (appId === "asana") {
         asanaConnectMutation.mutate();
+      } else if (appId === "zoom") {
+        zoomConnectMutation.mutate();
       }
     } else if (app.connectType === "configured") {
       toast({
@@ -716,6 +770,8 @@ export default function Connect() {
       slackDisconnectMutation.mutate();
     } else if (appId === "asana") {
       asanaDisconnectMutation.mutate();
+    } else if (appId === "zoom") {
+      zoomDisconnectMutation.mutate();
     } else if (appId === "perkville") {
       perkvilleDisconnectMutation.mutate();
     } else {
