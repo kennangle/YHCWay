@@ -1,6 +1,6 @@
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { TopBar } from "@/components/top-bar";
-import { Search, Mail, MessageCircle, Users, MessageSquare, PenSquare, Loader2, Share2, Check, Trash2, Archive, Send } from "lucide-react";
+import { Search, Mail, MessageCircle, Users, MessageSquare, PenSquare, Loader2, Share2, Check, Trash2, Archive, Send, RefreshCw } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SlackChannelConfig } from "@/components/slack-channel-config";
@@ -346,6 +346,22 @@ export default function Inbox() {
             >
               <PenSquare className="w-4 h-4" />
               Compose
+            </button>
+            <button
+              onClick={() => {
+                queryClient.invalidateQueries({ queryKey: ["gmail-messages"] });
+                queryClient.invalidateQueries({ queryKey: ["gmail-sent"] });
+                queryClient.invalidateQueries({ queryKey: ["gmail-archived"] });
+                queryClient.invalidateQueries({ queryKey: ["gmail-trash"] });
+                queryClient.invalidateQueries({ queryKey: ["slack-messages"] });
+                queryClient.invalidateQueries({ queryKey: ["slack-dms"] });
+                toast.success("Refreshing messages...");
+              }}
+              className="flex items-center gap-2 px-4 py-2 glass-panel rounded-full hover:bg-white/80 transition-colors"
+              data-testid="button-refresh"
+              title="Refresh messages"
+            >
+              <RefreshCw className="w-4 h-4" />
             </button>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
