@@ -163,33 +163,23 @@ export function AppLayout({ children }: AppLayoutProps) {
         }}
       />
 
-      <header className="sticky top-0 z-50 w-full border-b bg-white/90 dark:bg-slate-900/90 backdrop-blur-md">
-        <div className="flex h-14 items-center justify-between px-4 gap-4">
-          <div className="flex items-center gap-4">
+      <header className="sticky top-0 z-50 w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md">
+        {/* Top Utility Bar */}
+        <div className="flex h-12 items-center justify-between px-4 gap-4 border-b border-gray-200/50 dark:border-gray-700/50">
+          <div className="flex items-center gap-3">
             <Link href="/dashboard" className="flex items-center gap-2 shrink-0">
-              <img src={yhcLogo} alt="The YHC Way" className="h-9 w-9 rounded-lg" />
-              <span className="font-semibold text-lg hidden lg:inline text-gray-800 dark:text-gray-200">
+              <img src={yhcLogo} alt="The YHC Way" className="h-8 w-8 rounded-lg" />
+              <span className="font-semibold text-lg text-gray-800 dark:text-gray-200">
                 The YHC Way
               </span>
             </Link>
-
-            <nav className="hidden md:flex items-center gap-1">
-              {tabs.map((tab) => (
-                <NavTabDropdown
-                  key={tab.id}
-                  tab={tab}
-                  isActive={isTabActive(tab)}
-                  isItemActive={isItemActive}
-                />
-              ))}
-            </nav>
           </div>
 
-          <div className="flex-1 max-w-md mx-4 hidden sm:block">
+          <div className="flex-1 max-w-lg mx-4 hidden sm:block">
             <GlobalSearch />
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Link href="/time-tracking">
@@ -200,7 +190,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                     data-testid="button-time-tracking"
                   >
                     <Clock className="h-4 w-4" />
-                    <span className="hidden lg:inline">Time</span>
+                    <span className="hidden sm:inline">Time</span>
                   </Button>
                 </Link>
               </TooltipTrigger>
@@ -217,7 +207,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                   data-testid="button-guided-tour"
                 >
                   <HelpCircle className="h-4 w-4" />
-                  <span className="hidden lg:inline">Tour</span>
+                  <span className="hidden sm:inline">Tour</span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Take a Guided Tour</TooltipContent>
@@ -322,6 +312,19 @@ export function AppLayout({ children }: AppLayoutProps) {
           </div>
         </div>
 
+        {/* Navigation Bar - Desktop */}
+        <nav className="hidden md:flex items-center gap-2 px-4 py-2 border-b border-gray-200/50 dark:border-gray-700/50">
+          {tabs.map((tab) => (
+            <NavTabDropdown
+              key={tab.id}
+              tab={tab}
+              isActive={isTabActive(tab)}
+              isItemActive={isItemActive}
+            />
+          ))}
+        </nav>
+
+        {/* Navigation Bar - Mobile */}
         <MobileNav tabs={tabs} isItemActive={isItemActive} isTabActive={isTabActive} />
       </header>
 
