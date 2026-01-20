@@ -64,6 +64,151 @@ interface AppLayoutProps {
   children: ReactNode;
 }
 
+function NavTabDropdown({
+  tab,
+  isActive,
+  isItemActive,
+}: {
+  tab: NavTab;
+  isActive: boolean;
+  isItemActive: (item: NavItem) => boolean;
+}) {
+  const [, navigate] = useLocation();
+
+  const handleTabClick = () => {
+    if (tab.href) {
+      navigate(tab.href);
+    }
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          className={cn(
+            "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all",
+            "hover:bg-gradient-to-r hover:from-orange-100 hover:to-amber-100 dark:hover:from-orange-900/30 dark:hover:to-amber-900/30",
+            "focus:outline-none focus:ring-2 focus:ring-orange-300 focus:ring-offset-1",
+            isActive
+              ? "bg-gradient-to-r from-orange-400 to-amber-500 text-white shadow-md"
+              : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+          )}
+          data-testid={`nav-tab-${tab.id}`}
+        >
+          <tab.icon className="h-4 w-4" />
+          <span className="hidden xl:inline">{tab.label}</span>
+          <ChevronDown className="h-3 w-3 opacity-70" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-52">
+        {tab.href && (
+          <DropdownMenuItem
+            onClick={handleTabClick}
+            className="gap-2 cursor-pointer"
+            data-testid={`nav-item-${tab.id}-home`}
+          >
+            <tab.icon className="h-4 w-4" />
+            <span>{tab.label} Home</span>
+          </DropdownMenuItem>
+        )}
+        {tab.items.map((item) => (
+          <NavDropdownItem key={item.id} item={item} isActive={isItemActive(item)} />
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function NavDropdownItem({ item, isActive }: { item: NavItem; isActive: boolean }) {
+  if (item.isExternal) {
+    return (
+      <DropdownMenuItem asChild>
+        <a
+          href={item.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={cn(
+            "flex items-center gap-2 cursor-pointer w-full",
+            isActive && "bg-orange-50 dark:bg-orange-900/20"
+          )}
+          data-testid={`nav-item-${item.id}`}
+        >
+          <item.icon className="h-4 w-4" />
+          <span>{item.label}</span>
+          <ExternalLink className="h-3 w-3 ml-auto opacity-50" />
+        </a>
+      </DropdownMenuItem>
+    );
+  }
+
+  return (
+    <DropdownMenuItem asChild>
+      <Link
+        href={item.href}
+        className={cn(
+          "flex items-center gap-2 cursor-pointer w-full",
+          isActive && "bg-orange-50 dark:bg-orange-900/20"
+        )}
+        data-testid={`nav-item-${item.id}`}
+      >
+        <item.icon className="h-4 w-4" />
+        <span>{item.label}</span>
+      </Link>
+    </DropdownMenuItem>
+  );
+}
+
+function MobileNavItem({
+  item,
+  isActive,
+  onClose,
+}: {
+  item: NavItem;
+  isActive: boolean;
+  onClose: () => void;
+}) {
+  const [, navigate] = useLocation();
+
+  if (item.isExternal) {
+    return (
+      <a
+        href={item.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={onClose}
+        className={cn(
+          "flex items-center gap-2 px-3 py-2 rounded-lg text-sm",
+          "hover:bg-gray-100 dark:hover:bg-gray-800",
+          isActive && "bg-orange-50 dark:bg-orange-900/20 text-orange-600"
+        )}
+        data-testid={`mobile-nav-item-${item.id}`}
+      >
+        <item.icon className="h-4 w-4" />
+        <span>{item.label}</span>
+        <ExternalLink className="h-3 w-3 ml-auto opacity-50" />
+      </a>
+    );
+  }
+
+  return (
+    <button
+      onClick={() => {
+        navigate(item.href);
+        onClose();
+      }}
+      className={cn(
+        "flex items-center gap-2 px-3 py-2 rounded-lg text-sm w-full text-left",
+        "hover:bg-gray-100 dark:hover:bg-gray-800",
+        isActive && "bg-orange-50 dark:bg-orange-900/20 text-orange-600"
+      )}
+      data-testid={`mobile-nav-item-${item.id}`}
+    >
+      <item.icon className="h-4 w-4" />
+      <span>{item.label}</span>
+    </button>
+  );
+}
+
 export function AppLayout({ children }: AppLayoutProps) {
   const [location, setLocation] = useLocation();
   const { user } = useAuth();
@@ -180,32 +325,31 @@ export function AppLayout({ children }: AppLayoutProps) {
 
       <header className="sticky top-0 z-50 w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md">
         {/* Top Utility Bar */}
-        <div className="flex h-12 items-center justify-between px-4 gap-4 border-b border-gray-200/50 dark:border-gray-700/50">
-          <div className="flex items-center gap-3">
+        <div className="flex h-12 items-center justify-between px-3 md:px-4 gap-2 md:gap-4 border-b border-gray-200/50 dark:border-gray-700/50">
+          <div className="flex items-center gap-2 shrink-0">
             <Link href="/dashboard" className="flex items-center gap-2 shrink-0">
-              <img src={yhcLogo} alt="The YHC Way" className="h-8 w-8 rounded-lg" />
-              <span className="font-semibold text-lg text-gray-800 dark:text-gray-200">
+              <img src={yhcLogo} alt="The YHC Way" className="h-7 w-7 md:h-8 md:w-8 rounded-lg" />
+              <span className="hidden sm:inline font-semibold text-lg text-gray-800 dark:text-gray-200">
                 The YHC Way
               </span>
             </Link>
           </div>
 
-          <div className="flex-1 max-w-lg mx-4 hidden sm:block">
+          <div className="flex-1 max-w-lg mx-2 md:mx-4 hidden sm:block">
             <GlobalSearch />
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5 md:gap-1">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Link href="/time-tracking">
                   <Button
                     variant="ghost"
-                    size="sm"
-                    className="gap-1.5 text-gray-600 dark:text-gray-300 hover:text-gray-900"
+                    size="icon"
+                    className="h-8 w-8 text-gray-600 dark:text-gray-300 hover:text-gray-900"
                     data-testid="button-time-tracking"
                   >
                     <Clock className="h-4 w-4" />
-                    <span className="hidden sm:inline">Time</span>
                   </Button>
                 </Link>
               </TooltipTrigger>
@@ -216,26 +360,23 @@ export function AppLayout({ children }: AppLayoutProps) {
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
-                  size="sm"
+                  size="icon"
                   onClick={startTour}
-                  className="gap-1.5 text-gray-600 dark:text-gray-300 hover:text-gray-900"
+                  className="h-8 w-8 text-gray-600 dark:text-gray-300 hover:text-gray-900"
                   data-testid="button-guided-tour"
                 >
                   <HelpCircle className="h-4 w-4" />
-                  <span className="hidden sm:inline">Tour</span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Take a Guided Tour</TooltipContent>
             </Tooltip>
-
-            <div className="h-5 w-px bg-gray-200 dark:bg-gray-700 mx-1 hidden sm:block" />
 
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 text-gray-500 hover:text-red-500"
+                  className="hidden sm:flex h-8 w-8 text-gray-500 hover:text-red-500"
                   onClick={() => setFeedbackType("bug")}
                   data-testid="button-report-bug"
                 >
@@ -250,7 +391,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 text-gray-500 hover:text-yellow-500"
+                  className="hidden sm:flex h-8 w-8 text-gray-500 hover:text-yellow-500"
                   onClick={() => setFeedbackType("feature")}
                   data-testid="button-request-feature"
                 >
@@ -280,8 +421,6 @@ export function AppLayout({ children }: AppLayoutProps) {
                 {theme === "dark" ? "Light mode" : "Dark mode"}
               </TooltipContent>
             </Tooltip>
-
-            <div className="h-5 w-px bg-gray-200 dark:bg-gray-700 mx-1 hidden sm:block" />
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -472,149 +611,3 @@ export function AppLayout({ children }: AppLayoutProps) {
     </div>
   );
 }
-
-function NavTabDropdown({
-  tab,
-  isActive,
-  isItemActive,
-}: {
-  tab: NavTab;
-  isActive: boolean;
-  isItemActive: (item: NavItem) => boolean;
-}) {
-  const [, navigate] = useLocation();
-
-  const handleTabClick = () => {
-    if (tab.href) {
-      navigate(tab.href);
-    }
-  };
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          className={cn(
-            "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all",
-            "hover:bg-gradient-to-r hover:from-orange-100 hover:to-amber-100 dark:hover:from-orange-900/30 dark:hover:to-amber-900/30",
-            "focus:outline-none focus:ring-2 focus:ring-orange-300 focus:ring-offset-1",
-            isActive
-              ? "bg-gradient-to-r from-orange-400 to-amber-500 text-white shadow-md"
-              : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
-          )}
-          data-testid={`nav-tab-${tab.id}`}
-        >
-          <tab.icon className="h-4 w-4" />
-          <span className="hidden xl:inline">{tab.label}</span>
-          <ChevronDown className="h-3 w-3 opacity-70" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-52">
-        {tab.href && (
-          <DropdownMenuItem
-            onClick={handleTabClick}
-            className="gap-2 cursor-pointer"
-            data-testid={`nav-item-${tab.id}-home`}
-          >
-            <tab.icon className="h-4 w-4" />
-            <span>{tab.label} Home</span>
-          </DropdownMenuItem>
-        )}
-        {tab.items.map((item) => (
-          <NavDropdownItem key={item.id} item={item} isActive={isItemActive(item)} />
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
-function NavDropdownItem({ item, isActive }: { item: NavItem; isActive: boolean }) {
-  if (item.isExternal) {
-    return (
-      <DropdownMenuItem asChild>
-        <a
-          href={item.href}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={cn(
-            "flex items-center gap-2 cursor-pointer w-full",
-            isActive && "bg-orange-50 dark:bg-orange-900/20"
-          )}
-          data-testid={`nav-item-${item.id}`}
-        >
-          <item.icon className="h-4 w-4" />
-          <span>{item.label}</span>
-          <ExternalLink className="h-3 w-3 ml-auto opacity-50" />
-        </a>
-      </DropdownMenuItem>
-    );
-  }
-
-  return (
-    <DropdownMenuItem asChild>
-      <Link
-        href={item.href}
-        className={cn(
-          "flex items-center gap-2 cursor-pointer w-full",
-          isActive && "bg-orange-50 dark:bg-orange-900/20"
-        )}
-        data-testid={`nav-item-${item.id}`}
-      >
-        <item.icon className="h-4 w-4" />
-        <span>{item.label}</span>
-      </Link>
-    </DropdownMenuItem>
-  );
-}
-
-function MobileNavItem({
-  item,
-  isActive,
-  onClose,
-}: {
-  item: NavItem;
-  isActive: boolean;
-  onClose: () => void;
-}) {
-  const [, navigate] = useLocation();
-
-  if (item.isExternal) {
-    return (
-      <a
-        href={item.href}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={onClose}
-        className={cn(
-          "flex items-center gap-2 px-3 py-2 rounded-lg text-sm",
-          "hover:bg-gray-100 dark:hover:bg-gray-800",
-          isActive && "bg-orange-50 dark:bg-orange-900/20 text-orange-600"
-        )}
-        data-testid={`mobile-nav-item-${item.id}`}
-      >
-        <item.icon className="h-4 w-4" />
-        <span>{item.label}</span>
-        <ExternalLink className="h-3 w-3 ml-auto opacity-50" />
-      </a>
-    );
-  }
-
-  return (
-    <button
-      onClick={() => {
-        navigate(item.href);
-        onClose();
-      }}
-      className={cn(
-        "flex items-center gap-2 px-3 py-2 rounded-lg text-sm w-full text-left",
-        "hover:bg-gray-100 dark:hover:bg-gray-800",
-        isActive && "bg-orange-50 dark:bg-orange-900/20 text-orange-600"
-      )}
-      data-testid={`mobile-nav-item-${item.id}`}
-    >
-      <item.icon className="h-4 w-4" />
-      <span>{item.label}</span>
-    </button>
-  );
-}
-
