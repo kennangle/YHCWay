@@ -2677,7 +2677,7 @@ export async function registerRoutes(
       const appUrl = process.env.APP_URL || 'https://yhcway.com';
       const redirectUri = `${appUrl}/api/slack/callback`;
       
-      // User scopes for accessing their own messages
+      // User scopes for accessing and sending messages
       const userScopes = [
         'channels:read',
         'channels:history',
@@ -2687,7 +2687,8 @@ export async function registerRoutes(
         'im:history',
         'mpim:read',
         'mpim:history',
-        'users:read'
+        'users:read',
+        'chat:write'
       ].join(',');
       
       const authUrl = `https://slack.com/oauth/v2/authorize?client_id=${clientId}&user_scope=${userScopes}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${userId}`;
