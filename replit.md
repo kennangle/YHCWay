@@ -70,3 +70,38 @@ The system uses local email/password authentication with PostgreSQL-backed sessi
 - **Vite**: Development server and build tool.
 - **esbuild**: Production server bundling.
 - **TypeScript**: Language for type checking.
+
+## User Guide
+
+### How to Use Task Dependencies
+
+Task dependencies allow you to define relationships between tasks, ensuring work is completed in the correct order. When Task A depends on Task B, Task A is "blocked" until Task B is completed.
+
+#### Adding Dependencies
+1. Open a project and click on a task to open the task details panel
+2. In the task panel, find the "Dependencies" section
+3. Use the "Add blocking task..." dropdown to select a task that must be completed first
+4. The selected task will appear as a dependency with a visual indicator showing if it's complete (green) or pending (amber)
+
+#### Removing Dependencies
+1. In the task details panel, find the dependency you want to remove
+2. Click the X button next to the dependency to unlink it
+
+#### Viewing the Dependency Tracker
+1. From the project board, click the "Dependencies" button in the header
+2. The Dependency Tracker shows:
+   - **Bottlenecks**: Tasks that block 2 or more other tasks (high priority to complete)
+   - **Blocked Tasks**: Tasks waiting on other tasks to be completed
+   - **Visual dependency chains**: See the flow of work and how tasks relate
+
+#### Dependency Types
+Dependencies use a "Finish to Start" relationship by default, meaning Task B cannot start until Task A is finished. This is the most common dependency type for sequential work.
+
+#### Tips
+- Avoid creating circular dependencies (e.g., Task A depends on Task B, which depends on Task A) as this can cause issues with task completion tracking.
+
+#### Best Practices
+- Keep dependency chains short to avoid bottlenecks
+- Complete bottleneck tasks first to unblock the most work
+- Use the Dependency Tracker regularly to identify blocked work
+- Mark tasks complete as soon as they're done to update blocked task status
