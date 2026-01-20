@@ -312,20 +312,19 @@ export function AppLayout({ children }: AppLayoutProps) {
           </div>
         </div>
 
-        {/* Navigation Bar - Desktop */}
-        <nav className="hidden md:flex items-center gap-2 px-4 py-2 border-b border-gray-200/50 dark:border-gray-700/50">
-          {tabs.map((tab) => (
-            <NavTabDropdown
-              key={tab.id}
-              tab={tab}
-              isActive={isTabActive(tab)}
-              isItemActive={isItemActive}
-            />
-          ))}
+        {/* Navigation Bar - All screens with horizontal scroll */}
+        <nav className="overflow-x-auto border-b border-gray-200/50 dark:border-gray-700/50">
+          <div className="flex items-center gap-2 px-4 py-2 min-w-max">
+            {tabs.map((tab) => (
+              <NavTabDropdown
+                key={tab.id}
+                tab={tab}
+                isActive={isTabActive(tab)}
+                isItemActive={isItemActive}
+              />
+            ))}
+          </div>
         </nav>
-
-        {/* Navigation Bar - Mobile */}
-        <MobileNav tabs={tabs} isItemActive={isItemActive} isTabActive={isTabActive} />
       </header>
 
       <main className="relative z-10">{children}</main>
@@ -500,43 +499,3 @@ function NavDropdownItem({ item, isActive }: { item: NavItem; isActive: boolean 
   );
 }
 
-function MobileNav({
-  tabs,
-  isItemActive,
-  isTabActive,
-}: {
-  tabs: NavTab[];
-  isItemActive: (item: NavItem) => boolean;
-  isTabActive: (tab: NavTab) => boolean;
-}) {
-  return (
-    <div className="md:hidden overflow-x-auto border-t bg-white dark:bg-slate-900">
-      <div className="flex items-center gap-1 p-2 min-w-max">
-        {tabs.map((tab) => (
-          <DropdownMenu key={tab.id}>
-            <DropdownMenuTrigger asChild>
-              <button
-                className={cn(
-                  "flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap",
-                  isTabActive(tab)
-                    ? "bg-gradient-to-r from-orange-400 to-amber-500 text-white"
-                    : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
-                )}
-                data-testid={`mobile-nav-tab-${tab.id}`}
-              >
-                <tab.icon className="h-3.5 w-3.5" />
-                <span>{tab.label}</span>
-                <ChevronDown className="h-3 w-3" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-48">
-              {tab.items.map((item) => (
-                <NavDropdownItem key={item.id} item={item} isActive={isItemActive(item)} />
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ))}
-      </div>
-    </div>
-  );
-}
