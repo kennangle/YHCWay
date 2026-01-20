@@ -100,7 +100,7 @@ export function BoardColumn({
 
       <div
         ref={setNodeRef}
-        className="flex-1 p-2 space-y-2 overflow-y-auto min-h-[100px]"
+        className="flex-1 p-2 space-y-2 overflow-y-auto min-h-[200px]"
       >
         <SortableContext items={sortableItems} strategy={verticalListSortingStrategy}>
           {tasks.map((task) => (

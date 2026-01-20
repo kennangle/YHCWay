@@ -1,5 +1,5 @@
-import { DndContext, DragEndEvent, DragOverlay, closestCorners } from "@dnd-kit/core";
-import { useState } from "react";
+import { DndContext, DragEndEvent, DragOverlay, pointerWithin, rectIntersection, CollisionDetection } from "@dnd-kit/core";
+import { useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { BoardColumn } from "./BoardColumn";
 import { TaskCard } from "./TaskCard";
@@ -7,6 +7,14 @@ import { useBoardSensors } from "@/features/tasks/dnd/sensors";
 import { computePlacement, findInsertIndex } from "@/features/tasks/dnd/placement";
 import { useMovePlacement, useCreateTask, useToggleTaskCompletion } from "@/features/tasks/hooks";
 import type { ProjectColumn, TaskLite } from "../types";
+
+const customCollisionDetection: CollisionDetection = (args) => {
+  const pointerCollisions = pointerWithin(args);
+  if (pointerCollisions.length > 0) {
+    return pointerCollisions;
+  }
+  return rectIntersection(args);
+};
 
 interface TeamUser {
   id: string;
@@ -119,7 +127,7 @@ export function ProjectBoardView({
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCorners}
+      collisionDetection={customCollisionDetection}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
