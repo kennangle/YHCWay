@@ -96,7 +96,7 @@ export async function testWebhook(
   const testPayload: WebhookPayload = {
     event: "test",
     timestamp: new Date().toISOString(),
-    data: { message: "This is a test webhook from UniWork" },
+    data: { message: "This is a test webhook from The YHC Way" },
   };
 
   const body = JSON.stringify(testPayload);

@@ -84,17 +84,17 @@ export async function sendInvitationEmail(to: string, firstName: string, tempPas
 }
 
 // Default password reset template
-const DEFAULT_RESET_SUBJECT = "Reset Your UniWork Password";
+const DEFAULT_RESET_SUBJECT = "Reset Your Password - The YHC Way";
 const DEFAULT_RESET_HTML = `
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <h1 style="color: #333; text-align: center;">UniWork</h1>
+  <h1 style="color: #FD971E; text-align: center;">The YHC Way</h1>
   <h2 style="color: #666;">Password Reset Request</h2>
   <p style="color: #444; line-height: 1.6;">
     We received a request to reset your password. Click the button below to create a new password:
   </p>
   <div style="text-align: center; margin: 30px 0;">
     <a href="{{resetLink}}" 
-       style="background-color: #6366f1; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold;">
+       style="background-color: #FD971E; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold;">
       Reset Password
     </a>
   </div>
@@ -103,7 +103,7 @@ const DEFAULT_RESET_HTML = `
   </p>
   <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
   <p style="color: #999; font-size: 12px; text-align: center;">
-    UniWork - Your Unified Workspace
+    The YHC Way - Your Unified Workspace
   </p>
 </div>
 `;
@@ -169,16 +169,16 @@ export function getTemplateTypes() {
 }
 
 // Default templates for all template types
-const DEFAULT_WELCOME_SUBJECT = "Welcome to UniWork!";
+const DEFAULT_WELCOME_SUBJECT = "Welcome to The YHC Way!";
 const DEFAULT_WELCOME_HTML = `
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <h1 style="color: #FD971E; text-align: center;">Welcome to UniWork!</h1>
+  <h1 style="color: #FD971E; text-align: center;">Welcome to The YHC Way!</h1>
   <h2 style="color: #666;">Hello {{firstName}},</h2>
   <p style="color: #444; line-height: 1.6;">
     Welcome to your new unified workspace! We're excited to have you on board.
   </p>
   <p style="color: #444; line-height: 1.6;">
-    UniWork brings all your work tools together in one place - email, calendar, tasks, and more.
+    The YHC Way brings all your work tools together in one place - email, calendar, tasks, and more.
   </p>
   <div style="text-align: center; margin: 30px 0;">
     <a href="{{loginUrl}}" 
@@ -188,36 +188,36 @@ const DEFAULT_WELCOME_HTML = `
   </div>
   <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
   <p style="color: #999; font-size: 12px; text-align: center;">
-    UniWork - Your Unified Workspace
+    The YHC Way - Your Unified Workspace
   </p>
 </div>
 `;
 
-const DEFAULT_NEWSLETTER_SUBJECT = "UniWork Newsletter";
+const DEFAULT_NEWSLETTER_SUBJECT = "The YHC Way Newsletter";
 const DEFAULT_NEWSLETTER_HTML = `
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <h1 style="color: #FD971E; text-align: center;">UniWork Updates</h1>
+  <h1 style="color: #FD971E; text-align: center;">The YHC Way Updates</h1>
   <h2 style="color: #666;">Hello {{firstName}},</h2>
   <p style="color: #444; line-height: 1.6;">
-    Here are the latest updates and announcements from UniWork.
+    Here are the latest updates and announcements from The YHC Way.
   </p>
   <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
     <p style="color: #444;">Add your newsletter content here...</p>
   </div>
   <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
   <p style="color: #999; font-size: 12px; text-align: center;">
-    UniWork - Your Unified Workspace
+    The YHC Way - Your Unified Workspace
   </p>
 </div>
 `;
 
-const DEFAULT_NOTIFICATION_SUBJECT = "UniWork Notification";
+const DEFAULT_NOTIFICATION_SUBJECT = "The YHC Way Notification";
 const DEFAULT_NOTIFICATION_HTML = `
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
   <h1 style="color: #FD971E; text-align: center;">Notification</h1>
   <h2 style="color: #666;">Hello {{firstName}},</h2>
   <p style="color: #444; line-height: 1.6;">
-    You have a new notification from UniWork.
+    You have a new notification from The YHC Way.
   </p>
   <div style="background-color: #fff8f0; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #FD971E;">
     <p style="color: #444;">Notification content goes here...</p>
@@ -230,7 +230,7 @@ const DEFAULT_NOTIFICATION_HTML = `
   </div>
   <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
   <p style="color: #999; font-size: 12px; text-align: center;">
-    UniWork - Your Unified Workspace
+    The YHC Way - Your Unified Workspace
   </p>
 </div>
 `;
@@ -238,13 +238,13 @@ const DEFAULT_NOTIFICATION_HTML = `
 const DEFAULT_CUSTOM_SUBJECT = "Custom Email";
 const DEFAULT_CUSTOM_HTML = `
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <h1 style="color: #FD971E; text-align: center;">UniWork</h1>
+  <h1 style="color: #FD971E; text-align: center;">The YHC Way</h1>
   <p style="color: #444; line-height: 1.6;">
     Start designing your custom email template here. Use variables like {{firstName}}, {{lastName}}, and {{email}} to personalize your messages.
   </p>
   <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
   <p style="color: #999; font-size: 12px; text-align: center;">
-    UniWork - Your Unified Workspace
+    The YHC Way - Your Unified Workspace
   </p>
 </div>
 `;
@@ -275,7 +275,7 @@ export function getDefaultTemplate(templateType: string): { subject: string; htm
 
 const NOTIFICATION_TASK_ASSIGNED_HTML = `
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <h1 style="color: #FD971E; text-align: center;">UniWork</h1>
+  <h1 style="color: #FD971E; text-align: center;">The YHC Way</h1>
   <h2 style="color: #333;">New Task Assigned to You</h2>
   <div style="background-color: #fff8f0; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #FD971E;">
     <h3 style="margin: 0 0 10px 0; color: #333;">{{taskTitle}}</h3>
@@ -292,14 +292,14 @@ const NOTIFICATION_TASK_ASSIGNED_HTML = `
   </div>
   <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
   <p style="color: #999; font-size: 12px; text-align: center;">
-    You're receiving this because you have task assignment notifications enabled in UniWork.
+    You're receiving this because you have task assignment notifications enabled in The YHC Way.
   </p>
 </div>
 `;
 
 const NOTIFICATION_TASK_DUE_HTML = `
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <h1 style="color: #FD971E; text-align: center;">UniWork</h1>
+  <h1 style="color: #FD971E; text-align: center;">The YHC Way</h1>
   <h2 style="color: #333;">Task Due Reminder</h2>
   <div style="background-color: #fff3e0; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ff9800;">
     <h3 style="margin: 0 0 10px 0; color: #333;">{{taskTitle}}</h3>
@@ -314,14 +314,14 @@ const NOTIFICATION_TASK_DUE_HTML = `
   </div>
   <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
   <p style="color: #999; font-size: 12px; text-align: center;">
-    You're receiving this because you have task due notifications enabled in UniWork.
+    You're receiving this because you have task due notifications enabled in The YHC Way.
   </p>
 </div>
 `;
 
 const NOTIFICATION_CALENDAR_CONFLICT_HTML = `
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <h1 style="color: #FD971E; text-align: center;">UniWork</h1>
+  <h1 style="color: #FD971E; text-align: center;">The YHC Way</h1>
   <h2 style="color: #333;">Calendar Conflict Detected</h2>
   <div style="background-color: #ffebee; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f44336;">
     <p style="margin: 0 0 15px 0; color: #666;">You have overlapping events:</p>
@@ -342,7 +342,7 @@ const NOTIFICATION_CALENDAR_CONFLICT_HTML = `
   </div>
   <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
   <p style="color: #999; font-size: 12px; text-align: center;">
-    You're receiving this because you have calendar conflict notifications enabled in UniWork.
+    You're receiving this because you have calendar conflict notifications enabled in The YHC Way.
   </p>
 </div>
 `;
