@@ -1328,3 +1328,93 @@ export const siteSettings = pgTable("site_settings", {
 
 export type SiteSetting = typeof siteSettings.$inferSelect;
 export type InsertSiteSetting = typeof siteSettings.$inferInsert;
+
+// =============================================================================
+// DAILY HUB - Staff communication log
+// =============================================================================
+
+export const DailyHubSection = {
+  TEACHER_ANNOUNCEMENTS: "teacher_announcements",
+  STAFF_QUESTIONS: "staff_questions",
+  STAFF_COMMENTS: "staff_comments",
+  VOICEMAIL_NOTES: "voicemail_notes",
+  MEMBERSHIP_SALES: "membership_sales",
+  RETAIL_SALES: "retail_sales",
+  LOST_AND_FOUND: "lost_and_found",
+} as const;
+export type DailyHubSectionType = typeof DailyHubSection[keyof typeof DailyHubSection];
+
+export const dailyHubEntries = pgTable("daily_hub_entries", {
+  id: serial("id").primaryKey(),
+  date: varchar("date", { length: 10 }).notNull(), // YYYY-MM-DD format
+  section: varchar("section").notNull(),
+  content: text("content").notNull(),
+  authorId: varchar("author_id").references(() => users.id),
+  authorInitials: varchar("author_initials", { length: 10 }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("daily_hub_by_date").on(table.date),
+  index("daily_hub_by_section").on(table.section),
+]);
+
+export type DailyHubEntry = typeof dailyHubEntries.$inferSelect;
+export type InsertDailyHubEntry = typeof dailyHubEntries.$inferInsert;
+
+export const insertDailyHubEntrySchema = createInsertSchema(dailyHubEntries).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const createDailyHubEntrySchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format"),
+  section: z.enum([
+    "teacher_announcements",
+    "staff_questions",
+    "staff_comments",
+    "voicemail_notes",
+    "membership_sales",
+    "retail_sales",
+    "lost_and_found",
+  ]),
+  content: z.string().min(1, "Content is required"),
+});
+
+// Pinned announcements that appear on multiple days
+export const dailyHubPinnedAnnouncements = pgTable("daily_hub_pinned_announcements", {
+  id: serial("id").primaryKey(),
+  section: varchar("section").notNull(),
+  content: text("content").notNull(),
+  startDate: varchar("start_date", { length: 10 }).notNull(),
+  endDate: varchar("end_date", { length: 10 }),
+  authorId: varchar("author_id").references(() => users.id),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("pinned_by_section").on(table.section),
+  index("pinned_by_dates").on(table.startDate, table.endDate),
+]);
+
+export type DailyHubPinnedAnnouncement = typeof dailyHubPinnedAnnouncements.$inferSelect;
+export type InsertDailyHubPinnedAnnouncement = typeof dailyHubPinnedAnnouncements.$inferInsert;
+
+export const insertPinnedAnnouncementSchema = createInsertSchema(dailyHubPinnedAnnouncements).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const createPinnedAnnouncementSchema = z.object({
+  section: z.enum([
+    "teacher_announcements",
+    "staff_questions",
+    "staff_comments",
+    "voicemail_notes",
+    "membership_sales",
+    "retail_sales",
+    "lost_and_found",
+  ]),
+  content: z.string().min(1, "Content is required"),
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Start date must be in YYYY-MM-DD format"),
+  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "End date must be in YYYY-MM-DD format").optional(),
+});
