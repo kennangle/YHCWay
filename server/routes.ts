@@ -7247,5 +7247,133 @@ export async function registerRoutes(
     }
   });
 
+  // ============== DAILY HUB ROUTES ==============
+  
+  app.get("/api/daily-hub/:date", isAuthenticated, async (req: any, res) => {
+    try {
+      const { date } = req.params;
+      const [entries, pinnedAnnouncements] = await Promise.all([
+        storage.getDailyHubEntries(date),
+        storage.getPinnedAnnouncements(date),
+      ]);
+      res.json({ entries, pinnedAnnouncements });
+    } catch (error) {
+      console.error("Error fetching daily hub:", error);
+      res.status(500).json({ error: "Failed to fetch daily hub" });
+    }
+  });
+
+  app.post("/api/daily-hub/entries", isAuthenticated, async (req: any, res) => {
+    try {
+      const { date, section, content } = req.body;
+      if (!date || !section || !content) {
+        return res.status(400).json({ error: "Date, section, and content are required" });
+      }
+      const user = req.user as any;
+      const initials = user.firstName && user.lastName 
+        ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
+        : user.email?.substring(0, 2).toUpperCase() || "??";
+      
+      const entry = await storage.createDailyHubEntry({
+        date,
+        section,
+        content,
+        authorId: user.id,
+        authorInitials: initials,
+      });
+      res.json(entry);
+    } catch (error) {
+      console.error("Error creating daily hub entry:", error);
+      res.status(500).json({ error: "Failed to create entry" });
+    }
+  });
+
+  app.put("/api/daily-hub/entries/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { content } = req.body;
+      if (!content) {
+        return res.status(400).json({ error: "Content is required" });
+      }
+      const entry = await storage.updateDailyHubEntry(parseInt(id), content);
+      if (!entry) {
+        return res.status(404).json({ error: "Entry not found" });
+      }
+      res.json(entry);
+    } catch (error) {
+      console.error("Error updating daily hub entry:", error);
+      res.status(500).json({ error: "Failed to update entry" });
+    }
+  });
+
+  app.delete("/api/daily-hub/entries/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteDailyHubEntry(parseInt(id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting daily hub entry:", error);
+      res.status(500).json({ error: "Failed to delete entry" });
+    }
+  });
+
+  app.get("/api/daily-hub/pinned", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const announcements = await storage.getPinnedAnnouncements(today);
+      res.json(announcements);
+    } catch (error) {
+      console.error("Error fetching pinned announcements:", error);
+      res.status(500).json({ error: "Failed to fetch announcements" });
+    }
+  });
+
+  app.post("/api/daily-hub/pinned", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { section, content, startDate, endDate } = req.body;
+      if (!section || !content || !startDate) {
+        return res.status(400).json({ error: "Section, content, and start date are required" });
+      }
+      const user = req.user as any;
+      const announcement = await storage.createPinnedAnnouncement({
+        section,
+        content,
+        startDate,
+        endDate: endDate || null,
+        authorId: user.id,
+        isActive: true,
+      });
+      res.json(announcement);
+    } catch (error) {
+      console.error("Error creating pinned announcement:", error);
+      res.status(500).json({ error: "Failed to create announcement" });
+    }
+  });
+
+  app.put("/api/daily-hub/pinned/:id", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const announcement = await storage.updatePinnedAnnouncement(parseInt(id), req.body);
+      if (!announcement) {
+        return res.status(404).json({ error: "Announcement not found" });
+      }
+      res.json(announcement);
+    } catch (error) {
+      console.error("Error updating pinned announcement:", error);
+      res.status(500).json({ error: "Failed to update announcement" });
+    }
+  });
+
+  app.delete("/api/daily-hub/pinned/:id", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deletePinnedAnnouncement(parseInt(id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting pinned announcement:", error);
+      res.status(500).json({ error: "Failed to delete announcement" });
+    }
+  });
+
   return httpServer;
 }
