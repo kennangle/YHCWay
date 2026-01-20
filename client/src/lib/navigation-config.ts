@@ -66,10 +66,10 @@ export const navigationTabs: NavTab[] = [
       { id: "tasks", icon: ListTodo, label: "Tasks", href: "/tasks" },
       { id: "projects", icon: FolderKanban, label: "Projects", href: "/projects" },
       { id: "dependencies", icon: GitBranch, label: "Dependencies", href: "/dependency-tracker" },
-      { id: "ai-summarize", icon: Zap, label: "AI Summarize", href: "/ai-summarize" },
-      { id: "google-drive", icon: HardDrive, label: "Google Drive", href: "/google-drive" },
-      { id: "google-sheets", icon: FileSpreadsheet, label: "Google Sheets", href: "/google-sheets" },
       { id: "google-docs", icon: File, label: "Google Docs", href: "/google-docs" },
+      { id: "google-sheets", icon: FileSpreadsheet, label: "Google Sheets", href: "/google-sheets" },
+      { id: "google-drive", icon: HardDrive, label: "Google Drive", href: "/google-drive" },
+      { id: "ai-summarize", icon: Zap, label: "AI Summarize", href: "/ai-summarize" },
     ],
   },
   {
