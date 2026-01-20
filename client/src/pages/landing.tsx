@@ -48,9 +48,9 @@ export default function Landing() {
           <p className="mt-6 text-sm text-muted-foreground">
             Sign in with Google or email
           </p>
-          <a href="https://www.yogahealthcenter.com/privacypolicy" target="_blank" rel="noopener noreferrer" className="mt-4 inline-block text-sm text-muted-foreground hover:text-primary transition-colors underline">
+          <Link href="/privacy" className="mt-4 inline-block text-sm text-muted-foreground hover:text-primary transition-colors underline">
             Privacy Policy
-          </a>
+          </Link>
         </div>
 
         <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl w-full">
@@ -68,9 +68,9 @@ export default function Landing() {
 
         <footer className="mt-16 pb-8 text-center text-sm text-muted-foreground">
           <p>© {new Date().getFullYear()} Yoga Health Center. All rights reserved.</p>
-          <a href="https://www.yogahealthcenter.com/privacypolicy" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors underline">
+          <Link href="/privacy" className="hover:text-primary transition-colors underline">
             Privacy Policy
-          </a>
+          </Link>
         </footer>
       </div>
     </div>
