@@ -17,24 +17,21 @@ interface SiteSetting {
 }
 
 export default function Privacy() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const queryClient = useQueryClient();
   const isAdmin = user?.isAdmin;
 
-  const { data: privacyPolicy, isLoading } = useQuery<SiteSetting | null>({
+  const { data: privacyPolicy, isLoading, isError } = useQuery<SiteSetting | null>({
     queryKey: ["/api/site-settings/privacy_policy"],
     queryFn: async () => {
-      try {
-        const res = await fetch("/api/site-settings/privacy_policy");
-        if (res.status === 404) return null;
-        if (!res.ok) return null;
-        return res.json();
-      } catch {
-        return null;
-      }
+      const res = await fetch("/api/site-settings/privacy_policy");
+      if (res.status === 404) return null;
+      if (!res.ok) return null;
+      return res.json();
     },
     retry: false,
+    staleTime: 1000 * 60 * 5,
   });
 
   const saveMutation = useMutation({
@@ -108,7 +105,7 @@ export default function Privacy() {
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50">
       <div className="max-w-4xl mx-auto px-6 py-12">
         <div className="bg-white rounded-2xl shadow-lg p-8">
-          {isAdmin && !isEditing && (
+          {!authLoading && isAdmin && !isEditing && (
             <div className="flex justify-end mb-4">
               <Button onClick={() => setIsEditing(true)} variant="outline" className="gap-2">
                 <Edit2 className="w-4 h-4" />
@@ -117,7 +114,7 @@ export default function Privacy() {
             </div>
           )}
 
-          {isLoading ? (
+          {isLoading && !isError ? (
             <div className="text-center py-12 text-muted-foreground">Loading...</div>
           ) : isEditing ? (
             <PrivacyEditor
