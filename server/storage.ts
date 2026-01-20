@@ -123,6 +123,12 @@ import {
   taskDependencies,
   type TaskDependency,
   type InsertTaskDependency,
+  dailyHubEntries,
+  dailyHubPinnedAnnouncements,
+  type DailyHubEntry,
+  type InsertDailyHubEntry,
+  type DailyHubPinnedAnnouncement,
+  type InsertDailyHubPinnedAnnouncement,
 } from "@shared/schema";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq, desc, and, lt, isNull, sql, inArray, gte, lte, or, asc } from "drizzle-orm";
@@ -501,6 +507,16 @@ export interface IStorage {
   createQrCode(data: InsertQrCode): Promise<QrCode>;
   getUserQrCodes(userId: string): Promise<QrCode[]>;
   deleteQrCode(id: number): Promise<void>;
+  
+  // Daily Hub
+  getDailyHubEntries(date: string): Promise<DailyHubEntry[]>;
+  createDailyHubEntry(data: InsertDailyHubEntry): Promise<DailyHubEntry>;
+  updateDailyHubEntry(id: number, content: string): Promise<DailyHubEntry | undefined>;
+  deleteDailyHubEntry(id: number): Promise<void>;
+  getPinnedAnnouncements(date: string): Promise<DailyHubPinnedAnnouncement[]>;
+  createPinnedAnnouncement(data: InsertDailyHubPinnedAnnouncement): Promise<DailyHubPinnedAnnouncement>;
+  updatePinnedAnnouncement(id: number, data: Partial<InsertDailyHubPinnedAnnouncement>): Promise<DailyHubPinnedAnnouncement | undefined>;
+  deletePinnedAnnouncement(id: number): Promise<void>;
 }
 
 export class DbStorage implements IStorage {
@@ -2899,6 +2915,68 @@ export class DbStorage implements IStorage {
       })
       .returning();
     return setting;
+  }
+
+  // Daily Hub methods
+  async getDailyHubEntries(date: string): Promise<DailyHubEntry[]> {
+    return await db
+      .select()
+      .from(dailyHubEntries)
+      .where(eq(dailyHubEntries.date, date))
+      .orderBy(asc(dailyHubEntries.createdAt));
+  }
+
+  async createDailyHubEntry(data: InsertDailyHubEntry): Promise<DailyHubEntry> {
+    const [entry] = await db.insert(dailyHubEntries).values(data).returning();
+    return entry;
+  }
+
+  async updateDailyHubEntry(id: number, content: string): Promise<DailyHubEntry | undefined> {
+    const [entry] = await db
+      .update(dailyHubEntries)
+      .set({ content, updatedAt: new Date() })
+      .where(eq(dailyHubEntries.id, id))
+      .returning();
+    return entry;
+  }
+
+  async deleteDailyHubEntry(id: number): Promise<void> {
+    await db.delete(dailyHubEntries).where(eq(dailyHubEntries.id, id));
+  }
+
+  async getPinnedAnnouncements(date: string): Promise<DailyHubPinnedAnnouncement[]> {
+    return await db
+      .select()
+      .from(dailyHubPinnedAnnouncements)
+      .where(
+        and(
+          eq(dailyHubPinnedAnnouncements.isActive, true),
+          lte(dailyHubPinnedAnnouncements.startDate, date),
+          or(
+            isNull(dailyHubPinnedAnnouncements.endDate),
+            gte(dailyHubPinnedAnnouncements.endDate, date)
+          )
+        )
+      )
+      .orderBy(asc(dailyHubPinnedAnnouncements.createdAt));
+  }
+
+  async createPinnedAnnouncement(data: InsertDailyHubPinnedAnnouncement): Promise<DailyHubPinnedAnnouncement> {
+    const [announcement] = await db.insert(dailyHubPinnedAnnouncements).values(data).returning();
+    return announcement;
+  }
+
+  async updatePinnedAnnouncement(id: number, data: Partial<InsertDailyHubPinnedAnnouncement>): Promise<DailyHubPinnedAnnouncement | undefined> {
+    const [announcement] = await db
+      .update(dailyHubPinnedAnnouncements)
+      .set(data)
+      .where(eq(dailyHubPinnedAnnouncements.id, id))
+      .returning();
+    return announcement;
+  }
+
+  async deletePinnedAnnouncement(id: number): Promise<void> {
+    await db.delete(dailyHubPinnedAnnouncements).where(eq(dailyHubPinnedAnnouncements.id, id));
   }
 }
 
