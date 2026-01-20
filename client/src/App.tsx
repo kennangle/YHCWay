@@ -94,6 +94,9 @@ import GoogleSheets from "@/pages/google-sheets";
 import GoogleDrive from "@/pages/google-drive";
 import DependencyTracker from "@/pages/dependency-tracker";
 import Privacy from "@/pages/privacy";
+import Terms from "@/pages/terms";
+import Support from "@/pages/support";
+import DocsZoom from "@/pages/docs-zoom";
 import { FloatingAIButton } from "@/components/floating-ai-button";
 import { GuidedTour } from "@/components/guided-tour";
 
@@ -131,6 +134,9 @@ function Router() {
         <Route path="/forgot-password" component={ForgotPassword} />
         <Route path="/reset-password" component={ResetPassword} />
         <Route path="/privacy" component={Privacy} />
+        <Route path="/terms" component={Terms} />
+        <Route path="/support" component={Support} />
+        <Route path="/docs/zoom" component={DocsZoom} />
         <Route path="/dashboard">{() => <Redirect to="/login" />}</Route>
         <Route component={NotFound} />
       </Switch>
