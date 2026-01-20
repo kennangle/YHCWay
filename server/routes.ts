@@ -1610,16 +1610,31 @@ export async function registerRoutes(
           return res.json(email);
         } catch (oauthError: any) {
           console.log("[Gmail] OAuth fetch failed, trying connector:", oauthError?.message);
+          // Check for common error types
+          if (oauthError?.message?.includes('not found') || oauthError?.code === 404) {
+            return res.status(404).json({ error: "Email not found or has been deleted" });
+          }
+          if (oauthError?.message?.includes('token') || oauthError?.code === 401) {
+            return res.status(401).json({ error: "Gmail connection expired. Please reconnect Gmail." });
+          }
         }
       }
       
       // Fall back to connector
-      const { getEmailByIdViaConnector } = await import("./gmail");
-      const email = await getEmailByIdViaConnector(messageId);
-      res.json(email);
+      try {
+        const { getEmailByIdViaConnector } = await import("./gmail");
+        const email = await getEmailByIdViaConnector(messageId);
+        return res.json(email);
+      } catch (connectorError: any) {
+        console.error("[Gmail] Connector fetch also failed:", connectorError?.message);
+        if (connectorError?.message?.includes('not found') || connectorError?.code === 404) {
+          return res.status(404).json({ error: "Email not found or has been deleted" });
+        }
+        throw connectorError;
+      }
     } catch (error: any) {
       console.error("[Gmail] Error fetching email:", error?.message);
-      res.status(500).json({ error: error?.message || "Failed to fetch email" });
+      res.status(500).json({ error: "Failed to load email. The email may have been deleted or your Gmail connection needs to be refreshed." });
     }
   });
 
@@ -2235,11 +2250,22 @@ export async function registerRoutes(
         return res.status(401).json({ error: "Unauthorized" });
       }
       
-      const { listZoomMeetings } = await import("./zoom-oauth");
+      const { isZoomConnectedForUser, listZoomMeetings } = await import("./zoom-oauth");
+      
+      // Check if user has Zoom connected first
+      const isConnected = await isZoomConnectedForUser(userId);
+      if (!isConnected) {
+        return res.json([]);
+      }
+      
       const meetings = await listZoomMeetings(userId);
       res.json(meetings);
     } catch (error: any) {
       console.error("[Zoom] Error listing meetings:", error);
+      // Return empty array for connection issues instead of 500
+      if (error?.message?.includes('not connected') || error?.message?.includes('reconnect')) {
+        return res.json([]);
+      }
       res.status(500).json({ error: error?.message || "Failed to fetch Zoom meetings" });
     }
   });
