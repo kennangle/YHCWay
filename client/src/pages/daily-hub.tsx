@@ -359,7 +359,7 @@ export default function DailyHub() {
                     </div>
                   ))}
                   
-                  {entries.length === 0 && pinned.length === 0 && !newEntry?.section?.includes(section.id) && (
+                  {entries.length === 0 && pinned.length === 0 && newEntry?.section !== section.id && (
                     <p className="text-sm text-muted-foreground italic py-2">No entries for today</p>
                   )}
                   

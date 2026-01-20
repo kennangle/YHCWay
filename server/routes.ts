@@ -21,7 +21,7 @@ import { isAppleCalendarConnected, testAppleCalendarConnection, saveAppleCalenda
 import { isAsanaConnected, getMyTasks, getProjects, getUpcomingTasks, isUserAsanaConnected, getUserMyTasks, getUserProjects, getUserUpcomingTasks, getAsanaProjectsForImport, getProjectSections, getProjectTasksForImport, updateAsanaTaskCompletion } from "./asana";
 import { getTypeformForms, getTypeformForm, createTypeformForm, updateTypeformForm, deleteTypeformForm, getTypeformResponses, isTypeformConfigured } from "./typeform";
 import { sendInvitationEmail, getTemplateTypes, getDefaultTemplate, sendTaskAssignedNotification, sendYHCTimeLinkChangeNotification } from "./email";
-import { appleCalendarConnectSchema, slackPreferencesUpdateSchema, slackDmPreferencesUpdateSchema, emailTemplateSchema, updateNotificationPrefsSchema, createTimeEntrySchema, updateTimeEntrySchema } from "@shared/schema";
+import { appleCalendarConnectSchema, slackPreferencesUpdateSchema, slackDmPreferencesUpdateSchema, emailTemplateSchema, updateNotificationPrefsSchema, createTimeEntrySchema, updateTimeEntrySchema, createDailyHubEntrySchema, createPinnedAnnouncementSchema, DailyHubSection } from "@shared/schema";
 import { broadcastToUsers, generateWsAuthToken } from "./websocket";
 import { getIntroOffers, getIntroOfferSummary, updateIntroOffer, getStudents, isMindbodyAnalyticsConfigured } from "./mindbodyAnalytics";
 import { generateEmailReplySuggestions, summarizeEmail, summarizeEmailThread, summarizeMeetingTranscript } from "./ai-email";
@@ -7265,10 +7265,11 @@ export async function registerRoutes(
 
   app.post("/api/daily-hub/entries", isAuthenticated, async (req: any, res) => {
     try {
-      const { date, section, content } = req.body;
-      if (!date || !section || !content) {
-        return res.status(400).json({ error: "Date, section, and content are required" });
+      const parseResult = createDailyHubEntrySchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ error: parseResult.error.errors[0]?.message || "Invalid input" });
       }
+      const { date, section, content } = parseResult.data;
       const user = req.user as any;
       const initials = user.firstName && user.lastName 
         ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
@@ -7330,10 +7331,11 @@ export async function registerRoutes(
 
   app.post("/api/daily-hub/pinned", isAuthenticated, isAdmin, async (req: any, res) => {
     try {
-      const { section, content, startDate, endDate } = req.body;
-      if (!section || !content || !startDate) {
-        return res.status(400).json({ error: "Section, content, and start date are required" });
+      const parseResult = createPinnedAnnouncementSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ error: parseResult.error.errors[0]?.message || "Invalid input" });
       }
+      const { section, content, startDate, endDate } = parseResult.data;
       const user = req.user as any;
       const announcement = await storage.createPinnedAnnouncement({
         section,
@@ -7353,7 +7355,13 @@ export async function registerRoutes(
   app.put("/api/daily-hub/pinned/:id", isAuthenticated, isAdmin, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const announcement = await storage.updatePinnedAnnouncement(parseInt(id), req.body);
+      const { content, endDate, isActive } = req.body;
+      const updateData: Record<string, unknown> = {};
+      if (content !== undefined) updateData.content = content;
+      if (endDate !== undefined) updateData.endDate = endDate;
+      if (isActive !== undefined) updateData.isActive = isActive;
+      
+      const announcement = await storage.updatePinnedAnnouncement(parseInt(id), updateData);
       if (!announcement) {
         return res.status(404).json({ error: "Announcement not found" });
       }
