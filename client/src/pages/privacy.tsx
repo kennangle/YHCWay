@@ -22,17 +22,23 @@ export default function Privacy() {
   const queryClient = useQueryClient();
   const isAdmin = user?.isAdmin;
 
-  const { data: privacyPolicy, isLoading, isError } = useQuery<SiteSetting | null>({
+  const { data: privacyPolicy, isLoading, isFetched } = useQuery<SiteSetting | null>({
     queryKey: ["/api/site-settings/privacy_policy"],
     queryFn: async () => {
-      const res = await fetch("/api/site-settings/privacy_policy");
-      if (res.status === 404) return null;
-      if (!res.ok) return null;
-      return res.json();
+      try {
+        const res = await fetch("/api/site-settings/privacy_policy");
+        if (res.status === 404) return null;
+        if (!res.ok) return null;
+        return res.json();
+      } catch {
+        return null;
+      }
     },
     retry: false,
     staleTime: 1000 * 60 * 5,
   });
+  
+  const showDefaultContent = !isLoading || isFetched;
 
   const saveMutation = useMutation({
     mutationFn: async (content: string) => {
@@ -114,7 +120,7 @@ export default function Privacy() {
             </div>
           )}
 
-          {isLoading && !isError ? (
+          {isLoading && !isFetched ? (
             <div className="text-center py-12 text-muted-foreground">Loading...</div>
           ) : isEditing ? (
             <PrivacyEditor
