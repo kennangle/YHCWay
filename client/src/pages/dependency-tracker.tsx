@@ -1,6 +1,4 @@
 import { useState, useMemo } from "react";
-import { UnifiedSidebar } from "@/components/unified-sidebar";
-import { TopBar } from "@/components/top-bar";
 import { ArrowLeft, AlertTriangle, CheckCircle2, Circle, Link2, ChevronRight, ArrowRight, Users, Calendar, Flag } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery } from "@tanstack/react-query";
@@ -8,7 +6,6 @@ import { Link, useParams } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Task {
@@ -46,7 +43,6 @@ interface DependencyNode {
 export default function DependencyTracker() {
   const params = useParams<{ id: string }>();
   const projectId = params.id ? parseInt(params.id) : null;
-  const mainContentClass = useMainContentClass();
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
 
   const { data: projects = [] } = useQuery<Project[]>({
@@ -157,18 +153,15 @@ export default function DependencyTracker() {
 
   if (!projectId) {
     return (
-      <div className="min-h-screen bg-background text-foreground flex font-sans">
-        <UnifiedSidebar />
-        <main
-          className={`flex-1 flex flex-col min-h-screen ${mainContentClass}`}
-          style={{
-            backgroundImage: `url(${generatedBg})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            backgroundAttachment: "fixed",
-          }}
-        >
-          <TopBar />
+      <div 
+        className="min-h-screen bg-background text-foreground font-sans"
+        style={{
+          backgroundImage: `url(${generatedBg})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundAttachment: "fixed",
+        }}
+      >
           <div className="flex-1 p-6 overflow-auto">
             <div className="max-w-4xl mx-auto">
               <h2 className="text-2xl font-bold text-foreground mb-6">Select a Project</h2>
@@ -185,24 +178,20 @@ export default function DependencyTracker() {
               </div>
             </div>
           </div>
-        </main>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex font-sans">
-      <UnifiedSidebar />
-      <main
-        className={`flex-1 flex flex-col min-h-screen ${mainContentClass}`}
-        style={{
-          backgroundImage: `url(${generatedBg})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundAttachment: "fixed",
-        }}
-      >
-        <TopBar />
+    <div 
+      className="min-h-screen bg-background text-foreground font-sans"
+      style={{
+        backgroundImage: `url(${generatedBg})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundAttachment: "fixed",
+      }}
+    >
         <div className="flex-1 p-6 overflow-auto">
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center gap-4 mb-6">
@@ -491,7 +480,6 @@ export default function DependencyTracker() {
             )}
           </div>
         </div>
-      </main>
     </div>
   );
 }

@@ -1,11 +1,8 @@
-import { UnifiedSidebar } from "@/components/unified-sidebar";
-import { TopBar } from "@/components/top-bar";
 import { Gift, Star, Trophy, History, RefreshCw, ExternalLink, Users, Search, Building, Mail, User } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { useState } from "react";
-import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 
 interface PerkvilleStatus {
   connected: boolean;
@@ -51,7 +48,6 @@ export default function Rewards() {
   const [searchedCustomer, setSearchedCustomer] = useState<PerkvilleCustomer | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
-  const mainContentClass = useMainContentClass();
 
   const { data: status, isLoading: statusLoading } = useQuery<PerkvilleStatus>({
     queryKey: ["perkville-status"],
@@ -156,7 +152,7 @@ export default function Rewards() {
     .slice(0, 10) || [];
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex font-sans">
+    <div className="min-h-screen bg-background text-foreground font-sans">
       <div 
         className="fixed inset-0 z-0 pointer-events-none opacity-40"
         style={{ 
@@ -166,11 +162,7 @@ export default function Rewards() {
         }}
       />
       
-      <UnifiedSidebar />
-
-      <main className={`flex-1 ml-0 ${mainContentClass} relative z-10 flex flex-col transition-all duration-300`}>
-        <TopBar />
-        <div className="flex-1 p-8">
+        <div className="flex-1 p-8 relative z-10">
           <header className="mb-8">
             <div className="flex items-center gap-3 mb-2">
               <Gift className="w-8 h-8 text-primary" />
@@ -442,7 +434,6 @@ export default function Rewards() {
             </div>
           )}
         </div>
-      </main>
     </div>
   );
 }

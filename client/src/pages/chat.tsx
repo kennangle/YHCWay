@@ -1,5 +1,3 @@
-import { UnifiedSidebar } from "@/components/unified-sidebar";
-import { TopBar } from "@/components/top-bar";
 import { Search, Send, Plus, Users, MessageCircle, X, Reply, ChevronRight, Paperclip, File, Image, FileText, Loader2 } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -7,7 +5,6 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 
 interface User {
   id: string;
@@ -51,7 +48,6 @@ interface Conversation {
 export default function Chat() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const mainContentClass = useMainContentClass();
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [messageInput, setMessageInput] = useState("");
   const [threadInput, setThreadInput] = useState("");
@@ -373,7 +369,7 @@ export default function Chat() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex font-sans">
+    <div className="min-h-screen bg-background text-foreground font-sans">
       <div 
         className="fixed inset-0 z-0 pointer-events-none opacity-40"
         style={{ 
@@ -383,11 +379,7 @@ export default function Chat() {
         }}
       />
       
-      <UnifiedSidebar />
-
-      <main className={`flex-1 ml-0 ${mainContentClass} relative z-10 flex flex-col transition-all duration-300`}>
-        <TopBar />
-        <div className="flex-1 flex">
+        <div className="flex-1 flex relative z-10">
         <div className="w-80 border-r border-border/50 glass-panel flex flex-col">
           <div className="p-4 border-b border-border/50">
             <div className="flex items-center justify-between mb-4">
@@ -919,7 +911,6 @@ export default function Chat() {
           </div>
         )}
         </div>
-      </main>
     </div>
   );
 }

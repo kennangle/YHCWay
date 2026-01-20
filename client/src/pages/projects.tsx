@@ -1,6 +1,4 @@
 import { useState } from "react";
-import { UnifiedSidebar } from "@/components/unified-sidebar";
-import { TopBar } from "@/components/top-bar";
 import { 
   FolderKanban, Plus, MoreVertical, Calendar, Trash2, Edit, RefreshCw, 
   CheckCircle2, Clock, AlertTriangle, TrendingUp, LayoutGrid, List,
@@ -19,7 +17,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Progress } from "@/components/ui/progress";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 
 interface AsanaProject {
   id: string;
@@ -68,7 +65,6 @@ type ViewMode = "grid" | "list";
 
 export default function Projects() {
   const queryClient = useQueryClient();
-  const mainContentClass = useMainContentClass();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [newProject, setNewProject] = useState({ name: "", description: "", color: "#3b82f6" });
@@ -287,7 +283,7 @@ export default function Projects() {
   const isLoading = projectsLoading;
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex font-sans">
+    <div className="min-h-screen bg-background text-foreground font-sans">
       <div 
         className="fixed inset-0 z-0 pointer-events-none opacity-40"
         style={{ 
@@ -297,11 +293,7 @@ export default function Projects() {
         }}
       />
       
-      <UnifiedSidebar />
-
-      <main className={`flex-1 ${mainContentClass} relative z-10 flex flex-col transition-all duration-300`}>
-        <TopBar />
-        <div className="flex-1 p-4 md:p-8 pb-20 md:pb-8">
+        <div className="flex-1 p-4 md:p-8 pb-20 md:pb-8 relative z-10">
           <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -622,7 +614,6 @@ export default function Projects() {
             </div>
           )}
         </div>
-      </main>
 
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
         <DialogContent>

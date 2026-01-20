@@ -1,7 +1,4 @@
 import { useState } from "react";
-import { UnifiedSidebar } from "@/components/unified-sidebar";
-import { TopBar } from "@/components/top-bar";
-import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -40,7 +37,6 @@ interface ThreadSummary {
 }
 
 export default function AISummarize() {
-  const mainContentClass = useMainContentClass();
   const [activeTab, setActiveTab] = useState("meeting");
   
   const [meetingTitle, setMeetingTitle] = useState("");
@@ -110,10 +106,7 @@ export default function AISummarize() {
   });
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50">
-      <UnifiedSidebar />
-      <main className={mainContentClass}>
-        <TopBar />
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50">
         <div className="p-6 max-w-5xl mx-auto">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
@@ -444,7 +437,6 @@ export default function AISummarize() {
             </TabsContent>
           </Tabs>
         </div>
-      </main>
     </div>
   );
 }

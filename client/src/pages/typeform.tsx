@@ -1,6 +1,4 @@
 import { useState } from "react";
-import { UnifiedSidebar } from "@/components/unified-sidebar";
-import { TopBar } from "@/components/top-bar";
 import { FileText, RefreshCw, ExternalLink, BarChart3, Trash2, Plus, Lock, Eye } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -10,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { Widget } from "@typeform/embed-react";
-import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 
 interface TypeformForm {
   id: string;
@@ -44,7 +41,6 @@ interface TypeformResponse {
 export default function Typeform() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const mainContentClass = useMainContentClass();
   const [showNewFormDialog, setShowNewFormDialog] = useState(false);
   const [showResponsesDialog, setShowResponsesDialog] = useState(false);
   const [showPreviewDialog, setShowPreviewDialog] = useState(false);
@@ -53,7 +49,7 @@ export default function Typeform() {
 
   if (!user?.isAdmin) {
     return (
-      <div className="min-h-screen bg-background text-foreground flex font-sans">
+      <div className="min-h-screen bg-background text-foreground font-sans">
         <div 
           className="fixed inset-0 z-0 pointer-events-none opacity-40"
           style={{ 
@@ -62,17 +58,13 @@ export default function Typeform() {
             backgroundPosition: 'center'
           }}
         />
-        <UnifiedSidebar />
-        <main className={`flex-1 ml-0 ${mainContentClass} relative z-10 flex flex-col transition-all duration-300`}>
-          <TopBar />
-          <div className="flex-1 p-8 flex items-center justify-center">
+          <div className="flex-1 p-8 flex items-center justify-center relative z-10">
             <div className="text-center">
               <Lock className="w-16 h-16 mx-auto mb-4 text-muted-foreground/50" />
               <h1 className="font-display font-bold text-2xl mb-2">Admin Access Required</h1>
               <p className="text-muted-foreground">This feature is only available to administrators.</p>
             </div>
           </div>
-        </main>
       </div>
     );
   }
@@ -180,7 +172,7 @@ export default function Typeform() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex font-sans">
+    <div className="min-h-screen bg-background text-foreground font-sans">
       <div 
         className="fixed inset-0 z-0 pointer-events-none opacity-40"
         style={{ 
@@ -190,11 +182,7 @@ export default function Typeform() {
         }}
       />
       
-      <UnifiedSidebar />
-
-      <main className={`flex-1 ml-0 ${mainContentClass} relative z-10 flex flex-col transition-all duration-300`}>
-        <TopBar />
-        <div className="flex-1 p-8">
+        <div className="flex-1 p-8 relative z-10">
         <header className="flex justify-between items-center mb-8">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl bg-[#262627]/10 flex items-center justify-center">
@@ -311,7 +299,6 @@ export default function Typeform() {
           )}
         </div>
         </div>
-      </main>
 
       <Dialog open={showNewFormDialog} onOpenChange={setShowNewFormDialog}>
         <DialogContent className="sm:max-w-md">

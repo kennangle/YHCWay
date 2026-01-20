@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,7 +8,6 @@ import { File, Plus, ExternalLink, Trash2, Edit3, Eye, Search, RefreshCw, FileTe
 import { getQueryFn } from "@/lib/queryClient";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 
 interface GoogleDoc {
   id: string;
@@ -28,7 +26,6 @@ interface GoogleDocContent {
 
 export default function GoogleDocsPage() {
   const queryClient = useQueryClient();
-  const mainContentClass = useMainContentClass();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -142,45 +139,33 @@ export default function GoogleDocsPage() {
 
   if (statusLoading) {
     return (
-      <div className="flex h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50">
-        <UnifiedSidebar />
-        <main className={mainContentClass}>
-          <div className="flex items-center justify-center h-full">
-            <div className="animate-spin w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full" />
-          </div>
-        </main>
+      <div className="h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50 flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full" />
       </div>
     );
   }
 
   if (!status?.connected) {
     return (
-      <div className="flex h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50">
-        <UnifiedSidebar />
-        <main className={mainContentClass}>
-          <div className="flex flex-col items-center justify-center h-full gap-4">
-            <FileText className="w-16 h-16 text-gray-400" />
-            <h2 className="text-xl font-semibold text-gray-700">Google Docs Not Connected</h2>
-            <p className="text-gray-500 text-center max-w-md">
-              Google Docs integration needs to be connected by an administrator. 
-              Please visit the Connect page to set up the integration.
-            </p>
-            <Button 
-              onClick={() => window.location.href = "/connect"}
-              className="mt-4"
-            >
-              Go to Connect Page
-            </Button>
-          </div>
-        </main>
+      <div className="h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50 flex flex-col items-center justify-center gap-4">
+        <FileText className="w-16 h-16 text-gray-400" />
+        <h2 className="text-xl font-semibold text-gray-700">Google Docs Not Connected</h2>
+        <p className="text-gray-500 text-center max-w-md">
+          Google Docs integration needs to be connected by an administrator. 
+          Please visit the Connect page to set up the integration.
+        </p>
+        <Button 
+          onClick={() => window.location.href = "/connect"}
+          className="mt-4"
+        >
+          Go to Connect Page
+        </Button>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50">
-      <UnifiedSidebar />
-      <main className={mainContentClass}>
+    <div className="h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50 overflow-auto">
         <div className="p-6 max-w-6xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
@@ -314,7 +299,6 @@ export default function GoogleDocsPage() {
             </div>
           )}
         </div>
-      </main>
 
       <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
         <DialogContent className="max-w-3xl max-h-[80vh]">

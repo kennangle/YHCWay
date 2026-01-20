@@ -1,7 +1,5 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { UnifiedSidebar } from "@/components/unified-sidebar";
-import { TopBar } from "@/components/top-bar";
 import { Webhook, Plus, Trash2, Edit2, Play, CheckCircle, XCircle, ExternalLink, Clock, RefreshCw } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { Button } from "@/components/ui/button";
@@ -10,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 
 interface WebhookType {
   id: number;
@@ -37,7 +34,6 @@ interface WebhookEvent {
 
 export default function Webhooks() {
   const queryClient = useQueryClient();
-  const mainContentClass = useMainContentClass();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingWebhook, setEditingWebhook] = useState<WebhookType | null>(null);
   const [viewDeliveriesId, setViewDeliveriesId] = useState<number | null>(null);
@@ -211,15 +207,12 @@ export default function Webhooks() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex font-sans">
+    <div className="min-h-screen bg-background text-foreground font-sans">
       <div 
         className="fixed inset-0 z-0 pointer-events-none opacity-40"
         style={{ backgroundImage: `url(${generatedBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
       />
-      <UnifiedSidebar />
-      <main className={`flex-1 ml-0 ${mainContentClass} relative z-10 flex flex-col transition-all duration-300`}>
-        <TopBar />
-        <div className="flex-1 p-8 overflow-auto">
+        <div className="flex-1 p-8 overflow-auto relative z-10">
           <div className="max-w-4xl mx-auto">
             <div className="flex justify-between items-center mb-8">
               <div>
@@ -490,7 +483,6 @@ export default function Webhooks() {
             )}
           </div>
         </div>
-      </main>
     </div>
   );
 }

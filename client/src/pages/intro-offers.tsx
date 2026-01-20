@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { UnifiedSidebar } from "@/components/unified-sidebar";
-import { TopBar } from "@/components/top-bar";
 import { Gift, RefreshCw, Users, TrendingUp, Clock, CheckCircle, XCircle, AlertCircle, Search, Edit2, Save, X, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { Button } from "@/components/ui/button";
@@ -9,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
-import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 
 interface IntroOffer {
   id: string;
@@ -57,7 +54,6 @@ type SortDirection = "asc" | "desc";
 export default function IntroOffers() {
   const queryClient = useQueryClient();
   const [location] = useLocation();
-  const mainContentClass = useMainContentClass();
   
   // Parse initial filter from URL
   const getInitialFilter = (): StatusFilter => {
@@ -251,38 +247,30 @@ export default function IntroOffers() {
 
   if (!statusData?.configured) {
     return (
-      <div className="min-h-screen bg-background text-foreground flex font-sans">
+      <div className="min-h-screen bg-background text-foreground font-sans">
         <div 
           className="fixed inset-0 z-0 pointer-events-none opacity-40"
           style={{ backgroundImage: `url(${generatedBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
         />
-        <UnifiedSidebar />
-        <main className={`flex-1 ml-0 ${mainContentClass} relative z-10 flex flex-col transition-all duration-300`}>
-          <TopBar />
-          <div className="flex-1 p-8 flex items-center justify-center">
+          <div className="flex-1 p-8 flex items-center justify-center relative z-10">
             <div className="text-center">
               <Gift className="w-16 h-16 mx-auto mb-4 text-muted-foreground/50" />
               <h1 className="font-display font-bold text-2xl mb-2">Mindbody Analytics Not Connected</h1>
               <p className="text-muted-foreground">Please configure your Mindbody Analytics API key to view intro offers.</p>
             </div>
           </div>
-        </main>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex font-sans">
+    <div className="min-h-screen bg-background text-foreground font-sans">
       <div 
         className="fixed inset-0 z-0 pointer-events-none opacity-40"
         style={{ backgroundImage: `url(${generatedBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
       />
       
-      <UnifiedSidebar />
-
-      <main className={`flex-1 ml-0 ${mainContentClass} relative z-10 flex flex-col transition-all duration-300`}>
-        <TopBar />
-        <div className="flex-1 p-8">
+        <div className="flex-1 p-8 relative z-10">
         <header className="flex justify-between items-center mb-8">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center">
@@ -537,7 +525,6 @@ export default function IntroOffers() {
           )}
         </div>
         </div>
-      </main>
     </div>
   );
 }

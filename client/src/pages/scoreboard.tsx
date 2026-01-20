@@ -1,12 +1,9 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { UnifiedSidebar } from "@/components/unified-sidebar";
-import { TopBar } from "@/components/top-bar";
 import { BarChart3, Users, UserPlus, UserMinus, TrendingUp, TrendingDown, Gift, Percent, Calendar, DollarSign, RefreshCw, ArrowUp, ArrowDown, Minus } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import { format, differenceInDays, subDays, startOfYear } from "date-fns";
@@ -99,7 +96,6 @@ function MetricCard({ title, value, subtitle, icon, color, bgColor, trend, trend
 }
 
 export default function Scoreboard() {
-  const mainContentClass = useMainContentClass();
   const [dateRange, setDateRange] = useState<DateRangeOption>('last_week');
   const [customStartDate, setCustomStartDate] = useState<Date | undefined>(undefined);
   const [customEndDate, setCustomEndDate] = useState<Date | undefined>(undefined);
@@ -163,14 +159,9 @@ export default function Scoreboard() {
 
   return (
     <div
-      className="min-h-screen flex bg-cover bg-center bg-no-repeat"
+      className="min-h-screen bg-cover bg-center bg-no-repeat"
       style={{ backgroundImage: `url(${generatedBg})` }}
     >
-      <UnifiedSidebar />
-
-      <main className={mainContentClass}>
-        <TopBar />
-
         <div className="p-4 md:p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
@@ -494,7 +485,6 @@ export default function Scoreboard() {
             </>
           )}
         </div>
-      </main>
     </div>
   );
 }

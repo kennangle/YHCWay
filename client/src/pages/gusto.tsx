@@ -8,10 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Users, DollarSign, Building2, RefreshCw, Mail, Phone, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
-import { UnifiedSidebar } from "@/components/unified-sidebar";
-import { TopBar } from "@/components/top-bar";
 import { useAuth } from "@/hooks/useAuth";
-import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 
 interface Company {
   uuid: string;
@@ -54,7 +51,6 @@ interface Payroll {
 
 export default function GustoPage() {
   const { user, isLoading: authLoading } = useAuth();
-  const mainContentClass = useMainContentClass();
   const [selectedCompany, setSelectedCompany] = useState<string>("");
 
   const { data: status, isLoading: statusLoading } = useQuery<{ connected: boolean }>({
@@ -124,10 +120,7 @@ export default function GustoPage() {
 
   if (statusLoading) {
     return (
-      <div className="min-h-screen bg-background text-foreground flex font-sans">
-        <UnifiedSidebar />
-        <main className={`flex-1 ml-0 ${mainContentClass} relative z-10 flex flex-col transition-all duration-300`}>
-          <TopBar />
+      <div className="min-h-screen bg-background text-foreground font-sans">
           <div className="flex-1 p-6 max-w-7xl mx-auto">
             <Card className="backdrop-blur-sm bg-white/80 border-white/20">
               <CardContent className="p-8 text-center">
@@ -136,17 +129,13 @@ export default function GustoPage() {
               </CardContent>
             </Card>
           </div>
-        </main>
       </div>
     );
   }
 
   if (!status?.connected) {
     return (
-      <div className="min-h-screen bg-background text-foreground flex font-sans">
-        <UnifiedSidebar />
-        <main className={`flex-1 ml-0 ${mainContentClass} relative z-10 flex flex-col transition-all duration-300`}>
-          <TopBar />
+      <div className="min-h-screen bg-background text-foreground font-sans">
           <div className="flex-1 p-6 max-w-7xl mx-auto">
             <Card className="backdrop-blur-sm bg-white/80 border-white/20">
               <CardContent className="p-8 text-center">
@@ -158,16 +147,12 @@ export default function GustoPage() {
               </CardContent>
             </Card>
           </div>
-        </main>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex font-sans">
-      <UnifiedSidebar />
-      <main className={`flex-1 ml-0 ${mainContentClass} relative z-10 flex flex-col transition-all duration-300`}>
-        <TopBar />
+    <div className="min-h-screen bg-background text-foreground font-sans">
         <div className="flex-1 p-6 max-w-7xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
@@ -386,7 +371,6 @@ export default function GustoPage() {
             </TabsContent>
           </Tabs>
         </div>
-      </main>
     </div>
   );
 }

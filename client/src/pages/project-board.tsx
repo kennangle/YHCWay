@@ -1,6 +1,4 @@
 import React, { useState, useCallback, useMemo } from "react";
-import { UnifiedSidebar } from "@/components/unified-sidebar";
-import { TopBar } from "@/components/top-bar";
 import { ArrowLeft, Plus, MoreVertical, Calendar, User, Clock, Flag, MessageSquare, CheckSquare, RefreshCw, GripVertical, Trash2, Edit, LayoutGrid, List, Search, Filter, X, Users, UserPlus, UserMinus, GanttChart, CalendarRange, ChevronRight, ChevronDown, Square, Check, GitBranch } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -14,7 +12,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DndContext, DragEndEvent, DragOverEvent, DragStartEvent, PointerSensor, useSensor, useSensors, closestCorners, DragOverlay } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 import { useToast } from "@/hooks/use-toast";
 
 interface ProjectColumn {
@@ -669,7 +666,6 @@ export default function ProjectBoard() {
   const params = useParams();
   const projectId = parseInt(params.id as string);
   const queryClient = useQueryClient();
-  const mainContentClass = useMainContentClass();
   const { toast } = useToast();
   
   const [createTaskDialogOpen, setCreateTaskDialogOpen] = useState(false);
@@ -1189,17 +1185,14 @@ export default function ProjectBoard() {
 
   if (isLoading || !project) {
     return (
-      <div className="min-h-screen bg-background text-foreground flex font-sans">
-        <UnifiedSidebar />
-        <main className={`flex-1 ${mainContentClass} flex items-center justify-center transition-all duration-300`}>
+      <div className="min-h-screen bg-background text-foreground font-sans flex items-center justify-center">
           <RefreshCw className="w-8 h-8 animate-spin text-primary" />
-        </main>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex font-sans">
+    <div className="min-h-screen bg-background text-foreground font-sans">
       <div 
         className="fixed inset-0 z-0 pointer-events-none opacity-40"
         style={{ 
@@ -1209,11 +1202,7 @@ export default function ProjectBoard() {
         }}
       />
       
-      <UnifiedSidebar />
-
-      <main className={`flex-1 ${mainContentClass} relative z-10 flex flex-col transition-all duration-300`}>
-        <TopBar />
-        <div className="flex-1 p-4 md:p-8 pb-20 md:pb-8 flex flex-col">
+        <div className="flex-1 p-4 md:p-8 pb-20 md:pb-8 flex flex-col relative z-10">
           <header className="mb-4 md:mb-6 space-y-3">
             <div className="flex flex-wrap items-center gap-2 md:gap-4">
               <Link href="/projects">
@@ -1605,7 +1594,6 @@ export default function ProjectBoard() {
             </div>
           )}
         </div>
-      </main>
 
       {/* Create Task Dialog */}
       <Dialog open={createTaskDialogOpen} onOpenChange={setCreateTaskDialogOpen}>

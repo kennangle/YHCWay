@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -131,8 +130,6 @@ export default function QRCodesPage() {
   if (statusLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
-        <UnifiedSidebar />
-        <main className="md:pl-64 min-h-screen">
           <div className="p-6 md:p-10">
             <div className="flex items-center gap-3 mb-8">
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -142,7 +139,6 @@ export default function QRCodesPage() {
             </div>
             <div className="text-center py-12 text-muted-foreground">Loading...</div>
           </div>
-        </main>
       </div>
     );
   }
@@ -150,8 +146,6 @@ export default function QRCodesPage() {
   if (!status?.connected) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
-        <UnifiedSidebar />
-        <main className="md:pl-64 min-h-screen">
           <div className="p-6 md:p-10">
             <div className="flex items-center gap-3 mb-8">
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -173,15 +167,12 @@ export default function QRCodesPage() {
               </a>
             </div>
           </div>
-        </main>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
-      <UnifiedSidebar />
-      <main className="md:pl-64 min-h-screen">
         <div className="p-6 md:p-10">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
@@ -482,7 +473,6 @@ export default function QRCodesPage() {
             </TabsContent>
           </Tabs>
         </div>
-      </main>
     </div>
   );
 }

@@ -1,5 +1,3 @@
-import { UnifiedSidebar } from "@/components/unified-sidebar";
-import { TopBar } from "@/components/top-bar";
 import { useAuth } from "@/hooks/useAuth";
 import { Redirect, Link } from "wouter";
 import { 
@@ -23,7 +21,6 @@ import {
 } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery } from "@tanstack/react-query";
-import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 
 interface ServiceStatus {
   gmail: boolean;
@@ -42,7 +39,6 @@ interface ServiceStatus {
 
 export default function SetupGuide() {
   const { user, isLoading: authLoading } = useAuth();
-  const mainContentClass = useMainContentClass();
 
   const { data: gmailStatus } = useQuery<{ connected: boolean }>({
     queryKey: ["/api/gmail/status"],
@@ -258,7 +254,7 @@ export default function SetupGuide() {
   ];
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex font-sans">
+    <div className="min-h-screen bg-background text-foreground font-sans">
       <div 
         className="fixed inset-0 z-0 pointer-events-none opacity-40"
         style={{ 
@@ -268,11 +264,7 @@ export default function SetupGuide() {
         }}
       />
       
-      <UnifiedSidebar />
-
-      <main className={`flex-1 ml-0 ${mainContentClass} relative z-10 flex flex-col transition-all duration-300`}>
-        <TopBar />
-        <div className="flex-1 p-8 max-w-4xl mx-auto w-full">
+        <div className="flex-1 p-8 max-w-4xl mx-auto w-full relative z-10">
           <header className="mb-8">
             <h1 className="font-display font-bold text-3xl mb-2" data-testid="text-setup-title">
               Welcome to The YHC Way!
@@ -384,7 +376,6 @@ export default function SetupGuide() {
             <p>Need help? Contact your administrator or check back later for updates.</p>
           </div>
         </div>
-      </main>
     </div>
   );
 }

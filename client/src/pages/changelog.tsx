@@ -1,5 +1,3 @@
-import { UnifiedSidebar } from "@/components/unified-sidebar";
-import { TopBar } from "@/components/top-bar";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -7,7 +5,6 @@ import { Redirect } from "wouter";
 import { History, RefreshCw, Plus, GitCommit, FileText, Bug, Rocket, BookOpen, Wrench, Sparkles, Copy, X, Check } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 import { format, subDays, startOfDay, endOfDay } from "date-fns";
 
 interface ChangelogEntry {
@@ -42,7 +39,6 @@ const entryTypeLabels: Record<string, string> = {
 
 export default function Changelog() {
   const { user, isLoading: authLoading } = useAuth();
-  const mainContentClass = useMainContentClass();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -142,10 +138,7 @@ export default function Changelog() {
   const entries = changelogData?.entries || [];
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
-      <UnifiedSidebar />
-      <main className={mainContentClass}>
-        <TopBar />
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
         <div className="p-6">
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-2">
@@ -357,7 +350,6 @@ export default function Changelog() {
             </div>
           )}
         </div>
-      </main>
     </div>
   );
 }

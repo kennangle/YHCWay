@@ -1,12 +1,10 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { HardDrive, ExternalLink, Search, RefreshCw, FileText, FileSpreadsheet, Folder, Image, Video, File, ChevronRight } from "lucide-react";
 import { getQueryFn } from "@/lib/queryClient";
 import { format } from "date-fns";
-import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 
 interface DriveFile {
   id: string;
@@ -53,7 +51,6 @@ function formatFileSize(bytes?: string) {
 }
 
 export default function GoogleDrivePage() {
-  const mainContentClass = useMainContentClass();
   const [searchQuery, setSearchQuery] = useState("");
   const [currentFolder, setCurrentFolder] = useState<{ id: string; name: string }[]>([]);
 
@@ -99,45 +96,33 @@ export default function GoogleDrivePage() {
 
   if (statusLoading) {
     return (
-      <div className="flex h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50">
-        <UnifiedSidebar />
-        <main className={mainContentClass}>
-          <div className="flex items-center justify-center h-full">
-            <div className="animate-spin w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full" />
-          </div>
-        </main>
+      <div className="h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50 flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full" />
       </div>
     );
   }
 
   if (!status?.connected) {
     return (
-      <div className="flex h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50">
-        <UnifiedSidebar />
-        <main className={mainContentClass}>
-          <div className="flex flex-col items-center justify-center h-full gap-4">
-            <HardDrive className="w-16 h-16 text-gray-400" />
-            <h2 className="text-xl font-semibold text-gray-700">Google Drive Not Connected</h2>
-            <p className="text-gray-500 text-center max-w-md">
-              Google Drive integration needs to be connected by an administrator. 
-              Please visit the Connect page to set up the integration.
-            </p>
-            <Button 
-              onClick={() => window.location.href = "/connect"}
-              className="mt-4"
-            >
-              Go to Connect Page
-            </Button>
-          </div>
-        </main>
+      <div className="h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50 flex flex-col items-center justify-center gap-4">
+        <HardDrive className="w-16 h-16 text-gray-400" />
+        <h2 className="text-xl font-semibold text-gray-700">Google Drive Not Connected</h2>
+        <p className="text-gray-500 text-center max-w-md">
+          Google Drive integration needs to be connected by an administrator. 
+          Please visit the Connect page to set up the integration.
+        </p>
+        <Button 
+          onClick={() => window.location.href = "/connect"}
+          className="mt-4"
+        >
+          Go to Connect Page
+        </Button>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50">
-      <UnifiedSidebar />
-      <main className={mainContentClass}>
+    <div className="h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50 overflow-auto">
         <div className="p-6 max-w-6xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
@@ -252,7 +237,6 @@ export default function GoogleDrivePage() {
             </div>
           )}
         </div>
-      </main>
     </div>
   );
 }

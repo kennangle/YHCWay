@@ -1,5 +1,3 @@
-import { UnifiedSidebar } from "@/components/unified-sidebar";
-import { TopBar } from "@/components/top-bar";
 import { Search, Mail, MessageCircle, Users, MessageSquare, PenSquare, Loader2, Share2, Check, Trash2, Archive, Send, RefreshCw, AlertTriangle, Settings } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -8,7 +6,6 @@ import { SlackDmConfig } from "@/components/slack-dm-config";
 import { EmailDetailPanel } from "@/components/email-detail-panel";
 import { ComposeEmailModal } from "@/components/compose-email-modal";
 import { useState } from "react";
-import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 import {
   Dialog,
   DialogContent,
@@ -108,7 +105,6 @@ export default function Inbox() {
   const [shareNote, setShareNote] = useState("");
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
   const queryClient = useQueryClient();
-  const mainContentClass = useMainContentClass();
 
   const { data: gmailAccounts = [] } = useQuery<GmailAccount[]>({
     queryKey: ["/api/gmail/accounts"],
@@ -339,7 +335,7 @@ export default function Inbox() {
   const isLoading = filter === 'archived' ? archivedLoading : filter === 'sent' ? sentLoading : filter === 'trash' ? trashLoading : (gmailLoading || slackLoading);
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex font-sans">
+    <div className="min-h-screen bg-background text-foreground font-sans">
       <div 
         className="fixed inset-0 z-0 pointer-events-none opacity-40"
         style={{ 
@@ -349,11 +345,7 @@ export default function Inbox() {
         }}
       />
       
-      <UnifiedSidebar />
-
-      <main className={`flex-1 ml-0 ${mainContentClass} relative z-10 flex flex-col transition-all duration-300`}>
-        <TopBar />
-        <div className="flex-1 p-8">
+        <div className="flex-1 p-8 relative z-10">
         <header className="flex justify-between items-center mb-8">
           <h1 className="font-display font-bold text-3xl">Mailbox</h1>
           <div className="flex gap-4">
@@ -608,7 +600,6 @@ export default function Inbox() {
           )}
         </div>
         </div>
-      </main>
 
       {selectedEmailId && (
         <EmailDetailPanel 

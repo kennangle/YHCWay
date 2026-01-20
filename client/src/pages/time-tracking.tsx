@@ -1,7 +1,5 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { UnifiedSidebar } from "@/components/unified-sidebar";
-import { TopBar } from "@/components/top-bar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,7 +13,6 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays } from "date-fns";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
-import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 
 interface EmployeeStatus {
   employeeId: string;
@@ -94,7 +91,6 @@ interface LinkedEmployee {
 export default function TimeTrackingPage() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const mainContentClass = useMainContentClass();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isLinkOpen, setIsLinkOpen] = useState(false);
   const [dateRange, setDateRange] = useState<'week' | 'month' | 'custom'>('week');
@@ -298,9 +294,6 @@ export default function TimeTrackingPage() {
         className="min-h-screen bg-cover bg-center bg-fixed"
         style={{ backgroundImage: `url(${generatedBg})` }}
       >
-        <UnifiedSidebar />
-        <main className={`${mainContentClass} min-h-screen transition-all duration-300`}>
-          <TopBar />
           <div className="p-6 md:p-8">
             <div className="max-w-4xl mx-auto">
               <div className="glass-card p-8 rounded-2xl text-center">
@@ -312,7 +305,6 @@ export default function TimeTrackingPage() {
               </div>
             </div>
           </div>
-        </main>
       </div>
     );
   }
@@ -322,11 +314,6 @@ export default function TimeTrackingPage() {
       className="min-h-screen bg-cover bg-center bg-fixed"
       style={{ backgroundImage: `url(${generatedBg})` }}
     >
-      <UnifiedSidebar />
-      
-      <main className={`${mainContentClass} min-h-screen transition-all duration-300`}>
-        <TopBar />
-        
         <div className="p-6 md:p-8">
           <div className="max-w-6xl mx-auto">
             <div className="flex items-center justify-between mb-8">
@@ -720,7 +707,6 @@ export default function TimeTrackingPage() {
             </Tabs>
           </div>
         </div>
-      </main>
     </div>
   );
 }

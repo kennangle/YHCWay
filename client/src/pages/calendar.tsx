@@ -1,5 +1,3 @@
-import { UnifiedSidebar } from "@/components/unified-sidebar";
-import { TopBar } from "@/components/top-bar";
 import { Search, Bell, ChevronLeft, ChevronRight, Clock, MapPin, Video, Apple, X, RefreshCw } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -9,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 
 interface UserPreferences {
   googleCalendarColor: string;
@@ -76,7 +73,6 @@ export default function Calendar() {
     isAllDay: false,
   });
   const queryClient = useQueryClient();
-  const mainContentClass = useMainContentClass();
 
   const createEventMutation = useMutation({
     mutationFn: async (eventData: typeof newEvent) => {
@@ -253,7 +249,7 @@ export default function Calendar() {
   const upcomingEvents = allEvents.filter(e => new Date(e.start) >= new Date()).slice(0, 10);
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex font-sans">
+    <div className="min-h-screen bg-background text-foreground font-sans">
       <div 
         className="fixed inset-0 z-0 pointer-events-none opacity-40"
         style={{ 
@@ -263,11 +259,7 @@ export default function Calendar() {
         }}
       />
       
-      <UnifiedSidebar />
-
-      <main className={`flex-1 min-w-0 ml-0 ${mainContentClass} relative z-10 flex flex-col pb-20 md:pb-0 transition-all duration-300 overflow-x-hidden`}>
-        <TopBar />
-        <div className="flex-1 p-4 md:p-8">
+        <div className="flex-1 p-4 md:p-8 relative z-10 pb-20 md:pb-0 overflow-x-hidden">
         <header className="flex justify-between items-end mb-6 md:mb-8">
           <div>
             <p className="text-muted-foreground font-medium mb-1 text-sm md:text-base">Your Schedule</p>
@@ -652,7 +644,6 @@ export default function Calendar() {
           </DialogContent>
         </Dialog>
         </div>
-      </main>
     </div>
   );
 }

@@ -1,5 +1,3 @@
-import { UnifiedSidebar } from "@/components/unified-sidebar";
-import { TopBar } from "@/components/top-bar";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -11,7 +9,6 @@ import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_back
 import { useToast } from "@/hooks/use-toast";
 import { EmailEditor } from "@/components/email-editor";
 import { EmailBuilder } from "@/components/email-builder";
-import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 
 type TabType = "users" | "services" | "feed" | "emails";
 
@@ -32,7 +29,6 @@ interface EmailTemplate {
 
 export default function Admin() {
   const { user, isLoading: authLoading } = useAuth();
-  const mainContentClass = useMainContentClass();
   const [activeTab, setActiveTab] = useState<TabType>("users");
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [editingFeed, setEditingFeed] = useState<FeedItem | null>(null);
@@ -293,7 +289,7 @@ export default function Admin() {
   ];
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex font-sans">
+    <div className="min-h-screen bg-background text-foreground font-sans">
       <div 
         className="fixed inset-0 z-0 pointer-events-none opacity-40"
         style={{ 
@@ -303,11 +299,7 @@ export default function Admin() {
         }}
       />
       
-      <UnifiedSidebar />
-
-      <main className={`flex-1 ml-0 ${mainContentClass} relative z-10 flex flex-col transition-all duration-300`}>
-        <TopBar />
-        <div className="flex-1 p-8">
+        <div className="flex-1 p-8 relative z-10">
         <header className="mb-8">
           <h1 className="font-display font-bold text-3xl mb-2" data-testid="text-admin-title">Admin Panel</h1>
           <p className="text-muted-foreground">Manage users, services, and feed items.</p>
@@ -691,7 +683,6 @@ export default function Admin() {
           />
         )}
         </div>
-      </main>
 
       {editingTemplate && (
         <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-[9999] overflow-y-auto pt-8 pb-8 px-4" data-testid="modal-email-template">

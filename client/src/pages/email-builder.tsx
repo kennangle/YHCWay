@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { EmailBuilder } from "@/components/email-builder";
-import { UnifiedSidebar } from "@/components/unified-sidebar";
-import { TopBar } from "@/components/top-bar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -11,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { Mail, Plus, Trash2, FileText, Save, RotateCcw } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 
 interface EmailTemplate {
   id: number;
@@ -41,7 +38,6 @@ export default function EmailBuilderPage() {
   const [newTemplateType, setNewTemplateType] = useState("");
   const [newTemplateSubject, setNewTemplateSubject] = useState("");
   const queryClient = useQueryClient();
-  const mainContentClass = useMainContentClass();
 
   const { data: templates = [], isLoading } = useQuery<EmailTemplate[]>({
     queryKey: ["/api/admin/email-templates"],
@@ -130,10 +126,7 @@ export default function EmailBuilderPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-      <UnifiedSidebar />
-      <main className={`flex-1 overflow-auto ml-0 ${mainContentClass} transition-all duration-300`}>
-        <TopBar />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 overflow-auto">
         <div className="p-6 w-full overflow-x-hidden">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
@@ -300,7 +293,6 @@ export default function EmailBuilderPage() {
             </Card>
           </div>
         </div>
-      </main>
     </div>
   );
 }

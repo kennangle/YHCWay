@@ -1,6 +1,4 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
-import { UnifiedSidebar } from "@/components/unified-sidebar";
-import { TopBar } from "@/components/top-bar";
 import { FeedItem } from "@/components/feed-item";
 import { Search, Bell, Mail, Video, MessageCircle, Users, MessageSquare, CheckSquare, RefreshCw, X, Gift, AlertTriangle, TrendingUp, Plus, Send, CalendarPlus, Share2, Trash2 } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
@@ -16,7 +14,6 @@ import { TimeTrackerWidget } from "@/components/time-tracker-widget";
 import { AIAssistantPanel } from "@/components/ai-assistant-panel";
 import { Brain } from "lucide-react";
 import { toast } from "sonner";
-import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 
 type FilterType = "all" | "mentions" | "unread";
 type ServiceFilter = "all" | "gmail" | "slack" | "zoom" | "calendar" | "intro-offer";
@@ -111,7 +108,6 @@ interface SlackMessage {
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const mainContentClass = useMainContentClass();
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const [serviceFilter, setServiceFilter] = useState<ServiceFilter>("all");
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -673,7 +669,7 @@ export default function Dashboard() {
   ] as const;
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex font-sans">
+    <div className="min-h-screen bg-background text-foreground font-sans">
       <div 
         className="fixed inset-0 z-0 pointer-events-none opacity-40"
         style={{ 
@@ -683,11 +679,7 @@ export default function Dashboard() {
         }}
       />
       
-      <UnifiedSidebar />
-
-      <main className={`flex-1 ml-0 ${mainContentClass} relative z-10 flex flex-col transition-all duration-300`}>
-        <TopBar />
-        <div className="flex-1 p-4 md:p-8">
+        <div className="flex-1 p-4 md:p-8 relative z-10">
         <header className="flex justify-between items-end mb-8">
           <div>
             <p className="text-muted-foreground font-medium mb-1">{today} · {timeStr}</p>
@@ -1118,7 +1110,6 @@ export default function Dashboard() {
         </div>
         )}
         </div>
-      </main>
 
       {/* AI Assistant Floating Button */}
       <button

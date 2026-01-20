@@ -1,5 +1,3 @@
-import { UnifiedSidebar } from "@/components/unified-sidebar";
-import { TopBar } from "@/components/top-bar";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { 
@@ -18,7 +16,6 @@ import {
   Loader2
 } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
-import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 
 interface ServiceStatus {
   name: string;
@@ -101,7 +98,6 @@ const appCards = [
 ];
 
 export default function Overview() {
-  const mainContentClass = useMainContentClass();
   const { data: services, isLoading } = useQuery<ServiceStatus[]>({
     queryKey: ["/api/services"],
     queryFn: async () => {
@@ -158,11 +154,6 @@ export default function Overview() {
       className="min-h-screen bg-cover bg-center bg-fixed"
       style={{ backgroundImage: `url(${generatedBg})` }}
     >
-      <UnifiedSidebar />
-      
-      <main className={`${mainContentClass} min-h-screen transition-all duration-300`}>
-        <TopBar />
-        
         <div className="p-6 md:p-8">
           <div className="max-w-6xl mx-auto">
             <div className="mb-8">
@@ -245,7 +236,6 @@ export default function Overview() {
             </div>
           </div>
         </div>
-      </main>
     </div>
   );
 }

@@ -99,6 +99,7 @@ import Support from "@/pages/support";
 import DocsZoom from "@/pages/docs-zoom";
 import { FloatingAIButton } from "@/components/floating-ai-button";
 import { GuidedTour } from "@/components/guided-tour";
+import { AppLayout } from "@/components/app-layout";
 
 function ApprovalGuard({ children }: { children: ReactNode }) {
   const { user } = useAuth();
@@ -148,43 +149,45 @@ function Router() {
       <CommandPalette open={commandPaletteOpen} onOpenChange={setCommandPaletteOpen} />
       <FloatingAIButton />
       <GuidedTour autoStart />
-      <Switch>
-        <Route path="/pending-approval" component={PendingApproval} />
-        <Route path="/" component={Overview} />
-        <Route path="/dashboard" component={Dashboard} />
-        <Route path="/inbox" component={Inbox} />
-        <Route path="/calendar" component={Calendar} />
-        <Route path="/tasks" component={Tasks} />
-        <Route path="/projects" component={Projects} />
-        <Route path="/projects/:id" component={ProjectV2} />
-        <Route path="/projects-old/:id" component={ProjectBoard} />
-        <Route path="/typeform" component={Typeform} />
-        <Route path="/chat" component={Chat} />
-        <Route path="/connect" component={Connect} />
-        <Route path="/settings" component={Settings} />
-        <Route path="/admin" component={Admin} />
-        <Route path="/email-builder" component={EmailBuilderPage} />
-        <Route path="/intro-offers" component={IntroOffers} />
-        <Route path="/scoreboard" component={Scoreboard} />
-        <Route path="/webhooks" component={Webhooks} />
-        <Route path="/setup-guide" component={SetupGuide} />
-        <Route path="/qr-codes" component={QRCodes} />
-        <Route path="/rewards" component={Rewards} />
-        <Route path="/time-tracking" component={TimeTracking} />
-        <Route path="/email-activity" component={EmailActivity} />
-        <Route path="/gusto" component={Gusto} />
-        <Route path="/presentation" component={Presentation} />
-        <Route path="/changelog" component={Changelog} />
-        <Route path="/google-drive" component={GoogleDrive} />
-        <Route path="/google-docs" component={GoogleDocs} />
-        <Route path="/google-sheets" component={GoogleSheets} />
-        <Route path="/ai-summarize" component={AISummarize} />
-        <Route path="/dependency-tracker" component={DependencyTracker} />
-        <Route path="/dependency-tracker/:id" component={DependencyTracker} />
-        <Route path="/login">{() => <Redirect to="/dashboard" />}</Route>
-        <Route path="/register">{() => <Redirect to="/dashboard" />}</Route>
-        <Route component={NotFound} />
-      </Switch>
+      <AppLayout>
+        <Switch>
+          <Route path="/pending-approval" component={PendingApproval} />
+          <Route path="/" component={Overview} />
+          <Route path="/dashboard" component={Dashboard} />
+          <Route path="/inbox" component={Inbox} />
+          <Route path="/calendar" component={Calendar} />
+          <Route path="/tasks" component={Tasks} />
+          <Route path="/projects" component={Projects} />
+          <Route path="/projects/:id" component={ProjectV2} />
+          <Route path="/projects-old/:id" component={ProjectBoard} />
+          <Route path="/typeform" component={Typeform} />
+          <Route path="/chat" component={Chat} />
+          <Route path="/connect" component={Connect} />
+          <Route path="/settings" component={Settings} />
+          <Route path="/admin" component={Admin} />
+          <Route path="/email-builder" component={EmailBuilderPage} />
+          <Route path="/intro-offers" component={IntroOffers} />
+          <Route path="/scoreboard" component={Scoreboard} />
+          <Route path="/webhooks" component={Webhooks} />
+          <Route path="/setup-guide" component={SetupGuide} />
+          <Route path="/qr-codes" component={QRCodes} />
+          <Route path="/rewards" component={Rewards} />
+          <Route path="/time-tracking" component={TimeTracking} />
+          <Route path="/email-activity" component={EmailActivity} />
+          <Route path="/gusto" component={Gusto} />
+          <Route path="/presentation" component={Presentation} />
+          <Route path="/changelog" component={Changelog} />
+          <Route path="/google-drive" component={GoogleDrive} />
+          <Route path="/google-docs" component={GoogleDocs} />
+          <Route path="/google-sheets" component={GoogleSheets} />
+          <Route path="/ai-summarize" component={AISummarize} />
+          <Route path="/dependency-tracker" component={DependencyTracker} />
+          <Route path="/dependency-tracker/:id" component={DependencyTracker} />
+          <Route path="/login">{() => <Redirect to="/dashboard" />}</Route>
+          <Route path="/register">{() => <Redirect to="/dashboard" />}</Route>
+          <Route component={NotFound} />
+        </Switch>
+      </AppLayout>
     </ApprovalGuard>
   );
 }

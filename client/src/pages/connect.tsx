@@ -1,5 +1,3 @@
-import { UnifiedSidebar } from "@/components/unified-sidebar";
-import { TopBar } from "@/components/top-bar";
 import { AppleCalendarConnect } from "@/components/apple-calendar-connect";
 import { Search, MessageCircle, Mail, Calendar, Video, CheckSquare, FileText, Clock, X, Gift, QrCode, FileSpreadsheet, File } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
@@ -7,7 +5,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
-import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 
 interface AppIntegration {
   id: string;
@@ -376,7 +373,6 @@ export default function Connect() {
   const [credentialsError, setCredentialsError] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const mainContentClass = useMainContentClass();
 
   const { data: connectionStatus = {} } = useQuery<Record<string, boolean>>({
     queryKey: ["connection-status"],
@@ -854,7 +850,7 @@ export default function Connect() {
   const availableToConnect = filteredApps.filter(app => !app.connected);
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex font-sans">
+    <div className="min-h-screen bg-background text-foreground font-sans">
       <div 
         className="fixed inset-0 z-0 pointer-events-none opacity-40"
         style={{ 
@@ -864,11 +860,7 @@ export default function Connect() {
         }}
       />
       
-      <UnifiedSidebar />
-
-      <main className={`flex-1 ml-0 ${mainContentClass} relative z-10 flex flex-col transition-all duration-300`}>
-        <TopBar />
-        <div className="flex-1 p-8">
+        <div className="flex-1 p-8 relative z-10">
         <header className="mb-8">
           <h1 className="font-display font-bold text-3xl mb-2">Connect Apps</h1>
           <p className="text-muted-foreground">Manage your connected services and add new integrations.</p>
@@ -928,7 +920,6 @@ export default function Connect() {
           </div>
         </section>
         </div>
-      </main>
 
       {apiKeyModalApp && (
         <ApiKeyModal

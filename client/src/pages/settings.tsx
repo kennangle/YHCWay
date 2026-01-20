@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTheme } from "@/App";
-import { UnifiedSidebar } from "@/components/unified-sidebar";
-import { TopBar } from "@/components/top-bar";
 import { User, Bell, Shield, Palette, HelpCircle, ChevronLeft, Check, Globe, Mail, MessageSquare, Calendar, Video, CheckSquare, MessageCircle, Volume2, Moon, Sun, ExternalLink, Trash2, Download, Eye, EyeOff, FileText, Plus, Pencil, Webhook, Bug, Play, CheckCircle, XCircle, Clock, RefreshCw, Edit2, Lightbulb, Building, Copy, Users, UserPlus, Bold, Italic, Underline as UnderlineIcon, Link as LinkIcon, AlignLeft, AlignCenter, AlignRight } from "lucide-react";
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -21,7 +19,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
-import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 
 interface UserPreferences {
   googleCalendarColor: string;
@@ -2364,7 +2361,6 @@ export default function Settings() {
   const [mounted, setMounted] = useState(false);
   const { theme, setTheme } = useTheme();
   const queryClient = useQueryClient();
-  const mainContentClass = useMainContentClass();
 
   useEffect(() => {
     setMounted(true);
@@ -3347,7 +3343,7 @@ Your online status can be toggled in Privacy settings. When hidden, others won't
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex font-sans">
+    <div className="min-h-screen bg-background text-foreground font-sans">
       <div 
         className="fixed inset-0 z-0 pointer-events-none opacity-40"
         style={{ 
@@ -3357,11 +3353,7 @@ Your online status can be toggled in Privacy settings. When hidden, others won't
         }}
       />
       
-      <UnifiedSidebar />
-
-      <main className={`flex-1 ml-0 ${mainContentClass} relative z-10 flex flex-col transition-all duration-300`}>
-        <TopBar />
-        <div className="flex-1 p-8">
+        <div className="flex-1 p-8 relative z-10">
         <header className="mb-8">
           <h1 className="font-display font-bold text-3xl mb-2">Settings</h1>
           <p className="text-muted-foreground">Manage your workspace preferences.</p>
@@ -3369,7 +3361,6 @@ Your online status can be toggled in Privacy settings. When hidden, others won't
 
         {renderContent()}
         </div>
-      </main>
     </div>
   );
 }

@@ -1,7 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useSearch, useLocation } from "wouter";
-import { UnifiedSidebar } from "@/components/unified-sidebar";
-import { TopBar } from "@/components/top-bar";
 import { ProjectHeader } from "@/features/projects/components/ProjectHeader";
 import { ProjectBoardView } from "@/features/projects/components/ProjectBoardView";
 import { TaskPane } from "@/features/tasks/components/TaskPane";
@@ -13,7 +11,6 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { TaskLite } from "@/features/projects/types";
-import { useMainContentClass } from "@/hooks/useSidebarCollapse";
 
 type FilterState = {
   assignee: string | null;
@@ -26,7 +23,6 @@ export default function ProjectPageV2() {
   const projectId = parseInt(params.id || "0");
   const searchString = useSearch();
   const [, setLocation] = useLocation();
-  const mainContentClass = useMainContentClass();
 
   const searchParams = new URLSearchParams(searchString);
   const viewMode = (searchParams.get("view") as "board" | "list") || "board";
@@ -195,32 +191,22 @@ export default function ProjectPageV2() {
 
   if (projectLoading || boardLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex">
-        <UnifiedSidebar />
-        <main className={`flex-1 ${mainContentClass} flex items-center justify-center transition-all duration-300`}>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
           <RefreshCw className="w-8 h-8 animate-spin text-primary" />
-        </main>
       </div>
     );
   }
 
   if (!project || !boardData) {
     return (
-      <div className="min-h-screen bg-gray-50 flex">
-        <UnifiedSidebar />
-        <main className={`flex-1 ${mainContentClass} flex items-center justify-center transition-all duration-300`}>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
           <p className="text-gray-500">Project not found</p>
-        </main>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      <UnifiedSidebar />
-
-      <main className={`flex-1 ${mainContentClass} flex flex-col h-screen transition-all duration-300`}>
-        <TopBar />
+    <div className="min-h-screen bg-gray-50 flex flex-col h-screen">
 
         <ProjectHeader
           projectId={projectId}
@@ -377,7 +363,6 @@ export default function ProjectPageV2() {
             handleSelectTask(taskId);
           }}
         />
-      </main>
     </div>
   );
 }
