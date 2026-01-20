@@ -19,6 +19,8 @@ import {
   Bug,
   Lightbulb,
   Send,
+  Menu,
+  X,
 } from "lucide-react";
 import yhcLogo from "@assets/logo_bug_1024_1767889616107.jpg";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
@@ -45,6 +47,18 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerClose,
+} from "@/components/ui/drawer";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -64,6 +78,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const [feedbackDescription, setFeedbackDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [appVersion, setAppVersion] = useState<string>("");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     fetch("/manifest.json")
@@ -312,8 +327,8 @@ export function AppLayout({ children }: AppLayoutProps) {
           </div>
         </div>
 
-        {/* Navigation Bar - All screens with horizontal scroll */}
-        <nav className="overflow-x-auto border-b border-gray-200/50 dark:border-gray-700/50">
+        {/* Navigation Bar - Desktop only */}
+        <nav className="hidden md:block overflow-x-auto border-b border-gray-200/50 dark:border-gray-700/50">
           <div className="flex items-center gap-2 px-4 py-2 min-w-max">
             {tabs.map((tab) => (
               <NavTabDropdown
@@ -325,7 +340,60 @@ export function AppLayout({ children }: AppLayoutProps) {
             ))}
           </div>
         </nav>
+
+        {/* Mobile Navigation Bar */}
+        <div className="md:hidden flex items-center justify-between px-4 py-2 border-b border-gray-200/50 dark:border-gray-700/50">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setMobileMenuOpen(true)}
+            className="gap-2"
+            data-testid="button-mobile-menu"
+          >
+            <Menu className="h-5 w-5" />
+            <span>Menu</span>
+          </Button>
+        </div>
       </header>
+
+      {/* Mobile Menu Drawer */}
+      <Drawer open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+        <DrawerContent className="max-h-[85vh]">
+          <DrawerHeader className="border-b">
+            <div className="flex items-center justify-between">
+              <DrawerTitle>Navigation</DrawerTitle>
+              <DrawerClose asChild>
+                <Button variant="ghost" size="icon" data-testid="button-close-mobile-menu">
+                  <X className="h-5 w-5" />
+                </Button>
+              </DrawerClose>
+            </div>
+          </DrawerHeader>
+          <div className="overflow-y-auto p-4 space-y-2">
+            {tabs.map((tab) => (
+              <Collapsible key={tab.id} defaultOpen={isTabActive(tab)}>
+                <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-left">
+                  <div className="flex items-center gap-2">
+                    <tab.icon className="h-5 w-5 text-orange-500" />
+                    <span className="font-medium">{tab.label}</span>
+                  </div>
+                  <ChevronDown className="h-4 w-4 text-gray-500" />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pl-7 mt-1 space-y-1">
+                  {tab.items.map((item) => (
+                    <MobileNavItem
+                      key={item.id}
+                      item={item}
+                      isActive={isItemActive(item)}
+                      onClose={() => setMobileMenuOpen(false)}
+                    />
+                  ))}
+                </CollapsibleContent>
+              </Collapsible>
+            ))}
+          </div>
+        </DrawerContent>
+      </Drawer>
 
       <main className="relative z-10">{children}</main>
 
@@ -496,6 +564,57 @@ function NavDropdownItem({ item, isActive }: { item: NavItem; isActive: boolean 
         <span>{item.label}</span>
       </Link>
     </DropdownMenuItem>
+  );
+}
+
+function MobileNavItem({
+  item,
+  isActive,
+  onClose,
+}: {
+  item: NavItem;
+  isActive: boolean;
+  onClose: () => void;
+}) {
+  const [, navigate] = useLocation();
+
+  if (item.isExternal) {
+    return (
+      <a
+        href={item.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={onClose}
+        className={cn(
+          "flex items-center gap-2 px-3 py-2 rounded-lg text-sm",
+          "hover:bg-gray-100 dark:hover:bg-gray-800",
+          isActive && "bg-orange-50 dark:bg-orange-900/20 text-orange-600"
+        )}
+        data-testid={`mobile-nav-item-${item.id}`}
+      >
+        <item.icon className="h-4 w-4" />
+        <span>{item.label}</span>
+        <ExternalLink className="h-3 w-3 ml-auto opacity-50" />
+      </a>
+    );
+  }
+
+  return (
+    <button
+      onClick={() => {
+        navigate(item.href);
+        onClose();
+      }}
+      className={cn(
+        "flex items-center gap-2 px-3 py-2 rounded-lg text-sm w-full text-left",
+        "hover:bg-gray-100 dark:hover:bg-gray-800",
+        isActive && "bg-orange-50 dark:bg-orange-900/20 text-orange-600"
+      )}
+      data-testid={`mobile-nav-item-${item.id}`}
+    >
+      <item.icon className="h-4 w-4" />
+      <span>{item.label}</span>
+    </button>
   );
 }
 
