@@ -98,30 +98,7 @@ export function BoardColumn({
         <span className="text-xs text-gray-400">{tasks.length}</span>
       </div>
 
-      <div
-        ref={setNodeRef}
-        className="flex-1 p-2 space-y-2 overflow-y-auto min-h-[200px]"
-      >
-        <SortableContext items={sortableItems} strategy={verticalListSortingStrategy}>
-          {tasks.map((task) => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              onClick={() => onSelectTask(task.id)}
-              isSelected={selectedTaskId === task.id}
-              onToggleComplete={onToggleComplete}
-            />
-          ))}
-        </SortableContext>
-
-        {tasks.length === 0 && !isAdding && (
-          <div className="text-center text-xs text-gray-400 py-4">
-            No tasks
-          </div>
-        )}
-      </div>
-
-      <div className="p-2 border-t border-gray-200">
+      <div className="p-2 border-b border-gray-200">
         {isAdding ? (
           <div className="space-y-2">
             <Input
@@ -257,6 +234,29 @@ export function BoardColumn({
             <Plus className="w-4 h-4" />
             Add task
           </button>
+        )}
+      </div>
+
+      <div
+        ref={setNodeRef}
+        className="flex-1 p-2 space-y-2 overflow-y-auto min-h-[200px]"
+      >
+        <SortableContext items={sortableItems} strategy={verticalListSortingStrategy}>
+          {tasks.map((task) => (
+            <TaskCard
+              key={task.id}
+              task={task}
+              onClick={() => onSelectTask(task.id)}
+              isSelected={selectedTaskId === task.id}
+              onToggleComplete={onToggleComplete}
+            />
+          ))}
+        </SortableContext>
+
+        {tasks.length === 0 && !isAdding && (
+          <div className="text-center text-xs text-gray-400 py-4">
+            No tasks
+          </div>
         )}
       </div>
     </div>
