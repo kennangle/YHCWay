@@ -7,6 +7,7 @@ The YHC Way is a unified workspace application designed to streamline productivi
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+Documentation updates (!updatedocumentation): Include both technical documentation and User Guide sections.
 
 ## System Architecture
 
