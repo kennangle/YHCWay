@@ -23,6 +23,7 @@ import {
   Wrench,
   Building2,
   Shield,
+  ClipboardList,
   LucideIcon,
 } from "lucide-react";
 
@@ -62,6 +63,7 @@ export const navigationTabs: NavTab[] = [
     label: "Productivity",
     icon: FileText,
     items: [
+      { id: "daily-hub", icon: ClipboardList, label: "Daily Hub", href: "/daily-hub" },
       { id: "chat", icon: MessageCircle, label: "Chat", href: "/chat" },
       { id: "tasks", icon: ListTodo, label: "Tasks", href: "/tasks" },
       { id: "projects", icon: FolderKanban, label: "Projects", href: "/projects" },

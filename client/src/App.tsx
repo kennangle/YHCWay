@@ -93,6 +93,7 @@ import GoogleDocs from "@/pages/google-docs";
 import GoogleSheets from "@/pages/google-sheets";
 import GoogleDrive from "@/pages/google-drive";
 import DependencyTracker from "@/pages/dependency-tracker";
+import DailyHub from "@/pages/daily-hub";
 import Privacy from "@/pages/privacy";
 import Terms from "@/pages/terms";
 import Support from "@/pages/support";
@@ -183,6 +184,7 @@ function Router() {
           <Route path="/ai-summarize" component={AISummarize} />
           <Route path="/dependency-tracker" component={DependencyTracker} />
           <Route path="/dependency-tracker/:id" component={DependencyTracker} />
+          <Route path="/daily-hub" component={DailyHub} />
           <Route path="/login">{() => <Redirect to="/dashboard" />}</Route>
           <Route path="/register">{() => <Redirect to="/dashboard" />}</Route>
           <Route component={NotFound} />
