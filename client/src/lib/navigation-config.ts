@@ -24,6 +24,7 @@ import {
   Building2,
   Shield,
   ClipboardList,
+  BookOpen,
   LucideIcon,
 } from "lucide-react";
 
@@ -56,6 +57,7 @@ export const navigationTabs: NavTab[] = [
       { id: "intro-offers", icon: Gift, label: "Intro Offers", href: "/intro-offers" },
       { id: "mailbox", icon: Mail, label: "Mailbox", href: "/inbox" },
       { id: "calendar", icon: Calendar, label: "Calendar", href: "/calendar" },
+      { id: "setup-guide", icon: BookOpen, label: "Setup Guide", href: "/setup-guide" },
     ],
   },
   {

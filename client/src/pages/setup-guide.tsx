@@ -17,7 +17,10 @@ import {
   Clock,
   CalendarCheck,
   Users,
-  FileText
+  FileText,
+  File,
+  FileSpreadsheet,
+  HardDrive
 } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery } from "@tanstack/react-query";
@@ -35,6 +38,9 @@ interface ServiceStatus {
   calendly: boolean;
   gusto: boolean;
   typeform: boolean;
+  googleDocs: boolean;
+  googleSheets: boolean;
+  googleDrive: boolean;
 }
 
 export default function SetupGuide() {
@@ -113,10 +119,13 @@ export default function SetupGuide() {
     calendly: calendlyStatus?.connected || false,
     gusto: gustoStatus?.connected || false,
     typeform: typeformStatus?.connected || false,
+    googleDocs: gmailStatus?.connected || false,
+    googleSheets: gmailStatus?.connected || false,
+    googleDrive: gmailStatus?.connected || false,
   };
 
   const completedSteps = Object.values(serviceStatus).filter(Boolean).length;
-  const totalSteps = 12;
+  const totalSteps = 15;
 
   if (authLoading) {
     return (
@@ -250,6 +259,36 @@ export default function SetupGuide() {
       href: "/connect",
       color: "text-violet-500",
       bgColor: "bg-violet-100",
+    },
+    {
+      id: "google-docs",
+      title: "Google Docs",
+      description: "Access and edit your Google Docs documents directly within the app.",
+      icon: File,
+      connected: serviceStatus.googleDocs,
+      href: "/google-docs",
+      color: "text-blue-500",
+      bgColor: "bg-blue-100",
+    },
+    {
+      id: "google-sheets",
+      title: "Google Sheets",
+      description: "View and manage your Google Sheets spreadsheets.",
+      icon: FileSpreadsheet,
+      connected: serviceStatus.googleSheets,
+      href: "/google-sheets",
+      color: "text-green-500",
+      bgColor: "bg-green-100",
+    },
+    {
+      id: "google-drive",
+      title: "Google Drive",
+      description: "Browse and manage files stored in your Google Drive.",
+      icon: HardDrive,
+      connected: serviceStatus.googleDrive,
+      href: "/google-drive",
+      color: "text-yellow-500",
+      bgColor: "bg-yellow-100",
     },
   ];
 
