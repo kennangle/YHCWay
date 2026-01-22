@@ -9,7 +9,7 @@ import { Link } from "wouter";
 import { useNotificationSound } from "@/hooks/useNotificationSound";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DashboardWidgetConfig, getDefaultWidgets, WidgetConfig, WidgetId } from "@/components/dashboard-widget-config";
+import { DraggableDashboard, getDefaultWidgets, WidgetConfig, WidgetId } from "@/components/draggable-dashboard";
 import { TimeTrackerWidget } from "@/components/time-tracker-widget";
 import { AIAssistantPanel } from "@/components/ai-assistant-panel";
 import { Brain } from "lucide-react";
@@ -686,10 +686,6 @@ export default function Dashboard() {
             <h1 className="font-display font-bold text-3xl">{getGreeting()}, {userName}</h1>
           </div>
           <div className="flex gap-4">
-            <DashboardWidgetConfig 
-              widgets={widgetConfigs}
-              onSave={(widgets) => saveWidgetsMutation.mutate(widgets)}
-            />
             <button 
               onClick={handleRefresh}
               disabled={isRefreshing}
@@ -791,154 +787,15 @@ export default function Dashboard() {
           </div>
         </header>
 
-        {isWidgetVisible("upcoming-events") && (
-          <div className="glass-panel p-6 rounded-2xl mb-8" style={{ order: getWidgetOrder("upcoming-events") }}>
-            <h3 className="font-display font-semibold text-lg mb-4">Upcoming Events</h3>
-            
-            {calendarLoading ? (
-              <div className="text-center text-muted-foreground py-4">Loading events...</div>
-            ) : (() => {
-              const sevenDaysFromNow = new Date();
-              sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
-              const filteredEvents = calendarEvents.filter(event => {
-                const eventDate = new Date(event.start);
-                return eventDate <= sevenDaysFromNow;
-              });
-              
-              return filteredEvents.length === 0 ? (
-                <div className="text-center text-muted-foreground py-4">No upcoming events in the next 7 days</div>
-              ) : (
-                <div className="flex flex-wrap gap-3">
-                  {filteredEvents.map((event) => {
-                    const isNow = isEventNow(event.start, event.end, event.isAllDay);
-                    const isCalendly = event.source === "calendly";
-                    return (
-                      <Link key={event.id} href="/calendar" data-testid={`upcoming-event-${event.id}`}>
-                        <div className={`flex items-center gap-3 px-4 py-2 rounded-lg border transition-colors cursor-pointer ${isCalendly ? 'bg-blue-50/60 border-blue-200/50 hover:bg-blue-100/80' : 'bg-white/60 border-white/30 hover:bg-white/80'}`}>
-                          <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isNow ? 'bg-primary animate-pulse' : isCalendly ? 'bg-blue-500' : 'bg-green-500'}`}></div>
-                          {isCalendly && (
-                            <span className="text-[10px] font-semibold text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded flex-shrink-0">
-                              Calendly
-                            </span>
-                          )}
-                          <span className="text-xs font-medium text-primary/80 flex-shrink-0">
-                            {formatEventDate(event.start)}
-                          </span>
-                          <span className={`text-xs font-semibold flex-shrink-0 ${isNow ? 'text-primary' : 'text-muted-foreground'}`}>
-                            {isNow ? 'NOW' : formatEventStartTime(event.start, event.isAllDay)}
-                          </span>
-                          <span className="font-medium text-foreground text-sm truncate max-w-48">{event.title}</span>
-                          <span className="text-xs text-muted-foreground flex-shrink-0">
-                            {formatEventTime(event.start, event.end, event.isAllDay)}
-                          </span>
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
-              );
-            })()}
-          </div>
-        )}
-
-        {/* Insights Section */}
-        {isWidgetVisible("insights") && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8" style={{ order: getWidgetOrder("insights") }}>
-            {/* At-Risk Students */}
-            <Link href="/intro-offers?filter=needs_attention" className="block" data-testid="insight-at-risk">
-            <div className="glass-panel p-5 rounded-xl border-l-4 border-l-amber-500 hover:bg-white/80 transition-colors cursor-pointer h-full">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
-                  <AlertTriangle className="w-5 h-5 text-amber-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-sm">Needs Attention</h3>
-                  <p className="text-2xl font-bold text-amber-600">
-                    {introOffers.filter(o => o.memberStatus === "at_risk" || o.memberStatus === "lapsed").length}
-                  </p>
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {introOffers.filter(o => o.memberStatus === "at_risk").length} at-risk, {introOffers.filter(o => o.memberStatus === "lapsed").length} lapsed students
-              </p>
-            </div>
-          </Link>
-
-          {/* New Intro Offers */}
-          <Link href="/intro-offers?filter=new" className="block" data-testid="insight-new-offers">
-            <div className="glass-panel p-5 rounded-xl border-l-4 border-l-green-500 hover:bg-white/80 transition-colors cursor-pointer h-full">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-green-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-sm">New This Week</h3>
-                  <p className="text-2xl font-bold text-green-600">
-                    {introOffers.filter(o => o.daysSincePurchase <= 7).length}
-                  </p>
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {introOffers.filter(o => o.memberStatus === "engaged").length} engaged, {introOffers.filter(o => o.memberStatus === "new").length} awaiting first class
-              </p>
-            </div>
-          </Link>
-
-          {/* Upcoming Tasks Card */}
-          <Link href="/projects" className="block" data-testid="insight-upcoming-tasks">
-            <div className="glass-panel p-5 rounded-xl border-l-4 border-l-blue-500 hover:bg-white/80 transition-colors cursor-pointer h-full">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                  <CheckSquare className="w-5 h-5 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-sm">Upcoming Tasks</h3>
-                  <p className="text-2xl font-bold text-blue-600">
-                    {upcomingTasks.length}
-                  </p>
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {upcomingTasks.filter(t => t.dueDate && new Date(t.dueDate) < new Date()).length > 0 
-                  ? `${upcomingTasks.filter(t => t.dueDate && new Date(t.dueDate) < new Date()).length} overdue`
-                  : upcomingTasks.length > 0 
-                    ? `Next: ${upcomingTasks[0]?.title?.substring(0, 20)}${(upcomingTasks[0]?.title?.length || 0) > 20 ? '...' : ''}`
-                    : 'No tasks due'
-                }
-              </p>
-            </div>
-          </Link>
-
-          {/* Quick Actions */}
-          <div className="glass-panel p-5 rounded-xl h-full">
-            <h3 className="font-semibold text-sm mb-3">Quick Actions</h3>
-            <div className="flex flex-wrap gap-2">
-              <Link href="/email-builder" data-testid="quick-action-email">
-                <button className="flex items-center gap-2 px-3 py-2 text-xs font-medium bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors">
-                  <Send className="w-3.5 h-3.5" />
-                  Compose Email
-                </button>
-              </Link>
-              <Link href="/calendar" data-testid="quick-action-event">
-                <button className="flex items-center gap-2 px-3 py-2 text-xs font-medium bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors">
-                  <CalendarPlus className="w-3.5 h-3.5" />
-                  New Event
-                </button>
-              </Link>
-              <Link href="/projects" data-testid="quick-action-task">
-                <button className="flex items-center gap-2 px-3 py-2 text-xs font-medium bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors">
-                  <Plus className="w-3.5 h-3.5" />
-                  View Projects
-                </button>
-              </Link>
-            </div>
-          </div>
-        </div>
-        )}
+        {/* Draggable Widget Dashboard */}
+        <DraggableDashboard 
+          widgets={widgetConfigs}
+          onWidgetsChange={(widgets) => saveWidgetsMutation.mutate(widgets)}
+        />
 
         {/* Shared with Team Section */}
         {sharedItems.length > 0 && (
-          <div className="glass-panel p-6 rounded-2xl mb-8">
+          <div className="glass-panel p-6 rounded-2xl mt-8">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-display font-semibold text-lg flex items-center gap-2">
                 <Share2 className="w-5 h-5 text-primary" />
@@ -991,123 +848,6 @@ export default function Dashboard() {
               })}
             </div>
           </div>
-        )}
-
-        {/* Time Tracker Widget - Hidden for now */}
-        {/* {isWidgetVisible("time-tracker") && (
-          <div className="mb-8" style={{ order: getWidgetOrder("time-tracker") }}>
-            <TimeTrackerWidget />
-          </div>
-        )} */}
-
-
-        {isWidgetVisible("service-summary") && (
-        <div className="mb-8" style={{ order: getWidgetOrder("service-summary") }}>
-          <h2 className="font-display font-semibold text-xl mb-4">Recent Activity</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {/* Gmail Card */}
-            <Link href="/inbox" data-testid="card-gmail">
-              <div className="glass-panel p-5 rounded-xl hover:bg-white/80 transition-all cursor-pointer border-l-4 border-l-red-500 h-full">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
-                    <Mail className="w-6 h-6 text-red-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg">Gmail</h3>
-                    <p className="text-xs text-muted-foreground">Mailbox</p>
-                  </div>
-                </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold text-red-600">
-                    {gmailLoading ? "..." : gmailMessages.length}
-                  </span>
-                  <span className="text-sm text-muted-foreground">
-                    {gmailMessages.filter(m => m.isUnread).length > 0 && (
-                      <span className="text-red-600 font-medium">
-                        ({gmailMessages.filter(m => m.isUnread).length} unread)
-                      </span>
-                    )}
-                  </span>
-                </div>
-              </div>
-            </Link>
-
-            {/* Slack Card */}
-            <Link href="/connect" data-testid="card-slack">
-              <div className="glass-panel p-5 rounded-xl hover:bg-white/80 transition-all cursor-pointer border-l-4 border-l-purple-500 h-full">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
-                    <MessageCircle className="w-6 h-6 text-purple-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg">Slack</h3>
-                    <p className="text-xs text-muted-foreground">Messages</p>
-                  </div>
-                </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold text-purple-600">
-                    {slackLoading ? "..." : slackMessages.length}
-                  </span>
-                  <span className="text-sm text-muted-foreground">
-                    {slackMessages.filter(m => m.isDm).length > 0 && (
-                      <span className="text-pink-600 font-medium">
-                        ({slackMessages.filter(m => m.isDm).length} DMs)
-                      </span>
-                    )}
-                  </span>
-                </div>
-              </div>
-            </Link>
-
-            {/* Zoom Card */}
-            <Link href="/connect" data-testid="card-zoom">
-              <div className="glass-panel p-5 rounded-xl hover:bg-white/80 transition-all cursor-pointer border-l-4 border-l-blue-500 h-full">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                    <Video className="w-6 h-6 text-blue-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg">Zoom</h3>
-                    <p className="text-xs text-muted-foreground">Meetings</p>
-                  </div>
-                </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold text-blue-600">
-                    {zoomLoading ? "..." : zoomMeetings.length}
-                  </span>
-                  <span className="text-sm text-muted-foreground">scheduled</span>
-                </div>
-              </div>
-            </Link>
-
-            {/* Intro Offers Card */}
-            <Link href="/intro-offers" data-testid="card-intro-offers">
-              <div className="glass-panel p-5 rounded-xl hover:bg-white/80 transition-all cursor-pointer border-l-4 border-l-amber-500 h-full">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
-                    <Gift className="w-6 h-6 text-amber-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg">Intro Offers</h3>
-                    <p className="text-xs text-muted-foreground">New Students</p>
-                  </div>
-                </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold text-amber-600">
-                    {introOffers.length}
-                  </span>
-                  <span className="text-sm text-muted-foreground">
-                    {introOffers.filter(o => o.memberStatus === "new" || o.memberStatus === "at_risk").length > 0 && (
-                      <span className="text-amber-600 font-medium">
-                        ({introOffers.filter(o => o.memberStatus === "new" || o.memberStatus === "at_risk").length} need attention)
-                      </span>
-                    )}
-                  </span>
-                </div>
-              </div>
-            </Link>
-          </div>
-        </div>
         )}
         </div>
 
