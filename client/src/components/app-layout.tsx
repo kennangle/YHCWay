@@ -4,15 +4,14 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useGuidedTour } from "@/components/guided-tour";
 import { useTheme } from "@/App";
-import { getNavigationTabs, NavTab, NavItem } from "@/lib/navigation-config";
 import { queryClient } from "@/lib/queryClient";
 import { GlobalSearch } from "@/components/global-search";
 import { useToast } from "@/hooks/use-toast";
+import { SidebarNav } from "@/components/sidebar-nav";
 import {
   ChevronDown,
   Clock,
   HelpCircle,
-  ExternalLink,
   Moon,
   Sun,
   LogOut,
@@ -21,6 +20,8 @@ import {
   Send,
   Menu,
   X,
+  PanelLeftClose,
+  PanelLeft,
 } from "lucide-react";
 import yhcLogo from "@assets/logo_bug_1024_1767889616107.jpg";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
@@ -64,159 +65,12 @@ interface AppLayoutProps {
   children: ReactNode;
 }
 
-function NavTabDropdown({
-  tab,
-  isActive,
-  isItemActive,
-}: {
-  tab: NavTab;
-  isActive: boolean;
-  isItemActive: (item: NavItem) => boolean;
-}) {
-  const [, navigate] = useLocation();
-
-  const handleTabClick = () => {
-    if (tab.href) {
-      navigate(tab.href);
-    }
-  };
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          className={cn(
-            "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all",
-            "hover:bg-gradient-to-r hover:from-orange-100 hover:to-amber-100 dark:hover:from-orange-900/30 dark:hover:to-amber-900/30",
-            "focus:outline-none focus:ring-2 focus:ring-orange-300 focus:ring-offset-1",
-            isActive
-              ? "bg-gradient-to-r from-orange-400 to-amber-500 text-white shadow-md"
-              : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
-          )}
-          data-testid={`nav-tab-${tab.id}`}
-        >
-          <tab.icon className="h-4 w-4" />
-          <span className="hidden xl:inline">{tab.label}</span>
-          <ChevronDown className="h-3 w-3 opacity-70" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-52">
-        {tab.href && (
-          <DropdownMenuItem
-            onClick={handleTabClick}
-            className="gap-2 cursor-pointer"
-            data-testid={`nav-item-${tab.id}-home`}
-          >
-            <tab.icon className="h-4 w-4" />
-            <span>{tab.label} Home</span>
-          </DropdownMenuItem>
-        )}
-        {tab.items.map((item) => (
-          <NavDropdownItem key={item.id} item={item} isActive={isItemActive(item)} />
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
-function NavDropdownItem({ item, isActive }: { item: NavItem; isActive: boolean }) {
-  if (item.isExternal) {
-    return (
-      <DropdownMenuItem asChild>
-        <a
-          href={item.href}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={cn(
-            "flex items-center gap-2 cursor-pointer w-full",
-            isActive && "bg-orange-50 dark:bg-orange-900/20"
-          )}
-          data-testid={`nav-item-${item.id}`}
-        >
-          <item.icon className="h-4 w-4" />
-          <span>{item.label}</span>
-          <ExternalLink className="h-3 w-3 ml-auto opacity-50" />
-        </a>
-      </DropdownMenuItem>
-    );
-  }
-
-  return (
-    <DropdownMenuItem asChild>
-      <Link
-        href={item.href}
-        className={cn(
-          "flex items-center gap-2 cursor-pointer w-full",
-          isActive && "bg-orange-50 dark:bg-orange-900/20"
-        )}
-        data-testid={`nav-item-${item.id}`}
-      >
-        <item.icon className="h-4 w-4" />
-        <span>{item.label}</span>
-      </Link>
-    </DropdownMenuItem>
-  );
-}
-
-function MobileNavItem({
-  item,
-  isActive,
-  onClose,
-}: {
-  item: NavItem;
-  isActive: boolean;
-  onClose: () => void;
-}) {
-  const [, navigate] = useLocation();
-
-  if (item.isExternal) {
-    return (
-      <a
-        href={item.href}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={onClose}
-        className={cn(
-          "flex items-center gap-2 px-3 py-2 rounded-lg text-sm",
-          "hover:bg-gray-100 dark:hover:bg-gray-800",
-          isActive && "bg-orange-50 dark:bg-orange-900/20 text-orange-600"
-        )}
-        data-testid={`mobile-nav-item-${item.id}`}
-      >
-        <item.icon className="h-4 w-4" />
-        <span>{item.label}</span>
-        <ExternalLink className="h-3 w-3 ml-auto opacity-50" />
-      </a>
-    );
-  }
-
-  return (
-    <button
-      onClick={() => {
-        navigate(item.href);
-        onClose();
-      }}
-      className={cn(
-        "flex items-center gap-2 px-3 py-2 rounded-lg text-sm w-full text-left",
-        "hover:bg-gray-100 dark:hover:bg-gray-800",
-        isActive && "bg-orange-50 dark:bg-orange-900/20 text-orange-600"
-      )}
-      data-testid={`mobile-nav-item-${item.id}`}
-    >
-      <item.icon className="h-4 w-4" />
-      <span>{item.label}</span>
-    </button>
-  );
-}
-
 export function AppLayout({ children }: AppLayoutProps) {
   const [location, setLocation] = useLocation();
   const { user } = useAuth();
   const { theme, setTheme } = useTheme();
   const { toast } = useToast();
   const { startTour } = useGuidedTour();
-  const isAdmin = user?.isAdmin || false;
-  const tabs = getNavigationTabs(isAdmin);
 
   const [feedbackType, setFeedbackType] = useState<"bug" | "feature" | null>(null);
   const [feedbackTitle, setFeedbackTitle] = useState("");
@@ -224,6 +78,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [appVersion, setAppVersion] = useState<string>("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     fetch("/manifest.json")
@@ -231,17 +86,6 @@ export function AppLayout({ children }: AppLayoutProps) {
       .then((data) => setAppVersion(data.version || ""))
       .catch(() => setAppVersion(""));
   }, []);
-
-  const isTabActive = (tab: NavTab) => {
-    if (tab.href && location === tab.href) return true;
-    return tab.items.some(
-      (item) => location === item.href || location.startsWith(item.href + "/")
-    );
-  };
-
-  const isItemActive = (item: NavItem) => {
-    return location === item.href || location.startsWith(item.href + "/");
-  };
 
   const handleLogout = async () => {
     try {
@@ -313,7 +157,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans">
+    <div className="min-h-screen bg-background text-foreground font-sans flex">
       <div
         className="fixed inset-0 z-0 pointer-events-none opacity-40"
         style={{
@@ -323,177 +167,15 @@ export function AppLayout({ children }: AppLayoutProps) {
         }}
       />
 
-      <header className="sticky top-0 z-50 w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md">
-        {/* Top Utility Bar */}
-        <div className="flex h-12 items-center justify-between px-3 md:px-4 gap-2 md:gap-4 border-b border-gray-200/50 dark:border-gray-700/50">
-          <div className="flex items-center gap-2 shrink-0">
-            <Link href="/dashboard" className="flex items-center gap-2 shrink-0">
-              <img src={yhcLogo} alt="The YHC Way" className="h-7 w-7 md:h-8 md:w-8 rounded-lg" />
-              <span className="hidden sm:inline font-semibold text-lg text-gray-800 dark:text-gray-200">
-                The YHC Way
-              </span>
-            </Link>
-          </div>
-
-          <div className="flex-1 max-w-lg mx-2 md:mx-4 hidden sm:block">
-            <GlobalSearch />
-          </div>
-
-          <div className="flex items-center gap-0.5 md:gap-1">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link href="/time-tracking">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-gray-600 dark:text-gray-300 hover:text-gray-900"
-                    data-testid="button-time-tracking"
-                  >
-                    <Clock className="h-4 w-4" />
-                  </Button>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent>Time Tracking</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={startTour}
-                  className="h-8 w-8 text-gray-600 dark:text-gray-300 hover:text-gray-900"
-                  data-testid="button-guided-tour"
-                >
-                  <HelpCircle className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Take a Guided Tour</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="hidden sm:flex h-8 w-8 text-gray-500 hover:text-red-500"
-                  onClick={() => setFeedbackType("bug")}
-                  data-testid="button-report-bug"
-                >
-                  <Bug className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Report a Bug</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="hidden sm:flex h-8 w-8 text-gray-500 hover:text-yellow-500"
-                  onClick={() => setFeedbackType("feature")}
-                  data-testid="button-request-feature"
-                >
-                  <Lightbulb className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Request a Feature</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                  data-testid="button-toggle-theme"
-                >
-                  {theme === "dark" ? (
-                    <Sun className="h-4 w-4" />
-                  ) : (
-                    <Moon className="h-4 w-4" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {theme === "dark" ? "Light mode" : "Dark mode"}
-              </TooltipContent>
-            </Tooltip>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  className="flex items-center gap-2 px-2 py-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                  data-testid="user-profile-button"
-                >
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white font-medium text-sm">
-                    {getInitials()}
-                  </div>
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300 hidden lg:inline">
-                    {user?.firstName || user?.email?.split("@")[0] || "User"}
-                  </span>
-                  <ChevronDown className="h-3.5 w-3.5 text-gray-500 hidden lg:inline" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <div className="px-2 py-1.5 text-xs text-gray-500">
-                  {user?.email}
-                  {appVersion && <span className="ml-1">v{appVersion}</span>}
-                </div>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/settings" className="cursor-pointer">
-                    Settings
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/connect" className="cursor-pointer">
-                    Connect Apps
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={handleLogout}
-                  className="text-red-600 cursor-pointer"
-                >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Log out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-
-        {/* Navigation Bar - Desktop only */}
-        <nav className="hidden md:block overflow-x-auto border-b border-gray-200/50 dark:border-gray-700/50">
-          <div className="flex items-center gap-2 px-4 py-2 min-w-max">
-            {tabs.map((tab) => (
-              <NavTabDropdown
-                key={tab.id}
-                tab={tab}
-                isActive={isTabActive(tab)}
-                isItemActive={isItemActive}
-              />
-            ))}
-          </div>
-        </nav>
-
-        {/* Mobile Navigation Bar */}
-        <div className="md:hidden flex items-center justify-between px-4 py-2 border-b border-gray-200/50 dark:border-gray-700/50">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setMobileMenuOpen(true)}
-            className="gap-2"
-            data-testid="button-mobile-menu"
-          >
-            <Menu className="h-5 w-5" />
-            <span>Menu</span>
-          </Button>
-        </div>
-      </header>
+      {/* Desktop Sidebar */}
+      <aside
+        className={cn(
+          "hidden md:flex flex-col fixed left-0 top-0 h-full z-40 transition-all duration-300",
+          sidebarCollapsed ? "w-0 overflow-hidden" : "w-64"
+        )}
+      >
+        <SidebarNav />
+      </aside>
 
       {/* Mobile Menu Drawer */}
       <Drawer open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
@@ -508,33 +190,189 @@ export function AppLayout({ children }: AppLayoutProps) {
               </DrawerClose>
             </div>
           </DrawerHeader>
-          <div className="overflow-y-auto p-4 space-y-2">
-            {tabs.map((tab) => (
-              <Collapsible key={tab.id} defaultOpen={isTabActive(tab)}>
-                <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-left">
-                  <div className="flex items-center gap-2">
-                    <tab.icon className="h-5 w-5 text-orange-500" />
-                    <span className="font-medium">{tab.label}</span>
-                  </div>
-                  <ChevronDown className="h-4 w-4 text-gray-500" />
-                </CollapsibleTrigger>
-                <CollapsibleContent className="pl-7 mt-1 space-y-1">
-                  {tab.items.map((item) => (
-                    <MobileNavItem
-                      key={item.id}
-                      item={item}
-                      isActive={isItemActive(item)}
-                      onClose={() => setMobileMenuOpen(false)}
-                    />
-                  ))}
-                </CollapsibleContent>
-              </Collapsible>
-            ))}
+          <div className="overflow-y-auto">
+            <SidebarNav onClose={() => setMobileMenuOpen(false)} />
           </div>
         </DrawerContent>
       </Drawer>
 
-      <main className="relative z-10">{children}</main>
+      {/* Main Content Area */}
+      <div className={cn(
+        "flex-1 flex flex-col min-h-screen transition-all duration-300",
+        sidebarCollapsed ? "md:ml-0" : "md:ml-64"
+      )}>
+        {/* Top Bar */}
+        <header className="sticky top-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-700/50">
+          <div className="flex h-14 items-center justify-between px-4 gap-4">
+            <div className="flex items-center gap-2">
+              {/* Mobile Menu Button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setMobileMenuOpen(true)}
+                className="md:hidden h-9 w-9"
+                data-testid="button-mobile-menu"
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+
+              {/* Desktop Sidebar Toggle */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                    className="hidden md:flex h-9 w-9"
+                    data-testid="button-toggle-sidebar"
+                  >
+                    {sidebarCollapsed ? (
+                      <PanelLeft className="h-5 w-5" />
+                    ) : (
+                      <PanelLeftClose className="h-5 w-5" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {sidebarCollapsed ? "Show sidebar" : "Hide sidebar"}
+                </TooltipContent>
+              </Tooltip>
+
+              <div className="flex-1 max-w-md">
+                <GlobalSearch />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link href="/time-tracking">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 text-gray-600 dark:text-gray-300"
+                      data-testid="button-time-tracking"
+                    >
+                      <Clock className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent>Time Tracking</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={startTour}
+                    className="h-9 w-9 text-gray-600 dark:text-gray-300"
+                    data-testid="button-guided-tour"
+                  >
+                    <HelpCircle className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Take a Guided Tour</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="hidden sm:flex h-9 w-9 text-gray-500 hover:text-red-500"
+                    onClick={() => setFeedbackType("bug")}
+                    data-testid="button-report-bug"
+                  >
+                    <Bug className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Report a Bug</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="hidden sm:flex h-9 w-9 text-gray-500 hover:text-yellow-500"
+                    onClick={() => setFeedbackType("feature")}
+                    data-testid="button-request-feature"
+                  >
+                    <Lightbulb className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Request a Feature</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9"
+                    onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                    data-testid="button-toggle-theme"
+                  >
+                    {theme === "dark" ? (
+                      <Sun className="h-4 w-4" />
+                    ) : (
+                      <Moon className="h-4 w-4" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {theme === "dark" ? "Light mode" : "Dark mode"}
+                </TooltipContent>
+              </Tooltip>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className="flex items-center gap-2 px-2 py-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    data-testid="user-profile-button"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white font-medium text-sm">
+                      {getInitials()}
+                    </div>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300 hidden lg:inline">
+                      {user?.firstName || user?.email?.split("@")[0] || "User"}
+                    </span>
+                    <ChevronDown className="h-3.5 w-3.5 text-gray-500 hidden lg:inline" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <div className="px-2 py-1.5 text-xs text-gray-500">
+                    {user?.email}
+                    {appVersion && <span className="ml-1">v{appVersion}</span>}
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/settings" className="cursor-pointer">
+                      Settings
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/connect" className="cursor-pointer">
+                      Connect Apps
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={handleLogout}
+                    className="text-red-600 cursor-pointer"
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Log out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        </header>
+
+        <main className="flex-1 relative z-10">{children}</main>
+      </div>
 
       <Dialog
         open={feedbackType !== null}
