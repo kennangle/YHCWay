@@ -523,6 +523,48 @@ export async function getTrashedEmailsForUser(userId: string, maxResults: number
   return emails;
 }
 
+export async function emptyTrashForUser(userId: string): Promise<{ deletedCount: number }> {
+  const gmail = await getGmailClientForUser(userId);
+  
+  let deletedCount = 0;
+  let pageToken: string | undefined = undefined;
+  
+  // Paginate through all trash messages
+  do {
+    const response: { data: { messages?: Array<{ id?: string | null }>; nextPageToken?: string | null } } = await gmail.users.messages.list({
+      userId: 'me',
+      labelIds: ['TRASH'],
+      maxResults: 500,
+      pageToken,
+    });
+
+    if (!response.data.messages || response.data.messages.length === 0) {
+      break;
+    }
+
+    const messageIds: string[] = response.data.messages.map((m: { id?: string | null }) => m.id!);
+    
+    // Permanently delete messages in batches
+    const batchSize = 50;
+    for (let i = 0; i < messageIds.length; i += batchSize) {
+      const batch = messageIds.slice(i, i + batchSize);
+      await Promise.all(
+        batch.map((id: string) =>
+          gmail.users.messages.delete({
+            userId: 'me',
+            id,
+          }).catch(() => null)
+        )
+      );
+    }
+    
+    deletedCount += messageIds.length;
+    pageToken = response.data.nextPageToken ?? undefined;
+  } while (pageToken);
+
+  return { deletedCount };
+}
+
 export interface EmailDetail extends EmailMessage {
   body: string;
   to: string;

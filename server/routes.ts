@@ -1592,6 +1592,48 @@ export async function registerRoutes(
     }
   });
 
+  // Empty Gmail trash
+  app.delete("/api/gmail/trash", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      console.log("[Gmail Empty Trash] Request from user:", userId);
+      
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      // Try custom OAuth first
+      const customConnected = await isGmailConnectedForUser(userId);
+      console.log("[Gmail Empty Trash] Custom OAuth connected:", customConnected);
+      
+      if (customConnected) {
+        try {
+          const { emptyTrashForUser } = await import("./gmail-oauth");
+          const result = await emptyTrashForUser(userId);
+          console.log("[Gmail Empty Trash] Deleted", result.deletedCount, "messages via OAuth");
+          return res.json(result);
+        } catch (oauthError: any) {
+          console.error("[Gmail Empty Trash] OAuth error:", oauthError?.message);
+          // Fall through to connector
+        }
+      }
+      
+      // Use connector as fallback
+      try {
+        const { emptyTrash } = await import("./gmail");
+        const result = await emptyTrash();
+        console.log("[Gmail Empty Trash] Deleted", result.deletedCount, "messages via connector");
+        return res.json(result);
+      } catch (connectorError: any) {
+        console.error("[Gmail Empty Trash] Error:", connectorError?.message || connectorError);
+        return res.status(500).json({ error: connectorError?.message || "Failed to empty trash" });
+      }
+    } catch (error: any) {
+      console.error("[Gmail Empty Trash] Error:", error?.message || error);
+      res.status(500).json({ error: error?.message || "Failed to empty trash" });
+    }
+  });
+
   // Get Gmail labels
   app.get("/api/gmail/labels", isAuthenticated, async (req: any, res) => {
     try {

@@ -406,6 +406,36 @@ export default function Inbox() {
             >
               <RefreshCw className="w-4 h-4" />
             </button>
+            {filter === 'trash' && (
+              <button
+                onClick={async () => {
+                  if (!confirm("Are you sure you want to permanently delete all messages in Trash? This cannot be undone.")) {
+                    return;
+                  }
+                  try {
+                    const res = await fetch("/api/gmail/trash", {
+                      method: "DELETE",
+                      credentials: "include",
+                    });
+                    if (!res.ok) {
+                      const error = await res.json();
+                      throw new Error(error.error || "Failed to empty trash");
+                    }
+                    const result = await res.json();
+                    queryClient.invalidateQueries({ queryKey: ["gmail-trash"] });
+                    toast.success(`Deleted ${result.deletedCount} messages from trash`);
+                  } catch (error: any) {
+                    toast.error(error.message || "Failed to empty trash");
+                  }
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                data-testid="button-empty-trash"
+                title="Empty Trash"
+              >
+                <Trash2 className="w-4 h-4" />
+                Empty Trash
+              </button>
+            )}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <input 
