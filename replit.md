@@ -74,6 +74,35 @@ The system uses local email/password authentication with PostgreSQL-backed sessi
 
 ## User Guide
 
+### Customizing Your Dashboard
+
+The dashboard now features a customizable, drag-and-drop widget layout that allows you to personalize your workspace.
+
+#### Available Widgets
+- **Upcoming Events**: Shows your upcoming calendar events from Google Calendar and Apple Calendar
+- **Insights & Stats**: Displays key metrics and statistics
+- **Upcoming Tasks**: Lists your pending tasks with priority indicators
+- **Service Summary**: Shows connected service status at a glance
+- **Recent Activity**: Unified feed of Gmail, Slack, Zoom meetings, and intro offers
+- **Quick Actions**: Fast access to common actions (compose email, view calendar, projects, etc.)
+
+#### Rearranging Widgets
+1. Click and hold any widget's header
+2. Drag the widget to a new position on your dashboard
+3. Release to drop it in place
+4. Your layout is automatically saved
+
+#### Showing/Hiding Widgets
+1. Click the gear icon (⚙️) in the dashboard header to open Widget Settings
+2. Toggle each widget on or off using the switches
+3. Click "Reset to Default" to restore the original layout
+4. Changes are saved automatically
+
+#### Tips
+- Drag widgets to prioritize the information most important to you
+- Hide widgets for services you don't use to reduce clutter
+- The dashboard remembers your preferences across sessions
+
 ### How to Use Task Dependencies
 
 Task dependencies allow you to define relationships between tasks, ensuring work is completed in the correct order. When Task A depends on Task B, Task A is "blocked" until Task B is completed.
