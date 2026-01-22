@@ -384,3 +384,135 @@ export async function sendEmailViaConnector(to: string, subject: string, body: s
     },
   });
 }
+
+export interface GmailLabel {
+  id: string;
+  name: string;
+  type: 'system' | 'user';
+  messagesTotal?: number;
+  messagesUnread?: number;
+  color?: {
+    textColor?: string;
+    backgroundColor?: string;
+  };
+}
+
+export async function getGmailLabels(): Promise<GmailLabel[]> {
+  const gmail = await getGmailClient();
+  
+  const response = await gmail.users.labels.list({
+    userId: 'me',
+  });
+
+  if (!response.data.labels) {
+    return [];
+  }
+
+  // Only fetch details for supported system labels and user labels
+  const relevantLabels = response.data.labels.filter(l => {
+    if (!l.id) return false;
+    // Include only system folders that have dedicated endpoints
+    if (['INBOX', 'SENT', 'TRASH'].includes(l.id)) return true;
+    // Include user labels
+    if (l.type === 'user') return true;
+    return false;
+  });
+
+  // Fetch details in parallel with concurrency limit
+  const batchSize = 10;
+  const labels: GmailLabel[] = [];
+  
+  for (let i = 0; i < relevantLabels.length; i += batchSize) {
+    const batch = relevantLabels.slice(i, i + batchSize);
+    const details = await Promise.all(
+      batch.map(label => 
+        gmail.users.labels.get({
+          userId: 'me',
+          id: label.id!,
+        }).catch(() => null)
+      )
+    );
+    
+    for (let j = 0; j < batch.length; j++) {
+      const label = batch[j];
+      const detail = details[j];
+      if (!detail) continue;
+      
+      labels.push({
+        id: label.id!,
+        name: label.name!,
+        type: label.type === 'system' ? 'system' : 'user',
+        messagesTotal: detail.data.messagesTotal ?? 0,
+        messagesUnread: detail.data.messagesUnread ?? 0,
+        color: detail.data.color ? {
+          textColor: detail.data.color.textColor ?? undefined,
+          backgroundColor: detail.data.color.backgroundColor ?? undefined,
+        } : undefined,
+      });
+    }
+  }
+
+  return labels;
+}
+
+export async function getEmailsByLabel(labelId: string, maxResults: number = 20): Promise<EmailMessage[]> {
+  const gmail = await getGmailClient();
+  
+  const profile = await gmail.users.getProfile({ userId: 'me' });
+  const accountEmail = profile.data.emailAddress || 'Gmail';
+  
+  const response = await gmail.users.messages.list({
+    userId: 'me',
+    maxResults,
+    labelIds: [labelId],
+  });
+
+  if (!response.data.messages) {
+    return [];
+  }
+
+  const emails: EmailMessage[] = [];
+  const messagesToFetch = response.data.messages.slice(0, maxResults);
+  
+  const batchSize = 10;
+  for (let i = 0; i < messagesToFetch.length; i += batchSize) {
+    const batch = messagesToFetch.slice(i, i + batchSize);
+    const details = await Promise.all(
+      batch.map(msg =>
+        gmail.users.messages.get({
+          userId: 'me',
+          id: msg.id!,
+          format: 'metadata',
+          metadataHeaders: ['Subject', 'From', 'Date'],
+        }).catch(() => null)
+      )
+    );
+
+    for (let j = 0; j < batch.length; j++) {
+      const msg = batch[j];
+      const detail = details[j];
+      if (!detail) continue;
+
+      const headers = detail.data.payload?.headers || [];
+      const subject = headers.find(h => h.name === 'Subject')?.value || '(No Subject)';
+      const from = headers.find(h => h.name === 'From')?.value || 'Unknown';
+      const date = headers.find(h => h.name === 'Date')?.value || '';
+      const isUnread = detail.data.labelIds?.includes('UNREAD') || false;
+
+      emails.push({
+        id: msg.id!,
+        threadId: msg.threadId!,
+        subject,
+        from,
+        snippet: detail.data.snippet || '',
+        date,
+        isUnread,
+        accountId: 'gmail-primary',
+        accountEmail,
+        accountLabel: 'Gmail',
+      });
+    }
+  }
+
+  return emails;
+}

@@ -1592,6 +1592,55 @@ export async function registerRoutes(
     }
   });
 
+  // Get Gmail labels
+  app.get("/api/gmail/labels", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      // Try connector-based fetch
+      try {
+        const { getGmailLabels } = await import("./gmail");
+        const labels = await getGmailLabels();
+        return res.json(labels);
+      } catch (connectorError: any) {
+        console.error("[Gmail Labels] Error fetching labels:", connectorError?.message || connectorError);
+        return res.status(500).json({ error: connectorError?.message || "Failed to fetch labels" });
+      }
+    } catch (error: any) {
+      console.error("[Gmail Labels] Error:", error?.message || error);
+      res.status(500).json({ error: error?.message || "Failed to fetch labels" });
+    }
+  });
+
+  // Get emails by label
+  app.get("/api/gmail/labels/:labelId/messages", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      const labelId = req.params.labelId;
+      
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      // Try connector-based fetch
+      try {
+        const { getEmailsByLabel } = await import("./gmail");
+        const emails = await getEmailsByLabel(labelId);
+        return res.json(emails);
+      } catch (connectorError: any) {
+        console.error("[Gmail Labels] Error fetching emails by label:", connectorError?.message || connectorError);
+        return res.status(500).json({ error: connectorError?.message || "Failed to fetch emails" });
+      }
+    } catch (error: any) {
+      console.error("[Gmail Labels] Error:", error?.message || error);
+      res.status(500).json({ error: error?.message || "Failed to fetch emails" });
+    }
+  });
+
   // Get single email with full content
   app.get("/api/gmail/messages/:id", isAuthenticated, async (req: any, res) => {
     try {

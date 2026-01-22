@@ -1,4 +1,5 @@
-import { Search, Mail, MessageCircle, Users, MessageSquare, PenSquare, Loader2, Share2, Check, Trash2, Archive, Send, RefreshCw, AlertTriangle, Settings } from "lucide-react";
+import { Search, Mail, MessageCircle, Users, MessageSquare, PenSquare, Loader2, Share2, Check, Trash2, Archive, Send, RefreshCw, AlertTriangle, Settings, PanelLeftClose, PanelLeft } from "lucide-react";
+import { GmailSidebar } from "@/components/gmail-sidebar";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SlackChannelConfig } from "@/components/slack-channel-config";
@@ -104,6 +105,8 @@ export default function Inbox() {
   const [sharingMessage, setSharingMessage] = useState<UnifiedMessage | null>(null);
   const [shareNote, setShareNote] = useState("");
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
+  const [selectedGmailLabel, setSelectedGmailLabel] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const queryClient = useQueryClient();
 
   const { data: gmailAccounts = [] } = useQuery<GmailAccount[]>({
@@ -221,6 +224,17 @@ export default function Inbox() {
     retry: false,
   });
 
+  const { data: labelEmails = [], isLoading: labelLoading } = useQuery<GmailMessage[]>({
+    queryKey: ["gmail-label-messages", selectedGmailLabel],
+    queryFn: async () => {
+      const res = await fetch(`/api/gmail/labels/${selectedGmailLabel}/messages`, { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: filter === 'gmail' && selectedGmailLabel !== null,
+    retry: false,
+  });
+
   const unifiedMessages: UnifiedMessage[] = [
     ...gmailMessages.map((email): UnifiedMessage => ({
       id: `gmail-${email.id}`,
@@ -281,16 +295,31 @@ export default function Inbox() {
     link: `https://mail.google.com/mail/u/0/#trash/${email.threadId}`,
   })).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
+  const labelMessages: UnifiedMessage[] = labelEmails.map((email): UnifiedMessage => ({
+    id: `gmail-label-${email.id}`,
+    type: 'gmail',
+    title: extractSenderName(email.from),
+    subtitle: email.subject,
+    preview: email.snippet,
+    timestamp: new Date(email.date),
+    isUnread: email.isUnread,
+    link: `https://mail.google.com/mail/u/0/#inbox/${email.threadId}`,
+    accountId: email.accountId,
+    accountEmail: email.accountEmail,
+    accountLabel: email.accountLabel,
+  })).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
   const getMessagesForFilter = () => {
     if (filter === 'archived') return archivedMessages;
     if (filter === 'sent') return sentMessages;
     if (filter === 'trash') return trashMessages;
+    if (filter === 'gmail' && selectedGmailLabel !== null) return labelMessages;
     return unifiedMessages;
   };
 
   const filteredMessages = getMessagesForFilter().filter(msg => {
-    // First filter by type (skip for archived/sent/trash since we already have filtered lists)
-    if (filter !== 'archived' && filter !== 'sent' && filter !== 'trash') {
+    // First filter by type (skip for archived/sent/trash/label-filtered since we already have filtered lists)
+    if (filter !== 'archived' && filter !== 'sent' && filter !== 'trash' && !(filter === 'gmail' && selectedGmailLabel !== null)) {
       if (filter === 'gmail' && msg.type !== 'gmail') return false;
       if (filter === 'slack' && msg.type !== 'slack') return false;
       if (filter === 'dms' && msg.type !== 'slack-dm') return false;
@@ -332,7 +361,11 @@ export default function Inbox() {
     return date.toLocaleDateString();
   }
 
-  const isLoading = filter === 'archived' ? archivedLoading : filter === 'sent' ? sentLoading : filter === 'trash' ? trashLoading : (gmailLoading || slackLoading);
+  const isLoading = filter === 'archived' ? archivedLoading : 
+    filter === 'sent' ? sentLoading : 
+    filter === 'trash' ? trashLoading : 
+    (filter === 'gmail' && selectedGmailLabel !== null) ? labelLoading :
+    (gmailLoading || slackLoading);
 
   return (
     <div className="min-h-screen bg-background text-foreground font-sans">
@@ -483,12 +516,50 @@ export default function Inbox() {
           </div>
         </div>
 
-        <div className="space-y-2">
+        <div className={`flex gap-4 ${filter === 'gmail' ? '' : ''}`}>
+          {filter === 'gmail' && (
+            <div className="flex-shrink-0">
+              <div className="flex items-center gap-2 mb-2">
+                <button
+                  onClick={() => setSidebarOpen(!sidebarOpen)}
+                  className="p-2 rounded-lg hover:bg-white/60 transition-colors text-muted-foreground"
+                  data-testid="button-toggle-gmail-sidebar"
+                  title={sidebarOpen ? "Hide folders" : "Show folders"}
+                >
+                  {sidebarOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeft className="w-4 h-4" />}
+                </button>
+              </div>
+              {sidebarOpen && (
+                <div className="glass-panel rounded-xl overflow-hidden">
+                  <GmailSidebar 
+                    selectedLabel={selectedGmailLabel}
+                    selectedFolder={filter === "gmail" ? "inbox" : filter === "sent" ? "sent" : filter === "trash" ? "trash" : null}
+                    onSelectLabel={(labelId) => {
+                      setSelectedGmailLabel(labelId);
+                      if (labelId) {
+                        queryClient.invalidateQueries({ queryKey: ["gmail-label-messages", labelId] });
+                      }
+                    }}
+                    onSelectFolder={(folder) => {
+                      setSelectedGmailLabel(null);
+                      if (folder === "inbox") {
+                        setFilter("gmail");
+                      } else if (folder) {
+                        setFilter(folder);
+                      }
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+          
+          <div className="flex-1 space-y-2">
           {isLoading ? (
             <div className="text-center text-muted-foreground py-12">Loading messages...</div>
           ) : filteredMessages.length === 0 ? (
             <div className="text-center text-muted-foreground py-12">
-              {filter === 'all' ? 'No messages yet' : filter === 'archived' ? 'No archived emails' : filter === 'sent' ? 'No sent emails' : filter === 'trash' ? 'No trashed emails' : `No ${filter === 'gmail' ? 'emails' : filter === 'slack' ? 'channel messages' : 'direct messages'} found`}
+              {filter === 'all' ? 'No messages yet' : filter === 'archived' ? 'No archived emails' : filter === 'sent' ? 'No sent emails' : filter === 'trash' ? 'No trashed emails' : selectedGmailLabel ? 'No emails in this folder' : `No ${filter === 'gmail' ? 'emails' : filter === 'slack' ? 'channel messages' : 'direct messages'} found`}
             </div>
           ) : (
             filteredMessages.map((message) => {
@@ -598,8 +669,9 @@ export default function Inbox() {
               );
             })
           )}
+          </div>
         </div>
-        </div>
+      </div>
 
       {selectedEmailId && (
         <EmailDetailPanel 
