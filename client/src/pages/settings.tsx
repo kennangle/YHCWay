@@ -1380,7 +1380,7 @@ function EmailSignaturesSectionContent({ renderBackButton }: { renderBackButton:
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, ...data }: { id: number; name?: string; htmlContent?: string; isDefault?: boolean }) => {
+    mutationFn: async ({ id, ...data }: { id: number; name?: string; htmlContent?: string; isDefault?: boolean; gmailAccountId?: number | null }) => {
       const res = await fetch(`/api/email-signatures/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -1496,97 +1496,6 @@ function EmailSignaturesSectionContent({ renderBackButton }: { renderBackButton:
     return account ? (account.label || account.email) : null;
   };
 
-  const SignatureEditor = () => (
-    <div className="glass-card p-6 rounded-2xl space-y-4">
-      <h3 className="font-semibold text-lg">
-        {isCreating ? "Create New Signature" : "Edit Signature"}
-      </h3>
-      
-      <div>
-        <Label htmlFor="signature-name" className="mb-2 block">Signature Name</Label>
-        <Input
-          id="signature-name"
-          value={signatureName}
-          onChange={(e) => setSignatureName(e.target.value)}
-          placeholder="e.g., Work Signature"
-          data-testid="input-signature-name"
-        />
-      </div>
-
-      {gmailAccounts.length > 0 && (
-        <div>
-          <Label htmlFor="signature-account" className="mb-2 block">Gmail Account (Optional)</Label>
-          <select
-            id="signature-account"
-            value={selectedAccountId ?? ""}
-            onChange={(e) => setSelectedAccountId(e.target.value ? parseInt(e.target.value) : null)}
-            className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-slate-900"
-            data-testid="select-signature-account"
-          >
-            <option value="">Default (All Accounts)</option>
-            {gmailAccounts.map((account) => (
-              <option key={account.id} value={account.id}>
-                {account.label || account.email}
-              </option>
-            ))}
-          </select>
-          <p className="text-xs text-muted-foreground mt-1">
-            Assign this signature to a specific Gmail account, or leave as default for all accounts
-          </p>
-        </div>
-      )}
-
-      <div>
-        <Label className="mb-2 block">Signature Content</Label>
-        <div className="border rounded-lg bg-white dark:bg-slate-900 min-h-[200px]">
-          <SignatureRichTextEditor
-            content={signatureContent}
-            onChange={setSignatureContent}
-            placeholder="Create your email signature..."
-          />
-        </div>
-        <p className="text-xs text-muted-foreground mt-1">
-          Use the toolbar to add formatting, links, and more
-        </p>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <Checkbox
-          id="is-default"
-          checked={isDefault}
-          onCheckedChange={(checked) => setIsDefault(!!checked)}
-          data-testid="checkbox-default-signature"
-        />
-        <Label htmlFor="is-default" className="text-sm cursor-pointer">
-          Set as default signature
-        </Label>
-      </div>
-
-      <div className="flex gap-2 pt-2">
-        <Button
-          onClick={isCreating ? handleCreate : handleUpdate}
-          disabled={createMutation.isPending || updateMutation.isPending}
-          data-testid="button-save-signature"
-        >
-          {(createMutation.isPending || updateMutation.isPending) ? (
-            <>
-              <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-              Saving...
-            </>
-          ) : (
-            <>
-              <Check className="w-4 h-4 mr-2" />
-              {isCreating ? "Create Signature" : "Save Changes"}
-            </>
-          )}
-        </Button>
-        <Button variant="outline" onClick={cancelEdit} data-testid="button-cancel-signature">
-          Cancel
-        </Button>
-      </div>
-    </div>
-  );
-
   return (
     <div className="max-w-3xl">
       {renderBackButton()}
@@ -1604,7 +1513,96 @@ function EmailSignaturesSectionContent({ renderBackButton }: { renderBackButton:
         )}
       </div>
 
-      {(isCreating || editingSignature) && <SignatureEditor />}
+      {(isCreating || editingSignature) && (
+        <div className="glass-card p-6 rounded-2xl space-y-4">
+          <h3 className="font-semibold text-lg">
+            {isCreating ? "Create New Signature" : "Edit Signature"}
+          </h3>
+          
+          <div>
+            <Label htmlFor="signature-name" className="mb-2 block">Signature Name</Label>
+            <Input
+              id="signature-name"
+              value={signatureName}
+              onChange={(e) => setSignatureName(e.target.value)}
+              placeholder="e.g., Work Signature"
+              data-testid="input-signature-name"
+            />
+          </div>
+
+          {gmailAccounts.length > 0 && (
+            <div>
+              <Label htmlFor="signature-account" className="mb-2 block">Gmail Account (Optional)</Label>
+              <select
+                id="signature-account"
+                value={selectedAccountId ?? ""}
+                onChange={(e) => setSelectedAccountId(e.target.value ? parseInt(e.target.value) : null)}
+                className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-slate-900"
+                data-testid="select-signature-account"
+              >
+                <option value="">Default (All Accounts)</option>
+                {gmailAccounts.map((account) => (
+                  <option key={account.id} value={account.id}>
+                    {account.label || account.email}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground mt-1">
+                Assign this signature to a specific Gmail account, or leave as default for all accounts
+              </p>
+            </div>
+          )}
+
+          <div>
+            <Label className="mb-2 block">Signature Content</Label>
+            <div className="border rounded-lg bg-white dark:bg-slate-900 min-h-[200px]">
+              <SignatureRichTextEditor
+                content={signatureContent}
+                onChange={setSignatureContent}
+                placeholder="Create your email signature..."
+              />
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Use the toolbar to add formatting, links, and more
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="is-default"
+              checked={isDefault}
+              onCheckedChange={(checked) => setIsDefault(!!checked)}
+              data-testid="checkbox-default-signature"
+            />
+            <Label htmlFor="is-default" className="text-sm cursor-pointer">
+              Set as default signature
+            </Label>
+          </div>
+
+          <div className="flex gap-2 pt-2">
+            <Button
+              onClick={isCreating ? handleCreate : handleUpdate}
+              disabled={createMutation.isPending || updateMutation.isPending}
+              data-testid="button-save-signature"
+            >
+              {(createMutation.isPending || updateMutation.isPending) ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4 mr-2" />
+                  {isCreating ? "Create Signature" : "Save Changes"}
+                </>
+              )}
+            </Button>
+            <Button variant="outline" onClick={cancelEdit} data-testid="button-cancel-signature">
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
 
       {!isCreating && !editingSignature && (
         <div className="space-y-4">
