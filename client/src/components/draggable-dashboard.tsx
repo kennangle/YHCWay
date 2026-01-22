@@ -115,10 +115,12 @@ function SortableWidget({ id, title, children, size }: SortableWidgetProps) {
         <button
           {...attributes}
           {...listeners}
-          className="p-2 rounded-lg hover:bg-white/50 cursor-grab active:cursor-grabbing text-muted-foreground touch-none"
+          className="p-2 rounded-lg hover:bg-white/60 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors select-none"
+          style={{ touchAction: 'none' }}
           data-testid={`widget-drag-handle-${id}`}
+          aria-label={`Drag to reorder ${title}`}
         >
-          <GripVertical className="w-4 h-4" />
+          <GripVertical className="w-5 h-5" />
         </button>
       </div>
       <div className="p-4 pt-0">{children}</div>
@@ -138,13 +140,13 @@ export function DraggableDashboard({ widgets, onWidgetsChange }: DraggableDashbo
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8,
+        distance: 5,
       },
     }),
     useSensor(TouchSensor, {
       activationConstraint: {
-        delay: 200,
-        tolerance: 5,
+        delay: 150,
+        tolerance: 8,
       },
     })
   );
