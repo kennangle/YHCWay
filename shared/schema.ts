@@ -506,6 +506,7 @@ export type InsertEmailLayoutInput = z.infer<typeof insertEmailLayoutSchema>;
 export const emailSignatures = pgTable("email_signatures", {
   id: serial("id").primaryKey(),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  gmailAccountId: integer("gmail_account_id").references(() => oauthAccounts.id, { onDelete: "cascade" }),
   name: varchar("name").notNull(),
   htmlContent: text("html_content").notNull(),
   isDefault: boolean("is_default").default(false),
@@ -513,6 +514,7 @@ export const emailSignatures = pgTable("email_signatures", {
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
   index("idx_email_signatures_user").on(table.userId),
+  index("idx_email_signatures_account").on(table.gmailAccountId),
 ]);
 
 export type EmailSignature = typeof emailSignatures.$inferSelect;

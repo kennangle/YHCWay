@@ -4428,6 +4428,77 @@ export async function registerRoutes(
     }
   });
 
+  // Get signature by Gmail account ID
+  app.get("/api/email-signatures/account/:accountId", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const accountId = parseInt(req.params.accountId);
+      
+      // Verify account belongs to user
+      const account = await storage.getOAuthAccountById(accountId);
+      if (!account || account.userId !== userId) {
+        return res.status(404).json({ error: "Account not found" });
+      }
+      
+      const signature = await storage.getEmailSignatureByAccount(userId, accountId);
+      
+      // Fall back to default signature if no account-specific one exists
+      if (!signature) {
+        const defaultSig = await storage.getDefaultEmailSignature(userId);
+        return res.json(defaultSig || null);
+      }
+      
+      res.json(signature);
+    } catch (error) {
+      console.error("Error fetching account signature:", error);
+      res.status(500).json({ error: "Failed to fetch account signature" });
+    }
+  });
+
+  // Save signature for Gmail account
+  app.post("/api/email-signatures/account/:accountId", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims?.sub || req.user.id;
+      const accountId = parseInt(req.params.accountId);
+      const { name, htmlContent } = req.body;
+      
+      if (!htmlContent) {
+        return res.status(400).json({ error: "Content is required" });
+      }
+      
+      // Verify account belongs to user
+      const account = await storage.getOAuthAccountById(accountId);
+      if (!account || account.userId !== userId) {
+        return res.status(404).json({ error: "Account not found" });
+      }
+      
+      // Check if signature already exists for this account
+      const existing = await storage.getEmailSignatureByAccount(userId, accountId);
+      
+      if (existing) {
+        // Update existing
+        const updated = await storage.updateEmailSignature(existing.id, { 
+          name: name || `${account.providerAccountId} Signature`,
+          htmlContent 
+        });
+        return res.json(updated);
+      } else {
+        // Create new
+        const signature = await storage.createEmailSignature({
+          userId,
+          gmailAccountId: accountId,
+          name: name || `${account.providerAccountId} Signature`,
+          htmlContent,
+          isDefault: false,
+        });
+        return res.json(signature);
+      }
+    } catch (error) {
+      console.error("Error saving account signature:", error);
+      res.status(500).json({ error: "Failed to save account signature" });
+    }
+  });
+
   // Get a specific signature
   app.get("/api/email-signatures/:id", isAuthenticated, async (req: any, res) => {
     try {
@@ -4450,14 +4521,23 @@ export async function registerRoutes(
   app.post("/api/email-signatures", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims?.sub || req.user.id;
-      const { name, htmlContent, isDefault } = req.body;
+      const { name, htmlContent, isDefault, gmailAccountId } = req.body;
       
       if (!name || !htmlContent) {
         return res.status(400).json({ error: "Name and content are required" });
       }
       
+      // If gmailAccountId provided, verify it belongs to the user
+      if (gmailAccountId) {
+        const account = await storage.getOAuthAccountById(gmailAccountId);
+        if (!account || account.userId !== userId) {
+          return res.status(400).json({ error: "Invalid Gmail account" });
+        }
+      }
+      
       const signature = await storage.createEmailSignature({
         userId,
+        gmailAccountId: gmailAccountId || null,
         name,
         htmlContent,
         isDefault: isDefault || false,
@@ -4475,17 +4555,26 @@ export async function registerRoutes(
     try {
       const userId = req.user.claims?.sub || req.user.id;
       const signatureId = parseInt(req.params.id);
-      const { name, htmlContent, isDefault } = req.body;
+      const { name, htmlContent, isDefault, gmailAccountId } = req.body;
       
       const existing = await storage.getEmailSignature(signatureId);
       if (!existing || existing.userId !== userId) {
         return res.status(404).json({ error: "Signature not found" });
       }
       
+      // Validate gmailAccountId if provided
+      if (gmailAccountId !== undefined && gmailAccountId !== null) {
+        const account = await storage.getOAuthAccountById(gmailAccountId);
+        if (!account || account.userId !== userId) {
+          return res.status(400).json({ error: "Invalid Gmail account" });
+        }
+      }
+      
       const updates: Record<string, any> = {};
       if (name !== undefined) updates.name = name;
       if (htmlContent !== undefined) updates.htmlContent = htmlContent;
       if (isDefault !== undefined) updates.isDefault = isDefault;
+      if (gmailAccountId !== undefined) updates.gmailAccountId = gmailAccountId;
       
       const signature = await storage.updateEmailSignature(signatureId, updates);
       res.json(signature);

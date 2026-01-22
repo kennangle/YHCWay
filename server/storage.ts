@@ -242,6 +242,7 @@ export interface IStorage {
   getUserEmailSignatures(userId: string): Promise<EmailSignature[]>;
   getEmailSignature(id: number): Promise<EmailSignature | undefined>;
   getDefaultEmailSignature(userId: string): Promise<EmailSignature | undefined>;
+  getEmailSignatureByAccount(userId: string, accountId: number): Promise<EmailSignature | undefined>;
   createEmailSignature(data: InsertEmailSignature): Promise<EmailSignature>;
   updateEmailSignature(id: number, data: Partial<InsertEmailSignature>): Promise<EmailSignature | undefined>;
   deleteEmailSignature(id: number): Promise<void>;
@@ -1293,6 +1294,16 @@ export class DbStorage implements IStorage {
     const [signature] = await db.select()
       .from(emailSignatures)
       .where(and(eq(emailSignatures.userId, userId), eq(emailSignatures.isDefault, true)));
+    return signature;
+  }
+
+  async getEmailSignatureByAccount(userId: string, accountId: number): Promise<EmailSignature | undefined> {
+    const [signature] = await db.select()
+      .from(emailSignatures)
+      .where(and(
+        eq(emailSignatures.userId, userId),
+        eq(emailSignatures.gmailAccountId, accountId)
+      ));
     return signature;
   }
 

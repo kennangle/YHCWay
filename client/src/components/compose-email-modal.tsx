@@ -15,6 +15,7 @@ interface EmailSignature {
   id: number;
   htmlContent: string;
   isDefault: boolean;
+  gmailAccountId?: number | null;
 }
 
 interface GmailAccount {
@@ -77,22 +78,35 @@ export function ComposeEmailModal({ onClose }: ComposeEmailModalProps) {
     queryKey: ["/api/users"],
   });
 
-  const { data: defaultSignature } = useQuery<EmailSignature | null>({
-    queryKey: ["/api/email-signatures/default"],
+  const { data: accountSignature, refetch: refetchSignature } = useQuery<EmailSignature | null>({
+    queryKey: ["/api/email-signatures/account", selectedAccountId],
     queryFn: async () => {
-      const res = await fetch("/api/email-signatures/default", { credentials: "include" });
+      if (!selectedAccountId) {
+        const res = await fetch("/api/email-signatures/default", { credentials: "include" });
+        if (!res.ok) return null;
+        return res.json();
+      }
+      const res = await fetch(`/api/email-signatures/account/${selectedAccountId}`, { credentials: "include" });
       if (!res.ok) return null;
       return res.json();
     },
+    enabled: true,
   });
 
   useEffect(() => {
-    if (defaultSignature && !signatureAppended && !body) {
-      const signatureHtml = `<p><br></p><p>--</p>${defaultSignature.htmlContent}`;
+    if (accountSignature && !signatureAppended && !body) {
+      const signatureHtml = `<p><br></p><p>--</p>${accountSignature.htmlContent}`;
       setBody(signatureHtml);
       setSignatureAppended(true);
     }
-  }, [defaultSignature, signatureAppended, body]);
+  }, [accountSignature, signatureAppended, body]);
+
+  // Update signature when account changes
+  useEffect(() => {
+    if (selectedAccountId !== null) {
+      refetchSignature();
+    }
+  }, [selectedAccountId, refetchSignature]);
 
   const filteredUsers = users.filter(user => {
     if (!to.trim()) return true; // Show all users when empty

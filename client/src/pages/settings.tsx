@@ -1311,11 +1311,19 @@ function OrganizationSectionContent({ renderBackButton }: { renderBackButton: ()
 interface EmailSignature {
   id: number;
   userId: string;
+  gmailAccountId?: number | null;
   name: string;
   htmlContent: string;
   isDefault: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+interface GmailAccountForSignature {
+  id: number;
+  email: string;
+  label: string | null;
+  isPrimary: boolean | null;
 }
 
 function EmailSignaturesSectionContent({ renderBackButton }: { renderBackButton: () => React.ReactNode }) {
@@ -1324,7 +1332,17 @@ function EmailSignaturesSectionContent({ renderBackButton }: { renderBackButton:
   const [signatureName, setSignatureName] = useState("");
   const [signatureContent, setSignatureContent] = useState("");
   const [isDefault, setIsDefault] = useState(false);
+  const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
   const queryClient = useQueryClient();
+
+  const { data: gmailAccounts = [] } = useQuery<GmailAccountForSignature[]>({
+    queryKey: ["/api/gmail/accounts"],
+    queryFn: async () => {
+      const res = await fetch("/api/gmail/accounts", { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
 
   const { data: signatures = [], isLoading } = useQuery<EmailSignature[]>({
     queryKey: ["/api/email-signatures"],
@@ -1336,7 +1354,7 @@ function EmailSignaturesSectionContent({ renderBackButton }: { renderBackButton:
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: { name: string; htmlContent: string; isDefault: boolean }) => {
+    mutationFn: async (data: { name: string; htmlContent: string; isDefault: boolean; gmailAccountId?: number | null }) => {
       const res = await fetch("/api/email-signatures", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1348,10 +1366,12 @@ function EmailSignaturesSectionContent({ renderBackButton }: { renderBackButton:
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/email-signatures"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/email-signatures/account"] });
       setIsCreating(false);
       setSignatureName("");
       setSignatureContent("");
       setIsDefault(false);
+      setSelectedAccountId(null);
       toast.success("Signature created!");
     },
     onError: () => {
@@ -1421,7 +1441,12 @@ function EmailSignaturesSectionContent({ renderBackButton }: { renderBackButton:
       toast.error("Please provide a name and content for your signature");
       return;
     }
-    createMutation.mutate({ name: signatureName, htmlContent: signatureContent, isDefault });
+    createMutation.mutate({ 
+      name: signatureName, 
+      htmlContent: signatureContent, 
+      isDefault,
+      gmailAccountId: selectedAccountId 
+    });
   };
 
   const handleUpdate = () => {
@@ -1434,6 +1459,7 @@ function EmailSignaturesSectionContent({ renderBackButton }: { renderBackButton:
       name: signatureName,
       htmlContent: signatureContent,
       isDefault,
+      gmailAccountId: selectedAccountId,
     });
   };
 
@@ -1442,6 +1468,7 @@ function EmailSignaturesSectionContent({ renderBackButton }: { renderBackButton:
     setSignatureName(signature.name);
     setSignatureContent(signature.htmlContent);
     setIsDefault(signature.isDefault);
+    setSelectedAccountId(signature.gmailAccountId ?? null);
     setIsCreating(false);
   };
 
@@ -1451,6 +1478,7 @@ function EmailSignaturesSectionContent({ renderBackButton }: { renderBackButton:
     setSignatureName("");
     setSignatureContent("");
     setIsDefault(signatures.length === 0);
+    setSelectedAccountId(null);
   };
 
   const cancelEdit = () => {
@@ -1459,6 +1487,13 @@ function EmailSignaturesSectionContent({ renderBackButton }: { renderBackButton:
     setSignatureName("");
     setSignatureContent("");
     setIsDefault(false);
+    setSelectedAccountId(null);
+  };
+
+  const getAccountLabel = (accountId: number | null | undefined) => {
+    if (!accountId) return null;
+    const account = gmailAccounts.find(a => a.id === accountId);
+    return account ? (account.label || account.email) : null;
   };
 
   const SignatureEditor = () => (
@@ -1477,6 +1512,29 @@ function EmailSignaturesSectionContent({ renderBackButton }: { renderBackButton:
           data-testid="input-signature-name"
         />
       </div>
+
+      {gmailAccounts.length > 0 && (
+        <div>
+          <Label htmlFor="signature-account" className="mb-2 block">Gmail Account (Optional)</Label>
+          <select
+            id="signature-account"
+            value={selectedAccountId ?? ""}
+            onChange={(e) => setSelectedAccountId(e.target.value ? parseInt(e.target.value) : null)}
+            className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-slate-900"
+            data-testid="select-signature-account"
+          >
+            <option value="">Default (All Accounts)</option>
+            {gmailAccounts.map((account) => (
+              <option key={account.id} value={account.id}>
+                {account.label || account.email}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-muted-foreground mt-1">
+            Assign this signature to a specific Gmail account, or leave as default for all accounts
+          </p>
+        </div>
+      )}
 
       <div>
         <Label className="mb-2 block">Signature Content</Label>
@@ -1575,11 +1633,16 @@ function EmailSignaturesSectionContent({ renderBackButton }: { renderBackButton:
                 data-testid={`signature-card-${signature.id}`}
               >
                 <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="font-semibold">{signature.name}</h3>
                     {signature.isDefault && (
                       <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
                         Default
+                      </span>
+                    )}
+                    {signature.gmailAccountId && getAccountLabel(signature.gmailAccountId) && (
+                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                        {getAccountLabel(signature.gmailAccountId)}
                       </span>
                     )}
                   </div>
