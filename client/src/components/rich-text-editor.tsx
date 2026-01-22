@@ -3,6 +3,11 @@ import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
 import TextAlign from '@tiptap/extension-text-align';
+import Image from '@tiptap/extension-image';
+import { Table } from '@tiptap/extension-table';
+import { TableRow } from '@tiptap/extension-table-row';
+import { TableCell } from '@tiptap/extension-table-cell';
+import { TableHeader } from '@tiptap/extension-table-header';
 import { 
   Bold, 
   Italic, 
@@ -46,6 +51,22 @@ export function RichTextEditor({ value, onChange, placeholder = "Write your mess
       TextAlign.configure({
         types: ['paragraph'],
       }),
+      Image.configure({
+        inline: true,
+        allowBase64: true,
+        HTMLAttributes: {
+          style: 'max-width: 120px; height: auto;',
+        },
+      }),
+      Table.configure({
+        resizable: false,
+        HTMLAttributes: {
+          style: 'border-collapse: collapse;',
+        },
+      }),
+      TableRow,
+      TableHeader,
+      TableCell,
     ],
     content: value,
     onUpdate: ({ editor }) => {
