@@ -1755,12 +1755,24 @@ function SignatureRichTextEditor({ content, onChange, placeholder }: { content: 
     editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
   }, [editor]);
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const addImage = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (!editor) return;
-    const url = window.prompt('Image URL (paste an image link):');
-    if (url) {
-      editor.chain().focus().setImage({ src: url }).run();
-    }
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result as string;
+      editor.chain().focus().setImage({ src: base64 }).run();
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
   }, [editor]);
 
   const insertTable = useCallback(() => {
@@ -1814,7 +1826,30 @@ function SignatureRichTextEditor({ content, onChange, placeholder }: { content: 
         <ToolbarBtn onClick={insertTable} title="Insert Table">
           <TableIcon className="w-4 h-4" />
         </ToolbarBtn>
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleImageUpload}
+          accept="image/*"
+          className="hidden"
+        />
       </div>
+      <style>{`
+        .ProseMirror table {
+          border-collapse: collapse;
+          width: 100%;
+        }
+        .ProseMirror td, .ProseMirror th {
+          border: 1px dashed #ccc;
+          padding: 8px;
+          min-width: 60px;
+          vertical-align: top;
+        }
+        .ProseMirror img {
+          max-width: 120px;
+          height: auto;
+        }
+      `}</style>
       <EditorContent editor={editor} />
     </div>
   );
