@@ -4135,7 +4135,8 @@ export async function registerRoutes(
         showOnlineStatus: prefs.showOnlineStatus ?? defaults.showOnlineStatus,
         timezone: prefs.timezone ?? defaults.timezone,
         dateFormat: prefs.dateFormat ?? defaults.dateFormat,
-        firstDayOfWeek: prefs.firstDayOfWeek ?? defaults.firstDayOfWeek
+        firstDayOfWeek: prefs.firstDayOfWeek ?? defaults.firstDayOfWeek,
+        dashboardWidgets: prefs.dashboardWidgets ?? null
       });
     } catch (error) {
       console.error("Error fetching preferences:", error);
@@ -4248,7 +4249,8 @@ export async function registerRoutes(
         notifyGmail, notifySlack, notifyCalendar, notifyZoom, notifyAsana, notifyChat,
         notifyInApp, notifyEmail, notifySound, notificationSoundType,
         quietHoursEnabled, quietHoursStart, quietHoursEnd,
-        showOnlineStatus, timezone, dateFormat, firstDayOfWeek
+        showOnlineStatus, timezone, dateFormat, firstDayOfWeek,
+        dashboardWidgets
       } = req.body;
       
       const updates: Record<string, any> = {};
@@ -4273,6 +4275,7 @@ export async function registerRoutes(
       if (timezone !== undefined) updates.timezone = timezone;
       if (dateFormat !== undefined) updates.dateFormat = dateFormat;
       if (firstDayOfWeek !== undefined) updates.firstDayOfWeek = firstDayOfWeek;
+      if (dashboardWidgets !== undefined) updates.dashboardWidgets = dashboardWidgets;
       
       const prefs = await storage.updateUserPreferences(userId, updates);
       
@@ -4297,7 +4300,8 @@ export async function registerRoutes(
         showOnlineStatus: prefs.showOnlineStatus,
         timezone: prefs.timezone,
         dateFormat: prefs.dateFormat,
-        firstDayOfWeek: prefs.firstDayOfWeek
+        firstDayOfWeek: prefs.firstDayOfWeek,
+        dashboardWidgets: prefs.dashboardWidgets ?? null
       });
     } catch (error) {
       console.error("Error updating preferences:", error);
