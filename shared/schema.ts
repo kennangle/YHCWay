@@ -91,6 +91,59 @@ export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 
 // =============================================================================
+// SECURITY & AUTHENTICATION TABLES
+// =============================================================================
+
+export const loginAttempts = pgTable("login_attempts", {
+  id: serial("id").primaryKey(),
+  email: varchar("email").notNull(),
+  ipAddress: varchar("ip_address"),
+  userAgent: varchar("user_agent"),
+  success: boolean("success").default(false),
+  failureReason: varchar("failure_reason"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_login_attempts_email").on(table.email),
+  index("idx_login_attempts_ip").on(table.ipAddress),
+  index("idx_login_attempts_created").on(table.createdAt),
+]);
+
+export type LoginAttempt = typeof loginAttempts.$inferSelect;
+export type InsertLoginAttempt = typeof loginAttempts.$inferInsert;
+export const insertLoginAttemptSchema = createInsertSchema(loginAttempts);
+
+export const emailVerificationTokens = pgTable("email_verification_tokens", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  token: varchar("token").notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
+  usedAt: timestamp("used_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_email_verification_user").on(table.userId),
+  index("idx_email_verification_token").on(table.token),
+]);
+
+export type EmailVerificationToken = typeof emailVerificationTokens.$inferSelect;
+export type InsertEmailVerificationToken = typeof emailVerificationTokens.$inferInsert;
+export const insertEmailVerificationTokenSchema = createInsertSchema(emailVerificationTokens);
+
+export const twoFactorSecrets = pgTable("two_factor_secrets", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().unique().references(() => users.id, { onDelete: "cascade" }),
+  secret: varchar("secret").notNull(),
+  enabled: boolean("enabled").default(false),
+  backupCodes: text("backup_codes").array(),
+  verifiedAt: timestamp("verified_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type TwoFactorSecret = typeof twoFactorSecrets.$inferSelect;
+export type InsertTwoFactorSecret = typeof twoFactorSecrets.$inferInsert;
+export const insertTwoFactorSecretSchema = createInsertSchema(twoFactorSecrets);
+
+// =============================================================================
 // MULTI-TENANCY TABLES (depend on users and tenants)
 // =============================================================================
 

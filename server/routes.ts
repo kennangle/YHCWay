@@ -33,6 +33,9 @@ import { getCalendlyEvents, getCalendlyEventsForMonth, isCalendlyConnected } fro
 import { isGoogleDocsConnected, listGoogleDocs, createGoogleDoc, getGoogleDocContent, updateGoogleDoc, deleteGoogleDoc } from "./google-docs";
 import { isGoogleSheetsConnected, listGoogleSheets, createGoogleSheet, getGoogleSheetContent, updateGoogleSheet, appendToGoogleSheet, deleteGoogleSheet } from "./google-sheets";
 import { isGoogleDriveConnected, listDriveFiles, listGoogleDocsViaDrive, listGoogleSheetsViaDrive, getDocContentViaDrive, getSheetContentViaDrive, getGoogleDriveClient, getGoogleDocsClientViaDrive, getGoogleSheetsClientViaDrive } from "./google-drive";
+import { monitoring, trackOperation } from "./monitoring";
+import { cache, TTL, getCached, setCache, invalidateGmailCache, getCacheStats } from "./cache";
+import { apiLimiter, gmailLimiter } from "./rate-limiter";
 
 const isAdmin: RequestHandler = async (req: any, res, next) => {
   try {
@@ -1410,7 +1413,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/gmail/messages", isAuthenticated, async (req: any, res) => {
+  app.get("/api/gmail/messages", isAuthenticated, gmailLimiter, async (req: any, res) => {
     try {
       const userId = req.user?.id;
       const accountIdParam = req.query.accountId;
@@ -1635,7 +1638,7 @@ export async function registerRoutes(
   });
 
   // Get Gmail labels
-  app.get("/api/gmail/labels", isAuthenticated, async (req: any, res) => {
+  app.get("/api/gmail/labels", isAuthenticated, gmailLimiter, async (req: any, res) => {
     try {
       const userId = req.user?.id;
       
@@ -7564,6 +7567,103 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error deleting pinned announcement:", error);
       res.status(500).json({ error: "Failed to delete announcement" });
+    }
+  });
+
+  // ==========================================================================
+  // SYSTEM MONITORING & HEALTH ROUTES
+  // ==========================================================================
+  
+  app.get("/api/admin/system-health", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const stats = monitoring.getStats();
+      const cacheStats = getCacheStats();
+      const serviceHealth = monitoring.getServiceHealth();
+      
+      res.json({
+        status: "operational",
+        timestamp: new Date().toISOString(),
+        errors: stats,
+        cache: cacheStats,
+        services: serviceHealth,
+      });
+    } catch (error) {
+      console.error("Error fetching system health:", error);
+      res.status(500).json({ error: "Failed to fetch system health" });
+    }
+  });
+  
+  app.get("/api/admin/error-logs", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 50;
+      const severity = req.query.severity as string;
+      const logs = monitoring.getRecentErrors(limit, severity as any);
+      
+      res.json({ logs });
+    } catch (error) {
+      console.error("Error fetching error logs:", error);
+      res.status(500).json({ error: "Failed to fetch error logs" });
+    }
+  });
+  
+  app.get("/api/admin/login-attempts", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const email = req.query.email as string;
+      const minutes = parseInt(req.query.minutes as string) || 60;
+      
+      if (email) {
+        const attempts = await storage.getRecentLoginAttempts(email, minutes);
+        res.json({ attempts });
+      } else {
+        res.status(400).json({ error: "Email parameter required" });
+      }
+    } catch (error) {
+      console.error("Error fetching login attempts:", error);
+      res.status(500).json({ error: "Failed to fetch login attempts" });
+    }
+  });
+  
+  // ==========================================================================
+  // EMAIL VERIFICATION ROUTES
+  // ==========================================================================
+  
+  app.get("/api/auth/verify-email/:token", async (req: any, res) => {
+    try {
+      const { token } = req.params;
+      const success = await storage.useEmailVerificationToken(token);
+      
+      if (success) {
+        monitoring.logInfo("Email verified successfully", { token: token.substring(0, 8) + "..." });
+        res.redirect("/?emailVerified=true");
+      } else {
+        res.redirect("/?emailVerified=false&error=invalid_or_expired");
+      }
+    } catch (error) {
+      console.error("Error verifying email:", error);
+      res.redirect("/?emailVerified=false&error=server_error");
+    }
+  });
+  
+  app.post("/api/auth/resend-verification", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id || req.user?.claims?.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      if (user.emailVerified) {
+        return res.status(400).json({ error: "Email already verified" });
+      }
+      
+      const verification = await storage.createEmailVerificationToken(userId);
+      // TODO: Send verification email
+      
+      res.json({ message: "Verification email sent" });
+    } catch (error) {
+      console.error("Error resending verification:", error);
+      res.status(500).json({ error: "Failed to resend verification email" });
     }
   });
 

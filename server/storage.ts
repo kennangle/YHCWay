@@ -129,6 +129,15 @@ import {
   type InsertDailyHubEntry,
   type DailyHubPinnedAnnouncement,
   type InsertDailyHubPinnedAnnouncement,
+  loginAttempts,
+  emailVerificationTokens,
+  twoFactorSecrets,
+  type LoginAttempt,
+  type InsertLoginAttempt,
+  type EmailVerificationToken,
+  type InsertEmailVerificationToken,
+  type TwoFactorSecret,
+  type InsertTwoFactorSecret,
 } from "@shared/schema";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq, desc, and, lt, isNull, sql, inArray, gte, lte, or, asc } from "drizzle-orm";
@@ -2988,6 +2997,140 @@ export class DbStorage implements IStorage {
 
   async deletePinnedAnnouncement(id: number): Promise<void> {
     await db.delete(dailyHubPinnedAnnouncements).where(eq(dailyHubPinnedAnnouncements.id, id));
+  }
+
+  // Login attempt tracking
+  async recordLoginAttempt(data: InsertLoginAttempt): Promise<LoginAttempt> {
+    const [attempt] = await db.insert(loginAttempts).values(data).returning();
+    return attempt;
+  }
+
+  async getRecentLoginAttempts(email: string, minutes: number = 15): Promise<LoginAttempt[]> {
+    const cutoff = new Date(Date.now() - minutes * 60 * 1000);
+    return await db
+      .select()
+      .from(loginAttempts)
+      .where(
+        and(
+          eq(loginAttempts.email, email),
+          gte(loginAttempts.createdAt, cutoff)
+        )
+      )
+      .orderBy(desc(loginAttempts.createdAt));
+  }
+
+  async getFailedLoginAttempts(email: string, minutes: number = 15): Promise<number> {
+    const attempts = await this.getRecentLoginAttempts(email, minutes);
+    return attempts.filter(a => !a.success).length;
+  }
+
+  async cleanupOldLoginAttempts(olderThanDays: number = 30): Promise<void> {
+    const cutoff = new Date(Date.now() - olderThanDays * 24 * 60 * 60 * 1000);
+    await db.delete(loginAttempts).where(lt(loginAttempts.createdAt, cutoff));
+  }
+
+  // Email verification tokens
+  async createEmailVerificationToken(userId: string): Promise<EmailVerificationToken> {
+    const crypto = await import("crypto");
+    const token = crypto.randomBytes(32).toString("hex");
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    
+    const [verification] = await db
+      .insert(emailVerificationTokens)
+      .values({ userId, token, expiresAt })
+      .returning();
+    return verification;
+  }
+
+  async getEmailVerificationToken(token: string): Promise<EmailVerificationToken | undefined> {
+    const [verification] = await db
+      .select()
+      .from(emailVerificationTokens)
+      .where(eq(emailVerificationTokens.token, token));
+    return verification;
+  }
+
+  async useEmailVerificationToken(token: string): Promise<boolean> {
+    const verification = await this.getEmailVerificationToken(token);
+    if (!verification || verification.usedAt || verification.expiresAt < new Date()) {
+      return false;
+    }
+    
+    await db
+      .update(emailVerificationTokens)
+      .set({ usedAt: new Date() })
+      .where(eq(emailVerificationTokens.token, token));
+    
+    await db
+      .update(users)
+      .set({ emailVerified: true })
+      .where(eq(users.id, verification.userId));
+    
+    return true;
+  }
+
+  async deleteExpiredVerificationTokens(): Promise<void> {
+    await db
+      .delete(emailVerificationTokens)
+      .where(lt(emailVerificationTokens.expiresAt, new Date()));
+  }
+
+  // Two-factor authentication
+  async getTwoFactorSecret(userId: string): Promise<TwoFactorSecret | undefined> {
+    const [secret] = await db
+      .select()
+      .from(twoFactorSecrets)
+      .where(eq(twoFactorSecrets.userId, userId));
+    return secret;
+  }
+
+  async createTwoFactorSecret(userId: string, secret: string): Promise<TwoFactorSecret> {
+    const existing = await this.getTwoFactorSecret(userId);
+    if (existing) {
+      const [updated] = await db
+        .update(twoFactorSecrets)
+        .set({ secret, enabled: false, verifiedAt: null, updatedAt: new Date() })
+        .where(eq(twoFactorSecrets.userId, userId))
+        .returning();
+      return updated;
+    }
+    
+    const [created] = await db
+      .insert(twoFactorSecrets)
+      .values({ userId, secret })
+      .returning();
+    return created;
+  }
+
+  async enableTwoFactor(userId: string, backupCodes: string[]): Promise<TwoFactorSecret | undefined> {
+    const [secret] = await db
+      .update(twoFactorSecrets)
+      .set({ enabled: true, backupCodes, verifiedAt: new Date(), updatedAt: new Date() })
+      .where(eq(twoFactorSecrets.userId, userId))
+      .returning();
+    return secret;
+  }
+
+  async disableTwoFactor(userId: string): Promise<void> {
+    await db.delete(twoFactorSecrets).where(eq(twoFactorSecrets.userId, userId));
+  }
+
+  async useBackupCode(userId: string, code: string): Promise<boolean> {
+    const secret = await this.getTwoFactorSecret(userId);
+    if (!secret?.backupCodes) return false;
+    
+    const index = secret.backupCodes.indexOf(code);
+    if (index === -1) return false;
+    
+    const newCodes = [...secret.backupCodes];
+    newCodes.splice(index, 1);
+    
+    await db
+      .update(twoFactorSecrets)
+      .set({ backupCodes: newCodes, updatedAt: new Date() })
+      .where(eq(twoFactorSecrets.userId, userId));
+    
+    return true;
   }
 }
 

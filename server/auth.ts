@@ -9,6 +9,8 @@ import type { Express, RequestHandler } from "express";
 import { storage } from "./storage";
 import { ADMIN_EMAIL, forgotPasswordSchema, resetPasswordSchema } from "@shared/schema";
 import { sendPasswordResetEmail } from "./email";
+import { loginLimiter, signupLimiter, resetLoginAttempts } from "./rate-limiter";
+import { monitoring } from "./monitoring";
 
 declare global {
   namespace Express {
@@ -164,7 +166,7 @@ export async function setupAuth(app: Express) {
     done(null, user);
   });
 
-  app.post("/api/auth/register", async (req, res) => {
+  app.post("/api/auth/register", signupLimiter, async (req, res) => {
     try {
       const { email, password, firstName, lastName } = req.body;
       
@@ -192,6 +194,15 @@ export async function setupAuth(app: Express) {
         emailVerified: false,
         isAdmin,
       });
+      
+      // Create email verification token
+      try {
+        const verification = await storage.createEmailVerificationToken(user.id);
+        monitoring.logInfo("User registered, verification email pending", { userId: user.id, email });
+        // TODO: Send verification email using sendEmailVerificationEmail when implemented
+      } catch (e) {
+        console.error("Error creating verification token:", e);
+      }
 
       req.login({ id: user.id, email: user.email }, async (err) => {
         if (err) {
@@ -211,24 +222,48 @@ export async function setupAuth(app: Express) {
     }
   });
 
-  app.post("/api/auth/login", (req, res, next) => {
+  app.post("/api/auth/login", loginLimiter, (req, res, next) => {
+    const email = req.body.email;
+    const ipAddress = req.ip || req.socket.remoteAddress || "unknown";
+    const userAgent = req.headers["user-agent"] || "unknown";
+    
     passport.authenticate("local", async (err: any, user: Express.User | false, info: { message: string }) => {
       if (err) {
+        await storage.recordLoginAttempt({ 
+          email, ipAddress, userAgent, success: false, failureReason: "server_error" 
+        });
+        monitoring.logError("Login server error", { email, error: err.message });
         return res.status(500).json({ message: "Login failed" });
       }
       if (!user) {
+        await storage.recordLoginAttempt({ 
+          email, ipAddress, userAgent, success: false, failureReason: info?.message || "invalid_credentials" 
+        });
+        monitoring.logWarn("Failed login attempt", { email, reason: info?.message });
         return res.status(401).json({ message: info?.message || "Invalid credentials" });
       }
+      
       req.login(user, async (loginErr) => {
         if (loginErr) {
+          await storage.recordLoginAttempt({ 
+            email, ipAddress, userAgent, success: false, failureReason: "login_error" 
+          });
           return res.status(500).json({ message: "Login failed" });
         }
+        
+        // Record successful login attempt
+        await storage.recordLoginAttempt({ email, ipAddress, userAgent, success: true });
+        resetLoginAttempts(email);
+        
         // Record login timestamp
         try {
           await storage.recordUserLogin((user as any).id);
         } catch (e) {
           console.error("Error recording login:", e);
         }
+        
+        monitoring.logInfo("Successful login", { userId: (user as any).id, email });
+        
         req.session.save((saveErr) => {
           if (saveErr) {
             console.error("Session save error:", saveErr);

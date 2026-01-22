@@ -39,6 +39,38 @@ Integrated AI capabilities, powered by OpenAI GPT-4.1-mini, offer:
 ### Authentication & Authorization
 The system uses local email/password authentication with PostgreSQL-backed session cookies. Admin access is determined by an `isAdmin` flag and a hardcoded admin email. New users require admin approval, and password resets are handled via Brevo transactional emails. A guided tour onboarding process is implemented using `driver.js`.
 
+### Infrastructure & Scaling Features
+The application includes enterprise-ready infrastructure components:
+
+**Caching System** (`server/cache.ts`)
+- In-memory TTL-based cache for frequently accessed data
+- Pre-defined cache keys for Gmail labels, calendar events, user preferences
+- Automatic cache cleanup and LRU eviction
+- Helper functions: `getOrFetch`, `invalidateGmailCache`, `getCacheStats`
+
+**Rate Limiting** (`server/rate-limiter.ts`)
+- Login rate limiter: 5 attempts per 15 minutes, 30-minute block on abuse
+- Signup rate limiter: 3 attempts per hour per IP
+- API rate limiter: 100 requests per minute
+- Gmail-specific limiter: 30 requests per minute
+- Exponential backoff retry logic for external API calls
+
+**Security Tables**
+- `login_attempts`: Tracks all login attempts with IP, user agent, success status
+- `email_verification_tokens`: Email verification tokens with expiration
+- `two_factor_secrets`: Optional 2FA with backup codes support
+
+**Monitoring** (`server/monitoring.ts`)
+- Error logging with severity levels (info, warn, error, critical)
+- Service health tracking with consecutive failure detection
+- Metrics recording for operation durations
+- Admin endpoints: `/api/admin/system-health`, `/api/admin/error-logs`
+
+**Session Security**
+- 7-day session TTL with PostgreSQL session store
+- Secure cookie settings: httpOnly, secure, sameSite=none, partitioned
+- Trust proxy enabled for proper IP detection
+
 ## External Dependencies
 
 ### Database
