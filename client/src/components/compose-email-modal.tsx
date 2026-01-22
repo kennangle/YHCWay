@@ -95,7 +95,8 @@ export function ComposeEmailModal({ onClose }: ComposeEmailModalProps) {
 
   useEffect(() => {
     if (accountSignature && !signatureAppended && !body) {
-      const signatureHtml = `<p><br></p><p>--</p>${accountSignature.htmlContent}`;
+      // Insert signature directly without extra lines or separator
+      const signatureHtml = `<br>${accountSignature.htmlContent}`;
       setBody(signatureHtml);
       setSignatureAppended(true);
     }

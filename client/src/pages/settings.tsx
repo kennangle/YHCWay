@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTheme } from "@/App";
-import { User, Bell, Shield, Palette, HelpCircle, ChevronLeft, Check, Globe, Mail, MessageSquare, Calendar, Video, CheckSquare, MessageCircle, Volume2, Moon, Sun, ExternalLink, Trash2, Download, Eye, EyeOff, FileText, Plus, Pencil, Webhook, Bug, Play, CheckCircle, XCircle, Clock, RefreshCw, Edit2, Lightbulb, Building, Copy, Users, UserPlus, Bold, Italic, Underline as UnderlineIcon, Link as LinkIcon, AlignLeft, AlignCenter, AlignRight } from "lucide-react";
+import { User, Bell, Shield, Palette, HelpCircle, ChevronLeft, Check, Globe, Mail, MessageSquare, Calendar, Video, CheckSquare, MessageCircle, Volume2, Moon, Sun, ExternalLink, Trash2, Download, Eye, EyeOff, FileText, Plus, Pencil, Webhook, Bug, Play, CheckCircle, XCircle, Clock, RefreshCw, Edit2, Lightbulb, Building, Copy, Users, UserPlus, Bold, Italic, Underline as UnderlineIcon, Link as LinkIcon, AlignLeft, AlignCenter, AlignRight, Image as ImageIcon, Table as TableIcon } from "lucide-react";
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -9,6 +9,11 @@ import Link from '@tiptap/extension-link';
 import TextAlign from '@tiptap/extension-text-align';
 import { TextStyle } from '@tiptap/extension-text-style';
 import { Color } from '@tiptap/extension-color';
+import Image from '@tiptap/extension-image';
+import Table from '@tiptap/extension-table';
+import TableRow from '@tiptap/extension-table-row';
+import TableCell from '@tiptap/extension-table-cell';
+import TableHeader from '@tiptap/extension-table-header';
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -1710,6 +1715,22 @@ function SignatureRichTextEditor({ content, onChange, placeholder }: { content: 
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
       TextStyle,
       Color,
+      Image.configure({
+        inline: true,
+        allowBase64: true,
+        HTMLAttributes: {
+          style: 'max-width: 100%; height: auto;',
+        },
+      }),
+      Table.configure({
+        resizable: true,
+        HTMLAttributes: {
+          style: 'border-collapse: collapse;',
+        },
+      }),
+      TableRow,
+      TableHeader,
+      TableCell,
     ],
     content: initialContentRef.current || '<p></p>',
     onUpdate: ({ editor }) => {
@@ -1732,6 +1753,19 @@ function SignatureRichTextEditor({ content, onChange, placeholder }: { content: 
       return;
     }
     editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+  }, [editor]);
+
+  const addImage = useCallback(() => {
+    if (!editor) return;
+    const url = window.prompt('Image URL (paste an image link):');
+    if (url) {
+      editor.chain().focus().setImage({ src: url }).run();
+    }
+  }, [editor]);
+
+  const insertTable = useCallback(() => {
+    if (!editor) return;
+    editor.chain().focus().insertTable({ rows: 2, cols: 2, withHeaderRow: false }).run();
   }, [editor]);
 
   if (!editor) return null;
@@ -1772,6 +1806,13 @@ function SignatureRichTextEditor({ content, onChange, placeholder }: { content: 
         </ToolbarBtn>
         <ToolbarBtn onClick={() => editor.chain().focus().setTextAlign('right').run()} active={editor.isActive({ textAlign: 'right' })} title="Align Right">
           <AlignRight className="w-4 h-4" />
+        </ToolbarBtn>
+        <div className="w-px bg-gray-300 dark:bg-gray-600 mx-1" />
+        <ToolbarBtn onClick={addImage} title="Insert Image">
+          <ImageIcon className="w-4 h-4" />
+        </ToolbarBtn>
+        <ToolbarBtn onClick={insertTable} title="Insert Table">
+          <TableIcon className="w-4 h-4" />
         </ToolbarBtn>
       </div>
       <EditorContent editor={editor} />
