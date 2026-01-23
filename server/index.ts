@@ -144,16 +144,27 @@ app.use((req, res, next) => {
     }
   }, 10000); // 10 seconds after startup
   
-  // Daily announcement scheduler - runs at 5 PM PST (UTC-8)
-  // Check every minute if it's time to send daily announcements
+  // Daily announcement scheduler - runs at 5 PM Pacific Time (America/Los_Angeles)
+  // Uses timezone-aware calculation to handle PST/PDT automatically
   let lastAnnouncementDate = "";
   setInterval(async () => {
     try {
       const now = new Date();
-      const pstOffset = -8 * 60; // PST is UTC-8
-      const pstTime = new Date(now.getTime() + (pstOffset + now.getTimezoneOffset()) * 60000);
-      const hour = pstTime.getHours();
-      const dateStr = pstTime.toISOString().split('T')[0];
+      // Use Intl.DateTimeFormat for timezone-aware time in Pacific timezone
+      const pacificFormatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/Los_Angeles',
+        hour: 'numeric',
+        hour12: false,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+      const parts = pacificFormatter.formatToParts(now);
+      const hour = parseInt(parts.find(p => p.type === 'hour')?.value || '0', 10);
+      const year = parts.find(p => p.type === 'year')?.value;
+      const month = parts.find(p => p.type === 'month')?.value;
+      const day = parts.find(p => p.type === 'day')?.value;
+      const dateStr = `${year}-${month}-${day}`;
       
       // Run at 5 PM PST (17:00) and only once per day
       if (hour === 17 && lastAnnouncementDate !== dateStr) {
@@ -182,7 +193,12 @@ app.use((req, res, next) => {
           }
           
           const body = parts.join(' | ');
-          const formattedDate = pstTime.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+          const formattedDate = new Intl.DateTimeFormat('en-US', { 
+            timeZone: 'America/Los_Angeles', 
+            month: 'long', 
+            day: 'numeric', 
+            year: 'numeric' 
+          }).format(now);
           
           // Broadcast to all users
           const count = await storage.broadcastAnnouncement({

@@ -7794,6 +7794,95 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/admin/changelog", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const entries = await storage.getChangelogEntries(thirtyDaysAgo, new Date());
+      res.json({ entries });
+    } catch (error) {
+      console.error("Error fetching changelog:", error);
+      res.status(500).json({ error: "Failed to fetch changelog" });
+    }
+  });
+
+  app.post("/api/admin/changelog", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { summary, description, entryType } = req.body;
+      
+      if (!summary) {
+        return res.status(400).json({ error: "Summary is required" });
+      }
+      
+      const entry = await storage.createChangelogEntry({
+        summary,
+        description: description || null,
+        entryType: entryType || "other",
+        entryDate: new Date(),
+        isManual: true,
+        author: req.user?.email || "Admin",
+      });
+      
+      res.json({ entry });
+    } catch (error) {
+      console.error("Error creating changelog entry:", error);
+      res.status(500).json({ error: "Failed to create changelog entry" });
+    }
+  });
+
+  app.get("/api/admin/changelog/unannounced", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const entries = await storage.getUnannouncedChangelogEntries();
+      res.json({ entries });
+    } catch (error) {
+      console.error("Error fetching unannounced entries:", error);
+      res.status(500).json({ error: "Failed to fetch unannounced entries" });
+    }
+  });
+
+  app.post("/api/admin/changelog/announce-now", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const entries = await storage.getUnannouncedChangelogEntries();
+      
+      if (entries.length === 0) {
+        return res.json({ success: true, message: "No unannounced entries to broadcast" });
+      }
+      
+      const features = entries.filter(e => e.entryType === 'feature');
+      const fixes = entries.filter(e => e.entryType === 'fix');
+      const changes = entries.filter(e => e.entryType !== 'feature' && e.entryType !== 'fix');
+      
+      const parts: string[] = [];
+      if (features.length > 0) {
+        parts.push(`New Features: ${features.map(f => f.summary).join('; ')}`);
+      }
+      if (fixes.length > 0) {
+        parts.push(`Bug Fixes: ${fixes.map(f => f.summary).join('; ')}`);
+      }
+      if (changes.length > 0) {
+        parts.push(`Changes: ${changes.map(c => c.summary).join('; ')}`);
+      }
+      
+      const body = parts.join(' | ');
+      const now = new Date();
+      const formattedDate = now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      
+      const count = await storage.broadcastAnnouncement({
+        type: 'daily.summary',
+        title: `Daily Update: ${formattedDate}`,
+        body,
+        metadata: { date: now.toISOString().split('T')[0], entriesCount: entries.length },
+      });
+      
+      await storage.markChangelogEntriesAnnounced(entries.map(e => e.id));
+      
+      res.json({ success: true, usersNotified: count, entriesAnnounced: entries.length });
+    } catch (error) {
+      console.error("Error announcing changelog:", error);
+      res.status(500).json({ error: "Failed to announce changelog" });
+    }
+  });
+
   // Global error handler - normalizes error responses
   app.use(globalErrorHandler);
 

@@ -139,6 +139,7 @@ export function UnifiedSidebar() {
       defaultCollapsed: true,
       items: [
         { icon: Building2, label: "HR & Payroll", href: "/gusto", tourId: "nav-gusto", adminOnly: true },
+        { icon: Megaphone, label: "Announcements", href: "/changelog-admin", tourId: "nav-announcements", adminOnly: true },
         { icon: PlusCircle, label: "Connect App", href: "/connect", tourId: "nav-connect" },
         { icon: Settings, label: "Settings", href: "/settings", tourId: "nav-settings" },
         { icon: Shield, label: "Admin", href: "/admin", tourId: "nav-admin", adminOnly: true },
