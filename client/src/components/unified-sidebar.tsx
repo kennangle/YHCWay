@@ -36,7 +36,8 @@ import {
   Users,
   ExternalLink,
   Dumbbell,
-  GitBranch
+  GitBranch,
+  MessageSquare
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
@@ -140,6 +141,7 @@ export function UnifiedSidebar() {
       items: [
         { icon: Building2, label: "HR & Payroll", href: "/gusto", tourId: "nav-gusto", adminOnly: true },
         { icon: Megaphone, label: "Announcements", href: "/changelog-admin", tourId: "nav-announcements", adminOnly: true },
+        { icon: MessageSquare, label: "Feedback", href: "/feedback", tourId: "nav-feedback", adminOnly: true },
         { icon: PlusCircle, label: "Connect App", href: "/connect", tourId: "nav-connect" },
         { icon: Settings, label: "Settings", href: "/settings", tourId: "nav-settings" },
         { icon: Shield, label: "Admin", href: "/admin", tourId: "nav-admin", adminOnly: true },

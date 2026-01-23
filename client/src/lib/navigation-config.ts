@@ -5,6 +5,7 @@ import {
   Mail,
   Calendar,
   MessageCircle,
+  MessageSquare,
   ListTodo,
   FolderKanban,
   GitBranch,
@@ -114,6 +115,7 @@ export const navigationTabs: NavTab[] = [
     items: [
       { id: "gusto", icon: Building2, label: "HR & Payroll", href: "/gusto", adminOnly: true },
       { id: "announcements", icon: Megaphone, label: "Announcements", href: "/changelog-admin", adminOnly: true },
+      { id: "feedback", icon: MessageSquare, label: "Feedback", href: "/feedback", adminOnly: true },
       { id: "system-health", icon: BarChart3, label: "System Health", href: "/system-health", adminOnly: true },
       { id: "admin", icon: Shield, label: "Admin", href: "/admin", adminOnly: true },
     ],

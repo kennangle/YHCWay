@@ -89,6 +89,7 @@ import Gusto from "@/pages/gusto";
 import Presentation from "@/pages/presentation";
 import Changelog from "@/pages/changelog";
 import ChangelogAdmin from "@/pages/changelog-admin";
+import FeedbackAdmin from "@/pages/feedback-admin";
 import Scoreboard from "@/pages/scoreboard";
 import GoogleDocs from "@/pages/google-docs";
 import GoogleSheets from "@/pages/google-sheets";
@@ -181,6 +182,7 @@ function Router() {
           <Route path="/presentation" component={Presentation} />
           <Route path="/changelog" component={Changelog} />
           <Route path="/changelog-admin" component={ChangelogAdmin} />
+          <Route path="/feedback" component={FeedbackAdmin} />
           <Route path="/google-drive" component={GoogleDrive} />
           <Route path="/google-docs" component={GoogleDocs} />
           <Route path="/google-sheets" component={GoogleSheets} />
