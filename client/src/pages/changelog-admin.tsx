@@ -142,6 +142,7 @@ export default function ChangelogAdmin() {
   };
 
   return (
+    <>
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 p-6">
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
@@ -298,8 +299,11 @@ export default function ChangelogAdmin() {
               ))}
             </div>
           )}
-        </div>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
+    </div>
 
       <Dialog open={showAddEntry} onOpenChange={setShowAddEntry}>
         <DialogContent>
@@ -356,6 +360,6 @@ export default function ChangelogAdmin() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }
