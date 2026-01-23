@@ -8,12 +8,13 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import { format, differenceInDays, subDays, startOfYear } from "date-fns";
 
-type DateRangeOption = 'last_week' | 'this_month' | 'last_month' | 'last_quarter' | 'last_year' | 'this_year' | 'custom';
+type DateRangeOption = 'last_week' | 'this_month' | 'last_month' | 'last_90_days' | 'last_quarter' | 'last_year' | 'this_year' | 'custom';
 
 const dateRangeLabels: Record<DateRangeOption, string> = {
   last_week: 'Last Week',
   this_month: 'This Month',
   last_month: 'Last Month',
+  last_90_days: 'Last 90 Days',
   last_quarter: 'Last Quarter',
   last_year: 'Last Year',
   this_year: 'This Year',
@@ -31,6 +32,8 @@ function getDateRange(option: DateRangeOption, customStart?: Date, customEnd?: D
       return { startDate: new Date(today.getFullYear(), today.getMonth(), 1), endDate: today };
     case 'last_month':
       return { startDate: subDays(today, 30), endDate: today };
+    case 'last_90_days':
+      return { startDate: subDays(today, 90), endDate: today };
     case 'last_quarter':
       return { startDate: subDays(today, 90), endDate: today };
     case 'last_year':
@@ -196,6 +199,7 @@ export default function Scoreboard() {
                   <SelectItem value="last_week" data-testid="option-last-week">Last Week</SelectItem>
                   <SelectItem value="this_month" data-testid="option-this-month">This Month</SelectItem>
                   <SelectItem value="last_month" data-testid="option-last-month">Last Month</SelectItem>
+                  <SelectItem value="last_90_days" data-testid="option-last-90-days">Last 90 Days</SelectItem>
                   <SelectItem value="last_quarter" data-testid="option-last-quarter">Last Quarter</SelectItem>
                   <SelectItem value="last_year" data-testid="option-last-year">Last Year</SelectItem>
                   <SelectItem value="this_year" data-testid="option-this-year">This Year</SelectItem>
