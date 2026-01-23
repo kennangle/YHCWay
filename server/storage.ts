@@ -3171,7 +3171,10 @@ export class DbStorage implements IStorage {
       conditions.push(isNull(userNotifications.readAt));
     }
     if (options?.tenantId) {
-      conditions.push(eq(userNotifications.tenantId, options.tenantId));
+      conditions.push(or(
+        eq(userNotifications.tenantId, options.tenantId),
+        isNull(userNotifications.tenantId)
+      ));
     }
     
     const results = await db
@@ -3237,7 +3240,10 @@ export class DbStorage implements IStorage {
       or(isNull(userNotifications.expiresAt), gte(userNotifications.expiresAt, now)),
     ];
     if (tenantId) {
-      conditions.push(eq(userNotifications.tenantId, tenantId));
+      conditions.push(or(
+        eq(userNotifications.tenantId, tenantId),
+        isNull(userNotifications.tenantId)
+      ));
     }
     
     const result = await db
