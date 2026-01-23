@@ -25,6 +25,7 @@ interface GmailSidebarProps {
   selectedFolder: SystemFolder;
   onSelectLabel: (labelId: string | null) => void;
   onSelectFolder: (folder: SystemFolder) => void;
+  accountId?: number | null;
 }
 
 const SYSTEM_FOLDER_ORDER = ["SENT", "TRASH"];
@@ -66,18 +67,30 @@ const FOLDER_TO_FILTER: Record<string, SystemFolder> = {
   TRASH: "trash",
 };
 
-export function GmailSidebar({ selectedLabel, selectedFolder, onSelectLabel, onSelectFolder }: GmailSidebarProps) {
+export function GmailSidebar({ selectedLabel, selectedFolder, onSelectLabel, onSelectFolder, accountId }: GmailSidebarProps) {
   const [labelsExpanded, setLabelsExpanded] = useState(true);
   
   const { data: labels = [], isLoading } = useQuery<GmailLabel[]>({
-    queryKey: ["gmail-labels"],
+    queryKey: ["gmail-labels", accountId],
     queryFn: async () => {
-      const res = await fetch("/api/gmail/labels", { credentials: "include" });
+      const url = accountId ? `/api/gmail/labels?accountId=${accountId}` : "/api/gmail/labels";
+      const res = await fetch(url, { credentials: "include" });
       if (!res.ok) return [];
       return res.json();
     },
     retry: false,
+    enabled: accountId !== null,
   });
+
+  if (accountId === null) {
+    return (
+      <div className="w-56 flex-shrink-0 border-r border-gray-200/50 bg-white/30 backdrop-blur-sm p-4">
+        <div className="text-sm text-muted-foreground text-center py-4">
+          Select an account to view folders and labels
+        </div>
+      </div>
+    );
+  }
 
   const systemFolders = labels
     .filter(l => l.type === "system" && SYSTEM_FOLDER_ORDER.includes(l.id))

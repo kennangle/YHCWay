@@ -711,6 +711,76 @@ export async function disconnectGmailForUser(userId: string): Promise<void> {
   await storage.deleteOAuthAccount(userId, 'gmail');
 }
 
+export async function getGmailLabelsForUser(userId: string, accountId?: number): Promise<Array<{
+  id: string;
+  name: string;
+  type: "system" | "user";
+  messagesTotal?: number;
+  messagesUnread?: number;
+  color?: { textColor?: string; backgroundColor?: string };
+}>> {
+  const gmail = await getGmailClientForUser(userId, accountId);
+  
+  const response = await gmail.users.labels.list({
+    userId: 'me',
+  });
+
+  if (!response.data.labels) {
+    return [];
+  }
+
+  const SYSTEM_FOLDER_ORDER = ["INBOX", "SENT", "DRAFT", "TRASH", "SPAM", "STARRED"];
+  const HIDDEN_LABELS = ["CATEGORY_PERSONAL", "CATEGORY_SOCIAL", "CATEGORY_PROMOTIONS", "CATEGORY_UPDATES", "CATEGORY_FORUMS", "UNREAD", "IMPORTANT", "CHAT"];
+
+  const relevantLabels = response.data.labels.filter(l => {
+    if (!l.id) return false;
+    if (HIDDEN_LABELS.includes(l.id)) return false;
+    if (l.type === 'system' && !SYSTEM_FOLDER_ORDER.includes(l.id)) return false;
+    return true;
+  });
+
+  const results: Array<{
+    id: string;
+    name: string;
+    type: "system" | "user";
+    messagesTotal?: number;
+    messagesUnread?: number;
+    color?: { textColor?: string; backgroundColor?: string };
+  }> = [];
+
+  for (let i = 0; i < relevantLabels.length; i += 10) {
+    const batch = relevantLabels.slice(i, i + 10);
+    const details = await Promise.all(
+      batch.map(label =>
+        gmail.users.labels.get({
+          userId: 'me',
+          id: label.id!,
+        }).catch(() => null)
+      )
+    );
+    
+    for (let j = 0; j < batch.length; j++) {
+      const label = batch[j];
+      const detail = details[j];
+      if (!detail) continue;
+      
+      results.push({
+        id: label.id!,
+        name: detail.data.name || label.name || label.id!,
+        type: label.type === 'system' ? 'system' : 'user',
+        messagesTotal: detail.data.messagesTotal || 0,
+        messagesUnread: detail.data.messagesUnread || 0,
+        color: detail.data.color ? {
+          textColor: detail.data.color.textColor || undefined,
+          backgroundColor: detail.data.color.backgroundColor || undefined,
+        } : undefined,
+      });
+    }
+  }
+
+  return results;
+}
+
 export async function deleteEmailById(userId: string, messageId: string): Promise<boolean> {
   const gmail = await getGmailClientForUser(userId);
   

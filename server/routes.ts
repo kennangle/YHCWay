@@ -1641,19 +1641,29 @@ export async function registerRoutes(
   app.get("/api/gmail/labels", isAuthenticated, gmailLimiter, async (req: any, res) => {
     try {
       const userId = req.user?.id;
+      const accountId = req.query.accountId ? parseInt(req.query.accountId as string, 10) : undefined;
       
       if (!userId) {
         return res.status(401).json({ error: "Unauthorized" });
       }
       
-      // Try connector-based fetch
+      // Try OAuth-based fetch first (supports account selection)
       try {
-        const { getGmailLabels } = await import("./gmail");
-        const labels = await getGmailLabels();
+        const { getGmailLabelsForUser } = await import("./gmail-oauth");
+        const labels = await getGmailLabelsForUser(userId, accountId);
         return res.json(labels);
-      } catch (connectorError: any) {
-        console.error("[Gmail Labels] Error fetching labels:", connectorError?.message || connectorError);
-        return res.status(500).json({ error: connectorError?.message || "Failed to fetch labels" });
+      } catch (oauthError: any) {
+        console.log("[Gmail Labels] OAuth fetch failed, trying connector:", oauthError?.message);
+        
+        // Fall back to connector-based fetch
+        try {
+          const { getGmailLabels } = await import("./gmail");
+          const labels = await getGmailLabels();
+          return res.json(labels);
+        } catch (connectorError: any) {
+          console.error("[Gmail Labels] Error fetching labels:", connectorError?.message || connectorError);
+          return res.status(500).json({ error: connectorError?.message || "Failed to fetch labels" });
+        }
       }
     } catch (error: any) {
       console.error("[Gmail Labels] Error:", error?.message || error);

@@ -578,6 +578,7 @@ export default function Inbox() {
                         setFilter(folder);
                       }
                     }}
+                    accountId={selectedAccountId}
                   />
                 </div>
               )}
