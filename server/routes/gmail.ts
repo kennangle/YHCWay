@@ -13,6 +13,7 @@ import {
   getGmailLabelsForUser
 } from "../gmail-oauth";
 import { isGmailConnected, getRecentEmails, getGmailLabels } from "../gmail";
+import { cache, TTL, getOrFetch, invalidateGmailCache } from "../cache";
 
 const router = Router();
 
@@ -55,6 +56,7 @@ router.delete("/accounts/:id", asyncHandler(async (req: any, res: any) => {
   }
   
   await storage.deleteOAuthAccountById(accountId);
+  invalidateGmailCache(userId, accountId);
   res.json({ success: true });
 }));
 
@@ -97,6 +99,7 @@ router.post("/disconnect", asyncHandler(async (req: any, res: any) => {
     throw new UnauthorizedError();
   }
   await disconnectGmailForUser(userId);
+  invalidateGmailCache(userId);
   res.json({ success: true });
 }));
 
@@ -197,8 +200,12 @@ router.get("/labels", gmailLimiter, asyncHandler(async (req: any, res: any) => {
     throw new ValidationError("Invalid accountId");
   }
   
+  const cacheKey = cache.gmail.labels(userId, accountId || 0);
+  
   try {
-    const labels = await getGmailLabelsForUser(userId, accountId);
+    const labels = await getOrFetch(cacheKey, async () => {
+      return await getGmailLabelsForUser(userId, accountId);
+    }, TTL.LABELS);
     return res.json(labels);
   } catch (oauthError: any) {
     console.log("[Gmail Labels] OAuth fetch failed, trying connector:", oauthError?.message);
