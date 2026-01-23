@@ -4,6 +4,7 @@ import { asyncHandler } from "../errors";
 import { handleGmailCallback, verifyOAuthState } from "../gmail-oauth";
 import adminRoutes from "./admin";
 import gmailRoutes from "./gmail";
+import tasksRoutes from "./tasks";
 
 export function registerModularRoutes(app: Express, isAuthenticated: RequestHandler, isAdmin: RequestHandler) {
   // OAuth callbacks must be registered without auth middleware
@@ -37,6 +38,9 @@ export function registerModularRoutes(app: Express, isAuthenticated: RequestHand
   
   // Register gmail routes with auth check (except callback which is above)
   app.use("/api/v2/gmail", isAuthenticated, gmailRoutes);
+  
+  // Register tasks routes with auth check
+  app.use("/api/v2/tasks", isAuthenticated, tasksRoutes);
 }
 
-export { adminRoutes, gmailRoutes };
+export { adminRoutes, gmailRoutes, tasksRoutes };
