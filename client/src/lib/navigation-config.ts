@@ -57,7 +57,9 @@ export const navigationTabs: NavTab[] = [
       { id: "intro-offers", icon: Gift, label: "Intro Offers", href: "/intro-offers" },
       { id: "mailbox", icon: Mail, label: "Mailbox", href: "/inbox" },
       { id: "calendar", icon: Calendar, label: "Calendar", href: "/calendar" },
-      { id: "setup-guide", icon: BookOpen, label: "Setup Guide", href: "/setup-guide" },
+      { id: "daily-hub", icon: ClipboardList, label: "Daily Hub", href: "/daily-hub" },
+      { id: "tasks", icon: ListTodo, label: "Tasks", href: "/tasks" },
+      { id: "projects", icon: FolderKanban, label: "Projects", href: "/projects" },
     ],
   },
   {
@@ -65,10 +67,7 @@ export const navigationTabs: NavTab[] = [
     label: "Productivity",
     icon: FileText,
     items: [
-      { id: "daily-hub", icon: ClipboardList, label: "Daily Hub", href: "/daily-hub" },
       { id: "chat", icon: MessageCircle, label: "Chat", href: "/chat" },
-      { id: "tasks", icon: ListTodo, label: "Tasks", href: "/tasks" },
-      { id: "projects", icon: FolderKanban, label: "Projects", href: "/projects" },
       { id: "dependencies", icon: GitBranch, label: "Dependencies", href: "/dependency-tracker" },
       { id: "google-docs", icon: File, label: "Google Docs", href: "/google-docs" },
       { id: "google-sheets", icon: FileSpreadsheet, label: "Google Sheets", href: "/google-sheets" },
@@ -104,6 +103,7 @@ export const navigationTabs: NavTab[] = [
     items: [
       { id: "settings", icon: Settings, label: "Settings", href: "/settings" },
       { id: "connect", icon: PlusCircle, label: "Connect App", href: "/connect" },
+      { id: "setup-guide", icon: BookOpen, label: "Setup Guide", href: "/setup-guide" },
     ],
   },
   {
