@@ -2,15 +2,16 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Redirect } from "wouter";
-import { Plus, Bell, Megaphone, Clock, CheckCircle, Sparkles, Bug, RefreshCw, Send } from "lucide-react";
+import { Plus, Bell, Megaphone, Clock, CheckCircle, Sparkles, Bug, RefreshCw, Send, MessageSquarePlus } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { formatDistanceToNow } from "date-fns";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface ChangelogEntry {
   id: number;
@@ -28,6 +29,7 @@ export default function ChangelogAdmin() {
   const { user, isLoading: authLoading } = useAuth();
   const [showAddEntry, setShowAddEntry] = useState(false);
   const [newEntry, setNewEntry] = useState({ summary: "", description: "", entryType: "feature" });
+  const [quickNotification, setQuickNotification] = useState({ title: "", body: "", type: "feature.announcement" });
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -86,6 +88,29 @@ export default function ChangelogAdmin() {
     },
   });
 
+  const sendQuickNotificationMutation = useMutation({
+    mutationFn: async (data: { title: string; body: string; type: string }) => {
+      const res = await fetch("/api/admin/announcements/broadcast", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to send notification");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      setQuickNotification({ title: "", body: "", type: "feature.announcement" });
+      toast({ 
+        title: "Notification sent!", 
+        description: `Sent to ${data.usersNotified || 'all'} users successfully.` 
+      });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to send notification", variant: "destructive" });
+    },
+  });
+
   if (authLoading) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
@@ -121,42 +146,118 @@ export default function ChangelogAdmin() {
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Changelog & Announcements</h1>
-            <p className="text-muted-foreground">Manage changelog entries and daily announcements</p>
-          </div>
-          <div className="flex gap-2">
-            <Button onClick={() => setShowAddEntry(true)} data-testid="button-add-changelog">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Entry
-            </Button>
+            <h1 className="text-2xl font-bold text-foreground">Announcements & Notifications</h1>
+            <p className="text-muted-foreground">Send notifications and manage changelog entries</p>
           </div>
         </div>
 
-        {unannounced.length > 0 && (
-          <div className="glass-panel rounded-xl p-4 border-amber-200 bg-amber-50/50">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Bell className="w-5 h-5 text-amber-600" />
+        <Tabs defaultValue="quick" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="quick" data-testid="tab-quick-notification">
+              <MessageSquarePlus className="w-4 h-4 mr-2" />
+              Quick Notification
+            </TabsTrigger>
+            <TabsTrigger value="changelog" data-testid="tab-changelog">
+              <Megaphone className="w-4 h-4 mr-2" />
+              Changelog
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="quick" className="space-y-4 mt-4">
+            <div className="glass-panel rounded-xl p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <MessageSquarePlus className="w-5 h-5 text-blue-600" />
                 <div>
-                  <p className="font-medium text-foreground">{unannounced.length} pending announcement{unannounced.length !== 1 ? 's' : ''}</p>
-                  <p className="text-sm text-muted-foreground">Will be sent at 5 PM PST or you can send now</p>
+                  <h2 className="text-lg font-semibold">Send Quick Notification</h2>
+                  <p className="text-sm text-muted-foreground">Send a notification directly to all users in production</p>
                 </div>
               </div>
-              <Button 
-                onClick={() => announceNowMutation.mutate()} 
-                disabled={announceNowMutation.isPending}
-                className="bg-amber-600 hover:bg-amber-700"
-                data-testid="button-announce-now"
-              >
-                <Send className="w-4 h-4 mr-2" />
-                {announceNowMutation.isPending ? "Sending..." : "Announce Now"}
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium">Notification Type</label>
+                  <Select 
+                    value={quickNotification.type} 
+                    onValueChange={(v) => setQuickNotification({ ...quickNotification, type: v })}
+                  >
+                    <SelectTrigger data-testid="select-notification-type">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="feature.announcement">Feature Announcement</SelectItem>
+                      <SelectItem value="daily.summary">Daily Summary</SelectItem>
+                      <SelectItem value="system.announcement">System Announcement</SelectItem>
+                      <SelectItem value="tip">Tip / Guide</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Title</label>
+                  <Input
+                    placeholder="e.g., New: AI Assistant User Guide"
+                    value={quickNotification.title}
+                    onChange={(e) => setQuickNotification({ ...quickNotification, title: e.target.value })}
+                    data-testid="input-notification-title"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Message</label>
+                  <Textarea
+                    placeholder="Write your notification message here..."
+                    value={quickNotification.body}
+                    onChange={(e) => setQuickNotification({ ...quickNotification, body: e.target.value })}
+                    rows={6}
+                    data-testid="input-notification-body"
+                  />
+                </div>
+                <div className="flex justify-end">
+                  <Button 
+                    onClick={() => sendQuickNotificationMutation.mutate(quickNotification)}
+                    disabled={!quickNotification.title || !quickNotification.body || sendQuickNotificationMutation.isPending}
+                    className="bg-blue-600 hover:bg-blue-700"
+                    data-testid="button-send-notification"
+                  >
+                    <Send className="w-4 h-4 mr-2" />
+                    {sendQuickNotificationMutation.isPending ? "Sending..." : "Send to All Users"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="changelog" className="space-y-4 mt-4">
+            <div className="flex justify-end">
+              <Button onClick={() => setShowAddEntry(true)} data-testid="button-add-changelog">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Entry
               </Button>
             </div>
-          </div>
-        )}
 
-        <div className="glass-panel rounded-xl p-6">
-          <h2 className="text-lg font-semibold mb-4">Recent Changelog Entries</h2>
+            {unannounced.length > 0 && (
+              <div className="glass-panel rounded-xl p-4 border-amber-200 bg-amber-50/50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Bell className="w-5 h-5 text-amber-600" />
+                    <div>
+                      <p className="font-medium text-foreground">{unannounced.length} pending announcement{unannounced.length !== 1 ? 's' : ''}</p>
+                      <p className="text-sm text-muted-foreground">Will be sent at 5 PM PST or you can send now</p>
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={() => announceNowMutation.mutate()} 
+                    disabled={announceNowMutation.isPending}
+                    className="bg-amber-600 hover:bg-amber-700"
+                    data-testid="button-announce-now"
+                  >
+                    <Send className="w-4 h-4 mr-2" />
+                    {announceNowMutation.isPending ? "Sending..." : "Announce Now"}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            <div className="glass-panel rounded-xl p-6">
+              <h2 className="text-lg font-semibold mb-4">Recent Changelog Entries</h2>
           
           {isLoading ? (
             <p className="text-muted-foreground">Loading...</p>
