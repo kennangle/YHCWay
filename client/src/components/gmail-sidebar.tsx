@@ -83,13 +83,7 @@ export function GmailSidebar({ selectedLabel, selectedFolder, onSelectLabel, onS
   });
 
   if (accountId === null) {
-    return (
-      <div className="w-56 flex-shrink-0 border-r border-gray-200/50 bg-white/30 backdrop-blur-sm p-4">
-        <div className="text-sm text-muted-foreground text-center py-4">
-          Select an account to view folders and labels
-        </div>
-      </div>
-    );
+    return null;
   }
 
   const systemFolders = labels
