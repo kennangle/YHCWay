@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { ListTodo, Plus, RefreshCw, Calendar, Flag, CheckCircle2, Circle, Clock, Filter, ChevronDown, ChevronRight, FolderKanban, MoreHorizontal, ArrowRight, Link2, Download, Upload, ArrowUpDown } from "lucide-react";
+import { ListTodo, Plus, RefreshCw, Calendar, Flag, CheckCircle2, Circle, Clock, Filter, ChevronDown, ChevronRight, FolderKanban, MoreHorizontal, ArrowRight, Link2, Download, Upload, Trash2, Square, CheckSquare } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
@@ -58,6 +58,8 @@ export default function Tasks() {
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
   const [newTask, setNewTask] = useState({ title: "", description: "", priority: "medium", dueDate: "", assigneeId: "" });
   const [isUploading, setIsUploading] = useState(false);
+  const [selectedTasks, setSelectedTasks] = useState<Set<number>>(new Set());
+  const [isDeleting, setIsDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: tasks = [], isLoading: tasksLoading, isFetching, refetch } = useQuery<Task[]>({
@@ -144,6 +146,27 @@ export default function Tasks() {
     },
     onError: () => {
       toast({ title: "Error", description: "Failed to move task", variant: "destructive" });
+    },
+  });
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (taskIds: number[]) => {
+      const res = await fetch("/api/tasks/bulk-delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ taskIds }),
+      });
+      if (!res.ok) throw new Error("Failed to delete tasks");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["all-tasks"] });
+      setSelectedTasks(new Set());
+      toast({ title: "Tasks deleted", description: `${data.deletedCount} task(s) deleted successfully` });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to delete tasks", variant: "destructive" });
     },
   });
 
@@ -238,6 +261,33 @@ export default function Tasks() {
       }
       return next;
     });
+  };
+
+  const toggleTaskSelection = (taskId: number) => {
+    setSelectedTasks(prev => {
+      const next = new Set(prev);
+      if (next.has(taskId)) {
+        next.delete(taskId);
+      } else {
+        next.add(taskId);
+      }
+      return next;
+    });
+  };
+
+  const selectAllTasks = () => {
+    if (selectedTasks.size === filteredTasks.length) {
+      setSelectedTasks(new Set());
+    } else {
+      setSelectedTasks(new Set(filteredTasks.map(t => t.id)));
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedTasks.size === 0) return;
+    if (confirm(`Are you sure you want to delete ${selectedTasks.size} task(s)? This cannot be undone.`)) {
+      bulkDeleteMutation.mutate(Array.from(selectedTasks));
+    }
   };
 
   const toggleProject = (projectId: number) => {
@@ -415,6 +465,18 @@ export default function Tasks() {
               >
                 <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
               </button>
+              {selectedTasks.size > 0 && (
+                <Button
+                  onClick={handleBulkDelete}
+                  disabled={bulkDeleteMutation.isPending}
+                  variant="destructive"
+                  className="flex items-center gap-2"
+                  data-testid="button-bulk-delete"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete ({selectedTasks.size})
+                </Button>
+              )}
               <Button
                 onClick={() => setCreateDialogOpen(true)}
                 disabled={projects.length === 0}
@@ -481,10 +543,33 @@ export default function Tasks() {
 
           <div className="glass-panel rounded-2xl p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="font-semibold text-lg flex items-center gap-2">
-                <Filter className="w-5 h-5 text-muted-foreground" />
-                {filteredTasks.length} {filteredTasks.length === 1 ? 'Task' : 'Tasks'}
-              </h2>
+              <div className="flex items-center gap-3">
+                {filteredTasks.length > 0 && (
+                  <button
+                    onClick={selectAllTasks}
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                    data-testid="select-all-tasks"
+                    title={selectedTasks.size === filteredTasks.length ? "Deselect all" : "Select all"}
+                  >
+                    {selectedTasks.size === filteredTasks.length && filteredTasks.length > 0 ? (
+                      <CheckSquare className="w-5 h-5 text-primary" />
+                    ) : selectedTasks.size > 0 ? (
+                      <Square className="w-5 h-5 text-primary" />
+                    ) : (
+                      <Square className="w-5 h-5" />
+                    )}
+                  </button>
+                )}
+                <h2 className="font-semibold text-lg flex items-center gap-2">
+                  <Filter className="w-5 h-5 text-muted-foreground" />
+                  {filteredTasks.length} {filteredTasks.length === 1 ? 'Task' : 'Tasks'}
+                  {selectedTasks.size > 0 && (
+                    <span className="text-sm font-normal text-muted-foreground">
+                      ({selectedTasks.size} selected)
+                    </span>
+                  )}
+                </h2>
+              </div>
               {isFetching && !isLoading && (
                 <span className="text-sm text-muted-foreground">Refreshing...</span>
               )}
@@ -546,12 +631,24 @@ export default function Tasks() {
                         <div className="divide-y">
                           {projectTasks.map(task => {
                             const dueInfo = formatDueDate(task.dueDate);
+                            const isSelected = selectedTasks.has(task.id);
                             return (
                               <div
                                 key={task.id}
-                                className="flex items-start gap-4 p-4 hover:bg-white/50 transition-colors"
+                                className={`flex items-start gap-4 p-4 hover:bg-white/50 transition-colors ${isSelected ? 'bg-primary/5' : ''}`}
                                 data-testid={`task-item-${task.id}`}
                               >
+                                <button
+                                  onClick={() => toggleTaskSelection(task.id)}
+                                  className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0 mt-0.5"
+                                  data-testid={`select-task-${task.id}`}
+                                >
+                                  {isSelected ? (
+                                    <CheckSquare className="w-4 h-4 text-primary" />
+                                  ) : (
+                                    <Square className="w-4 h-4" />
+                                  )}
+                                </button>
                                 <button
                                   onClick={() => toggleTaskMutation.mutate({ taskId: task.id, isCompleted: !task.isCompleted })}
                                   className={`w-5 h-5 rounded-full border-2 flex-shrink-0 mt-0.5 transition-colors ${
@@ -691,12 +788,24 @@ export default function Tasks() {
                           {priorityTasks.map(task => {
                             const dueInfo = formatDueDate(task.dueDate);
                             const project = projects.find(p => p.id === task.projectId);
+                            const isSelected = selectedTasks.has(task.id);
                             return (
                               <div
                                 key={task.id}
-                                className="flex items-start gap-4 p-4 hover:bg-white/50 transition-colors"
+                                className={`flex items-start gap-4 p-4 hover:bg-white/50 transition-colors ${isSelected ? 'bg-primary/5' : ''}`}
                                 data-testid={`task-item-${task.id}`}
                               >
+                                <button
+                                  onClick={() => toggleTaskSelection(task.id)}
+                                  className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0 mt-0.5"
+                                  data-testid={`select-task-${task.id}`}
+                                >
+                                  {isSelected ? (
+                                    <CheckSquare className="w-4 h-4 text-primary" />
+                                  ) : (
+                                    <Square className="w-4 h-4" />
+                                  )}
+                                </button>
                                 <button
                                   onClick={() => toggleTaskMutation.mutate({ taskId: task.id, isCompleted: !task.isCompleted })}
                                   className={`w-5 h-5 rounded-full border-2 flex-shrink-0 mt-0.5 transition-colors ${

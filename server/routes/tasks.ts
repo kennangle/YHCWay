@@ -215,6 +215,24 @@ router.delete("/:id", asyncHandler(async (req: any, res: any) => {
   res.status(204).send();
 }));
 
+router.post("/bulk-delete", asyncHandler(async (req: any, res: any) => {
+  const { taskIds } = req.body;
+  if (!Array.isArray(taskIds) || taskIds.length === 0) {
+    throw new ValidationError("taskIds must be a non-empty array");
+  }
+  
+  let deletedCount = 0;
+  for (const taskId of taskIds) {
+    const id = parseInt(taskId);
+    if (!isNaN(id)) {
+      await storage.deleteTask(id);
+      deletedCount++;
+    }
+  }
+  
+  res.json({ deletedCount });
+}));
+
 router.post("/:id/archive", asyncHandler(async (req: any, res: any) => {
   const taskId = parseInt(req.params.id);
   const task = await storage.archiveTask(taskId);
