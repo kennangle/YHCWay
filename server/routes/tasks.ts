@@ -528,4 +528,121 @@ router.get("/:id/time-entries", asyncHandler(async (req: any, res: any) => {
   res.json(entries);
 }));
 
+router.get("/export/csv", asyncHandler(async (req: any, res: any) => {
+  const userId = req.user?.claims?.sub || req.user?.id;
+  if (!userId) {
+    throw new UnauthorizedError();
+  }
+  const tenantId = req.tenantId;
+  const tasks = await storage.getAllUserTasks(userId, tenantId);
+  const projects = await storage.getUserProjects(userId, tenantId);
+  const users = await storage.getAllUsers();
+  
+  const projectMap = new Map(projects.map((p: any) => [p.id, p.name]));
+  const userMap = new Map(users.map((u: any) => [u.id, `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email]));
+  
+  const headers = ["ID", "Title", "Description", "Project", "Priority", "Status", "Due Date", "Assignee", "Labels", "Created At"];
+  const rows = tasks.map((task: any) => [
+    task.id,
+    `"${(task.title || '').replace(/"/g, '""')}"`,
+    `"${(task.description || '').replace(/"/g, '""')}"`,
+    `"${projectMap.get(task.projectId) || ''}"`,
+    task.priority || 'medium',
+    task.isCompleted ? 'completed' : 'active',
+    task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '',
+    `"${userMap.get(task.assigneeId) || ''}"`,
+    `"${(task.labels || []).join(', ')}"`,
+    task.createdAt ? new Date(task.createdAt).toISOString().split('T')[0] : ''
+  ]);
+  
+  const csv = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+  
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', 'attachment; filename=tasks.csv');
+  res.send(csv);
+}));
+
+router.post("/import/csv", asyncHandler(async (req: any, res: any) => {
+  const userId = req.user?.claims?.sub || req.user?.id;
+  if (!userId) {
+    throw new UnauthorizedError();
+  }
+  const tenantId = req.tenantId;
+  
+  const { rows } = req.body;
+  if (!Array.isArray(rows)) {
+    throw new ValidationError("Invalid CSV data");
+  }
+  
+  const projects = await storage.getUserProjects(userId, tenantId);
+  const projectNameMap = new Map(projects.map((p: any) => [p.name.toLowerCase(), p.id]));
+  
+  let updated = 0;
+  let created = 0;
+  let errors: string[] = [];
+  
+  for (const row of rows) {
+    try {
+      const taskId = parseInt(row.ID || row.id);
+      const title = row.Title || row.title;
+      const priority = (row.Priority || row.priority || 'medium').toLowerCase();
+      const status = (row.Status || row.status || 'active').toLowerCase();
+      const dueDate = row['Due Date'] || row.dueDate || row.due_date;
+      const description = row.Description || row.description || '';
+      
+      if (!title) continue;
+      
+      const validPriorities = ['urgent', 'high', 'medium', 'low'];
+      const normalizedPriority = validPriorities.includes(priority) ? priority : 'medium';
+      const isCompleted = status === 'completed' || status === 'done';
+      
+      if (taskId && !isNaN(taskId)) {
+        const existingTask = await storage.getTask(taskId);
+        if (existingTask && 
+            (existingTask.creatorId === userId || 
+             existingTask.assigneeId === userId ||
+             (tenantId && existingTask.tenantId === tenantId))) {
+          await storage.updateTask(taskId, {
+            title,
+            description,
+            priority: normalizedPriority,
+            isCompleted,
+            dueDate: dueDate ? new Date(dueDate) : null,
+          });
+          updated++;
+        } else if (existingTask) {
+          errors.push(`Task ${taskId}: Access denied`);
+        }
+      } else {
+        const projectName = row.Project || row.project;
+        let projectId = projectNameMap.get(projectName?.toLowerCase());
+        
+        if (!projectId && projects.length > 0) {
+          projectId = projects[0].id;
+        }
+        
+        if (projectId) {
+          await storage.createTask({
+            projectId,
+            title,
+            description,
+            priority: normalizedPriority,
+            isCompleted,
+            dueDate: dueDate ? new Date(dueDate) : null,
+            creatorId: userId,
+            columnId: null,
+            sortOrder: 0,
+            labels: [],
+          });
+          created++;
+        }
+      }
+    } catch (err: any) {
+      errors.push(err.message);
+    }
+  }
+  
+  res.json({ updated, created, errors: errors.slice(0, 10) });
+}));
+
 export default router;

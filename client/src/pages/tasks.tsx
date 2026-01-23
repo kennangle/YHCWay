@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { ListTodo, Plus, RefreshCw, Calendar, Flag, CheckCircle2, Circle, Clock, Filter, ChevronDown, ChevronRight, FolderKanban, MoreHorizontal, ArrowRight, Link2 } from "lucide-react";
+import { useState, useRef } from "react";
+import { ListTodo, Plus, RefreshCw, Calendar, Flag, CheckCircle2, Circle, Clock, Filter, ChevronDown, ChevronRight, FolderKanban, MoreHorizontal, ArrowRight, Link2, Download, Upload } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
@@ -54,6 +54,8 @@ export default function Tasks() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
   const [newTask, setNewTask] = useState({ title: "", description: "", priority: "medium", dueDate: "", assigneeId: "" });
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: tasks = [], isLoading: tasksLoading, isFetching, refetch } = useQuery<Task[]>({
     queryKey: ["all-tasks"],
@@ -246,6 +248,81 @@ export default function Tasks() {
     }
   };
 
+  const handleDownloadCSV = async () => {
+    try {
+      const res = await fetch("/api/tasks/export/csv", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to export tasks");
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `tasks_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast({ title: "Tasks exported", description: "Your tasks have been downloaded as a CSV file." });
+    } catch (error) {
+      toast({ title: "Export failed", description: "Failed to export tasks.", variant: "destructive" });
+    }
+  };
+
+  const handleUploadCSV = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    setIsUploading(true);
+    try {
+      const text = await file.text();
+      const lines = text.split('\n').filter(line => line.trim());
+      if (lines.length < 2) {
+        throw new Error("CSV file is empty or has no data rows");
+      }
+      
+      const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+      const rows = lines.slice(1).map(line => {
+        const values: string[] = [];
+        let current = '';
+        let inQuotes = false;
+        for (const char of line) {
+          if (char === '"') inQuotes = !inQuotes;
+          else if (char === ',' && !inQuotes) {
+            values.push(current.trim().replace(/^"|"$/g, ''));
+            current = '';
+          } else {
+            current += char;
+          }
+        }
+        values.push(current.trim().replace(/^"|"$/g, ''));
+        
+        const row: Record<string, string> = {};
+        headers.forEach((h, i) => { row[h] = values[i] || ''; });
+        return row;
+      });
+      
+      const res = await fetch("/api/tasks/import/csv", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ rows }),
+      });
+      
+      if (!res.ok) throw new Error("Failed to import tasks");
+      const result = await res.json();
+      
+      queryClient.invalidateQueries({ queryKey: ["all-tasks"] });
+      toast({ 
+        title: "Tasks imported", 
+        description: `Updated ${result.updated} tasks, created ${result.created} new tasks.${result.errors?.length ? ` ${result.errors.length} errors.` : ''}` 
+      });
+    } catch (error: any) {
+      toast({ title: "Import failed", description: error.message || "Failed to import tasks.", variant: "destructive" });
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   const isLoading = tasksLoading;
 
   return (
@@ -271,6 +348,31 @@ export default function Tasks() {
               </div>
             </div>
             <div className="flex gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv"
+                onChange={handleUploadCSV}
+                className="hidden"
+                data-testid="input-upload-csv"
+              />
+              <button
+                onClick={handleDownloadCSV}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/80 hover:bg-white transition-colors shadow-sm border border-gray-200"
+                title="Download tasks as spreadsheet"
+                data-testid="button-download-csv"
+              >
+                <Download className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/80 hover:bg-white transition-colors shadow-sm border border-gray-200 disabled:opacity-50"
+                title="Upload modified spreadsheet"
+                data-testid="button-upload-csv"
+              >
+                <Upload className={`w-4 h-4 ${isUploading ? 'animate-pulse' : ''}`} />
+              </button>
               <button
                 onClick={() => refetch()}
                 disabled={isFetching}
