@@ -224,6 +224,8 @@ export interface IStorage {
   getChangelogEntryByHash(hash: string): Promise<ChangelogEntry | undefined>;
   getLastSyncedCommitHash(): Promise<string | null>;
   updateLastSyncedCommitHash(hash: string): Promise<void>;
+  getUnannouncedChangelogEntries(): Promise<ChangelogEntry[]>;
+  markChangelogEntriesAnnounced(ids: number[]): Promise<void>;
   
   // Integration API keys
   getIntegrationApiKey(userId: string, integrationName: string): Promise<IntegrationApiKey | undefined>;
@@ -1060,6 +1062,20 @@ export class DbStorage implements IStorage {
     } else {
       await db.insert(changelogSyncState).values({ lastCommitHash: hash });
     }
+  }
+
+  async getUnannouncedChangelogEntries(): Promise<ChangelogEntry[]> {
+    return db.select()
+      .from(changelogEntries)
+      .where(isNull(changelogEntries.announcedAt))
+      .orderBy(desc(changelogEntries.entryDate));
+  }
+
+  async markChangelogEntriesAnnounced(ids: number[]): Promise<void> {
+    if (ids.length === 0) return;
+    await db.update(changelogEntries)
+      .set({ announcedAt: new Date() })
+      .where(inArray(changelogEntries.id, ids));
   }
 
   async getIntegrationApiKey(userId: string, integrationName: string): Promise<IntegrationApiKey | undefined> {
