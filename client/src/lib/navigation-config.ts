@@ -53,13 +53,13 @@ export const navigationTabs: NavTab[] = [
     icon: LayoutDashboard,
     href: "/dashboard",
     items: [
-      { id: "scoreboard", icon: BarChart3, label: "Scoreboard", href: "/scoreboard" },
-      { id: "intro-offers", icon: Gift, label: "Intro Offers", href: "/intro-offers" },
       { id: "mailbox", icon: Mail, label: "Mailbox", href: "/inbox" },
       { id: "calendar", icon: Calendar, label: "Calendar", href: "/calendar" },
       { id: "daily-hub", icon: ClipboardList, label: "Daily Hub", href: "/daily-hub" },
-      { id: "tasks", icon: ListTodo, label: "Tasks", href: "/tasks" },
+      { id: "intro-offers", icon: Gift, label: "Intro Offers", href: "/intro-offers" },
       { id: "projects", icon: FolderKanban, label: "Projects", href: "/projects" },
+      { id: "tasks", icon: ListTodo, label: "Tasks", href: "/tasks" },
+      { id: "scoreboard", icon: BarChart3, label: "Scoreboard", href: "/scoreboard" },
     ],
   },
   {
