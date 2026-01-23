@@ -143,4 +143,65 @@ app.use((req, res, next) => {
       console.error("[NotificationCleanup] Initial cleanup error:", error);
     }
   }, 10000); // 10 seconds after startup
+  
+  // Daily announcement scheduler - runs at 5 PM PST (UTC-8)
+  // Check every minute if it's time to send daily announcements
+  let lastAnnouncementDate = "";
+  setInterval(async () => {
+    try {
+      const now = new Date();
+      const pstOffset = -8 * 60; // PST is UTC-8
+      const pstTime = new Date(now.getTime() + (pstOffset + now.getTimezoneOffset()) * 60000);
+      const hour = pstTime.getHours();
+      const dateStr = pstTime.toISOString().split('T')[0];
+      
+      // Run at 5 PM PST (17:00) and only once per day
+      if (hour === 17 && lastAnnouncementDate !== dateStr) {
+        lastAnnouncementDate = dateStr;
+        log(`[DailyAnnouncement] Running daily announcement for ${dateStr}`);
+        
+        // Get unannounced changelog entries
+        const entries = await storage.getUnannouncedChangelogEntries();
+        
+        if (entries.length > 0) {
+          // Group by type
+          const features = entries.filter(e => e.entryType === 'feature');
+          const fixes = entries.filter(e => e.entryType === 'fix');
+          const changes = entries.filter(e => e.entryType !== 'feature' && e.entryType !== 'fix');
+          
+          // Build announcement body
+          const parts: string[] = [];
+          if (features.length > 0) {
+            parts.push(`New Features: ${features.map(f => f.summary).join('; ')}`);
+          }
+          if (fixes.length > 0) {
+            parts.push(`Bug Fixes: ${fixes.map(f => f.summary).join('; ')}`);
+          }
+          if (changes.length > 0) {
+            parts.push(`Changes: ${changes.map(c => c.summary).join('; ')}`);
+          }
+          
+          const body = parts.join(' | ');
+          const formattedDate = pstTime.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+          
+          // Broadcast to all users
+          const count = await storage.broadcastAnnouncement({
+            type: 'daily.summary',
+            title: `Daily Update: ${formattedDate}`,
+            body,
+            metadata: { date: dateStr, entriesCount: entries.length },
+          });
+          
+          // Mark entries as announced
+          await storage.markChangelogEntriesAnnounced(entries.map(e => e.id));
+          
+          log(`[DailyAnnouncement] Sent announcement to ${count} users with ${entries.length} changelog entries`);
+        } else {
+          log(`[DailyAnnouncement] No unannounced changelog entries for ${dateStr}`);
+        }
+      }
+    } catch (error) {
+      console.error("[DailyAnnouncement] Error:", error);
+    }
+  }, 60 * 1000); // Check every minute
 })();
