@@ -113,11 +113,23 @@ router.patch("/:id", asyncHandler(async (req: any, res: any) => {
       validatedData.assigneeId !== userId) {
     const assignee = await storage.getUser(validatedData.assigneeId);
     const prefs = await storage.getNotificationPreferences(validatedData.assigneeId);
+    const project = task.projectId ? await storage.getProject(task.projectId) : null;
+    const projectName = project?.name || 'No Project';
+    const assignerName = req.user.firstName || req.user.email?.split('@')[0] || 'Someone';
+    
+    storage.createUserNotification({
+      tenantId: req.tenantId || null,
+      userId: validatedData.assigneeId,
+      type: 'task.assigned',
+      title: `New task assigned: ${task.title}`,
+      body: `${assignerName} assigned you to "${task.title}"${projectName !== 'No Project' ? ` in ${projectName}` : ''}`,
+      resourceType: 'task',
+      resourceId: String(task.id),
+      actorId: userId,
+      metadata: { taskId: task.id, projectId: task.projectId, projectName },
+    }).catch(err => console.error("Failed to create task notification:", err));
     
     if (assignee?.email && (prefs?.emailTaskAssigned !== false)) {
-      const project = task.projectId ? await storage.getProject(task.projectId) : null;
-      const projectName = project?.name || 'No Project';
-      const assignerName = req.user.firstName || req.user.email?.split('@')[0] || 'Someone';
       const baseUrl = process.env.REPL_SLUG ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co` : 'http://localhost:5000';
       const taskUrl = `${baseUrl}/projects/${task.projectId}`;
       

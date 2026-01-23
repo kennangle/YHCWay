@@ -129,6 +129,9 @@ import {
   type InsertDailyHubEntry,
   type DailyHubPinnedAnnouncement,
   type InsertDailyHubPinnedAnnouncement,
+  userNotifications,
+  type UserNotification,
+  type InsertUserNotification,
   loginAttempts,
   emailVerificationTokens,
   twoFactorSecrets,
@@ -527,6 +530,15 @@ export interface IStorage {
   createPinnedAnnouncement(data: InsertDailyHubPinnedAnnouncement): Promise<DailyHubPinnedAnnouncement>;
   updatePinnedAnnouncement(id: number, data: Partial<InsertDailyHubPinnedAnnouncement>): Promise<DailyHubPinnedAnnouncement | undefined>;
   deletePinnedAnnouncement(id: number): Promise<void>;
+  
+  // User Notifications (in-app alerts)
+  createUserNotification(data: Omit<InsertUserNotification, 'id' | 'createdAt'>): Promise<UserNotification>;
+  getUserNotifications(userId: string, options?: { unreadOnly?: boolean; limit?: number; tenantId?: string }): Promise<(UserNotification & { actor?: User })[]>;
+  markUserNotificationRead(id: string, userId: string, tenantId?: string): Promise<UserNotification | undefined>;
+  dismissUserNotification(id: string, userId: string, tenantId?: string): Promise<UserNotification | undefined>;
+  markAllUserNotificationsRead(userId: string, tenantId?: string): Promise<void>;
+  getUnreadUserNotificationCount(userId: string, tenantId?: string): Promise<number>;
+  cleanupExpiredUserNotifications(): Promise<number>;
 }
 
 export class DbStorage implements IStorage {
@@ -3131,6 +3143,120 @@ export class DbStorage implements IStorage {
       .where(eq(twoFactorSecrets.userId, userId));
     
     return true;
+  }
+
+  // User Notifications
+  async createUserNotification(data: Omit<InsertUserNotification, 'id' | 'createdAt'>): Promise<UserNotification> {
+    const expiresAt = data.expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const [notification] = await db
+      .insert(userNotifications)
+      .values({ ...data, expiresAt })
+      .returning();
+    return notification;
+  }
+
+  async getUserNotifications(
+    userId: string, 
+    options?: { unreadOnly?: boolean; limit?: number; tenantId?: string }
+  ): Promise<(UserNotification & { actor?: User })[]> {
+    const now = new Date();
+    const conditions = [
+      eq(userNotifications.userId, userId),
+      isNull(userNotifications.dismissedAt),
+      or(isNull(userNotifications.expiresAt), gte(userNotifications.expiresAt, now)),
+    ];
+    
+    if (options?.unreadOnly) {
+      conditions.push(isNull(userNotifications.readAt));
+    }
+    if (options?.tenantId) {
+      conditions.push(eq(userNotifications.tenantId, options.tenantId));
+    }
+    
+    const results = await db
+      .select({
+        notification: userNotifications,
+        actor: users,
+      })
+      .from(userNotifications)
+      .leftJoin(users, eq(userNotifications.actorId, users.id))
+      .where(and(...conditions))
+      .orderBy(desc(userNotifications.createdAt))
+      .limit(options?.limit || 50);
+    
+    return results.map(r => ({
+      ...r.notification,
+      actor: r.actor || undefined,
+    }));
+  }
+
+  async markUserNotificationRead(id: string, userId: string, tenantId?: string): Promise<UserNotification | undefined> {
+    const conditions = [eq(userNotifications.id, id), eq(userNotifications.userId, userId)];
+    if (tenantId) {
+      conditions.push(eq(userNotifications.tenantId, tenantId));
+    }
+    const [notification] = await db
+      .update(userNotifications)
+      .set({ readAt: new Date() })
+      .where(and(...conditions))
+      .returning();
+    return notification;
+  }
+
+  async dismissUserNotification(id: string, userId: string, tenantId?: string): Promise<UserNotification | undefined> {
+    const conditions = [eq(userNotifications.id, id), eq(userNotifications.userId, userId)];
+    if (tenantId) {
+      conditions.push(eq(userNotifications.tenantId, tenantId));
+    }
+    const [notification] = await db
+      .update(userNotifications)
+      .set({ dismissedAt: new Date() })
+      .where(and(...conditions))
+      .returning();
+    return notification;
+  }
+
+  async markAllUserNotificationsRead(userId: string, tenantId?: string): Promise<void> {
+    const conditions = [eq(userNotifications.userId, userId), isNull(userNotifications.readAt)];
+    if (tenantId) {
+      conditions.push(eq(userNotifications.tenantId, tenantId));
+    }
+    await db
+      .update(userNotifications)
+      .set({ readAt: new Date() })
+      .where(and(...conditions));
+  }
+
+  async getUnreadUserNotificationCount(userId: string, tenantId?: string): Promise<number> {
+    const now = new Date();
+    const conditions = [
+      eq(userNotifications.userId, userId),
+      isNull(userNotifications.readAt),
+      isNull(userNotifications.dismissedAt),
+      or(isNull(userNotifications.expiresAt), gte(userNotifications.expiresAt, now)),
+    ];
+    if (tenantId) {
+      conditions.push(eq(userNotifications.tenantId, tenantId));
+    }
+    
+    const result = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(userNotifications)
+      .where(and(...conditions));
+    
+    return result[0]?.count || 0;
+  }
+
+  async cleanupExpiredUserNotifications(): Promise<number> {
+    const now = new Date();
+    const result = await db
+      .delete(userNotifications)
+      .where(and(
+        lt(userNotifications.expiresAt, now),
+        isNull(userNotifications.dismissedAt)
+      ))
+      .returning();
+    return result.length;
   }
 }
 

@@ -150,12 +150,31 @@ router.post("/:id/members", asyncHandler(async (req: any, res: any) => {
     throw new ValidationError("Invalid project ID");
   }
   
+  const requesterId = req.user?.claims?.sub || req.user?.id;
   const { userId, role } = req.body;
   if (!userId) {
     throw new ValidationError("userId is required");
   }
   
   const member = await storage.addProjectMember(projectId, userId, role);
+  
+  if (userId !== requesterId) {
+    const project = await storage.getProject(projectId);
+    const requesterName = req.user?.firstName || req.user?.email?.split('@')[0] || 'Someone';
+    
+    storage.createUserNotification({
+      tenantId: req.tenantId || null,
+      userId: userId,
+      type: 'project.member_added',
+      title: `Added to project: ${project?.name || 'Untitled'}`,
+      body: `${requesterName} added you to the project "${project?.name || 'Untitled'}"`,
+      resourceType: 'project',
+      resourceId: String(projectId),
+      actorId: requesterId,
+      metadata: { projectId, projectName: project?.name, role },
+    }).catch(err => console.error("Failed to create project member notification:", err));
+  }
+  
   res.status(201).json(member);
 }));
 

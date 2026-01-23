@@ -7682,6 +7682,96 @@ export async function registerRoutes(
     }
   });
 
+  // ==========================================================================
+  // USER NOTIFICATIONS ROUTES
+  // ==========================================================================
+  
+  app.get("/api/notifications", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id || req.user?.claims?.sub;
+      const tenantId = req.tenantId;
+      const unreadOnly = req.query.unreadOnly === "true";
+      const limit = parseInt(req.query.limit as string) || 20;
+      
+      const notifications = await storage.getUserNotifications(userId, {
+        unreadOnly,
+        limit,
+        tenantId,
+      });
+      
+      res.json({ notifications });
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      res.status(500).json({ error: "Failed to fetch notifications" });
+    }
+  });
+  
+  app.get("/api/notifications/count", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id || req.user?.claims?.sub;
+      const tenantId = req.tenantId;
+      
+      const count = await storage.getUnreadUserNotificationCount(userId, tenantId);
+      
+      res.json({ count });
+    } catch (error) {
+      console.error("Error fetching notification count:", error);
+      res.status(500).json({ error: "Failed to fetch notification count" });
+    }
+  });
+  
+  app.post("/api/notifications/:id/read", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id || req.user?.claims?.sub;
+      const tenantId = req.tenantId;
+      const { id } = req.params;
+      
+      const notification = await storage.markUserNotificationRead(id, userId, tenantId);
+      
+      if (!notification) {
+        return res.status(404).json({ error: "Notification not found" });
+      }
+      
+      res.json({ notification });
+    } catch (error) {
+      console.error("Error marking notification read:", error);
+      res.status(500).json({ error: "Failed to mark notification read" });
+    }
+  });
+  
+  app.post("/api/notifications/:id/dismiss", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id || req.user?.claims?.sub;
+      const tenantId = req.tenantId;
+      const { id } = req.params;
+      
+      const notification = await storage.dismissUserNotification(id, userId, tenantId);
+      
+      if (!notification) {
+        return res.status(404).json({ error: "Notification not found" });
+      }
+      
+      res.json({ notification });
+    } catch (error) {
+      console.error("Error dismissing notification:", error);
+      res.status(500).json({ error: "Failed to dismiss notification" });
+    }
+  });
+  
+  app.post("/api/notifications/mark-all-read", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id || req.user?.claims?.sub;
+      const tenantId = req.tenantId;
+      
+      await storage.markAllUserNotificationsRead(userId, tenantId);
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking all notifications read:", error);
+      res.status(500).json({ error: "Failed to mark all notifications read" });
+    }
+  });
+
   // Global error handler - normalizes error responses
   app.use(globalErrorHandler);
 

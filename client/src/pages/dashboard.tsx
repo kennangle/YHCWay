@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DraggableDashboard, getDefaultWidgets, WidgetConfig, WidgetId } from "@/components/draggable-dashboard";
 import { TimeTrackerWidget } from "@/components/time-tracker-widget";
 import { AIAssistantPanel } from "@/components/ai-assistant-panel";
+import { NotificationsBanner } from "@/components/notifications-banner";
 import { Brain } from "lucide-react";
 import { toast } from "sonner";
 
@@ -685,7 +686,7 @@ export default function Dashboard() {
             <p className="text-muted-foreground font-medium mb-1">{today} · {timeStr}</p>
             <h1 className="font-display font-bold text-3xl">{getGreeting()}, {userName}</h1>
           </div>
-          <div className="flex gap-4">
+          <div className="flex gap-4" data-testid="header-actions">
             <button 
               onClick={handleRefresh}
               disabled={isRefreshing}
@@ -786,6 +787,9 @@ export default function Dashboard() {
             </div>
           </div>
         </header>
+
+        {/* Notifications Banner */}
+        <NotificationsBanner />
 
         {/* Draggable Widget Dashboard */}
         <DraggableDashboard 

@@ -1473,3 +1473,57 @@ export const createPinnedAnnouncementSchema = z.object({
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Start date must be in YYYY-MM-DD format"),
   endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "End date must be in YYYY-MM-DD format").optional(),
 });
+
+// =============================================================================
+// USER NOTIFICATIONS
+// =============================================================================
+
+export const NotificationType = {
+  TASK_ASSIGNED: "task.assigned",
+  TASK_ADDED_TO_PROJECT: "task.added_to_project",
+  TASK_COMMENT: "task.comment",
+  PROJECT_MEMBER_ADDED: "project.member_added",
+  MENTION: "mention",
+} as const;
+export type NotificationTypeValue = typeof NotificationType[keyof typeof NotificationType];
+
+export const userNotifications = pgTable("user_notifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").references(() => tenants.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  type: varchar("type").notNull(),
+  title: varchar("title").notNull(),
+  body: text("body"),
+  resourceType: varchar("resource_type"),
+  resourceId: varchar("resource_id"),
+  metadata: jsonb("metadata"),
+  actorId: varchar("actor_id").references(() => users.id),
+  readAt: timestamp("read_at"),
+  dismissedAt: timestamp("dismissed_at"),
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("notifications_user_tenant_idx").on(table.userId, table.tenantId),
+  index("notifications_unread_idx").on(table.userId, table.readAt, table.dismissedAt),
+  index("notifications_expires_idx").on(table.expiresAt),
+]);
+
+export type UserNotification = typeof userNotifications.$inferSelect;
+export type InsertUserNotification = typeof userNotifications.$inferInsert;
+
+export const insertUserNotificationSchema = createInsertSchema(userNotifications).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const createUserNotificationSchema = z.object({
+  userId: z.string(),
+  type: z.string(),
+  title: z.string().min(1),
+  body: z.string().optional(),
+  resourceType: z.string().optional(),
+  resourceId: z.string().optional(),
+  metadata: z.record(z.any()).optional(),
+  actorId: z.string().optional(),
+  expiresAt: z.date().optional(),
+});

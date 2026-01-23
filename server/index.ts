@@ -4,6 +4,7 @@ import { serveStatic } from "./static";
 import { createServer } from "http";
 import { setupWebSocket } from "./websocket";
 import { startOutboxWorkerInBackground } from "./outboxWorker";
+import { storage } from "./storage";
 
 const app = express();
 const httpServer = createServer(app);
@@ -118,4 +119,28 @@ app.use((req, res, next) => {
       log(`serving on port ${port}`);
     },
   );
+  
+  // Schedule expired notification cleanup every hour
+  setInterval(async () => {
+    try {
+      const count = await storage.cleanupExpiredUserNotifications();
+      if (count > 0) {
+        log(`[NotificationCleanup] Removed ${count} expired notifications`);
+      }
+    } catch (error) {
+      console.error("[NotificationCleanup] Error:", error);
+    }
+  }, 60 * 60 * 1000); // Run every hour
+  
+  // Also run cleanup on startup (after a short delay)
+  setTimeout(async () => {
+    try {
+      const count = await storage.cleanupExpiredUserNotifications();
+      if (count > 0) {
+        log(`[NotificationCleanup] Initial cleanup removed ${count} expired notifications`);
+      }
+    } catch (error) {
+      console.error("[NotificationCleanup] Initial cleanup error:", error);
+    }
+  }, 10000); // 10 seconds after startup
 })();
