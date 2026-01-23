@@ -4,7 +4,7 @@ import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_back
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -605,6 +605,7 @@ export default function Tasks() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Create New Task</DialogTitle>
+            <DialogDescription>Add a new task to your project</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div>
@@ -647,12 +648,12 @@ export default function Tasks() {
             </div>
             <div>
               <Label htmlFor="task-assignee">Assignee (optional)</Label>
-              <Select value={newTask.assigneeId} onValueChange={(v) => setNewTask({ ...newTask, assigneeId: v })}>
+              <Select value={newTask.assigneeId || "unassigned"} onValueChange={(v) => setNewTask({ ...newTask, assigneeId: v === "unassigned" ? "" : v })}>
                 <SelectTrigger data-testid="select-assignee">
                   <SelectValue placeholder="Assign to someone" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Unassigned</SelectItem>
+                  <SelectItem value="unassigned">Unassigned</SelectItem>
                   {users.map((user) => (
                     <SelectItem key={user.id} value={user.id}>
                       {user.firstName || user.lastName 
