@@ -36,6 +36,8 @@ import { isGoogleDriveConnected, listDriveFiles, listGoogleDocsViaDrive, listGoo
 import { monitoring, trackOperation } from "./monitoring";
 import { cache, TTL, getCached, setCache, invalidateGmailCache, getCacheStats } from "./cache";
 import { apiLimiter, gmailLimiter } from "./rate-limiter";
+import { globalErrorHandler, AppError, ExternalServiceError } from "./errors";
+import { registerModularRoutes } from "./routes/index";
 
 const isAdmin: RequestHandler = async (req: any, res, next) => {
   try {
@@ -62,6 +64,9 @@ export async function registerRoutes(
   await setupAuth(app);
   
   app.use(tenantMiddleware);
+  
+  // Register modular routes (v2 API) with improved error handling
+  registerModularRoutes(app, isAuthenticated, isAdmin);
 
   // Configure multer for chat file uploads
   const chatUploadsDir = path.join(process.cwd(), "uploads", "chat");
@@ -7676,6 +7681,9 @@ export async function registerRoutes(
       res.status(500).json({ error: "Failed to resend verification email" });
     }
   });
+
+  // Global error handler - normalizes error responses
+  app.use(globalErrorHandler);
 
   return httpServer;
 }
