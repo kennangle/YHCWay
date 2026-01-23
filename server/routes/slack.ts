@@ -221,7 +221,8 @@ router.get("/connect", asyncHandler(async (req: any, res: any) => {
   }
   
   const appUrl = process.env.APP_URL || 'https://yhcway.com';
-  const redirectUri = `${appUrl}/api/v2/slack/callback`;
+  // Use V1 callback URL for backward compatibility with Slack app settings
+  const redirectUri = `${appUrl}/api/slack/callback`;
   
   const userScopes = [
     'channels:read',

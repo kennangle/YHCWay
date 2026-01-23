@@ -79,7 +79,12 @@ The application includes enterprise-ready infrastructure components:
 - Trust proxy enabled for proper IP detection
 
 **Modular Routes (V2 API)**
-- Located in `server/routes/` folder with domain-specific modules (admin.ts, gmail.ts)
+- Located in `server/routes/` folder with domain-specific modules:
+  - `admin.ts` - Admin management routes
+  - `gmail.ts` - Gmail/email routes
+  - `tasks.ts` - Task management routes (27+ endpoints)
+  - `slack.ts` - Slack integration routes (17 endpoints)
+  - `projects.ts` - Project management routes (15 endpoints)
 - V2 endpoints registered at `/api/v2/*` with centralized error handling
 - Error utilities in `server/errors.ts`: AppError, asyncHandler, globalErrorHandler
 - User-friendly error messages for external service failures
