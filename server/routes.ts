@@ -7772,6 +7772,49 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/notifications/grouped", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id || req.user?.claims?.sub;
+      const unreadOnly = req.query.unreadOnly === "true";
+      const limit = parseInt(req.query.limit as string) || 10;
+      
+      const groups = await storage.getNotificationGroups(userId, { unreadOnly, limit });
+      
+      res.json({ groups });
+    } catch (error) {
+      console.error("Error fetching notification groups:", error);
+      res.status(500).json({ error: "Failed to fetch notification groups" });
+    }
+  });
+
+  app.post("/api/notifications/groups/:id/read", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id || req.user?.claims?.sub;
+      const groupId = parseInt(req.params.id);
+      
+      await storage.markNotificationGroupRead(userId, groupId);
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking group read:", error);
+      res.status(500).json({ error: "Failed to mark group as read" });
+    }
+  });
+
+  app.post("/api/notifications/groups/:id/dismiss", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id || req.user?.claims?.sub;
+      const groupId = parseInt(req.params.id);
+      
+      await storage.dismissNotificationGroup(userId, groupId);
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error dismissing group:", error);
+      res.status(500).json({ error: "Failed to dismiss notification group" });
+    }
+  });
+
   app.post("/api/admin/announcements/broadcast", isAuthenticated, isAdmin, async (req: any, res) => {
     try {
       const { type, title, body, metadata } = req.body;
