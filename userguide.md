@@ -712,6 +712,25 @@ Get AI-powered task rankings:
 
 ---
 
+## For Developers: Running Tests
+
+The YHC Way includes automated tests to ensure code quality.
+
+### Test Commands
+
+- **npm test** - Run all tests once
+- **npm run test:watch** - Run tests in development mode (auto-rerun on file changes)
+- **npm run test:coverage** - Generate a coverage report
+
+### What's Tested
+
+- Cache module functionality
+- Authentication validation
+- Task dependency logic
+- API route patterns
+
+---
+
 ## Getting Help
 
 If you have questions or run into issues:

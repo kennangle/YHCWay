@@ -44,6 +44,20 @@ The application includes:
 - **Modular Routes**: V2 API routes organized by domain (admin, gmail, tasks, slack, projects) with centralized error handling and OAuth callback protection.
 - **Testing Infrastructure**: Vitest for unit and integration tests, including coverage reporting.
 
+### Testing Infrastructure
+
+The application uses Vitest for automated testing with the following commands:
+
+- `npm test` - Run all tests once
+- `npm run test:watch` - Run tests in watch mode (auto-rerun on file changes)
+- `npm run test:coverage` - Run tests with coverage report
+
+Test files are located in the `tests/` directory:
+- `tests/unit/server/cache.test.ts` - Cache module tests (TTL, getOrFetch, invalidation)
+- `tests/unit/server/auth.test.ts` - Authentication validation tests (password, email)
+- `tests/unit/server/task-dependencies.test.ts` - Circular dependency detection
+- `tests/integration/api.test.ts` - API route pattern and error handling tests
+
 ## External Dependencies
 
 ### Database
