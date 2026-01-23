@@ -881,6 +881,23 @@ export const createCommentSchema = z.object({
   content: z.string().min(1, "Comment cannot be empty"),
 });
 
+// Task attachments table - for files attached to tasks
+export const taskAttachments = pgTable("task_attachments", {
+  id: serial("id").primaryKey(),
+  taskId: integer("task_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
+  uploaderId: varchar("uploader_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  fileName: varchar("file_name", { length: 255 }).notNull(),
+  fileSize: integer("file_size").notNull(),
+  contentType: varchar("content_type", { length: 128 }),
+  objectPath: varchar("object_path", { length: 512 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_attachment_task").on(table.taskId),
+]);
+
+export type TaskAttachment = typeof taskAttachments.$inferSelect;
+export type InsertTaskAttachment = typeof taskAttachments.$inferInsert;
+
 // Task collaborators table - for sharing tasks with multiple team members
 export const taskCollaborators = pgTable("task_collaborators", {
   id: serial("id").primaryKey(),

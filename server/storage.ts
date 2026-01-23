@@ -43,6 +43,8 @@ import {
   type InsertTaskSubtask,
   type TaskComment,
   type InsertTaskComment,
+  type TaskAttachment,
+  type InsertTaskAttachment,
   type TaskCollaborator,
   type ProjectMember,
   type NotificationPreference,
@@ -100,6 +102,7 @@ import {
   tasks,
   taskSubtasks,
   taskComments,
+  taskAttachments,
   taskCollaborators,
   projectMembers,
   notificationPreferences,
@@ -365,6 +368,11 @@ export interface IStorage {
   createTaskComment(taskId: number, authorId: string, content: string): Promise<TaskComment>;
   updateTaskComment(id: number, content: string): Promise<TaskComment | undefined>;
   deleteTaskComment(id: number): Promise<void>;
+  
+  // Task attachments
+  getTaskAttachments(taskId: number): Promise<(TaskAttachment & { uploader: User })[]>;
+  createTaskAttachment(data: InsertTaskAttachment): Promise<TaskAttachment>;
+  deleteTaskAttachment(id: number): Promise<void>;
   
   // Task collaborators (sharing tasks with team members)
   getTaskCollaborators(taskId: number): Promise<(TaskCollaborator & { user: User })[]>;
