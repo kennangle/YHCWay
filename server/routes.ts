@@ -7772,6 +7772,28 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/admin/announcements/broadcast", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { type, title, body, metadata } = req.body;
+      
+      if (!title) {
+        return res.status(400).json({ error: "Title is required" });
+      }
+      
+      const count = await storage.broadcastAnnouncement({
+        type: type || "announcement",
+        title,
+        body,
+        metadata,
+      });
+      
+      res.json({ success: true, usersNotified: count });
+    } catch (error) {
+      console.error("Error broadcasting announcement:", error);
+      res.status(500).json({ error: "Failed to broadcast announcement" });
+    }
+  });
+
   // Global error handler - normalizes error responses
   app.use(globalErrorHandler);
 

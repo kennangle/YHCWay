@@ -539,6 +539,7 @@ export interface IStorage {
   markAllUserNotificationsRead(userId: string, tenantId?: string): Promise<void>;
   getUnreadUserNotificationCount(userId: string, tenantId?: string): Promise<number>;
   cleanupExpiredUserNotifications(): Promise<number>;
+  broadcastAnnouncement(data: { type: string; title: string; body?: string; metadata?: Record<string, any> }): Promise<number>;
 }
 
 export class DbStorage implements IStorage {
@@ -3257,6 +3258,31 @@ export class DbStorage implements IStorage {
       ))
       .returning();
     return result.length;
+  }
+
+  async broadcastAnnouncement(data: { type: string; title: string; body?: string; metadata?: Record<string, any> }): Promise<number> {
+    const allUsers = await db.select({ id: users.id }).from(users);
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 14);
+    
+    let count = 0;
+    for (const user of allUsers) {
+      await db.insert(userNotifications).values({
+        id: crypto.randomUUID(),
+        userId: user.id,
+        tenantId: null,
+        type: data.type,
+        title: data.title,
+        body: data.body || null,
+        resourceType: null,
+        resourceId: null,
+        metadata: data.metadata || null,
+        actorId: null,
+        expiresAt,
+      });
+      count++;
+    }
+    return count;
   }
 }
 
