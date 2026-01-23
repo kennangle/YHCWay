@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Mail, CheckSquare, Video, Reply, Check, ChevronDown, ChevronUp, ExternalLink, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
@@ -323,6 +323,9 @@ function EventCard({ event, zoomMeeting }: EventCardProps) {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Quick Reply</DialogTitle>
+            <DialogDescription>
+              Send a quick reply to this email without leaving the dashboard.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 pt-2">
             <div className="text-sm">

@@ -1576,7 +1576,7 @@ export const notificationGroups = pgTable("notification_groups", {
   title: text("title").notNull(),
   summary: text("summary"),
   itemCount: integer("item_count").default(1),
-  notificationIds: jsonb("notification_ids").$type<number[]>().default([]),
+  notificationIds: jsonb("notification_ids").$type<string[]>().default([]),
   priority: varchar("priority").default("normal"), // 'low', 'normal', 'high', 'urgent'
   metadata: jsonb("metadata"),
   lastUpdatedAt: timestamp("last_updated_at").defaultNow(),

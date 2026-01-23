@@ -32,7 +32,7 @@ interface NotificationGroup {
   title: string;
   summary: string | null;
   itemCount: number | null;
-  notificationIds: number[] | null;
+  notificationIds: string[] | null;
   priority: string | null;
   metadata: Record<string, any> | null;
   readAt: string | null;
@@ -375,7 +375,7 @@ export function NotificationsBanner() {
                   <div className="px-3 pb-3 pt-0 border-t border-border/30 ml-9">
                     <div className="space-y-1.5 pt-2">
                       {notifications
-                        .filter(n => group.notificationIds?.includes(parseInt(n.id)))
+                        .filter(n => group.notificationIds?.includes(n.id))
                         .slice(0, 5)
                         .map((notification) => {
                           const notifLink = getNotificationLink(notification);
