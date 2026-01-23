@@ -7,6 +7,19 @@ The YHC Way is a unified workspace application designed to centralize productivi
 Preferred communication style: Simple, everyday language.
 Documentation updates (!updatedocumentation): Include both technical documentation and User Guide sections.
 
+## Daily Announcement Process
+**IMPORTANT**: At the end of each working session (or at 5 PM PST if session is active), create a notification announcement summarizing:
+- New features added that day
+- Modifications or changes made
+- Bug fixes implemented
+
+Use the admin broadcast endpoint (`POST /api/admin/announcements/broadcast`) or direct SQL insert to `user_notifications` table with:
+- type: `'daily.summary'`
+- title: `'Daily Update: [Date]'`
+- body: Summary of changes
+- tenant_id: NULL (global announcement)
+- expires_at: 14 days from creation
+
 ## System Architecture
 
 ### Frontend
