@@ -3389,21 +3389,19 @@ export class DbStorage implements IStorage {
 
   // Notification groups
   async getNotificationGroups(userId: string, options?: { unreadOnly?: boolean; limit?: number }): Promise<NotificationGroup[]> {
-    let query = db
-      .select()
-      .from(notificationGroups)
-      .where(
-        and(
-          eq(notificationGroups.userId, userId),
-          isNull(notificationGroups.dismissedAt)
-        )
-      );
+    const conditions = [
+      eq(notificationGroups.userId, userId),
+      isNull(notificationGroups.dismissedAt),
+    ];
     
     if (options?.unreadOnly) {
-      query = query.where(isNull(notificationGroups.readAt)) as typeof query;
+      conditions.push(isNull(notificationGroups.readAt));
     }
     
-    return await query
+    return await db
+      .select()
+      .from(notificationGroups)
+      .where(and(...conditions))
       .orderBy(desc(notificationGroups.lastUpdatedAt))
       .limit(options?.limit || 50);
   }

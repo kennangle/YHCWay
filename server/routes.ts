@@ -7883,6 +7883,189 @@ export async function registerRoutes(
     }
   });
 
+  // =============================================================================
+  // Cross-Service Insights API
+  // =============================================================================
+
+  app.get("/api/insights/event/:eventId", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      const { eventId } = req.params;
+      
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const correlations = await storage.getCorrelationsForEvent(userId, eventId);
+      
+      const emails = correlations
+        .filter(c => c.relatedType === 'email')
+        .map(c => ({
+          id: c.relatedId,
+          subject: c.relatedTitle,
+          from: (c.metadata as any)?.from || '',
+          snippet: (c.metadata as any)?.snippet || '',
+          score: c.correlationScore,
+          reason: c.correlationReason,
+        }));
+      
+      const tasks = correlations
+        .filter(c => c.relatedType === 'task')
+        .map(c => ({
+          id: parseInt(c.relatedId),
+          title: c.relatedTitle,
+          priority: (c.metadata as any)?.priority || 'medium',
+          dueDate: (c.metadata as any)?.dueDate,
+          score: c.correlationScore,
+          reason: c.correlationReason,
+        }));
+      
+      res.json({ emails, tasks });
+    } catch (error) {
+      console.error("Error fetching event insights:", error);
+      res.status(500).json({ error: "Failed to fetch event insights" });
+    }
+  });
+
+  app.post("/api/insights/compute", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      const { event, emails = [], tasks = [] } = req.body;
+      
+      if (!userId || !event) {
+        return res.status(400).json({ error: "Event data is required" });
+      }
+      
+      const { correlationService } = await import("./services/correlations");
+      const result = await correlationService.getOrComputeCorrelations(userId, event, emails, tasks);
+      
+      res.json({
+        emails: result.emails.map(e => ({
+          id: e.email.id,
+          subject: e.email.subject,
+          from: e.email.from,
+          snippet: e.email.snippet,
+          score: e.score,
+          reason: e.reason,
+        })),
+        tasks: result.tasks.map(t => ({
+          id: t.task.id,
+          title: t.task.title,
+          priority: t.task.priority,
+          dueDate: t.task.dueDate,
+          score: t.score,
+          reason: t.reason,
+        })),
+      });
+    } catch (error) {
+      console.error("Error computing insights:", error);
+      res.status(500).json({ error: "Failed to compute insights" });
+    }
+  });
+
+  app.get("/api/insights/day/:date", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      const { date } = req.params;
+      
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const correlations = await storage.getCorrelationsByDate(userId, new Date(date));
+      
+      const grouped = correlations.reduce((acc, c) => {
+        if (!acc[c.primaryId]) {
+          acc[c.primaryId] = {
+            eventId: c.primaryId,
+            eventTitle: c.primaryTitle,
+            eventDate: c.primaryDate,
+            emails: [],
+            tasks: [],
+          };
+        }
+        if (c.relatedType === 'email') {
+          acc[c.primaryId].emails.push({
+            id: c.relatedId,
+            subject: c.relatedTitle,
+            score: c.correlationScore,
+          });
+        } else if (c.relatedType === 'task') {
+          acc[c.primaryId].tasks.push({
+            id: parseInt(c.relatedId),
+            title: c.relatedTitle,
+            score: c.correlationScore,
+          });
+        }
+        return acc;
+      }, {} as Record<string, any>);
+      
+      res.json({ events: Object.values(grouped) });
+    } catch (error) {
+      console.error("Error fetching day insights:", error);
+      res.status(500).json({ error: "Failed to fetch day insights" });
+    }
+  });
+
+  // =============================================================================
+  // Notification Groups API
+  // =============================================================================
+
+  app.get("/api/notification-groups", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      const { unreadOnly, limit } = req.query;
+      
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const groups = await storage.getNotificationGroups(userId, {
+        unreadOnly: unreadOnly === 'true',
+        limit: limit ? parseInt(limit) : undefined,
+      });
+      
+      res.json({ groups });
+    } catch (error) {
+      console.error("Error fetching notification groups:", error);
+      res.status(500).json({ error: "Failed to fetch notification groups" });
+    }
+  });
+
+  app.post("/api/notification-groups/:id/read", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      const groupId = parseInt(req.params.id);
+      
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      await storage.markNotificationGroupRead(userId, groupId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking group read:", error);
+      res.status(500).json({ error: "Failed to mark group read" });
+    }
+  });
+
+  app.post("/api/notification-groups/:id/dismiss", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      const groupId = parseInt(req.params.id);
+      
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      await storage.dismissNotificationGroup(userId, groupId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error dismissing group:", error);
+      res.status(500).json({ error: "Failed to dismiss group" });
+    }
+  });
+
   // Global error handler - normalizes error responses
   app.use(globalErrorHandler);
 
