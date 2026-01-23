@@ -4,6 +4,7 @@ import { Bell, X, Check, CheckCheck, ExternalLink, ChevronDown, ChevronUp, Layer
 import { formatDistanceToNow } from "date-fns";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface UserNotification {
   id: string;
@@ -98,12 +99,20 @@ export function NotificationsBanner() {
         method: "POST",
         credentials: "include",
       });
-      if (!res.ok) throw new Error("Failed to dismiss");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to dismiss");
+      }
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
       queryClient.invalidateQueries({ queryKey: ["/api/notifications/count"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications/grouped"] });
+    },
+    onError: (error) => {
+      console.error("Dismiss error:", error);
+      toast.error("Could not dismiss notification");
     },
   });
 
