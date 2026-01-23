@@ -547,7 +547,7 @@ export default function Inbox() {
         </div>
 
         <div className={`flex gap-4 ${filter === 'gmail' ? '' : ''}`}>
-          {filter === 'gmail' && (
+          {filter === 'gmail' && selectedAccountId !== null && (
             <div className="flex-shrink-0">
               <div className="flex items-center gap-2 mb-2">
                 <button

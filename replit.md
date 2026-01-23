@@ -78,6 +78,14 @@ The application includes enterprise-ready infrastructure components:
 - Secure cookie settings: httpOnly, secure, sameSite=none, partitioned
 - Trust proxy enabled for proper IP detection
 
+**Modular Routes (V2 API)**
+- Located in `server/routes/` folder with domain-specific modules (admin.ts, gmail.ts)
+- V2 endpoints registered at `/api/v2/*` with centralized error handling
+- Error utilities in `server/errors.ts`: AppError, asyncHandler, globalErrorHandler
+- User-friendly error messages for external service failures
+- OAuth callbacks protected by signed state tokens (not session auth)
+- V1 routes remain at `/api/*` for backward compatibility during migration
+
 ## External Dependencies
 
 ### Database
