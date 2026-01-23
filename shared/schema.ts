@@ -1347,6 +1347,7 @@ export const changelogEntries = pgTable("changelog_entries", {
   entryType: varchar("entry_type").default("other"),
   entryDate: timestamp("entry_date").notNull(),
   isManual: boolean("is_manual").default(false),
+  announcedAt: timestamp("announced_at"),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
   index("changelog_by_date").on(table.entryDate),
