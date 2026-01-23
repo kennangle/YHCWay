@@ -641,57 +641,96 @@ Zoom meetings include a **Join** button for quick access to your video calls dir
 
 ## AI Assistant
 
-The YHC Way includes a powerful AI Assistant to help you work smarter. Access it by clicking the **brain icon** in the bottom-right corner of your screen.
+The YHC Way includes a powerful AI Assistant to help you work smarter and save time on routine tasks. Access it by clicking the **brain icon** in the bottom-right corner of your screen.
+
+> For a comprehensive guide, see the dedicated [AI Assistant User Guide](ai_assistant_userguide.md).
+
+### Getting Started
+
+1. Click the **brain icon** (bottom-right corner of your screen)
+2. The AI Assistant panel opens with multiple tabs
+3. Select the feature you want to use
+4. Your last-used tab is remembered between sessions
 
 ### Available Features
 
 **Daily Briefing**
-Get a personalized morning summary including:
-- Your tasks for the day
-- Upcoming meetings
+Start your day with a personalized summary:
+- Your priority tasks for the day
+- Upcoming meetings with context
 - Urgent messages that need attention
+- Key deadlines and reminders
+
+*Best used: First thing in the morning or after breaks*
 
 **Smart Search**
 Search across all your connected services using natural language:
 - "Find emails about the budget proposal"
 - "What meetings do I have this week?"
 - "Show me tasks assigned to me"
+- "What did Sarah email me about last Friday?"
+
+*Best used: When looking for information across multiple services*
 
 **Email Drafting**
 Compose professional emails quickly:
-1. Describe what you want to say
-2. The AI generates a draft
-3. Click **Copy** to use it in your email client
+1. Describe what you want to say in plain language
+2. The AI generates a polished draft
+3. Review and edit as needed
+4. Click **Copy** to paste into your email client
+
+*Best used: When you need to write professional responses quickly*
 
 **Task Generation**
-Extract actionable tasks from content:
-- Paste an email or meeting notes
-- The AI identifies action items
-- Create tasks directly from the suggestions
+Extract actionable tasks from any content:
+- Paste an email, meeting notes, or any text
+- The AI identifies action items automatically
+- Review the suggested tasks
+- Create them directly in your project boards
+
+*Best used: After meetings or when processing email backlogs*
 
 **Meeting Prep**
-Get ready for meetings:
-1. Select an upcoming meeting
-2. Get a summary of related emails, tasks, and Slack discussions
-3. Walk into every meeting prepared
+Walk into every meeting prepared:
+1. Select an upcoming meeting from your calendar
+2. Get a summary of:
+   - Related emails and threads
+   - Open tasks involving attendees
+   - Recent Slack discussions
+   - Previous meeting notes
+3. Review key talking points
+
+*Best used: 10-15 minutes before important meetings*
 
 **Calendar Optimization**
-Analyze your schedule:
+Analyze and improve your schedule:
 - Identify overloaded days
 - Find opportunities for focus time
-- Get suggestions for better time management
+- Spot back-to-back meeting patterns
+- Get suggestions for better time blocking
+
+*Best used: Weekly planning sessions*
 
 **Task Prioritization**
-Get AI-powered task rankings:
-- Based on urgency and importance
-- Considers due dates and dependencies
-- Helps you focus on what matters most
+Get AI-powered task rankings based on:
+- Urgency and due dates
+- Task importance and impact
+- Dependencies on other tasks
+- Your current workload
 
-### Tips for the AI Assistant
+*Best used: When you have many tasks and need to focus*
+
+### Tips for Success
 
 - **Copy buttons** - Click the copy icon next to any AI-generated content to copy it to your clipboard
 - **Tab memory** - Your last-used tab is remembered between sessions
-- **Service connection** - If a service isn't connected, the AI will show a helpful message explaining what's needed
+- **Be specific** - The more context you provide, the better the AI can help
+- **Service connection** - Connect Gmail, Calendar, Slack, and Asana for the best experience
+- **Regular use** - Daily Briefings work best when used consistently
+
+### Privacy Note
+
+The AI Assistant processes your data securely and only accesses services you've connected. No data is stored beyond your session unless you explicitly save it (like creating a task).
 
 ---
 
