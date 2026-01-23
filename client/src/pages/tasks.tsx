@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { ListTodo, Plus, RefreshCw, Calendar, Flag, CheckCircle2, Circle, Clock, Filter, ChevronDown, ChevronRight, FolderKanban, MoreHorizontal, ArrowRight, Link2, Download, Upload } from "lucide-react";
+import { ListTodo, Plus, RefreshCw, Calendar, Flag, CheckCircle2, Circle, Clock, Filter, ChevronDown, ChevronRight, FolderKanban, MoreHorizontal, ArrowRight, Link2, Download, Upload, ArrowUpDown } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
@@ -45,12 +45,15 @@ interface User {
 }
 
 type FilterType = "all" | "today" | "upcoming" | "overdue" | "completed";
+type GroupByType = "project" | "priority";
 
 export default function Tasks() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [filter, setFilter] = useState<FilterType>("all");
+  const [groupBy, setGroupBy] = useState<GroupByType>("project");
   const [expandedProjects, setExpandedProjects] = useState<Set<number>>(new Set());
+  const [expandedPriorities, setExpandedPriorities] = useState<Set<string>>(new Set(["high", "medium", "low"]));
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
   const [newTask, setNewTask] = useState({ title: "", description: "", priority: "medium", dueDate: "", assigneeId: "" });
@@ -205,6 +208,37 @@ export default function Tasks() {
     acc[projectId].push(task);
     return acc;
   }, {} as Record<number, Task[]>);
+
+  const priorityOrder = ["high", "medium", "low"];
+  const priorityLabels: Record<string, string> = {
+    high: "High Priority",
+    medium: "Medium Priority", 
+    low: "Low Priority"
+  };
+  const priorityColors: Record<string, string> = {
+    high: "#ef4444",
+    medium: "#f59e0b",
+    low: "#22c55e"
+  };
+
+  const tasksByPriority = filteredTasks.reduce((acc, task) => {
+    const priority = task.priority || "medium";
+    if (!acc[priority]) acc[priority] = [];
+    acc[priority].push(task);
+    return acc;
+  }, {} as Record<string, Task[]>);
+
+  const togglePriority = (priority: string) => {
+    setExpandedPriorities(prev => {
+      const next = new Set(prev);
+      if (next.has(priority)) {
+        next.delete(priority);
+      } else {
+        next.add(priority);
+      }
+      return next;
+    });
+  };
 
   const toggleProject = (projectId: number) => {
     setExpandedProjects(prev => {
@@ -393,7 +427,7 @@ export default function Tasks() {
             </div>
           </header>
 
-          <div className="flex gap-2 mb-6 flex-wrap">
+          <div className="flex gap-2 mb-6 flex-wrap items-center">
             {[
               { id: "all", label: "Active", icon: Circle },
               { id: "today", label: "Today", icon: Clock },
@@ -415,6 +449,21 @@ export default function Tasks() {
                 {label}
               </button>
             ))}
+            
+            <div className="ml-auto">
+              <button
+                onClick={() => setGroupBy(groupBy === "project" ? "priority" : "project")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-colors ${
+                  groupBy === "priority"
+                    ? "bg-primary text-white shadow-sm"
+                    : "bg-white/80 text-muted-foreground hover:bg-white"
+                }`}
+                data-testid="toggle-group-by"
+              >
+                <ArrowUpDown className="w-4 h-4" />
+                {groupBy === "priority" ? "By Priority" : "By Project"}
+              </button>
+            </div>
           </div>
 
           <div className="glass-panel rounded-2xl p-6">
@@ -453,7 +502,7 @@ export default function Tasks() {
                   </Button>
                 )}
               </div>
-            ) : (
+            ) : groupBy === "project" ? (
               <div className="space-y-4">
                 {Object.entries(tasksByProject).map(([projectIdStr, projectTasks]) => {
                   const projectId = parseInt(projectIdStr);
@@ -518,6 +567,154 @@ export default function Tasks() {
                                     <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${getPriorityColor(task.priority)}`}>
                                       {task.priority}
                                     </span>
+                                    {dueInfo && (
+                                      <span className={`text-xs px-2 py-0.5 rounded-full ${dueInfo.className}`}>
+                                        {dueInfo.text}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Link href={`/projects/${task.projectId}`}>
+                                    <Button variant="ghost" size="sm" className="text-muted-foreground">
+                                      View
+                                    </Button>
+                                  </Link>
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0" data-testid={`task-menu-${task.id}`}>
+                                        <MoreHorizontal className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuSub>
+                                        <DropdownMenuSubTrigger>
+                                          <ArrowRight className="mr-2 h-4 w-4" />
+                                          Move to project
+                                        </DropdownMenuSubTrigger>
+                                        <DropdownMenuPortal>
+                                          <DropdownMenuSubContent>
+                                            {projects.filter(p => p.id !== task.projectId).map(p => (
+                                              <DropdownMenuItem
+                                                key={p.id}
+                                                onClick={() => moveTaskMutation.mutate({ taskId: task.id, projectId: p.id })}
+                                                data-testid={`move-task-${task.id}-to-${p.id}`}
+                                              >
+                                                <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: p.color }} />
+                                                {p.name}
+                                              </DropdownMenuItem>
+                                            ))}
+                                            {projects.filter(p => p.id !== task.projectId).length === 0 && (
+                                              <DropdownMenuItem disabled>No other projects</DropdownMenuItem>
+                                            )}
+                                          </DropdownMenuSubContent>
+                                        </DropdownMenuPortal>
+                                      </DropdownMenuSub>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuSub>
+                                        <DropdownMenuSubTrigger>
+                                          <Link2 className="mr-2 h-4 w-4" />
+                                          Add to project
+                                        </DropdownMenuSubTrigger>
+                                        <DropdownMenuPortal>
+                                          <DropdownMenuSubContent>
+                                            {projects.filter(p => p.id !== task.projectId).map(p => (
+                                              <DropdownMenuItem
+                                                key={p.id}
+                                                onClick={() => linkTaskMutation.mutate({ taskId: task.id, projectId: p.id })}
+                                                data-testid={`link-task-${task.id}-to-${p.id}`}
+                                              >
+                                                <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: p.color }} />
+                                                {p.name}
+                                              </DropdownMenuItem>
+                                            ))}
+                                            {projects.filter(p => p.id !== task.projectId).length === 0 && (
+                                              <DropdownMenuItem disabled>No other projects</DropdownMenuItem>
+                                            )}
+                                          </DropdownMenuSubContent>
+                                        </DropdownMenuPortal>
+                                      </DropdownMenuSub>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {priorityOrder.map(priority => {
+                  const priorityTasks = tasksByPriority[priority] || [];
+                  if (priorityTasks.length === 0) return null;
+                  const isExpanded = expandedPriorities.has(priority);
+
+                  return (
+                    <div key={priority} className="border rounded-xl overflow-hidden">
+                      <button
+                        onClick={() => togglePriority(priority)}
+                        className="w-full flex items-center gap-3 p-4 bg-white/50 hover:bg-white/80 transition-colors"
+                        data-testid={`priority-header-${priority}`}
+                      >
+                        {isExpanded ? (
+                          <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                        ) : (
+                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                        )}
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: priorityColors[priority] }}
+                        />
+                        <span className="font-medium">{priorityLabels[priority]}</span>
+                        <span className="text-sm text-muted-foreground">({priorityTasks.length})</span>
+                      </button>
+
+                      {isExpanded && (
+                        <div className="divide-y">
+                          {priorityTasks.map(task => {
+                            const dueInfo = formatDueDate(task.dueDate);
+                            const project = projects.find(p => p.id === task.projectId);
+                            return (
+                              <div
+                                key={task.id}
+                                className="flex items-start gap-4 p-4 hover:bg-white/50 transition-colors"
+                                data-testid={`task-item-${task.id}`}
+                              >
+                                <button
+                                  onClick={() => toggleTaskMutation.mutate({ taskId: task.id, isCompleted: !task.isCompleted })}
+                                  className={`w-5 h-5 rounded-full border-2 flex-shrink-0 mt-0.5 transition-colors ${
+                                    task.isCompleted
+                                      ? "bg-green-500 border-green-500"
+                                      : "border-gray-300 hover:border-primary"
+                                  }`}
+                                  data-testid={`toggle-task-${task.id}`}
+                                >
+                                  {task.isCompleted && (
+                                    <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  )}
+                                </button>
+                                <div className="flex-1 min-w-0">
+                                  <p className={`font-medium ${task.isCompleted ? "line-through text-muted-foreground" : ""}`}>
+                                    {task.title}
+                                  </p>
+                                  {task.description && (
+                                    <p className="text-sm text-muted-foreground line-clamp-1 mt-1">
+                                      {task.description}
+                                    </p>
+                                  )}
+                                  <div className="flex items-center gap-2 mt-2 flex-wrap">
+                                    {project && (
+                                      <span className="text-xs px-2 py-0.5 rounded-full bg-white/80 border flex items-center gap-1">
+                                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: project.color }} />
+                                        {project.name}
+                                      </span>
+                                    )}
                                     {dueInfo && (
                                       <span className={`text-xs px-2 py-0.5 rounded-full ${dueInfo.className}`}>
                                         {dueInfo.text}
