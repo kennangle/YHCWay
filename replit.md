@@ -14,6 +14,13 @@ Documentation updates (!updatedocumentation): Include both technical documentati
 ### Frontend Architecture
 The frontend is built with React 18 and TypeScript, utilizing Wouter for routing and TanStack React Query for state management. Styling is handled by Tailwind CSS v4, implementing a custom glassmorphism design system. UI components are sourced from shadcn/ui (New York style) based on Radix UI primitives. Vite serves as the build tool. The architecture is page-based, featuring a dashboard, service connection management, settings, and an admin panel.
 
+**Rich Text Editor** (`client/src/components/rich-text-editor.tsx`)
+- Built with Tiptap editor framework
+- Supports Image extension with file picker for uploading images (base64 encoded)
+- Supports Table extension for structured layouts (tables, rows, cells)
+- Used for email signatures and email composition
+- Images auto-sized to 120px max width for professional appearance
+
 ### Backend Architecture
 The backend is an Express.js application with TypeScript, providing a RESTful JSON API. Session management uses `express-session` with a PostgreSQL store. Authentication is managed via Replit Auth using OpenID Connect and Passport.js. The server serves both API routes and static frontend assets in production.
 
@@ -87,7 +94,7 @@ The application includes enterprise-ready infrastructure components:
 - **shadcn/ui**: UI component library.
 
 ### Service Integrations
-- **Gmail & Google Calendar**: Via Google APIs for email and calendar management.
+- **Gmail & Google Calendar**: Via Google APIs for email and calendar management. Supports multiple Gmail accounts per user with OAuth-based authentication. Account-specific label fetching via `getGmailLabelsForUser()` with account isolation enforced server-side.
 - **Slack**: Bot token for channel/DM access and message retrieval.
 - **Zoom**: Server-to-server OAuth.
 - **Apple Calendar**: CalDAV via `tsdav` for calendar synchronization.
@@ -167,3 +174,55 @@ Dependencies use a "Finish to Start" relationship by default, meaning Task B can
 - Complete bottleneck tasks first to unblock the most work
 - Use the Dependency Tracker regularly to identify blocked work
 - Mark tasks complete as soon as they're done to update blocked task status
+
+### Email Signatures with Rich Formatting
+
+Create professional email signatures with logos, images, and structured layouts.
+
+#### Creating a Signature
+1. Go to Settings and scroll to the "Email Signature" section
+2. Use the rich text editor to format your signature
+3. Your signature is automatically appended to composed emails
+
+#### Adding Images and Logos
+1. In the signature editor, click the image icon in the toolbar
+2. Select an image file from your computer (PNG, JPG, GIF supported)
+3. Images are automatically sized to a maximum width of 120px for professional appearance
+4. You can add multiple images (e.g., company logo, social media icons)
+
+#### Using Tables for Structured Layouts
+1. Click the table icon in the toolbar to insert a table
+2. Tables are useful for creating side-by-side layouts (e.g., logo next to contact info)
+3. Tables display with dashed borders in the editor for visibility, but appear cleanly formatted in sent emails
+4. Resize columns by adjusting content or adding/removing cells
+
+#### Tips
+- Keep signatures concise and professional
+- Use tables to align logos with contact information
+- Test your signature by composing a test email to yourself
+- Images are embedded as base64, so they display without external hosting
+
+### Multi-Account Gmail Management
+
+Manage multiple Gmail accounts from a single inbox view.
+
+#### Viewing All Accounts
+- Select "All Accounts" from the account dropdown to see a unified inbox with emails from all connected accounts
+- When viewing all accounts, the folder/label sidebar is hidden since labels are account-specific
+
+#### Viewing a Specific Account
+1. Click the account dropdown at the top of the inbox
+2. Select the specific Gmail account you want to view
+3. The sidebar will show folders (Inbox, Sent, Trash) and custom labels for that account only
+4. Email filters and searches apply to the selected account
+
+#### Account Identification
+- Each email shows which account it belongs to with an account indicator
+- The account dropdown displays the email address for each connected account
+- Primary accounts are marked for easy identification
+
+#### Connecting Additional Gmail Accounts
+1. Go to Settings > Connected Services
+2. Click "Add Gmail Account" 
+3. Follow the Google authorization flow
+4. The new account will appear in the account dropdown
