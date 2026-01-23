@@ -1528,3 +1528,67 @@ export const createUserNotificationSchema = z.object({
   actorId: z.string().optional(),
   expiresAt: z.date().optional(),
 });
+
+// =============================================================================
+// CROSS-SERVICE CORRELATIONS (Links calendar events to related emails/tasks)
+// =============================================================================
+
+/**
+ * service_correlations = cached links between calendar events and related emails/tasks
+ * Helps surface contextual information without expensive real-time searches
+ */
+export const serviceCorrelations = pgTable("service_correlations", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  primaryType: varchar("primary_type").notNull(), // 'calendar_event'
+  primaryId: varchar("primary_id").notNull(), // Google Calendar event ID
+  primaryTitle: text("primary_title"),
+  primaryDate: timestamp("primary_date"),
+  relatedType: varchar("related_type").notNull(), // 'email', 'task', 'document'
+  relatedId: varchar("related_id").notNull(), // Gmail thread ID, task ID, etc
+  relatedTitle: text("related_title"),
+  correlationScore: integer("correlation_score").default(0), // Matching strength
+  correlationReason: varchar("correlation_reason"), // 'attendee_match', 'subject_match', 'time_proximity'
+  metadata: jsonb("metadata"), // Additional context
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("correlations_user_primary").on(table.userId, table.primaryType, table.primaryId),
+  index("correlations_user_date").on(table.userId, table.primaryDate),
+]);
+
+export type ServiceCorrelation = typeof serviceCorrelations.$inferSelect;
+export type InsertServiceCorrelation = typeof serviceCorrelations.$inferInsert;
+
+// =============================================================================
+// NOTIFICATION GROUPS (Aggregate related notifications)
+// =============================================================================
+
+/**
+ * notification_groups = groups of related notifications for smarter display
+ * Reduces notification fatigue by consolidating related updates
+ */
+export const notificationGroups = pgTable("notification_groups", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  groupKey: varchar("group_key").notNull(), // e.g., 'meeting:abc123' or 'thread:xyz456'
+  groupType: varchar("group_type").notNull(), // 'meeting_context', 'email_thread', 'task_updates'
+  title: text("title").notNull(),
+  summary: text("summary"),
+  itemCount: integer("item_count").default(1),
+  notificationIds: jsonb("notification_ids").$type<number[]>().default([]),
+  priority: varchar("priority").default("normal"), // 'low', 'normal', 'high', 'urgent'
+  metadata: jsonb("metadata"),
+  lastUpdatedAt: timestamp("last_updated_at").defaultNow(),
+  readAt: timestamp("read_at"),
+  dismissedAt: timestamp("dismissed_at"),
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("notification_groups_user").on(table.userId),
+  index("notification_groups_key").on(table.userId, table.groupKey),
+  index("notification_groups_unread").on(table.userId, table.readAt, table.dismissedAt),
+]);
+
+export type NotificationGroup = typeof notificationGroups.$inferSelect;
+export type InsertNotificationGroup = typeof notificationGroups.$inferInsert;

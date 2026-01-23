@@ -141,6 +141,12 @@ import {
   type InsertEmailVerificationToken,
   type TwoFactorSecret,
   type InsertTwoFactorSecret,
+  serviceCorrelations,
+  type ServiceCorrelation,
+  type InsertServiceCorrelation,
+  notificationGroups,
+  type NotificationGroup,
+  type InsertNotificationGroup,
 } from "@shared/schema";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq, desc, and, lt, isNull, sql, inArray, gte, lte, or, asc } from "drizzle-orm";
@@ -542,6 +548,20 @@ export interface IStorage {
   getUnreadUserNotificationCount(userId: string, tenantId?: string): Promise<number>;
   cleanupExpiredUserNotifications(): Promise<number>;
   broadcastAnnouncement(data: { type: string; title: string; body?: string; metadata?: Record<string, any> }): Promise<number>;
+  
+  // Cross-service correlations
+  getCorrelationsForEvent(userId: string, eventId: string): Promise<ServiceCorrelation[]>;
+  saveCorrelation(correlation: InsertServiceCorrelation): Promise<ServiceCorrelation>;
+  saveCorrelations(correlations: InsertServiceCorrelation[]): Promise<ServiceCorrelation[]>;
+  deleteCorrelationsForEvent(userId: string, eventId: string): Promise<void>;
+  getCorrelationsByDate(userId: string, date: Date): Promise<ServiceCorrelation[]>;
+  
+  // Notification groups
+  getNotificationGroups(userId: string, options?: { unreadOnly?: boolean; limit?: number }): Promise<NotificationGroup[]>;
+  getNotificationGroup(userId: string, groupKey: string): Promise<NotificationGroup | undefined>;
+  createOrUpdateNotificationGroup(data: InsertNotificationGroup): Promise<NotificationGroup>;
+  markNotificationGroupRead(userId: string, groupId: number): Promise<void>;
+  dismissNotificationGroup(userId: string, groupId: number): Promise<void>;
 }
 
 export class DbStorage implements IStorage {
@@ -3305,6 +3325,152 @@ export class DbStorage implements IStorage {
       count++;
     }
     return count;
+  }
+
+  // Cross-service correlations
+  async getCorrelationsForEvent(userId: string, eventId: string): Promise<ServiceCorrelation[]> {
+    return await db
+      .select()
+      .from(serviceCorrelations)
+      .where(
+        and(
+          eq(serviceCorrelations.userId, userId),
+          eq(serviceCorrelations.primaryId, eventId)
+        )
+      )
+      .orderBy(desc(serviceCorrelations.correlationScore));
+  }
+
+  async saveCorrelation(correlation: InsertServiceCorrelation): Promise<ServiceCorrelation> {
+    const [result] = await db
+      .insert(serviceCorrelations)
+      .values(correlation)
+      .returning();
+    return result;
+  }
+
+  async saveCorrelations(correlations: InsertServiceCorrelation[]): Promise<ServiceCorrelation[]> {
+    if (correlations.length === 0) return [];
+    return await db
+      .insert(serviceCorrelations)
+      .values(correlations)
+      .returning();
+  }
+
+  async deleteCorrelationsForEvent(userId: string, eventId: string): Promise<void> {
+    await db
+      .delete(serviceCorrelations)
+      .where(
+        and(
+          eq(serviceCorrelations.userId, userId),
+          eq(serviceCorrelations.primaryId, eventId)
+        )
+      );
+  }
+
+  async getCorrelationsByDate(userId: string, date: Date): Promise<ServiceCorrelation[]> {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+    
+    return await db
+      .select()
+      .from(serviceCorrelations)
+      .where(
+        and(
+          eq(serviceCorrelations.userId, userId),
+          gte(serviceCorrelations.primaryDate, startOfDay),
+          lte(serviceCorrelations.primaryDate, endOfDay)
+        )
+      )
+      .orderBy(asc(serviceCorrelations.primaryDate));
+  }
+
+  // Notification groups
+  async getNotificationGroups(userId: string, options?: { unreadOnly?: boolean; limit?: number }): Promise<NotificationGroup[]> {
+    let query = db
+      .select()
+      .from(notificationGroups)
+      .where(
+        and(
+          eq(notificationGroups.userId, userId),
+          isNull(notificationGroups.dismissedAt)
+        )
+      );
+    
+    if (options?.unreadOnly) {
+      query = query.where(isNull(notificationGroups.readAt)) as typeof query;
+    }
+    
+    return await query
+      .orderBy(desc(notificationGroups.lastUpdatedAt))
+      .limit(options?.limit || 50);
+  }
+
+  async getNotificationGroup(userId: string, groupKey: string): Promise<NotificationGroup | undefined> {
+    const [result] = await db
+      .select()
+      .from(notificationGroups)
+      .where(
+        and(
+          eq(notificationGroups.userId, userId),
+          eq(notificationGroups.groupKey, groupKey)
+        )
+      );
+    return result;
+  }
+
+  async createOrUpdateNotificationGroup(data: InsertNotificationGroup): Promise<NotificationGroup> {
+    const existing = await this.getNotificationGroup(data.userId, data.groupKey);
+    
+    if (existing) {
+      const [updated] = await db
+        .update(notificationGroups)
+        .set({
+          title: data.title,
+          summary: data.summary,
+          itemCount: (existing.itemCount || 0) + 1,
+          notificationIds: [...(existing.notificationIds || []), ...(data.notificationIds || [])],
+          priority: data.priority,
+          metadata: data.metadata,
+          lastUpdatedAt: new Date(),
+          readAt: null,
+        })
+        .where(eq(notificationGroups.id, existing.id))
+        .returning();
+      return updated;
+    }
+    
+    const [result] = await db
+      .insert(notificationGroups)
+      .values(data)
+      .returning();
+    return result;
+  }
+
+  async markNotificationGroupRead(userId: string, groupId: number): Promise<void> {
+    await db
+      .update(notificationGroups)
+      .set({ readAt: new Date() })
+      .where(
+        and(
+          eq(notificationGroups.id, groupId),
+          eq(notificationGroups.userId, userId)
+        )
+      );
+  }
+
+  async dismissNotificationGroup(userId: string, groupId: number): Promise<void> {
+    await db
+      .update(notificationGroups)
+      .set({ dismissedAt: new Date() })
+      .where(
+        and(
+          eq(notificationGroups.id, groupId),
+          eq(notificationGroups.userId, userId)
+        )
+      );
   }
 }
 
