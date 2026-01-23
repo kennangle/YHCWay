@@ -450,18 +450,31 @@ export default function Tasks() {
               </button>
             ))}
             
-            <div className="ml-auto">
+            <div className="ml-auto flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Group:</span>
               <button
-                onClick={() => setGroupBy(groupBy === "project" ? "priority" : "project")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-colors ${
+                onClick={() => setGroupBy("project")}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                  groupBy === "project"
+                    ? "bg-primary text-white shadow-sm"
+                    : "bg-white/80 text-muted-foreground hover:bg-white"
+                }`}
+                data-testid="group-by-project"
+              >
+                <FolderKanban className="w-3.5 h-3.5" />
+                Project
+              </button>
+              <button
+                onClick={() => setGroupBy("priority")}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
                   groupBy === "priority"
                     ? "bg-primary text-white shadow-sm"
                     : "bg-white/80 text-muted-foreground hover:bg-white"
                 }`}
-                data-testid="toggle-group-by"
+                data-testid="group-by-priority"
               >
-                <ArrowUpDown className="w-4 h-4" />
-                {groupBy === "priority" ? "By Priority" : "By Project"}
+                <Flag className="w-3.5 h-3.5" />
+                Priority
               </button>
             </div>
           </div>
