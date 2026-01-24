@@ -130,6 +130,27 @@ async function getUserNameCached(token: string, userId: string, cache: Record<st
   return cache[userId];
 }
 
+// Get display names for mpim (group DM) members
+async function getMpimMemberNames(token: string, channelId: string, cache: Record<string, string>): Promise<string> {
+  try {
+    const response = await fetch(`https://slack.com/api/conversations.members?channel=${channelId}&limit=20`, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+    });
+    const data = await response.json();
+    if (data.ok && data.members && data.members.length > 0) {
+      const names: string[] = [];
+      for (const memberId of data.members.slice(0, 10)) {
+        const name = await getUserNameCached(token, memberId, cache);
+        names.push(name);
+      }
+      return names.join(', ');
+    }
+  } catch (err) {
+    console.error('Error fetching mpim members:', err);
+  }
+  return 'Group DM';
+}
+
 export async function getDmConversations(userToken?: string): Promise<SlackDmConversation[]> {
   const token = userToken || await getSlackToken();
   
@@ -156,7 +177,7 @@ export async function getDmConversations(userToken?: string): Promise<SlackDmCon
     if (dm.is_im && dm.user) {
       name = await getUserNameCached(token, dm.user, userNameCache);
     } else if (dm.is_mpim) {
-      name = dm.name?.replace('mpdm-', '').replace(/-/g, ', ').replace('--', '') || 'Group DM';
+      name = await getMpimMemberNames(token, dm.id, userNameCache);
     }
     
     conversations.push({
@@ -231,8 +252,8 @@ export async function getDirectMessages(maxResults: number = 10, includeThreadRe
             userNameCache[dm.user] = await getUserName(token, dm.user);
           }
           dmName = userNameCache[dm.user];
-        } else if (dm.is_mpim && dm.name) {
-          dmName = dm.name.replace('mpdm-', '').replace('--', ', ');
+        } else if (dm.is_mpim) {
+          dmName = await getMpimMemberNames(token, dm.id, userNameCache);
         }
 
         for (const msg of historyData.messages) {
@@ -684,8 +705,8 @@ export async function getUserDirectMessages(userId: string, maxResults: number =
                 userNameCache[dm.user] = await getUserName(token, dm.user);
               }
               dmName = userNameCache[dm.user];
-            } else if (dm.is_mpim && dm.name) {
-              dmName = dm.name.replace('mpdm-', '').replace('--', ', ');
+            } else if (dm.is_mpim) {
+              dmName = await getMpimMemberNames(token, dm.id, userNameCache);
             }
 
             messages.push({
