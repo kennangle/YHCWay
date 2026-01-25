@@ -186,7 +186,8 @@ export default function Inbox() {
         console.error("Gmail fetch failed:", res.status, errorData);
         throw new Error(errorData.error || "Failed to load emails");
       }
-      return res.json();
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
     },
     retry: false,
   });
@@ -196,7 +197,8 @@ export default function Inbox() {
     queryFn: async () => {
       const res = await fetch("/api/slack/messages/filtered", { credentials: "include" });
       if (!res.ok) return [];
-      return res.json();
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
     },
     retry: false,
   });
@@ -206,7 +208,8 @@ export default function Inbox() {
     queryFn: async () => {
       const res = await fetch("/api/gmail/archived", { credentials: "include" });
       if (!res.ok) return [];
-      return res.json();
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
     },
     enabled: filter === 'archived',
     retry: false,
@@ -217,7 +220,8 @@ export default function Inbox() {
     queryFn: async () => {
       const res = await fetch("/api/gmail/sent", { credentials: "include" });
       if (!res.ok) return [];
-      return res.json();
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
     },
     enabled: filter === 'sent',
     retry: false,
@@ -228,7 +232,8 @@ export default function Inbox() {
     queryFn: async () => {
       const res = await fetch("/api/gmail/trash", { credentials: "include" });
       if (!res.ok) return [];
-      return res.json();
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
     },
     enabled: filter === 'trash',
     retry: false,
@@ -239,7 +244,8 @@ export default function Inbox() {
     queryFn: async () => {
       const res = await fetch(`/api/gmail/labels/${selectedGmailLabel}/messages`, { credentials: "include" });
       if (!res.ok) return [];
-      return res.json();
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
     },
     enabled: filter === 'gmail' && selectedGmailLabel !== null,
     retry: false,

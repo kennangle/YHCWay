@@ -272,7 +272,8 @@ export default function Dashboard() {
     queryFn: async () => {
       const res = await fetch("/api/feed");
       if (!res.ok) throw new Error("Failed to fetch feed items");
-      return res.json();
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
     },
   });
 
@@ -287,7 +288,8 @@ export default function Dashboard() {
         }
         throw new Error("Failed to fetch Gmail messages");
       }
-      return res.json();
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
     },
     retry: false,
   });
@@ -303,7 +305,8 @@ export default function Dashboard() {
         }
         throw new Error("Failed to fetch calendar events");
       }
-      return res.json();
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
     },
     retry: false,
   });
@@ -316,7 +319,8 @@ export default function Dashboard() {
         console.warn("Zoom integration not available");
         return [];
       }
-      return res.json();
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
     },
     retry: false,
   });
@@ -329,7 +333,8 @@ export default function Dashboard() {
         console.warn("Slack integration not available");
         return [];
       }
-      return res.json();
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
     },
     retry: false,
   });
@@ -342,7 +347,8 @@ export default function Dashboard() {
         console.warn("Asana integration not available");
         return [];
       }
-      return res.json();
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
     },
     retry: false,
   });
