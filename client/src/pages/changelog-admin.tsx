@@ -131,25 +131,51 @@ export default function ChangelogAdmin() {
     const changes = entriesToSummarize.filter(e => e.entryType === 'change');
     const others = entriesToSummarize.filter(e => !['feature', 'fix', 'improvement', 'change'].includes(e.entryType));
     
-    const sections: string[] = [];
+    const sentences: string[] = [];
     
     if (features.length > 0) {
-      sections.push(`New Features:\n${features.map(f => `• ${f.summary}`).join('\n')}`);
-    }
-    if (improvements.length > 0) {
-      sections.push(`Improvements:\n${improvements.map(f => `• ${f.summary}`).join('\n')}`);
-    }
-    if (fixes.length > 0) {
-      sections.push(`Bug Fixes:\n${fixes.map(f => `• ${f.summary}`).join('\n')}`);
-    }
-    if (changes.length > 0) {
-      sections.push(`Changes:\n${changes.map(c => `• ${c.summary}`).join('\n')}`);
-    }
-    if (others.length > 0) {
-      sections.push(`Other Updates:\n${others.map(o => `• ${o.summary}`).join('\n')}`);
+      if (features.length === 1) {
+        sentences.push(`We've added a new feature: ${features[0].summary.toLowerCase()}.`);
+      } else {
+        const lastFeature = features[features.length - 1].summary.toLowerCase();
+        const otherFeatures = features.slice(0, -1).map(f => f.summary.toLowerCase()).join(', ');
+        sentences.push(`We've added several new features including ${otherFeatures}, and ${lastFeature}.`);
+      }
     }
     
-    return sections.join('\n\n');
+    if (improvements.length > 0) {
+      if (improvements.length === 1) {
+        sentences.push(`We've improved ${improvements[0].summary.toLowerCase()}.`);
+      } else {
+        const items = improvements.map(i => i.summary.toLowerCase()).join(', ');
+        sentences.push(`We've made improvements to ${items}.`);
+      }
+    }
+    
+    if (fixes.length > 0) {
+      if (fixes.length === 1) {
+        sentences.push(`We've fixed an issue with ${fixes[0].summary.toLowerCase()}.`);
+      } else {
+        const items = fixes.map(f => f.summary.toLowerCase()).join(', ');
+        sentences.push(`We've resolved several issues including ${items}.`);
+      }
+    }
+    
+    if (changes.length > 0) {
+      if (changes.length === 1) {
+        sentences.push(`Additionally, ${changes[0].summary.toLowerCase()}.`);
+      } else {
+        const items = changes.map(c => c.summary.toLowerCase()).join(', ');
+        sentences.push(`Other changes include ${items}.`);
+      }
+    }
+    
+    if (others.length > 0) {
+      const items = others.map(o => o.summary.toLowerCase()).join(', ');
+      sentences.push(`Other updates: ${items}.`);
+    }
+    
+    return sentences.join(' ');
   };
 
   const copyToClipboard = async (text: string) => {
