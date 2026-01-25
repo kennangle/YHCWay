@@ -362,7 +362,7 @@ function EventCard({ event, zoomMeeting }: EventCardProps) {
 }
 
 export function UpcomingEventsWidget() {
-  const { data: calendarEvents = [], isLoading: eventsLoading } = useQuery<CalendarEvent[]>({
+  const { data: calendarEventsRaw = [], isLoading: eventsLoading } = useQuery<CalendarEvent[]>({
     queryKey: ["calendar-events"],
     queryFn: async () => {
       const res = await fetch("/api/calendar/events", { credentials: "include" });
@@ -375,7 +375,7 @@ export function UpcomingEventsWidget() {
     },
   });
 
-  const { data: zoomMeetings = [] } = useQuery<ZoomMeeting[]>({
+  const { data: zoomMeetingsRaw = [] } = useQuery<ZoomMeeting[]>({
     queryKey: ["zoom-meetings"],
     queryFn: async () => {
       const res = await fetch("/api/zoom/meetings", { credentials: "include" });
@@ -384,6 +384,9 @@ export function UpcomingEventsWidget() {
       return Array.isArray(data) ? data : [];
     },
   });
+
+  const calendarEvents = Array.isArray(calendarEventsRaw) ? calendarEventsRaw : [];
+  const zoomMeetings = Array.isArray(zoomMeetingsRaw) ? zoomMeetingsRaw : [];
 
   if (eventsLoading) {
     return <div className="text-center text-muted-foreground py-4">Loading events...</div>;

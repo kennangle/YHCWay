@@ -49,7 +49,7 @@ function isOverdue(dateStr: string | null): boolean {
 }
 
 export function UpcomingTasksWidget() {
-  const { data: nativeTasks = [], isLoading } = useQuery<NativeTask[]>({
+  const { data: nativeTasksRaw = [], isLoading } = useQuery<NativeTask[]>({
     queryKey: ["native-tasks-upcoming"],
     queryFn: async () => {
       const res = await fetch("/api/tasks/upcoming", { credentials: "include" });
@@ -59,6 +59,7 @@ export function UpcomingTasksWidget() {
     },
   });
 
+  const nativeTasks = Array.isArray(nativeTasksRaw) ? nativeTasksRaw : [];
   const upcomingTasks = nativeTasks.filter((t) => !t.isCompleted).slice(0, 8);
 
   if (isLoading) {

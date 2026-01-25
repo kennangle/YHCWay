@@ -59,7 +59,7 @@ function formatRelativeTime(date: Date): string {
 }
 
 export function ActivityFeedWidget() {
-  const { data: feedItems = [] } = useQuery<FeedItemType[]>({
+  const { data: feedItemsRaw = [] } = useQuery<FeedItemType[]>({
     queryKey: ["feed"],
     queryFn: async () => {
       const res = await fetch("/api/feed");
@@ -69,7 +69,7 @@ export function ActivityFeedWidget() {
     },
   });
 
-  const { data: gmailMessages = [] } = useQuery<GmailMessage[]>({
+  const { data: gmailMessagesRaw = [] } = useQuery<GmailMessage[]>({
     queryKey: ["gmail-messages"],
     queryFn: async () => {
       const res = await fetch("/api/gmail/messages", { credentials: "include" });
@@ -80,7 +80,7 @@ export function ActivityFeedWidget() {
     retry: false,
   });
 
-  const { data: slackMessages = [] } = useQuery<SlackMessage[]>({
+  const { data: slackMessagesRaw = [] } = useQuery<SlackMessage[]>({
     queryKey: ["slack-messages"],
     queryFn: async () => {
       const res = await fetch("/api/slack/messages", { credentials: "include" });
@@ -91,7 +91,7 @@ export function ActivityFeedWidget() {
     retry: false,
   });
 
-  const { data: zoomMeetings = [] } = useQuery<ZoomMeeting[]>({
+  const { data: zoomMeetingsRaw = [] } = useQuery<ZoomMeeting[]>({
     queryKey: ["zoom-meetings"],
     queryFn: async () => {
       const res = await fetch("/api/zoom/meetings", { credentials: "include" });
@@ -102,7 +102,7 @@ export function ActivityFeedWidget() {
     retry: false,
   });
 
-  const { data: introOffers = [] } = useQuery<IntroOffer[]>({
+  const { data: introOffersRaw = [] } = useQuery<IntroOffer[]>({
     queryKey: ["intro-offers-feed"],
     queryFn: async () => {
       const res = await fetch("/api/mindbody-analytics/intro-offers", { credentials: "include" });
@@ -111,6 +111,12 @@ export function ActivityFeedWidget() {
       return Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
     },
   });
+
+  const feedItems = Array.isArray(feedItemsRaw) ? feedItemsRaw : [];
+  const gmailMessages = Array.isArray(gmailMessagesRaw) ? gmailMessagesRaw : [];
+  const slackMessages = Array.isArray(slackMessagesRaw) ? slackMessagesRaw : [];
+  const zoomMeetings = Array.isArray(zoomMeetingsRaw) ? zoomMeetingsRaw : [];
+  const introOffers = Array.isArray(introOffersRaw) ? introOffersRaw : [];
 
   const unifiedFeed: UnifiedActivityItem[] = [
     ...gmailMessages.slice(0, 5).map((msg) => ({

@@ -24,7 +24,7 @@ interface NativeTask {
 }
 
 export function InsightsWidget() {
-  const { data: introOffers = [] } = useQuery<IntroOffer[]>({
+  const { data: introOffersRaw = [] } = useQuery<IntroOffer[]>({
     queryKey: ["intro-offers-feed"],
     queryFn: async () => {
       const res = await fetch("/api/mindbody-analytics/intro-offers", { credentials: "include" });
@@ -34,7 +34,7 @@ export function InsightsWidget() {
     },
   });
 
-  const { data: nativeTasks = [] } = useQuery<NativeTask[]>({
+  const { data: nativeTasksRaw = [] } = useQuery<NativeTask[]>({
     queryKey: ["native-tasks-upcoming"],
     queryFn: async () => {
       const res = await fetch("/api/tasks/upcoming", { credentials: "include" });
@@ -44,6 +44,8 @@ export function InsightsWidget() {
     },
   });
 
+  const introOffers = Array.isArray(introOffersRaw) ? introOffersRaw : [];
+  const nativeTasks = Array.isArray(nativeTasksRaw) ? nativeTasksRaw : [];
   const upcomingTasks = nativeTasks.filter((t) => !t.isCompleted);
 
   return (

@@ -23,7 +23,7 @@ interface IntroOffer {
 }
 
 export function ServiceSummaryWidget() {
-  const { data: gmailMessages = [], isLoading: gmailLoading } = useQuery<GmailMessage[]>({
+  const { data: gmailMessagesRaw = [] } = useQuery<GmailMessage[]>({
     queryKey: ["gmail-messages"],
     queryFn: async () => {
       const res = await fetch("/api/gmail/messages", { credentials: "include" });
@@ -34,7 +34,7 @@ export function ServiceSummaryWidget() {
     retry: false,
   });
 
-  const { data: slackMessages = [], isLoading: slackLoading } = useQuery<SlackMessage[]>({
+  const { data: slackMessagesRaw = [] } = useQuery<SlackMessage[]>({
     queryKey: ["slack-messages"],
     queryFn: async () => {
       const res = await fetch("/api/slack/messages", { credentials: "include" });
@@ -45,7 +45,7 @@ export function ServiceSummaryWidget() {
     retry: false,
   });
 
-  const { data: zoomMeetings = [], isLoading: zoomLoading } = useQuery<ZoomMeeting[]>({
+  const { data: zoomMeetingsRaw = [] } = useQuery<ZoomMeeting[]>({
     queryKey: ["zoom-meetings"],
     queryFn: async () => {
       const res = await fetch("/api/zoom/meetings", { credentials: "include" });
@@ -56,7 +56,7 @@ export function ServiceSummaryWidget() {
     retry: false,
   });
 
-  const { data: introOffers = [] } = useQuery<IntroOffer[]>({
+  const { data: introOffersRaw = [] } = useQuery<IntroOffer[]>({
     queryKey: ["intro-offers-feed"],
     queryFn: async () => {
       const res = await fetch("/api/mindbody-analytics/intro-offers", { credentials: "include" });
@@ -65,6 +65,14 @@ export function ServiceSummaryWidget() {
       return Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
     },
   });
+
+  const gmailMessages = Array.isArray(gmailMessagesRaw) ? gmailMessagesRaw : [];
+  const slackMessages = Array.isArray(slackMessagesRaw) ? slackMessagesRaw : [];
+  const zoomMeetings = Array.isArray(zoomMeetingsRaw) ? zoomMeetingsRaw : [];
+  const introOffers = Array.isArray(introOffersRaw) ? introOffersRaw : [];
+  const gmailLoading = false;
+  const slackLoading = false;
+  const zoomLoading = false;
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
