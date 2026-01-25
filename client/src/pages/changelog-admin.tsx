@@ -2,7 +2,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Redirect } from "wouter";
-import { Plus, Bell, Megaphone, Clock, CheckCircle, Sparkles, Bug, RefreshCw, Send, MessageSquarePlus } from "lucide-react";
+import { Plus, Bell, Megaphone, Clock, CheckCircle, Sparkles, Bug, RefreshCw, Send, MessageSquarePlus, Copy } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -122,6 +122,45 @@ export default function ChangelogAdmin() {
   const entries = entriesData?.entries || [];
   const unannounced = unannouncedData?.entries || [];
 
+  const generateConsolidatedSummary = (entriesToSummarize: ChangelogEntry[]) => {
+    if (entriesToSummarize.length === 0) return "";
+    
+    const features = entriesToSummarize.filter(e => e.entryType === 'feature');
+    const fixes = entriesToSummarize.filter(e => e.entryType === 'fix');
+    const improvements = entriesToSummarize.filter(e => e.entryType === 'improvement');
+    const changes = entriesToSummarize.filter(e => e.entryType === 'change');
+    const others = entriesToSummarize.filter(e => !['feature', 'fix', 'improvement', 'change'].includes(e.entryType));
+    
+    const sections: string[] = [];
+    
+    if (features.length > 0) {
+      sections.push(`New Features:\n${features.map(f => `• ${f.summary}`).join('\n')}`);
+    }
+    if (improvements.length > 0) {
+      sections.push(`Improvements:\n${improvements.map(f => `• ${f.summary}`).join('\n')}`);
+    }
+    if (fixes.length > 0) {
+      sections.push(`Bug Fixes:\n${fixes.map(f => `• ${f.summary}`).join('\n')}`);
+    }
+    if (changes.length > 0) {
+      sections.push(`Changes:\n${changes.map(c => `• ${c.summary}`).join('\n')}`);
+    }
+    if (others.length > 0) {
+      sections.push(`Other Updates:\n${others.map(o => `• ${o.summary}`).join('\n')}`);
+    }
+    
+    return sections.join('\n\n');
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({ title: "Copied!", description: "Summary copied to clipboard" });
+    } catch (err) {
+      toast({ title: "Copy failed", description: "Please select and copy manually", variant: "destructive" });
+    }
+  };
+
   const getTypeIcon = (type: string) => {
     switch (type) {
       case "feature": return <Sparkles className="w-4 h-4 text-green-600" />;
@@ -227,7 +266,27 @@ export default function ChangelogAdmin() {
           </TabsContent>
 
           <TabsContent value="changelog" className="space-y-4 mt-4">
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-2">
+              {entries.length > 0 && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => copyToClipboard(generateConsolidatedSummary(entries))}
+                  data-testid="button-copy-all-changelog"
+                >
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copy All ({entries.length})
+                </Button>
+              )}
+              {unannounced.length > 0 && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => copyToClipboard(generateConsolidatedSummary(unannounced))}
+                  data-testid="button-copy-pending-changelog"
+                >
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copy Pending ({unannounced.length})
+                </Button>
+              )}
               <Button onClick={() => setShowAddEntry(true)} data-testid="button-add-changelog">
                 <Plus className="w-4 h-4 mr-2" />
                 Add Entry
@@ -309,6 +368,7 @@ export default function ChangelogAdmin() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add Changelog Entry</DialogTitle>
+            <DialogDescription>Create a new changelog entry to track updates and changes.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 pt-4">
             <div>
