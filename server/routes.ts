@@ -7693,55 +7693,11 @@ export async function registerRoutes(
       const unreadOnly = req.query.unreadOnly === "true";
       const limit = parseInt(req.query.limit as string) || 20;
       
-      let notifications = await storage.getUserNotifications(userId, {
+      const notifications = await storage.getUserNotifications(userId, {
         unreadOnly,
         limit,
         tenantId,
       });
-      
-      // Auto-seed welcome notifications if user has none
-      if (notifications.length === 0) {
-        const welcomeNotifications = [
-          {
-            userId,
-            tenantId: tenantId || null,
-            type: "feature.announcement",
-            title: "Meet Your AI Assistant",
-            body: `Your AI Assistant is here to help you work smarter! Here's what it can do:
-
-• Daily Briefings - Get a personalized summary of your day including meetings, tasks, and important emails
-• Smart Search - Ask questions about your calendar, emails, and tasks in plain English
-• Email Drafting - Let AI help compose professional email responses
-• Task Generation - Automatically create tasks from emails or meeting notes
-• Meeting Preparation - Get briefings with attendee info and related documents before meetings
-• Calendar Optimization - Get suggestions for better scheduling and time management
-
-Click the AI Assistant button in the bottom right corner to get started!`,
-            metadata: { feature: "ai_assistant", version: "1.0" },
-            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-          },
-          {
-            userId,
-            tenantId: tenantId || null,
-            type: "announcement",
-            title: "Welcome to The YHC Way!",
-            body: "Your unified workspace is ready. Connect your services, customize your dashboard, and explore the features to boost your productivity.",
-            metadata: { feature: "welcome" },
-            expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
-          },
-        ];
-        
-        for (const notification of welcomeNotifications) {
-          await storage.createUserNotification(notification);
-        }
-        
-        // Fetch the newly created notifications
-        notifications = await storage.getUserNotifications(userId, {
-          unreadOnly,
-          limit,
-          tenantId,
-        });
-      }
       
       res.json({ notifications });
     } catch (error) {
