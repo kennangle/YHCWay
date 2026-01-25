@@ -123,6 +123,7 @@ export default function Calendar() {
       const res = await fetch(`/api/calendar/month/${currentDate.getFullYear()}/${currentDate.getMonth()}`, { credentials: "include" });
       if (!res.ok) return [];
       const events = await res.json();
+      if (!Array.isArray(events)) return [];
       return events.map((e: CalendarEvent) => ({ ...e, source: e.source || 'google' as const }));
     },
     retry: false,
@@ -134,6 +135,7 @@ export default function Calendar() {
       const res = await fetch(`/api/apple-calendar/month/${currentDate.getFullYear()}/${currentDate.getMonth()}`, { credentials: "include" });
       if (!res.ok) return [];
       const events = await res.json();
+      if (!Array.isArray(events)) return [];
       return events.map((e: any) => ({ 
         id: e.id,
         title: e.title,
@@ -158,7 +160,8 @@ export default function Calendar() {
     queryFn: async () => {
       const res = await fetch("/api/zoom/meetings", { credentials: "include" });
       if (!res.ok) return [];
-      return res.json();
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
     },
     retry: false,
   });

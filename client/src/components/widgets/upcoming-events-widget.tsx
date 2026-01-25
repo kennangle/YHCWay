@@ -370,7 +370,8 @@ export function UpcomingEventsWidget() {
         if (res.status === 500) return [];
         throw new Error("Failed to fetch calendar events");
       }
-      return res.json();
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
     },
   });
 
@@ -379,7 +380,8 @@ export function UpcomingEventsWidget() {
     queryFn: async () => {
       const res = await fetch("/api/zoom/meetings", { credentials: "include" });
       if (!res.ok) return [];
-      return res.json();
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
     },
   });
 

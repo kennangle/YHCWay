@@ -64,7 +64,8 @@ export function ActivityFeedWidget() {
     queryFn: async () => {
       const res = await fetch("/api/feed");
       if (!res.ok) return [];
-      return res.json();
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
     },
   });
 
@@ -73,7 +74,8 @@ export function ActivityFeedWidget() {
     queryFn: async () => {
       const res = await fetch("/api/gmail/messages", { credentials: "include" });
       if (!res.ok) return [];
-      return res.json();
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
     },
     retry: false,
   });
@@ -83,7 +85,8 @@ export function ActivityFeedWidget() {
     queryFn: async () => {
       const res = await fetch("/api/slack/messages", { credentials: "include" });
       if (!res.ok) return [];
-      return res.json();
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
     },
     retry: false,
   });
@@ -93,7 +96,8 @@ export function ActivityFeedWidget() {
     queryFn: async () => {
       const res = await fetch("/api/zoom/meetings", { credentials: "include" });
       if (!res.ok) return [];
-      return res.json();
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
     },
     retry: false,
   });
@@ -101,9 +105,10 @@ export function ActivityFeedWidget() {
   const { data: introOffers = [] } = useQuery<IntroOffer[]>({
     queryKey: ["intro-offers-feed"],
     queryFn: async () => {
-      const res = await fetch("/api/mindbody/intro-offers", { credentials: "include" });
+      const res = await fetch("/api/mindbody-analytics/intro-offers", { credentials: "include" });
       if (!res.ok) return [];
-      return res.json();
+      const data = await res.json();
+      return Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
     },
   });
 
