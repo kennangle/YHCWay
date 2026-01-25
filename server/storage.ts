@@ -2107,6 +2107,30 @@ export class DbStorage implements IStorage {
     await db.delete(taskComments).where(eq(taskComments.id, id));
   }
 
+  // Task attachments
+  async getTaskAttachments(taskId: number): Promise<(TaskAttachment & { uploader: User })[]> {
+    const results = await db.select()
+      .from(taskAttachments)
+      .innerJoin(users, eq(taskAttachments.uploaderId, users.id))
+      .where(eq(taskAttachments.taskId, taskId))
+      .orderBy(taskAttachments.createdAt);
+    return results.map(r => ({
+      ...r.task_attachments,
+      uploader: r.users,
+    }));
+  }
+
+  async createTaskAttachment(data: InsertTaskAttachment): Promise<TaskAttachment> {
+    const [attachment] = await db.insert(taskAttachments)
+      .values(data)
+      .returning();
+    return attachment;
+  }
+
+  async deleteTaskAttachment(id: number): Promise<void> {
+    await db.delete(taskAttachments).where(eq(taskAttachments.id, id));
+  }
+
   // Task collaborators
   async getTaskCollaborators(taskId: number): Promise<(TaskCollaborator & { user: User })[]> {
     const collaborators = await db.select()
@@ -3241,7 +3265,11 @@ export class DbStorage implements IStorage {
   async markUserNotificationRead(id: string, userId: string, tenantId?: string): Promise<UserNotification | undefined> {
     const conditions = [eq(userNotifications.id, id), eq(userNotifications.userId, userId)];
     if (tenantId) {
-      conditions.push(eq(userNotifications.tenantId, tenantId));
+      const tenantCondition = or(
+        eq(userNotifications.tenantId, tenantId),
+        isNull(userNotifications.tenantId)
+      );
+      if (tenantCondition) conditions.push(tenantCondition);
     }
     const [notification] = await db
       .update(userNotifications)
@@ -3254,7 +3282,11 @@ export class DbStorage implements IStorage {
   async dismissUserNotification(id: string, userId: string, tenantId?: string): Promise<UserNotification | undefined> {
     const conditions = [eq(userNotifications.id, id), eq(userNotifications.userId, userId)];
     if (tenantId) {
-      conditions.push(eq(userNotifications.tenantId, tenantId));
+      const tenantCondition = or(
+        eq(userNotifications.tenantId, tenantId),
+        isNull(userNotifications.tenantId)
+      );
+      if (tenantCondition) conditions.push(tenantCondition);
     }
     const [notification] = await db
       .update(userNotifications)
