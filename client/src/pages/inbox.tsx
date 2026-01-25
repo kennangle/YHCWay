@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SlackChannelConfig } from "@/components/slack-channel-config";
 import { SlackDmConfig } from "@/components/slack-dm-config";
 import { EmailDetailPanel } from "@/components/email-detail-panel";
+import { SlackDmDetailPanel } from "@/components/slack-dm-detail-panel";
 import { ComposeEmailModal } from "@/components/compose-email-modal";
 import { useState } from "react";
 import {
@@ -101,6 +102,15 @@ export default function Inbox() {
   const [filter, setFilter] = useState<FilterType>('all');
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedEmailId, setSelectedEmailId] = useState<string | null>(null);
+  const [selectedSlackDm, setSelectedSlackDm] = useState<{
+    id: string;
+    channelId: string;
+    channelName: string;
+    text: string;
+    userName: string;
+    timestamp: string;
+    threadTs?: string;
+  } | null>(null);
   const [isComposing, setIsComposing] = useState(false);
   const [sharingMessage, setSharingMessage] = useState<UnifiedMessage | null>(null);
   const [shareNote, setShareNote] = useState("");
@@ -599,10 +609,23 @@ export default function Inbox() {
               const iconColor = message.type === 'gmail' ? 'text-red-600' : message.type === 'slack-dm' ? 'text-pink-600' : 'text-purple-600';
               
               const handleClick = (e: React.MouseEvent) => {
+                e.preventDefault();
                 if (message.type === 'gmail') {
-                  e.preventDefault();
                   const gmailId = message.id.replace(/^gmail-(archived-|sent-|trash-)?/, '');
                   setSelectedEmailId(gmailId);
+                } else if (message.type === 'slack-dm' || message.type === 'slack') {
+                  const slackMsg = slackMessages.find(m => `slack-${m.id}` === message.id);
+                  if (slackMsg) {
+                    setSelectedSlackDm({
+                      id: slackMsg.id,
+                      channelId: slackMsg.channelId,
+                      channelName: slackMsg.channelName,
+                      text: slackMsg.text,
+                      userName: slackMsg.userName,
+                      timestamp: slackMsg.timestamp,
+                      threadTs: slackMsg.threadTs,
+                    });
+                  }
                 }
               };
 
@@ -708,6 +731,13 @@ export default function Inbox() {
         <EmailDetailPanel 
           messageId={selectedEmailId} 
           onClose={() => setSelectedEmailId(null)} 
+        />
+      )}
+
+      {selectedSlackDm && (
+        <SlackDmDetailPanel
+          message={selectedSlackDm}
+          onClose={() => setSelectedSlackDm(null)}
         />
       )}
 
