@@ -4,6 +4,7 @@ import { Bell, X, Check, CheckCheck, ExternalLink, ChevronDown, ChevronUp, Layer
 import { formatDistanceToNow } from "date-fns";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
 interface UserNotification {
@@ -45,6 +46,7 @@ interface NotificationGroup {
 export function NotificationsBanner() {
   const [showGrouped, setShowGrouped] = useState(true);
   const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set());
+  const [selectedNotification, setSelectedNotification] = useState<UserNotification | null>(null);
   const queryClient = useQueryClient();
 
   const { data: notificationsData, isLoading } = useQuery<{ notifications: UserNotification[] }>({
@@ -425,13 +427,22 @@ export function NotificationsBanner() {
           notifications.slice(0, 5).map((notification) => {
             const link = getNotificationLink(notification);
             const isUnread = !notification.readAt;
+            const hasLongBody = notification.body && notification.body.length > 100;
 
             return (
               <div
                 key={notification.id}
                 className={`flex items-start gap-3 p-3 rounded-lg transition-colors ${
                   isUnread ? "bg-amber-50/50 border border-amber-200/50" : "bg-white/30"
-                }`}
+                } ${hasLongBody ? "cursor-pointer hover:bg-amber-100/50" : ""}`}
+                onClick={() => {
+                  if (hasLongBody) {
+                    setSelectedNotification(notification);
+                    if (isUnread) {
+                      markReadMutation.mutate(notification.id);
+                    }
+                  }
+                }}
                 data-testid={`notification-${notification.id}`}
               >
                 <span className="text-lg" role="img" aria-label="notification type">
@@ -447,6 +458,7 @@ export function NotificationsBanner() {
                       {notification.body && (
                         <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
                           {notification.body}
+                          {hasLongBody && <span className="text-primary ml-1">Read more...</span>}
                         </p>
                       )}
                       <p className="text-xs text-muted-foreground/70 mt-1">
@@ -508,6 +520,27 @@ export function NotificationsBanner() {
           +{(showGrouped ? groups.length : notifications.length) - 5} more
         </p>
       )}
+
+      <Dialog open={!!selectedNotification} onOpenChange={(open) => !open && setSelectedNotification(null)}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <span role="img" aria-label="notification">
+                {selectedNotification && getNotificationIcon(selectedNotification.type)}
+              </span>
+              {selectedNotification?.title}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedNotification && formatDistanceToNow(new Date(selectedNotification.createdAt), { addSuffix: true })}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-4">
+            <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+              {selectedNotification?.body}
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
