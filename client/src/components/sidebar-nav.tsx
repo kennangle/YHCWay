@@ -97,13 +97,6 @@ export function SidebarNav({ onClose }: SidebarNavProps) {
               </button>
             </CollapsibleTrigger>
             <CollapsibleContent className="pl-4 mt-1 space-y-0.5">
-              {tab.href && (
-                <SidebarNavItem
-                  item={{ id: `${tab.id}-home`, icon: tab.icon, label: `${tab.label} Home`, href: tab.href }}
-                  isActive={location === tab.href}
-                  onClose={onClose}
-                />
-              )}
               {tab.items.map((item) => (
                 <SidebarNavItem
                   key={item.id}
