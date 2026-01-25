@@ -152,7 +152,7 @@ import {
   type InsertNotificationGroup,
 } from "@shared/schema";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { eq, desc, and, lt, isNull, sql, inArray, gte, lte, or, asc } from "drizzle-orm";
+import { eq, desc, and, lt, isNull, sql, inArray, gte, lte, or, asc, SQL } from "drizzle-orm";
 import pg from "pg";
 
 const { Pool } = pg;
@@ -553,6 +553,7 @@ export interface IStorage {
   markUserNotificationRead(id: string, userId: string, tenantId?: string): Promise<UserNotification | undefined>;
   dismissUserNotification(id: string, userId: string, tenantId?: string): Promise<UserNotification | undefined>;
   markAllUserNotificationsRead(userId: string, tenantId?: string): Promise<void>;
+  deleteAllUserNotifications(userId: string, tenantId?: string): Promise<number>;
   getUnreadUserNotificationCount(userId: string, tenantId?: string): Promise<number>;
   cleanupExpiredUserNotifications(): Promise<number>;
   broadcastAnnouncement(data: { type: string; title: string; body?: string; metadata?: Record<string, any> }): Promise<number>;
@@ -3297,14 +3298,32 @@ export class DbStorage implements IStorage {
   }
 
   async markAllUserNotificationsRead(userId: string, tenantId?: string): Promise<void> {
-    const conditions = [eq(userNotifications.userId, userId), isNull(userNotifications.readAt)];
+    const conditions: SQL<unknown>[] = [eq(userNotifications.userId, userId), isNull(userNotifications.readAt)];
     if (tenantId) {
-      conditions.push(eq(userNotifications.tenantId, tenantId));
+      conditions.push(or(
+        eq(userNotifications.tenantId, tenantId),
+        isNull(userNotifications.tenantId)
+      )!);
     }
     await db
       .update(userNotifications)
       .set({ readAt: new Date() })
       .where(and(...conditions));
+  }
+
+  async deleteAllUserNotifications(userId: string, tenantId?: string): Promise<number> {
+    const conditions: SQL<unknown>[] = [eq(userNotifications.userId, userId)];
+    if (tenantId) {
+      conditions.push(or(
+        eq(userNotifications.tenantId, tenantId),
+        isNull(userNotifications.tenantId)
+      )!);
+    }
+    const deleted = await db
+      .delete(userNotifications)
+      .where(and(...conditions))
+      .returning();
+    return deleted.length;
   }
 
   async getUnreadUserNotificationCount(userId: string, tenantId?: string): Promise<number> {

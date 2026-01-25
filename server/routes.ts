@@ -7815,6 +7815,20 @@ Click the AI Assistant button in the bottom right corner to get started!`,
       res.status(500).json({ error: "Failed to mark all notifications read" });
     }
   });
+  
+  app.delete("/api/notifications/delete-all", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id || req.user?.claims?.sub;
+      const tenantId = req.tenantId;
+      
+      const count = await storage.deleteAllUserNotifications(userId, tenantId);
+      
+      res.json({ success: true, deleted: count });
+    } catch (error) {
+      console.error("Error deleting all notifications:", error);
+      res.status(500).json({ error: "Failed to delete all notifications" });
+    }
+  });
 
   app.get("/api/notifications/grouped", isAuthenticated, async (req: any, res) => {
     try {

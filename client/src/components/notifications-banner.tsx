@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Bell, X, Check, CheckCheck, ExternalLink, ChevronDown, ChevronUp, Layers } from "lucide-react";
+import { Bell, X, Check, CheckCheck, ExternalLink, ChevronDown, ChevronUp, Layers, Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -131,6 +131,22 @@ export function NotificationsBanner() {
         credentials: "include",
       });
       if (!res.ok) throw new Error("Failed to mark all as read");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications/count"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications/grouped"] });
+    },
+  });
+
+  const deleteAllMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/notifications/delete-all", {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to delete all notifications");
       return res.json();
     },
     onSuccess: () => {
@@ -286,6 +302,19 @@ export function NotificationsBanner() {
             >
               <CheckCheck className="w-4 h-4 mr-1" />
               Mark all read
+            </Button>
+          )}
+          {notifications.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => deleteAllMutation.mutate()}
+              disabled={deleteAllMutation.isPending}
+              className="text-xs text-red-500 hover:text-red-700 hover:bg-red-50"
+              data-testid="button-delete-all"
+            >
+              <Trash2 className="w-4 h-4 mr-1" />
+              Delete all
             </Button>
           )}
         </div>
