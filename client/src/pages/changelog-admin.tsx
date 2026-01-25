@@ -267,7 +267,25 @@ export default function ChangelogAdmin() {
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Message</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-sm font-medium">Message</label>
+                    {entries.length > 0 && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => {
+                          const summary = generateConsolidatedSummary(entries);
+                          setQuickNotification({ ...quickNotification, body: summary });
+                          toast({ title: "Inserted!", description: "Changelog summary added to message" });
+                        }}
+                        className="text-xs h-7 text-blue-600 hover:text-blue-700"
+                        data-testid="button-insert-changelog"
+                      >
+                        <Copy className="w-3 h-3 mr-1" />
+                        Insert Changelog Summary ({entries.length})
+                      </Button>
+                    )}
+                  </div>
                   <Textarea
                     placeholder="Write your notification message here..."
                     value={quickNotification.body}
