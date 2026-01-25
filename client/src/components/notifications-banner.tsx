@@ -55,6 +55,8 @@ export function NotificationsBanner() {
       return res.json();
     },
     refetchInterval: 30000,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const { data: groupsData } = useQuery<{ groups: NotificationGroup[] }>({
@@ -65,6 +67,8 @@ export function NotificationsBanner() {
       return res.json();
     },
     refetchInterval: 30000,
+    staleTime: 0,
+    refetchOnMount: "always",
     enabled: showGrouped,
   });
 
@@ -76,6 +80,8 @@ export function NotificationsBanner() {
       return res.json();
     },
     refetchInterval: 30000,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const markReadMutation = useMutation({

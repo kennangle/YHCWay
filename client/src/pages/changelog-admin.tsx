@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, format, isToday, isYesterday, subDays, startOfDay, endOfDay } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface ChangelogEntry {
@@ -30,6 +30,7 @@ export default function ChangelogAdmin() {
   const [showAddEntry, setShowAddEntry] = useState(false);
   const [newEntry, setNewEntry] = useState({ summary: "", description: "", entryType: "feature" });
   const [quickNotification, setQuickNotification] = useState({ title: "", body: "", type: "feature.announcement" });
+  const [summaryDateFilter, setSummaryDateFilter] = useState<string>("today");
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -121,6 +122,50 @@ export default function ChangelogAdmin() {
 
   const entries = entriesData?.entries || [];
   const unannounced = unannouncedData?.entries || [];
+
+  const getFilteredEntriesForSummary = () => {
+    const now = new Date();
+    let startDate: Date;
+    let endDate: Date = endOfDay(now);
+    
+    switch (summaryDateFilter) {
+      case "today":
+        startDate = startOfDay(now);
+        break;
+      case "yesterday":
+        startDate = startOfDay(subDays(now, 1));
+        endDate = endOfDay(subDays(now, 1));
+        break;
+      case "last7days":
+        startDate = startOfDay(subDays(now, 7));
+        break;
+      case "last30days":
+        startDate = startOfDay(subDays(now, 30));
+        break;
+      case "all":
+        return entries;
+      default:
+        startDate = startOfDay(now);
+    }
+    
+    return entries.filter(entry => {
+      const entryDate = new Date(entry.entryDate);
+      return entryDate >= startDate && entryDate <= endDate;
+    });
+  };
+
+  const filteredEntriesForSummary = getFilteredEntriesForSummary();
+
+  const getDateFilterLabel = () => {
+    switch (summaryDateFilter) {
+      case "today": return "Today";
+      case "yesterday": return "Yesterday";
+      case "last7days": return "Last 7 Days";
+      case "last30days": return "Last 30 Days";
+      case "all": return "All Time";
+      default: return "Today";
+    }
+  };
 
   const generateConsolidatedSummary = (entriesToSummarize: ChangelogEntry[]) => {
     if (entriesToSummarize.length === 0) return "";
@@ -267,24 +312,51 @@ export default function ChangelogAdmin() {
                   />
                 </div>
                 <div>
-                  <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center justify-between mb-2">
                     <label className="text-sm font-medium">Message</label>
-                    {entries.length > 0 && (
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => {
-                          const summary = generateConsolidatedSummary(entries);
-                          setQuickNotification({ ...quickNotification, body: summary });
-                          toast({ title: "Inserted!", description: "Changelog summary added to message" });
-                        }}
-                        className="text-xs h-7 text-blue-600 hover:text-blue-700"
-                        data-testid="button-insert-changelog"
-                      >
-                        <Copy className="w-3 h-3 mr-1" />
-                        Insert Changelog Summary ({entries.length})
-                      </Button>
-                    )}
+                    <div className="flex items-center gap-2">
+                      <Select value={summaryDateFilter} onValueChange={setSummaryDateFilter}>
+                        <SelectTrigger className="h-7 w-32 text-xs" data-testid="select-date-filter">
+                          <Calendar className="w-3 h-3 mr-1" />
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="today">Today</SelectItem>
+                          <SelectItem value="yesterday">Yesterday</SelectItem>
+                          <SelectItem value="last7days">Last 7 Days</SelectItem>
+                          <SelectItem value="last30days">Last 30 Days</SelectItem>
+                          <SelectItem value="all">All Time</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {filteredEntriesForSummary.length > 0 && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => {
+                            const summary = generateConsolidatedSummary(filteredEntriesForSummary);
+                            setQuickNotification({ ...quickNotification, body: summary });
+                            toast({ title: "Inserted!", description: `${getDateFilterLabel()} changelog summary added` });
+                          }}
+                          className="text-xs h-7 text-blue-600 hover:text-blue-700"
+                          data-testid="button-insert-changelog"
+                        >
+                          <Copy className="w-3 h-3 mr-1" />
+                          Insert ({filteredEntriesForSummary.length})
+                        </Button>
+                      )}
+                      {quickNotification.body && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => setQuickNotification({ ...quickNotification, body: "" })}
+                          className="text-xs h-7 text-gray-500 hover:text-gray-700"
+                          data-testid="button-clear-message"
+                        >
+                          <X className="w-3 h-3 mr-1" />
+                          Clear
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   <Textarea
                     placeholder="Write your notification message here..."
