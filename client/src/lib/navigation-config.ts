@@ -49,10 +49,16 @@ export interface NavTab {
 
 export const navigationTabs: NavTab[] = [
   {
-    id: "dashboard",
-    label: "Dashboard",
+    id: "home",
+    label: "Home",
     icon: LayoutDashboard,
     href: "/dashboard",
+    items: [],
+  },
+  {
+    id: "workspace",
+    label: "Workspace",
+    icon: FolderKanban,
     items: [
       { id: "mailbox", icon: Mail, label: "Mailbox", href: "/inbox" },
       { id: "calendar", icon: Calendar, label: "Calendar", href: "/calendar" },
