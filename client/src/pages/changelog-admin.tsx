@@ -2,7 +2,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Redirect } from "wouter";
-import { Plus, Bell, Megaphone, Clock, CheckCircle, Sparkles, Bug, RefreshCw, Send, MessageSquarePlus, Copy } from "lucide-react";
+import { Plus, Bell, Megaphone, Clock, CheckCircle, Sparkles, Bug, RefreshCw, Send, MessageSquarePlus, Copy, X, Calendar } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
