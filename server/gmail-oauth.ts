@@ -615,8 +615,8 @@ function extractEmailBody(payload: any): string {
   return '';
 }
 
-export async function getEmailById(userId: string, messageId: string): Promise<EmailDetail> {
-  const gmail = await getGmailClientForUser(userId);
+export async function getEmailById(userId: string, messageId: string, accountId?: number): Promise<EmailDetail> {
+  const gmail = await getGmailClientForUser(userId, accountId);
   
   const response = await gmail.users.messages.get({
     userId: 'me',

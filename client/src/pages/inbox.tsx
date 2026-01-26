@@ -102,6 +102,7 @@ export default function Inbox() {
   const [filter, setFilter] = useState<FilterType>('all');
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedEmailId, setSelectedEmailId] = useState<string | null>(null);
+  const [selectedEmailAccountId, setSelectedEmailAccountId] = useState<number | undefined>(undefined);
   const [selectedSlackDm, setSelectedSlackDm] = useState<{
     id: string;
     channelId: string;
@@ -619,6 +620,7 @@ export default function Inbox() {
                 if (message.type === 'gmail') {
                   const gmailId = message.id.replace(/^gmail-(archived-|sent-|trash-)?/, '');
                   setSelectedEmailId(gmailId);
+                  setSelectedEmailAccountId(message.accountId);
                 } else if (message.type === 'slack-dm' || message.type === 'slack') {
                   const slackMsg = slackMessages.find(m => `slack-${m.id}` === message.id);
                   if (slackMsg) {
@@ -735,8 +737,9 @@ export default function Inbox() {
 
       {selectedEmailId && (
         <EmailDetailPanel 
-          messageId={selectedEmailId} 
-          onClose={() => setSelectedEmailId(null)} 
+          messageId={selectedEmailId}
+          accountId={selectedEmailAccountId}
+          onClose={() => { setSelectedEmailId(null); setSelectedEmailAccountId(undefined); }} 
         />
       )}
 

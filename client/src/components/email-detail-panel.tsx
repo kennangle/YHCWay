@@ -38,6 +38,7 @@ interface EmailSignature {
 
 interface EmailDetailPanelProps {
   messageId: string;
+  accountId?: number;
   onClose: () => void;
 }
 
@@ -54,7 +55,7 @@ const sentimentColors: Record<string, { bg: string; text: string; icon: React.Re
   urgent: { bg: "bg-orange-100", text: "text-orange-700", icon: <AlertCircle className="w-4 h-4" /> },
 };
 
-export function EmailDetailPanel({ messageId, onClose }: EmailDetailPanelProps) {
+export function EmailDetailPanel({ messageId, accountId, onClose }: EmailDetailPanelProps) {
   const [isReplying, setIsReplying] = useState(false);
   const [replyBody, setReplyBody] = useState("");
   const [replySignatureAppended, setReplySignatureAppended] = useState(false);
@@ -94,9 +95,12 @@ export function EmailDetailPanel({ messageId, onClose }: EmailDetailPanelProps) 
   }, [isReplying]);
 
   const { data: email, isLoading, isError } = useQuery<EmailDetail>({
-    queryKey: ["gmail-message", messageId],
+    queryKey: ["gmail-message", messageId, accountId],
     queryFn: async () => {
-      const res = await fetch(`/api/gmail/messages/${messageId}`, { credentials: "include" });
+      const url = accountId 
+        ? `/api/gmail/messages/${messageId}?accountId=${accountId}` 
+        : `/api/gmail/messages/${messageId}`;
+      const res = await fetch(url, { credentials: "include" });
       if (!res.ok) throw new Error("Failed to load email");
       return res.json();
     },

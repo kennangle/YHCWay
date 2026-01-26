@@ -12,7 +12,7 @@ import { z } from "zod";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { getRecentEmails, isGmailConnected, deleteEmail } from "./gmail";
-import { getGmailAuthUrl, handleGmailCallback, getRecentEmailsForUser, getRecentEmailsFromAllAccounts, isGmailConnectedForUser, disconnectGmailForUser, getGmailClientForUser, getEmailById, sendEmail, deleteEmailById, signOAuthState, verifyOAuthState } from "./gmail-oauth";
+import { getGmailAuthUrl, handleGmailCallback, getRecentEmailsForUser, getRecentEmailsFromAllAccounts, isGmailConnectedForUser, disconnectGmailForUser, getGmailClientForUser, getGmailClientsForUser, getEmailById, sendEmail, deleteEmailById, signOAuthState, verifyOAuthState } from "./gmail-oauth";
 import { getUpcomingEvents, getEventsForMonth, isCalendarConnected, createCalendarEvent } from "./calendar";
 import { getUpcomingMeetings } from "./zoom";
 import { isZoomConnectedForUser as isZoomUserConnected } from "./zoom-oauth";
@@ -1706,6 +1706,7 @@ export async function registerRoutes(
     try {
       const userId = req.user?.id;
       const messageId = req.params.id;
+      const accountId = req.query.accountId ? parseInt(req.query.accountId as string) : undefined;
       
       if (!userId) {
         return res.status(401).json({ error: "Unauthorized" });
@@ -1714,18 +1715,36 @@ export async function registerRoutes(
       // Try user-specific OAuth first, then fall back to connector
       const isUserConnected = await isGmailConnectedForUser(userId);
       if (isUserConnected) {
+        // If accountId is specified, try that account directly
+        if (accountId) {
+          try {
+            const email = await getEmailById(userId, messageId, accountId);
+            return res.json(email);
+          } catch (oauthError: any) {
+            console.log("[Gmail] OAuth fetch with accountId failed:", oauthError?.message);
+            if (oauthError?.message?.includes('token') || oauthError?.code === 401) {
+              return res.status(401).json({ error: "Gmail connection expired. Please reconnect Gmail." });
+            }
+          }
+        }
+        
+        // Try all connected accounts to find the email
         try {
-          const email = await getEmailById(userId, messageId);
-          return res.json(email);
-        } catch (oauthError: any) {
-          console.log("[Gmail] OAuth fetch failed, trying connector:", oauthError?.message);
-          // Check for common error types
-          if (oauthError?.message?.includes('not found') || oauthError?.code === 404) {
-            return res.status(404).json({ error: "Email not found or has been deleted" });
+          const clients = await getGmailClientsForUser(userId);
+          for (const { accountId: accId } of clients) {
+            try {
+              const email = await getEmailById(userId, messageId, accId);
+              return res.json(email);
+            } catch (oauthError: any) {
+              // Continue to next account if not found
+              if (oauthError?.response?.status === 404 || oauthError?.code === 404) {
+                continue;
+              }
+              console.log("[Gmail] OAuth fetch failed for account", accId, ":", oauthError?.message);
+            }
           }
-          if (oauthError?.message?.includes('token') || oauthError?.code === 401) {
-            return res.status(401).json({ error: "Gmail connection expired. Please reconnect Gmail." });
-          }
+        } catch (clientsError: any) {
+          console.log("[Gmail] Failed to get Gmail clients:", clientsError?.message);
         }
       }
       
