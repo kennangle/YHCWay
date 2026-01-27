@@ -224,7 +224,10 @@ export const oauthAccounts = pgTable("oauth_accounts", {
   label: varchar("label"),
   isPrimary: boolean("is_primary").default(false),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_oauth_user_provider").on(table.userId, table.provider),
+  index("idx_oauth_user").on(table.userId),
+]);
 
 export type OAuthAccount = typeof oauthAccounts.$inferSelect;
 export type InsertOAuthAccount = typeof oauthAccounts.$inferInsert;

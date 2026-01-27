@@ -34,7 +34,7 @@ import { isGoogleDocsConnected, listGoogleDocs, createGoogleDoc, getGoogleDocCon
 import { isGoogleSheetsConnected, listGoogleSheets, createGoogleSheet, getGoogleSheetContent, updateGoogleSheet, appendToGoogleSheet, deleteGoogleSheet } from "./google-sheets";
 import { isGoogleDriveConnected, listDriveFiles, listGoogleDocsViaDrive, listGoogleSheetsViaDrive, getDocContentViaDrive, getSheetContentViaDrive, getGoogleDriveClient, getGoogleDocsClientViaDrive, getGoogleSheetsClientViaDrive } from "./google-drive";
 import { monitoring, trackOperation } from "./monitoring";
-import { cache, TTL, getCached, setCache, invalidateGmailCache, getCacheStats } from "./cache";
+import { cache, TTL, getCached, setCache, invalidateGmailCache, getCacheStats, getOrFetch, invalidateCache } from "./cache";
 import { apiLimiter, gmailLimiter } from "./rate-limiter";
 import { globalErrorHandler, AppError, ExternalServiceError } from "./errors";
 import { registerModularRoutes } from "./routes/index";
@@ -1423,7 +1423,8 @@ export async function registerRoutes(
       const userId = req.user?.id;
       const accountIdParam = req.query.accountId;
       const accountId = accountIdParam ? parseInt(accountIdParam as string) : undefined;
-      console.log("[Gmail Messages] Fetching for user:", userId, "accountId:", accountId);
+      const skipCache = req.query.refresh === 'true';
+      console.log("[Gmail Messages] Fetching for user:", userId, "accountId:", accountId, "skipCache:", skipCache);
       
       if (!userId) {
         return res.status(401).json({ error: "Unauthorized" });
@@ -1439,6 +1440,16 @@ export async function registerRoutes(
         const account = await storage.getOAuthAccountById(accountId);
         if (!account || account.userId !== userId || account.provider !== 'gmail') {
           return res.status(404).json({ error: "Gmail account not found" });
+        }
+      }
+      
+      // Check cache first (unless refresh requested)
+      const cacheKey = cache.gmail.messages(userId, accountId || 0, 'all');
+      if (!skipCache) {
+        const cached = getCached<any[]>(cacheKey);
+        if (cached) {
+          console.log("[Gmail Messages] Returning cached emails:", cached.length);
+          return res.json(cached);
         }
       }
       
@@ -1459,6 +1470,8 @@ export async function registerRoutes(
             emails = await getRecentEmailsFromAllAccounts(userId, 20);
           }
           console.log("[Gmail Messages] Fetched", emails.length, "emails");
+          // Cache the results
+          setCache(cacheKey, emails, TTL.MESSAGES);
           return res.json(emails);
         } catch (emailError: any) {
           console.error("[Gmail Messages] Error fetching via custom OAuth:", emailError?.message);
@@ -1792,10 +1805,12 @@ export async function registerRoutes(
           }
         }
         await sendEmail(userId, to, subject, body, inReplyTo, threadId, accountId);
+        invalidateGmailCache(userId, accountId);
       } else {
         // Fall back to connector-based send
         const { sendEmailViaConnector } = await import("./gmail");
         await sendEmailViaConnector(to, subject, body, threadId);
+        invalidateGmailCache(userId);
       }
       res.json({ success: true });
     } catch (error: any) {
@@ -1821,6 +1836,7 @@ export async function registerRoutes(
         // If accountId is specified, try that account directly
         if (accountId) {
           await deleteEmailById(userId, messageId, accountId);
+          invalidateGmailCache(userId, accountId);
           return res.json({ success: true });
         }
         
@@ -1830,6 +1846,7 @@ export async function registerRoutes(
           for (const { accountId: accId } of clients) {
             try {
               await deleteEmailById(userId, messageId, accId);
+              invalidateGmailCache(userId, accId);
               return res.json({ success: true });
             } catch (oauthError: any) {
               // Continue to next account if not found
@@ -1847,6 +1864,7 @@ export async function registerRoutes(
       // Fall back to connector-based delete
       try {
         await deleteEmail(messageId);
+        invalidateGmailCache(userId);
         return res.json({ success: true });
       } catch (connectorError: any) {
         console.error("[Gmail] Connector delete also failed:", connectorError?.message);
@@ -1877,6 +1895,7 @@ export async function registerRoutes(
         // If accountId is specified, try that account directly
         if (accountId) {
           await archiveEmailById(userId, messageId, accountId);
+          invalidateGmailCache(userId, accountId);
           return res.json({ success: true });
         }
         
@@ -1886,6 +1905,7 @@ export async function registerRoutes(
           for (const { accountId: accId } of clients) {
             try {
               await archiveEmailById(userId, messageId, accId);
+              invalidateGmailCache(userId, accId);
               return res.json({ success: true });
             } catch (oauthError: any) {
               // Continue to next account if not found
@@ -1904,6 +1924,7 @@ export async function registerRoutes(
       try {
         const { archiveEmail } = await import("./gmail");
         await archiveEmail(messageId);
+        invalidateGmailCache(userId);
         return res.json({ success: true });
       } catch (connectorError: any) {
         console.error("[Gmail] Connector archive also failed:", connectorError?.message);
@@ -2528,6 +2549,18 @@ export async function registerRoutes(
   app.get("/api/calendar/events", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user?.id;
+      const skipCache = req.query.refresh === 'true';
+      
+      // Check cache first
+      const cacheKey = cache.calendar.events(userId || 'anonymous', 'upcoming', '10');
+      if (!skipCache && userId) {
+        const cached = getCached<any[]>(cacheKey);
+        if (cached) {
+          console.log("[Calendar] Returning cached events:", cached.length);
+          return res.json(cached);
+        }
+      }
+      
       const googleEvents = await getUpcomingEvents(10).catch(() => []);
       const calendlyEvents = userId ? await getCalendlyEvents(userId, 10).catch(() => []) : [];
       
@@ -2560,6 +2593,12 @@ export async function registerRoutes(
       ]
         .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
         .slice(0, 20);
+      
+      // Cache the results
+      if (userId) {
+        setCache(cacheKey, mergedEvents, TTL.EVENTS);
+      }
+      
       res.json(mergedEvents);
     } catch (error) {
       console.error("Error fetching calendar events:", error);
@@ -2712,18 +2751,33 @@ export async function registerRoutes(
   app.get("/api/slack/channels", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user?.id;
+      const skipCache = req.query.refresh === 'true';
+      
+      // Check cache first
+      const cacheKey = cache.slack.channels(userId || 'anonymous');
+      if (!skipCache && userId) {
+        const cached = getCached<any[]>(cacheKey);
+        if (cached) {
+          console.log("[Slack] Returning cached channels:", cached.length);
+          return res.json(cached);
+        }
+      }
       
       // Use user token if available
       if (userId) {
         const userConnected = await isUserSlackConnected(userId);
         if (userConnected) {
           const channels = await getUserChannels(userId);
+          setCache(cacheKey, channels, TTL.MEDIUM);
           return res.json(channels);
         }
       }
       
       // Fall back to bot token
       const channels = await getSlackChannels();
+      if (userId) {
+        setCache(cacheKey, channels, TTL.MEDIUM);
+      }
       res.json(channels);
     } catch (error: any) {
       console.error("Error fetching Slack channels:", error?.message || error);

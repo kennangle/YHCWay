@@ -183,6 +183,8 @@ export function invalidateUserCache(userId: string): void {
 export function invalidateGmailCache(userId: string, accountId?: number): void {
   if (accountId) {
     globalCache.deletePattern(`gmail:*:${userId}:${accountId}*`);
+    // Also invalidate the aggregated cache (accountId=0) for multi-account lists
+    globalCache.deletePattern(`gmail:*:${userId}:0*`);
   } else {
     globalCache.deletePattern(`gmail:*:${userId}:*`);
   }
