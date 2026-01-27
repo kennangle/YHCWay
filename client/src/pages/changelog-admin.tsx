@@ -2,7 +2,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Redirect } from "wouter";
-import { Plus, Bell, Megaphone, Clock, CheckCircle, Sparkles, Bug, RefreshCw, Send, MessageSquarePlus, Copy, X, Calendar } from "lucide-react";
+import { Plus, Bell, Megaphone, Clock, CheckCircle, Sparkles, Bug, RefreshCw, Send, MessageSquarePlus, Copy, X, Calendar, GitBranch } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -109,6 +109,31 @@ export default function ChangelogAdmin() {
     },
     onError: () => {
       toast({ title: "Error", description: "Failed to send notification", variant: "destructive" });
+    },
+  });
+
+  const syncGitMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/changelog/sync", {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to sync");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/changelog"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/changelog/unannounced"] });
+      toast({ 
+        title: "Git sync complete", 
+        description: data.message || `Synced ${data.synced} new commits.` 
+      });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Sync failed", description: error.message, variant: "destructive" });
     },
   });
 
@@ -403,6 +428,15 @@ export default function ChangelogAdmin() {
                   Copy Pending ({unannounced.length})
                 </Button>
               )}
+              <Button 
+                variant="outline"
+                onClick={() => syncGitMutation.mutate()} 
+                disabled={syncGitMutation.isPending}
+                data-testid="button-sync-git"
+              >
+                <GitBranch className="w-4 h-4 mr-2" />
+                {syncGitMutation.isPending ? "Syncing..." : "Sync Git"}
+              </Button>
               <Button onClick={() => setShowAddEntry(true)} data-testid="button-add-changelog">
                 <Plus className="w-4 h-4 mr-2" />
                 Add Entry
