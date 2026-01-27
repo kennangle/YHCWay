@@ -161,8 +161,11 @@ export default function Inbox() {
   });
 
   const deleteEmailMutation = useMutation({
-    mutationFn: async (messageId: string) => {
-      const res = await fetch(`/api/gmail/messages/${messageId}`, {
+    mutationFn: async ({ messageId, accountId }: { messageId: string; accountId?: number }) => {
+      const url = accountId 
+        ? `/api/gmail/messages/${messageId}?accountId=${accountId}`
+        : `/api/gmail/messages/${messageId}`;
+      const res = await fetch(url, {
         method: "DELETE",
         credentials: "include",
       });
@@ -648,7 +651,7 @@ export default function Inbox() {
                 e.stopPropagation();
                 if (message.type === 'gmail') {
                   const gmailId = message.id.replace(/^gmail-(archived-|sent-|trash-)?/, '');
-                  deleteEmailMutation.mutate(gmailId);
+                  deleteEmailMutation.mutate({ messageId: gmailId, accountId: message.accountId });
                 }
               };
               

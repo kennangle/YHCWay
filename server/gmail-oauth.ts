@@ -781,8 +781,8 @@ export async function getGmailLabelsForUser(userId: string, accountId?: number):
   return results;
 }
 
-export async function deleteEmailById(userId: string, messageId: string): Promise<boolean> {
-  const gmail = await getGmailClientForUser(userId);
+export async function deleteEmailById(userId: string, messageId: string, accountId?: number): Promise<boolean> {
+  const gmail = await getGmailClientForUser(userId, accountId);
   
   await gmail.users.messages.trash({
     userId: 'me',
@@ -792,8 +792,8 @@ export async function deleteEmailById(userId: string, messageId: string): Promis
   return true;
 }
 
-export async function archiveEmailById(userId: string, messageId: string): Promise<boolean> {
-  const gmail = await getGmailClientForUser(userId);
+export async function archiveEmailById(userId: string, messageId: string, accountId?: number): Promise<boolean> {
+  const gmail = await getGmailClientForUser(userId, accountId);
   
   // Archive = remove INBOX label
   await gmail.users.messages.modify({

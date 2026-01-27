@@ -1809,6 +1809,7 @@ export async function registerRoutes(
     try {
       const userId = req.user?.id;
       const messageId = req.params.id;
+      const accountId = req.query.accountId ? parseInt(req.query.accountId as string) : undefined;
       
       if (!userId) {
         return res.status(401).json({ error: "Unauthorized" });
@@ -1817,12 +1818,40 @@ export async function registerRoutes(
       // Try user-specific OAuth first, then fall back to connector
       const isUserConnected = await isGmailConnectedForUser(userId);
       if (isUserConnected) {
-        await deleteEmailById(userId, messageId);
-      } else {
-        // Fall back to connector-based delete
-        await deleteEmail(messageId);
+        // If accountId is specified, try that account directly
+        if (accountId) {
+          await deleteEmailById(userId, messageId, accountId);
+          return res.json({ success: true });
+        }
+        
+        // Try all connected accounts to find and delete the email
+        try {
+          const clients = await getGmailClientsForUser(userId);
+          for (const { accountId: accId } of clients) {
+            try {
+              await deleteEmailById(userId, messageId, accId);
+              return res.json({ success: true });
+            } catch (oauthError: any) {
+              // Continue to next account if not found
+              if (oauthError?.response?.status === 404 || oauthError?.code === 404) {
+                continue;
+              }
+              console.log("[Gmail] Delete failed for account", accId, ":", oauthError?.message);
+            }
+          }
+        } catch (clientsError: any) {
+          console.log("[Gmail] Failed to get Gmail clients for delete:", clientsError?.message);
+        }
       }
-      res.json({ success: true });
+      
+      // Fall back to connector-based delete
+      try {
+        await deleteEmail(messageId);
+        return res.json({ success: true });
+      } catch (connectorError: any) {
+        console.error("[Gmail] Connector delete also failed:", connectorError?.message);
+        throw connectorError;
+      }
     } catch (error: any) {
       console.error("[Gmail] Error deleting email:", error?.message);
       res.status(500).json({ error: error?.message || "Failed to delete email" });
@@ -1834,6 +1863,7 @@ export async function registerRoutes(
     try {
       const userId = req.user?.id;
       const messageId = req.params.id;
+      const accountId = req.query.accountId ? parseInt(req.query.accountId as string) : undefined;
       
       if (!userId) {
         return res.status(401).json({ error: "Unauthorized" });
@@ -1843,13 +1873,42 @@ export async function registerRoutes(
       const isUserConnected = await isGmailConnectedForUser(userId);
       if (isUserConnected) {
         const { archiveEmailById } = await import("./gmail-oauth");
-        await archiveEmailById(userId, messageId);
-      } else {
-        // Fall back to connector-based archive
+        
+        // If accountId is specified, try that account directly
+        if (accountId) {
+          await archiveEmailById(userId, messageId, accountId);
+          return res.json({ success: true });
+        }
+        
+        // Try all connected accounts to find and archive the email
+        try {
+          const clients = await getGmailClientsForUser(userId);
+          for (const { accountId: accId } of clients) {
+            try {
+              await archiveEmailById(userId, messageId, accId);
+              return res.json({ success: true });
+            } catch (oauthError: any) {
+              // Continue to next account if not found
+              if (oauthError?.response?.status === 404 || oauthError?.code === 404) {
+                continue;
+              }
+              console.log("[Gmail] Archive failed for account", accId, ":", oauthError?.message);
+            }
+          }
+        } catch (clientsError: any) {
+          console.log("[Gmail] Failed to get Gmail clients for archive:", clientsError?.message);
+        }
+      }
+      
+      // Fall back to connector-based archive
+      try {
         const { archiveEmail } = await import("./gmail");
         await archiveEmail(messageId);
+        return res.json({ success: true });
+      } catch (connectorError: any) {
+        console.error("[Gmail] Connector archive also failed:", connectorError?.message);
+        throw connectorError;
       }
-      res.json({ success: true });
     } catch (error: any) {
       console.error("[Gmail] Error archiving email:", error?.message);
       res.status(500).json({ error: error?.message || "Failed to archive email" });
