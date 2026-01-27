@@ -3,7 +3,7 @@ import {
   FolderKanban, Plus, MoreVertical, Calendar, Trash2, Edit, RefreshCw, 
   CheckCircle2, Clock, AlertTriangle, TrendingUp, LayoutGrid, List,
   Search, Filter, ChevronRight, Users, ListTodo, Download, Loader2, Check, X,
-  FileText, Flag, User
+  FileText, Flag, User, Copy, FileSpreadsheet
 } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -952,9 +952,54 @@ export default function Projects() {
             <p className="text-sm text-muted-foreground">
               {tasksWithProjects.length} active task{tasksWithProjects.length !== 1 ? 's' : ''} sorted by priority
             </p>
-            <Button variant="outline" onClick={() => setTasksReportOpen(false)}>
-              Close
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const text = tasksWithProjects.map((task, i) => 
+                    `${i + 1}. [${task.priority.toUpperCase()}] ${task.title}${task.projectName ? ` (${task.projectName})` : ''}${task.assignee ? ` - ${task.assignee.firstName || task.assignee.email.split('@')[0]}` : ''}${task.dueDate ? ` - Due: ${format(new Date(task.dueDate), "MMM d, yyyy")}` : ''}`
+                  ).join('\n');
+                  navigator.clipboard.writeText(text);
+                  toast.success("Copied to clipboard");
+                }}
+                data-testid="button-copy-tasks"
+              >
+                <Copy className="w-4 h-4 mr-2" />
+                Copy
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const headers = ["#", "Priority", "Task", "Project", "Assignee", "Due Date"];
+                  const rows = tasksWithProjects.map((task, i) => [
+                    i + 1,
+                    task.priority,
+                    `"${task.title.replace(/"/g, '""')}"`,
+                    task.projectName || "",
+                    task.assignee ? (task.assignee.firstName || task.assignee.email.split('@')[0]) : "",
+                    task.dueDate ? format(new Date(task.dueDate), "yyyy-MM-dd") : ""
+                  ]);
+                  const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+                  const blob = new Blob([csv], { type: "text/csv" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = `tasks-report-${format(new Date(), "yyyy-MM-dd")}.csv`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                  toast.success("CSV downloaded");
+                }}
+                data-testid="button-export-csv"
+              >
+                <FileSpreadsheet className="w-4 h-4 mr-2" />
+                Export CSV
+              </Button>
+              <Button variant="outline" onClick={() => setTasksReportOpen(false)}>
+                Close
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
