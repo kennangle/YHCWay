@@ -5,6 +5,70 @@
 
 ---
 
+## Tech Stack Overview
+
+### Frontend
+| Category | Technology |
+|----------|------------|
+| **Framework** | React 18 |
+| **Language** | TypeScript |
+| **Build Tool** | Vite 7 |
+| **Routing** | Wouter |
+| **State Management** | TanStack React Query, Zustand |
+| **UI Components** | shadcn/ui (Radix UI primitives) |
+| **Styling** | Tailwind CSS v4 |
+| **Icons** | Lucide React |
+| **Rich Text Editor** | TipTap |
+| **Drag & Drop** | dnd-kit |
+| **Charts** | Recharts |
+| **Forms** | React Hook Form + Zod validation |
+| **Date Handling** | date-fns |
+| **Animations** | Framer Motion |
+| **Onboarding Tours** | Driver.js |
+
+### Backend
+| Category | Technology |
+|----------|------------|
+| **Runtime** | Node.js |
+| **Framework** | Express.js |
+| **Language** | TypeScript |
+| **Database** | PostgreSQL |
+| **ORM** | Drizzle ORM |
+| **Session Store** | connect-pg-simple (PostgreSQL) |
+| **Authentication** | Passport.js (Local + Google OAuth) |
+| **Password Hashing** | bcryptjs |
+| **WebSockets** | ws |
+| **AI Integration** | OpenAI GPT-4.1-mini |
+| **Email Service** | Brevo (Sendinblue) |
+| **File Storage** | Google Cloud Storage |
+| **Rate Limiting** | Custom in-memory implementation |
+| **Caching** | Custom in-memory TTL cache with LRU |
+
+### Development & Build
+| Category | Technology |
+|----------|------------|
+| **Dev Server** | Vite |
+| **Production Bundler** | esbuild |
+| **TypeScript Runner** | tsx |
+| **Testing** | Vitest |
+| **Schema Validation** | Zod, drizzle-zod |
+| **HTML Sanitization** | DOMPurify |
+
+### External Service Integrations
+| Service | SDK/Library |
+|---------|-------------|
+| **Google APIs** | googleapis, google-auth-library |
+| **Slack** | REST API (custom) |
+| **Zoom** | REST API (custom) |
+| **Asana** | asana SDK |
+| **Apple Calendar** | tsdav (CalDAV) |
+| **Mindbody** | REST API (custom) |
+| **Perkville** | REST API (custom) |
+| **QR Tiger** | REST API (custom) |
+| **Calendly** | REST API (custom) |
+
+---
+
 ## 1. Runtime
 
 | Component | Technology |
