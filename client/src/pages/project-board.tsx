@@ -1249,20 +1249,21 @@ export default function ProjectBoard() {
             </div>
 
             <div className="flex flex-wrap gap-2 items-center">
-              <div className="relative w-48">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                <Input
+              <div className="relative flex-1 max-w-[200px]">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none z-10" />
+                <input
+                  type="text"
                   placeholder="Search tasks..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 pr-8 bg-white/80 h-9"
+                  className="w-full h-9 pl-9 pr-8 rounded-md border border-input bg-white/80 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                   data-testid="input-search-tasks"
                 />
                 {searchQuery && (
                   <button
                     type="button"
                     onClick={() => setSearchQuery("")}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded-full z-10"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 hover:bg-gray-200 rounded"
                     data-testid="button-clear-task-search"
                   >
                     <X className="w-4 h-4 text-gray-500" />
