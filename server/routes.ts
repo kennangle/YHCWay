@@ -5982,6 +5982,139 @@ export async function registerRoutes(
   });
 
   // =============================================================================
+  // TASK ATTACHMENT ROUTES
+  // =============================================================================
+
+  const { ObjectStorageService } = await import("./replit_integrations/object_storage");
+  const taskAttachmentStorage = new ObjectStorageService();
+
+  app.get("/api/tasks/:id/attachments", isAuthenticated, async (req: any, res) => {
+    try {
+      const taskId = parseInt(req.params.id);
+      const userId = req.user.claims?.sub || req.user.id;
+      const tenantId = req.tenantId;
+
+      const task = await storage.getTask(taskId);
+      if (!task) {
+        return res.status(404).json({ error: "Task not found" });
+      }
+
+      if (!await canAccessTask(userId, task, tenantId, storage)) {
+        return res.status(403).json({ error: "Not authorized to view this task" });
+      }
+
+      const attachments = await storage.getTaskAttachments(taskId);
+      const attachmentsWithUrls = attachments.map((a: any) => ({
+        ...a,
+        downloadUrl: a.objectPath,
+      }));
+      res.json(attachmentsWithUrls);
+    } catch (error) {
+      console.error("Error fetching task attachments:", error);
+      res.status(500).json({ error: "Failed to fetch attachments" });
+    }
+  });
+
+  app.post("/api/tasks/:id/attachments/request-url", isAuthenticated, async (req: any, res) => {
+    try {
+      const taskId = parseInt(req.params.id);
+      const userId = req.user.claims?.sub || req.user.id;
+      const tenantId = req.tenantId;
+      const { fileName, fileSize, contentType } = req.body;
+
+      if (!fileName) {
+        return res.status(400).json({ error: "Missing required field: fileName" });
+      }
+
+      const task = await storage.getTask(taskId);
+      if (!task) {
+        return res.status(404).json({ error: "Task not found" });
+      }
+
+      if (!await canAccessTask(userId, task, tenantId, storage)) {
+        return res.status(403).json({ error: "Not authorized to access this task" });
+      }
+
+      const uploadURL = await taskAttachmentStorage.getObjectEntityUploadURL();
+      const objectPath = taskAttachmentStorage.normalizeObjectEntityPath(uploadURL);
+
+      res.json({
+        uploadURL,
+        objectPath,
+        metadata: { fileName, fileSize, contentType },
+      });
+    } catch (error) {
+      console.error("Error generating upload URL:", error);
+      res.status(500).json({ error: "Failed to generate upload URL" });
+    }
+  });
+
+  app.post("/api/tasks/:id/attachments", isAuthenticated, async (req: any, res) => {
+    try {
+      const taskId = parseInt(req.params.id);
+      const userId = req.user.claims?.sub || req.user.id;
+      const tenantId = req.tenantId;
+      const { fileName, fileSize, contentType, objectPath } = req.body;
+
+      if (!fileName || !objectPath) {
+        return res.status(400).json({ error: "Missing required fields: fileName, objectPath" });
+      }
+
+      const task = await storage.getTask(taskId);
+      if (!task) {
+        return res.status(404).json({ error: "Task not found" });
+      }
+
+      if (!await canAccessTask(userId, task, tenantId, storage)) {
+        return res.status(403).json({ error: "Not authorized to access this task" });
+      }
+
+      const attachment = await storage.createTaskAttachment({
+        taskId,
+        uploaderId: userId,
+        fileName,
+        fileSize: fileSize || 0,
+        contentType: contentType || null,
+        objectPath,
+      });
+
+      res.status(201).json({ ...attachment, downloadUrl: objectPath });
+    } catch (error) {
+      console.error("Error creating task attachment:", error);
+      res.status(500).json({ error: "Failed to create attachment" });
+    }
+  });
+
+  app.delete("/api/tasks/:taskId/attachments/:attachmentId", isAuthenticated, async (req: any, res) => {
+    try {
+      const taskId = parseInt(req.params.taskId);
+      const attachmentId = parseInt(req.params.attachmentId);
+      const userId = req.user.claims?.sub || req.user.id;
+
+      const task = await storage.getTask(taskId);
+      if (!task) {
+        return res.status(404).json({ error: "Task not found" });
+      }
+
+      const attachments = await storage.getTaskAttachments(taskId);
+      const attachment = attachments.find(a => a.id === attachmentId);
+      if (!attachment) {
+        return res.status(404).json({ error: "Attachment not found" });
+      }
+
+      if (attachment.uploaderId !== userId && task.creatorId !== userId && task.assigneeId !== userId) {
+        return res.status(403).json({ error: "Not authorized to delete this attachment" });
+      }
+
+      await storage.deleteTaskAttachment(attachmentId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting task attachment:", error);
+      res.status(500).json({ error: "Failed to delete attachment" });
+    }
+  });
+
+  // =============================================================================
   // NOTIFICATION PREFERENCE ROUTES
   // =============================================================================
 

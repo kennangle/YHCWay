@@ -279,3 +279,99 @@ export function useArchivedTasks(projectId: number) {
     enabled: !!projectId,
   });
 }
+
+export const attachmentKeys = {
+  list: (taskId: number) => ["taskAttachments", taskId] as const,
+};
+
+interface TaskAttachment {
+  id: number;
+  taskId: number;
+  uploaderId: string;
+  fileName: string;
+  fileSize: number;
+  contentType: string | null;
+  objectPath: string;
+  downloadUrl: string;
+  createdAt: string;
+  uploader: {
+    id: string;
+    email: string;
+    firstName?: string | null;
+    lastName?: string | null;
+  };
+}
+
+export function useTaskAttachments(taskId: number | null) {
+  return useQuery<TaskAttachment[]>({
+    queryKey: taskId ? attachmentKeys.list(taskId) : ["taskAttachments", "none"],
+    queryFn: async () => {
+      const res = await fetch(`/api/tasks/${taskId}/attachments`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch attachments");
+      return res.json();
+    },
+    enabled: !!taskId,
+  });
+}
+
+export function useUploadAttachment(taskId: number) {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const urlRes = await fetch(`/api/tasks/${taskId}/attachments/request-url`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          fileName: file.name,
+          fileSize: file.size,
+          contentType: file.type,
+        }),
+      });
+      if (!urlRes.ok) throw new Error("Failed to get upload URL");
+      const { uploadURL, objectPath } = await urlRes.json();
+
+      const uploadRes = await fetch(uploadURL, {
+        method: "PUT",
+        body: file,
+        headers: { "Content-Type": file.type || "application/octet-stream" },
+      });
+      if (!uploadRes.ok) throw new Error("Failed to upload file");
+
+      const registerRes = await fetch(`/api/tasks/${taskId}/attachments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          fileName: file.name,
+          fileSize: file.size,
+          contentType: file.type,
+          objectPath,
+        }),
+      });
+      if (!registerRes.ok) throw new Error("Failed to register attachment");
+      return registerRes.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: attachmentKeys.list(taskId) });
+    },
+  });
+}
+
+export function useDeleteAttachment(taskId: number) {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (attachmentId: number) => {
+      const res = await fetch(`/api/tasks/${taskId}/attachments/${attachmentId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to delete attachment");
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: attachmentKeys.list(taskId) });
+    },
+  });
+}
