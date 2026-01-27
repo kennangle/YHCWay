@@ -16,7 +16,7 @@ interface SidebarNavProps {
 }
 
 export function SidebarNav({ onClose }: SidebarNavProps) {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const { user } = useAuth();
   const isAdmin = user?.isAdmin || false;
   const tabs = getNavigationTabs(isAdmin);
@@ -47,6 +47,16 @@ export function SidebarNav({ onClose }: SidebarNavProps) {
     setOpenSections(prev => ({ ...prev, [tabId]: !prev[tabId] }));
   };
 
+  const handleTabClick = (tab: NavTab) => {
+    if (tab.href) {
+      setLocation(tab.href);
+      setOpenSections(prev => ({ ...prev, [tab.id]: true }));
+      onClose?.();
+    } else {
+      toggleSection(tab.id);
+    }
+  };
+
   const isItemActive = (item: NavItem) => {
     return location === item.href || location.startsWith(item.href + "/");
   };
@@ -74,10 +84,11 @@ export function SidebarNav({ onClose }: SidebarNavProps) {
             open={openSections[tab.id]}
             onOpenChange={() => toggleSection(tab.id)}
           >
-            <CollapsibleTrigger asChild>
+            <div className="flex items-center">
               <button
+                onClick={() => handleTabClick(tab)}
                 className={cn(
-                  "flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
+                  "flex items-center gap-3 flex-1 px-3 py-2.5 rounded-l-lg text-sm font-medium transition-all",
                   "hover:bg-orange-50 dark:hover:bg-orange-900/20",
                   isTabActive(tab)
                     ? "bg-gradient-to-r from-orange-100 to-amber-100 dark:from-orange-900/30 dark:to-amber-900/30 text-orange-700 dark:text-orange-300"
@@ -85,17 +96,28 @@ export function SidebarNav({ onClose }: SidebarNavProps) {
                 )}
                 data-testid={`sidebar-tab-${tab.id}`}
               >
-                <div className="flex items-center gap-3">
-                  <tab.icon className="h-5 w-5" />
-                  <span>{tab.label}</span>
-                </div>
-                {openSections[tab.id] ? (
-                  <ChevronDown className="h-4 w-4 opacity-60" />
-                ) : (
-                  <ChevronRight className="h-4 w-4 opacity-60" />
-                )}
+                <tab.icon className="h-5 w-5" />
+                <span>{tab.label}</span>
               </button>
-            </CollapsibleTrigger>
+              <CollapsibleTrigger asChild>
+                <button
+                  className={cn(
+                    "px-2 py-2.5 rounded-r-lg text-sm transition-all",
+                    "hover:bg-orange-50 dark:hover:bg-orange-900/20",
+                    isTabActive(tab)
+                      ? "bg-gradient-to-r from-amber-100 to-amber-100 dark:from-amber-900/30 dark:to-amber-900/30 text-orange-700 dark:text-orange-300"
+                      : "text-gray-700 dark:text-gray-300"
+                  )}
+                  data-testid={`sidebar-tab-${tab.id}-toggle`}
+                >
+                  {openSections[tab.id] ? (
+                    <ChevronDown className="h-4 w-4 opacity-60" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4 opacity-60" />
+                  )}
+                </button>
+              </CollapsibleTrigger>
+            </div>
             <CollapsibleContent className="pl-4 mt-1 space-y-0.5">
               {tab.items.map((item) => (
                 <SidebarNavItem
