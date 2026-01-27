@@ -2,7 +2,8 @@ import { useState } from "react";
 import { 
   FolderKanban, Plus, MoreVertical, Calendar, Trash2, Edit, RefreshCw, 
   CheckCircle2, Clock, AlertTriangle, TrendingUp, LayoutGrid, List,
-  Search, Filter, ChevronRight, Users, ListTodo, Download, Loader2, Check, X
+  Search, Filter, ChevronRight, Users, ListTodo, Download, Loader2, Check, X,
+  FileText, Flag, User
 } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -34,6 +35,18 @@ interface Task {
   priority: string;
   createdAt: string;
   updatedAt: string;
+  assigneeId?: string | null;
+}
+
+interface TaskWithProject extends Task {
+  projectName?: string;
+  projectColor?: string;
+  assignee?: {
+    id: string;
+    firstName?: string;
+    lastName?: string;
+    email: string;
+  } | null;
 }
 
 interface Project {
@@ -74,6 +87,7 @@ export default function Projects() {
   const [selectedAsanaProjects, setSelectedAsanaProjects] = useState<Set<string>>(new Set());
   const [importingProjects, setImportingProjects] = useState<Set<string>>(new Set());
   const [importedProjects, setImportedProjects] = useState<Set<string>>(new Set());
+  const [tasksReportOpen, setTasksReportOpen] = useState(false);
 
   const { data: projects = [], isLoading: projectsLoading, isFetching, refetch } = useQuery<Project[]>({
     queryKey: ["projects"],
@@ -92,6 +106,38 @@ export default function Projects() {
       return res.json();
     },
   });
+
+  const { data: users = [] } = useQuery<{ id: string; email: string; firstName?: string; lastName?: string }[]>({
+    queryKey: ["/api/users"],
+    queryFn: async () => {
+      const res = await fetch("/api/users", { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+
+  const priorityOrder: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
+  
+  const tasksWithProjects: TaskWithProject[] = allTasks
+    .filter(task => !task.isCompleted)
+    .map(task => {
+      const project = projects.find(p => p.id === task.projectId);
+      const assignee = users.find(u => u.id === task.assigneeId);
+      return {
+        ...task,
+        projectName: project?.name,
+        projectColor: project?.color,
+        assignee: assignee ? { id: assignee.id, firstName: assignee.firstName, lastName: assignee.lastName, email: assignee.email } : null,
+      };
+    })
+    .sort((a, b) => {
+      const priorityDiff = (priorityOrder[a.priority] ?? 4) - (priorityOrder[b.priority] ?? 4);
+      if (priorityDiff !== 0) return priorityDiff;
+      if (a.dueDate && b.dueDate) return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      if (a.dueDate) return -1;
+      if (b.dueDate) return 1;
+      return 0;
+    });
 
   const { data: asanaProjects = [], isLoading: loadingAsanaProjects } = useQuery<AsanaProject[]>({
     queryKey: ["asana-projects-import"],
@@ -313,6 +359,15 @@ export default function Projects() {
               >
                 <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
               </button>
+              <Button
+                variant="outline"
+                onClick={() => setTasksReportOpen(true)}
+                className="flex items-center gap-2"
+                data-testid="button-tasks-report"
+              >
+                <FileText className="w-4 h-4" />
+                <span className="hidden sm:inline">Tasks Report</span>
+              </Button>
               <Button
                 variant="outline"
                 onClick={() => setImportDialogOpen(true)}
@@ -821,6 +876,86 @@ export default function Projects() {
               )}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Tasks Report Dialog */}
+      <Dialog open={tasksReportOpen} onOpenChange={setTasksReportOpen}>
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              Tasks Report - Priority Order
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto">
+            {tasksWithProjects.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <ListTodo className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p>No active tasks found</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {tasksWithProjects.map((task, index) => {
+                  const priorityColors: Record<string, { bg: string; text: string; icon: string }> = {
+                    urgent: { bg: "bg-red-100", text: "text-red-700", icon: "text-red-500" },
+                    high: { bg: "bg-orange-100", text: "text-orange-700", icon: "text-orange-500" },
+                    medium: { bg: "bg-blue-100", text: "text-blue-700", icon: "text-blue-500" },
+                    low: { bg: "bg-gray-100", text: "text-gray-700", icon: "text-gray-500" },
+                  };
+                  const colors = priorityColors[task.priority] || priorityColors.medium;
+                  
+                  return (
+                    <div
+                      key={task.id}
+                      className="flex items-center gap-4 p-3 rounded-lg bg-white border border-gray-100 hover:border-gray-200 transition-colors"
+                      data-testid={`report-task-${task.id}`}
+                    >
+                      <span className="text-sm text-muted-foreground w-6 text-right">#{index + 1}</span>
+                      <div className={`px-2 py-1 rounded text-xs font-medium ${colors.bg} ${colors.text} capitalize min-w-[70px] text-center`}>
+                        <Flag className={`w-3 h-3 inline mr-1 ${colors.icon}`} />
+                        {task.priority}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <Link href={`/projects/${task.projectId}`}>
+                          <p className="font-medium text-sm truncate hover:text-primary cursor-pointer">{task.title}</p>
+                        </Link>
+                        {task.projectName && (
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <div 
+                              className="w-2 h-2 rounded-full" 
+                              style={{ backgroundColor: task.projectColor || "#6b7280" }}
+                            />
+                            <span className="text-xs text-muted-foreground">{task.projectName}</span>
+                          </div>
+                        )}
+                      </div>
+                      {task.assignee && (
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <User className="w-3 h-3" />
+                          <span>{task.assignee.firstName || task.assignee.email.split('@')[0]}</span>
+                        </div>
+                      )}
+                      {task.dueDate && (
+                        <div className={`flex items-center gap-1.5 text-xs ${new Date(task.dueDate) < new Date() ? "text-red-500" : "text-muted-foreground"}`}>
+                          <Calendar className="w-3 h-3" />
+                          <span>{format(new Date(task.dueDate), "MMM d")}</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          <div className="pt-4 border-t flex justify-between items-center">
+            <p className="text-sm text-muted-foreground">
+              {tasksWithProjects.length} active task{tasksWithProjects.length !== 1 ? 's' : ''} sorted by priority
+            </p>
+            <Button variant="outline" onClick={() => setTasksReportOpen(false)}>
+              Close
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
