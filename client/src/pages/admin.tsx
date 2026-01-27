@@ -2,7 +2,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Redirect } from "wouter";
-import { Users, Server, Rss, Trash2, Edit2, Shield, ShieldOff, Plus, X, Key, Mail, RotateCcw, Check, XCircle, UserCheck, Clock } from "lucide-react";
+import { Users, Server, Rss, Trash2, Edit2, Shield, ShieldOff, Plus, X, Key, Mail, RotateCcw, Check, XCircle, UserCheck, Clock, Database, Download } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import type { User, Service, FeedItem, InsertService, InsertFeedItem, AdminCreateUser } from "@shared/schema";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { EmailEditor } from "@/components/email-editor";
 import { EmailBuilder } from "@/components/email-builder";
 
-type TabType = "users" | "services" | "feed" | "emails";
+type TabType = "users" | "services" | "feed" | "emails" | "backup";
 
 interface EmailTemplateType {
   type: string;
@@ -286,6 +286,7 @@ export default function Admin() {
     { id: "services" as TabType, label: "Services", icon: Server, count: services.length },
     { id: "feed" as TabType, label: "Feed Items", icon: Rss, count: feedItems.length },
     { id: "emails" as TabType, label: "Email Templates", icon: Mail, count: emailTemplateTypes.length },
+    { id: "backup" as TabType, label: "Database Backup", icon: Database },
   ];
 
   return (
@@ -772,6 +773,73 @@ export default function Admin() {
           </div>
         </div>
       )}
+
+        {activeTab === "backup" && (
+          <div className="glass-card rounded-2xl p-6" data-testid="section-backup">
+            <div className="flex items-center gap-3 mb-6">
+              <Database className="w-6 h-6 text-primary" />
+              <h2 className="font-semibold text-lg">Database Backup</h2>
+            </div>
+            
+            <div className="space-y-6">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 className="font-medium text-blue-900 mb-2">About SQL Backups</h3>
+                <p className="text-sm text-blue-700">
+                  Download a complete SQL backup of your database. This file contains all your data 
+                  (users, projects, tasks, settings, etc.) and can be used to restore your data if needed.
+                </p>
+              </div>
+
+              <div className="border rounded-lg p-6 text-center">
+                <Database className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                <h3 className="font-medium mb-2">Export Database as SQL</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Creates a complete backup of all tables and data in SQL format.
+                </p>
+                <button
+                  onClick={async () => {
+                    try {
+                      toast({ title: "Generating backup...", description: "This may take a moment." });
+                      const response = await fetch("/api/admin/backup/sql", { credentials: "include" });
+                      if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.error || "Backup failed");
+                      }
+                      const blob = await response.blob();
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      const contentDisposition = response.headers.get("Content-Disposition");
+                      const filename = contentDisposition?.match(/filename="(.+)"/)?.[1] || "backup.sql";
+                      a.download = filename;
+                      document.body.appendChild(a);
+                      a.click();
+                      window.URL.revokeObjectURL(url);
+                      document.body.removeChild(a);
+                      toast({ title: "Backup downloaded", description: `File: ${filename}` });
+                    } catch (error: any) {
+                      toast({ title: "Backup failed", description: error.message, variant: "destructive" });
+                    }
+                  }}
+                  className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 mx-auto"
+                  data-testid="button-download-backup"
+                >
+                  <Download className="w-5 h-5" />
+                  Download SQL Backup
+                </button>
+              </div>
+
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <h3 className="font-medium text-amber-900 mb-2">Restore Instructions</h3>
+                <p className="text-sm text-amber-700">
+                  To restore from a backup, you would need to import the SQL file into a PostgreSQL database 
+                  using a tool like <code className="bg-amber-100 px-1 rounded">psql</code> or a database management tool.
+                  Contact your administrator for restoration assistance.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
     </div>
   );
 }

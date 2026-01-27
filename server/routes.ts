@@ -7740,6 +7740,75 @@ export async function registerRoutes(
     }
   });
   
+  // Database backup - export as SQL (streaming, secure)
+  app.get("/api/admin/backup/sql", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { spawn } = await import("child_process");
+      const url = await import("url");
+      
+      // Parse DATABASE_URL securely
+      const dbUrl = process.env.DATABASE_URL;
+      if (!dbUrl) {
+        return res.status(500).json({ error: "Database URL not configured" });
+      }
+      
+      // Parse connection string into components
+      const parsedUrl = new url.URL(dbUrl);
+      const pgEnv = {
+        PGHOST: parsedUrl.hostname,
+        PGPORT: parsedUrl.port || '5432',
+        PGUSER: parsedUrl.username,
+        PGPASSWORD: parsedUrl.password,
+        PGDATABASE: parsedUrl.pathname.slice(1),
+        PGSSLMODE: parsedUrl.searchParams.get('sslmode') || 'require',
+      };
+      
+      // Generate timestamp for filename
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const filename = `yhcway_backup_${timestamp}.sql`;
+      
+      // Set headers for file download before streaming
+      res.setHeader('Content-Type', 'application/sql');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      
+      // Spawn pg_dump with env vars (no credentials in command line)
+      const pgDump = spawn('pg_dump', ['--no-owner', '--no-acl'], {
+        env: { ...process.env, ...pgEnv },
+      });
+      
+      let stderrData = '';
+      
+      // Pipe stdout directly to response (streaming)
+      pgDump.stdout.pipe(res);
+      
+      pgDump.stderr.on('data', (data) => {
+        stderrData += data.toString();
+      });
+      
+      pgDump.on('close', (code) => {
+        if (code === 0) {
+          console.log(`[Backup] SQL backup streamed: ${filename}`);
+        } else {
+          console.error(`[Backup] pg_dump exited with code ${code}:`, stderrData);
+          // Response already started streaming, can't change status
+        }
+      });
+      
+      pgDump.on('error', (err) => {
+        console.error("[Backup] pg_dump spawn error:", err.message);
+        if (!res.headersSent) {
+          res.status(500).json({ error: "Failed to start backup process" });
+        }
+      });
+      
+    } catch (error: any) {
+      console.error("[Backup] Error generating SQL backup:", error?.message);
+      if (!res.headersSent) {
+        res.status(500).json({ error: error?.message || "Failed to generate backup" });
+      }
+    }
+  });
+  
   app.get("/api/admin/error-logs", isAuthenticated, isAdmin, async (req: any, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 50;
