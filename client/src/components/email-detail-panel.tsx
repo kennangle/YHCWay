@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { X, Reply, Send, ArrowLeft, Loader2, Trash2, Archive, Sparkles, RefreshCw, FileText, ChevronDown, ChevronUp, AlertCircle, CheckCircle2, ListTodo, Forward, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import DOMPurify from "dompurify";
+import { RichTextEditor } from "./rich-text-editor";
 
 interface EmailDetail {
   id: string;
@@ -622,12 +623,11 @@ export function EmailDetailPanel({ messageId, accountId, onClose }: EmailDetailP
                   Replying to: {extractEmail(email.from)}
                 </span>
               </div>
-              <textarea
+              <RichTextEditor
                 value={replyBody}
-                onChange={(e) => setReplyBody(e.target.value)}
+                onChange={setReplyBody}
                 placeholder="Write your reply..."
-                className="w-full h-40 p-4 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
-                data-testid="input-reply-body"
+                minHeight="160px"
               />
               <div className="flex justify-end gap-2 mt-4">
                 <button
