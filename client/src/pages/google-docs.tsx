@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { File, Plus, ExternalLink, Trash2, Edit3, Eye, Search, RefreshCw, FileText } from "lucide-react";
+import { File, Plus, ExternalLink, Trash2, Edit3, Eye, Search, RefreshCw, FileText, X } from "lucide-react";
 import { getQueryFn } from "@/lib/queryClient";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -223,9 +223,18 @@ export default function GoogleDocsPage() {
                 placeholder="Search documents..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-10 pr-8"
                 data-testid="input-search-docs"
               />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded"
+                  data-testid="button-clear-search"
+                >
+                  <X className="w-3 h-3 text-muted-foreground" />
+                </button>
+              )}
             </div>
           </div>
 

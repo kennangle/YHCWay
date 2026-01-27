@@ -1,4 +1,4 @@
-import { Search, Mail, MessageCircle, Users, MessageSquare, PenSquare, Loader2, Share2, Check, Trash2, Archive, Send, RefreshCw, AlertTriangle, Settings, PanelLeftClose, PanelLeft } from "lucide-react";
+import { Search, Mail, MessageCircle, Users, MessageSquare, PenSquare, Loader2, Share2, Check, Trash2, Archive, Send, RefreshCw, AlertTriangle, Settings, PanelLeftClose, PanelLeft, X } from "lucide-react";
 import { GmailSidebar } from "@/components/gmail-sidebar";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -463,9 +463,18 @@ export default function Inbox() {
                 placeholder="Search messages..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 py-2 rounded-full glass-panel border-0 w-64 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                className="pl-10 pr-8 py-2 rounded-full glass-panel border-0 w-64 focus:outline-none focus:ring-2 focus:ring-primary/20"
                 data-testid="input-search"
               />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded-full"
+                  data-testid="button-clear-search"
+                >
+                  <X className="w-3 h-3 text-muted-foreground" />
+                </button>
+              )}
             </div>
           </div>
         </header>

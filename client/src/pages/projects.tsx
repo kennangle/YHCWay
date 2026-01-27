@@ -2,7 +2,7 @@ import { useState } from "react";
 import { 
   FolderKanban, Plus, MoreVertical, Calendar, Trash2, Edit, RefreshCw, 
   CheckCircle2, Clock, AlertTriangle, TrendingUp, LayoutGrid, List,
-  Search, Filter, ChevronRight, Users, ListTodo, Download, Loader2, Check
+  Search, Filter, ChevronRight, Users, ListTodo, Download, Loader2, Check, X
 } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -387,9 +387,18 @@ export default function Projects() {
                 placeholder="Search projects..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 bg-white/80"
+                className="pl-9 pr-8 bg-white/80"
                 data-testid="input-search-projects"
               />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded"
+                  data-testid="button-clear-search"
+                >
+                  <X className="w-3 h-3 text-muted-foreground" />
+                </button>
+              )}
             </div>
             <div className="flex gap-2">
               <button

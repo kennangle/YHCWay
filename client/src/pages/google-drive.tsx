@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { HardDrive, ExternalLink, Search, RefreshCw, FileText, FileSpreadsheet, Folder, Image, Video, File, ChevronRight } from "lucide-react";
+import { HardDrive, ExternalLink, Search, RefreshCw, FileText, FileSpreadsheet, Folder, Image, Video, File, ChevronRight, X } from "lucide-react";
 import { getQueryFn } from "@/lib/queryClient";
 import { format } from "date-fns";
 
@@ -170,9 +170,18 @@ export default function GoogleDrivePage() {
                 placeholder="Search files..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-10 pr-8"
                 data-testid="input-search-drive"
               />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded"
+                  data-testid="button-clear-search"
+                >
+                  <X className="w-3 h-3 text-muted-foreground" />
+                </button>
+              )}
             </div>
           </div>
 
