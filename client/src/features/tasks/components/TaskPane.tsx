@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { X, CheckCircle2, Circle, Calendar as CalendarIcon, User, Flag, FolderOpen, Repeat, ChevronDown, Users, Plus, Trash2, Archive, ArchiveRestore } from "lucide-react";
 import { useTask, useTaskProjects, useUpdateTask, useTaskCollaborators, useAddTaskCollaborator, useRemoveTaskCollaborator, useArchiveTask, useUnarchiveTask } from "../hooks";
 import { StoriesFeed } from "./StoriesFeed";
@@ -59,7 +59,7 @@ export function TaskPane({ taskId, projectId, onClose }: TaskPaneProps) {
   const archiveTask = useArchiveTask(projectId);
   const unarchiveTask = useUnarchiveTask(projectId);
 
-  const { data: users = [] } = useQuery<User[]>({
+  const { data: usersRaw = [] } = useQuery<User[]>({
     queryKey: ["/api/users"],
     queryFn: async () => {
       const res = await fetch("/api/users", { credentials: "include" });
@@ -67,6 +67,16 @@ export function TaskPane({ taskId, projectId, onClose }: TaskPaneProps) {
       return res.json();
     },
   });
+
+  // Deduplicate users by ID to prevent duplicate entries in dropdowns
+  const users = useMemo(() => {
+    const seen = new Set<string>();
+    return usersRaw.filter(user => {
+      if (seen.has(user.id)) return false;
+      seen.add(user.id);
+      return true;
+    });
+  }, [usersRaw]);
 
   const handleAddCollaborator = () => {
     if (selectedUserId && taskId) {

@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { ListTodo, Plus, RefreshCw, Calendar, Flag, CheckCircle2, Circle, Clock, Filter, ChevronDown, ChevronRight, FolderKanban, MoreHorizontal, ArrowRight, Link2, Download, Upload, Trash2, Square, CheckSquare } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -80,7 +80,7 @@ export default function Tasks() {
     },
   });
 
-  const { data: users = [] } = useQuery<User[]>({
+  const { data: usersRaw = [] } = useQuery<User[]>({
     queryKey: ["users"],
     queryFn: async () => {
       const res = await fetch("/api/users", { credentials: "include" });
@@ -88,6 +88,16 @@ export default function Tasks() {
       return res.json();
     },
   });
+
+  // Deduplicate users by ID to prevent duplicate entries in dropdowns
+  const users = useMemo(() => {
+    const seen = new Set<string>();
+    return usersRaw.filter(user => {
+      if (seen.has(user.id)) return false;
+      seen.add(user.id);
+      return true;
+    });
+  }, [usersRaw]);
 
   const toggleTaskMutation = useMutation({
     mutationFn: async ({ taskId, isCompleted }: { taskId: number; isCompleted: boolean }) => {

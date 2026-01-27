@@ -708,7 +708,7 @@ export default function ProjectBoard() {
     enabled: !!projectId,
   });
 
-  const { data: users = [] } = useQuery<User[]>({
+  const { data: usersRaw = [] } = useQuery<User[]>({
     queryKey: ["/api/users"],
     queryFn: async () => {
       const res = await fetch("/api/users", { credentials: "include" });
@@ -716,6 +716,16 @@ export default function ProjectBoard() {
       return res.json();
     },
   });
+
+  // Deduplicate users by ID to prevent duplicate entries in dropdowns
+  const users = useMemo(() => {
+    const seen = new Set<string>();
+    return usersRaw.filter(user => {
+      if (seen.has(user.id)) return false;
+      seen.add(user.id);
+      return true;
+    });
+  }, [usersRaw]);
 
   const { data: allProjects = [] } = useQuery<{ id: number; name: string; color: string }[]>({
     queryKey: ["all-projects"],
