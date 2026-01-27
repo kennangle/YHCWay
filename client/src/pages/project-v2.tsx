@@ -226,9 +226,19 @@ export default function ProjectPageV2() {
               placeholder="Search tasks..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 h-8"
+              className="pl-8 pr-8 h-8"
               data-testid="input-search-tasks"
             />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded"
+                data-testid="button-clear-task-search"
+              >
+                <X className="w-3 h-3 text-muted-foreground" />
+              </button>
+            )}
           </div>
 
           <Popover open={showFilters} onOpenChange={setShowFilters}>
