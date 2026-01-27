@@ -1255,15 +1255,16 @@ export default function ProjectBoard() {
                   placeholder="Search tasks..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 bg-white/80 h-9"
+                  className="pl-9 pr-8 bg-white/80 h-9"
                   data-testid="input-search-tasks"
                 />
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery("")}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded z-10"
+                    data-testid="button-clear-task-search"
                   >
-                    <X className="w-3 h-3 text-muted-foreground" />
+                    <X className="w-4 h-4 text-muted-foreground" />
                   </button>
                 )}
               </div>
