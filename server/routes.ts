@@ -3650,10 +3650,12 @@ export async function registerRoutes(
       if (!title) {
         return res.status(400).json({ error: "Title is required" });
       }
+      console.log("[Google Docs] Creating document with title:", title);
       const doc = await createGoogleDoc(title);
+      console.log("[Google Docs] Document created successfully:", doc.id);
       res.json(doc);
     } catch (error: any) {
-      console.error("Error creating Google Doc:", error);
+      console.error("[Google Docs] Error creating document:", error?.message, error?.response?.data || error?.stack);
       res.status(500).json({ error: error?.message || "Failed to create document" });
     }
   });
