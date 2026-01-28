@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { File, Plus, ExternalLink, Trash2, Edit3, Eye, Search, RefreshCw, FileText, X } from "lucide-react";
+import { File, Plus, ExternalLink, Edit3, Eye, Search, RefreshCw, FileText, X } from "lucide-react";
 import { RichTextEditor } from "@/components/rich-text-editor";
 import { getQueryFn } from "@/lib/queryClient";
 import { toast } from "sonner";
@@ -67,23 +67,6 @@ export default function GoogleDocsPage() {
     },
     onError: () => {
       toast.error("Failed to create document");
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const res = await fetch(`/api/google-docs/${id}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error("Failed to delete document");
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/google-docs"] });
-      toast.success("Document deleted");
-    },
-    onError: () => {
-      toast.error("Failed to delete document");
     },
   });
 
@@ -297,15 +280,6 @@ export default function GoogleDocsPage() {
                         data-testid={`button-open-${doc.id}`}
                       >
                         <ExternalLink className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => deleteMutation.mutate(doc.id)}
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                        data-testid={`button-delete-${doc.id}`}
-                      >
-                        <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
                   </div>
