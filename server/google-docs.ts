@@ -120,24 +120,68 @@ export interface GoogleDocContent {
   webViewLink: string;
 }
 
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 export async function getGoogleDocContent(documentId: string): Promise<GoogleDocContent> {
   const docs = await getGoogleDocsClient();
   
   const docResponse = await docs.documents.get({ documentId });
   
-  // Construct webViewLink directly instead of calling Drive API (which may lack scopes)
   const webViewLink = `https://docs.google.com/document/d/${documentId}/edit`;
 
-  let textContent = '';
+  let htmlContent = '';
   const body = docResponse.data.body;
   
   if (body?.content) {
     for (const element of body.content) {
-      if (element.paragraph?.elements) {
-        for (const textElement of element.paragraph.elements) {
-          if (textElement.textRun?.content) {
-            textContent += textElement.textRun.content;
+      if (element.paragraph) {
+        const paragraph = element.paragraph;
+        let paragraphHtml = '';
+        
+        if (paragraph.elements) {
+          for (const textElement of paragraph.elements) {
+            if (textElement.textRun) {
+              let text = textElement.textRun.content || '';
+              
+              if (text === '\n') {
+                continue;
+              }
+              
+              text = escapeHtml(text.replace(/\n$/, ''));
+              
+              const style = textElement.textRun.textStyle;
+              if (style) {
+                if (style.bold) text = `<strong>${text}</strong>`;
+                if (style.italic) text = `<em>${text}</em>`;
+                if (style.underline) text = `<u>${text}</u>`;
+                if (style.strikethrough) text = `<s>${text}</s>`;
+              }
+              
+              paragraphHtml += text;
+            }
           }
+        }
+        
+        if (paragraphHtml.trim()) {
+          const namedStyle = paragraph.paragraphStyle?.namedStyleType;
+          if (namedStyle === 'HEADING_1') {
+            htmlContent += `<h1>${paragraphHtml}</h1>`;
+          } else if (namedStyle === 'HEADING_2') {
+            htmlContent += `<h2>${paragraphHtml}</h2>`;
+          } else if (namedStyle === 'HEADING_3') {
+            htmlContent += `<h3>${paragraphHtml}</h3>`;
+          } else {
+            htmlContent += `<p>${paragraphHtml}</p>`;
+          }
+        } else {
+          htmlContent += '<p><br></p>';
         }
       }
     }
@@ -146,7 +190,7 @@ export async function getGoogleDocContent(documentId: string): Promise<GoogleDoc
   return {
     id: documentId,
     title: docResponse.data.title || 'Untitled',
-    content: textContent,
+    content: htmlContent || '<p></p>',
     webViewLink
   };
 }
