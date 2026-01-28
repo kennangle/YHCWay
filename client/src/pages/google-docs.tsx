@@ -15,6 +15,7 @@ interface GoogleDoc {
   modifiedTime: string;
   createdTime: string;
   webViewLink: string;
+  ownerName?: string;
 }
 
 interface GoogleDocContent {
@@ -261,7 +262,12 @@ export default function GoogleDocsPage() {
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <File className="w-8 h-8 text-blue-600 flex-shrink-0" />
                       <div className="min-w-0 flex-1">
-                        <h3 className="font-medium text-gray-900 truncate max-w-[calc(100vw-300px)]" title={doc.name}>{doc.name}</h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-medium text-gray-900 truncate max-w-[calc(100vw-350px)]" title={doc.name}>{doc.name}</h3>
+                          {doc.ownerName && (
+                            <span className="text-xs text-gray-400 flex-shrink-0">by {doc.ownerName}</span>
+                          )}
+                        </div>
                         <p className="text-sm text-gray-500">
                           Modified {format(new Date(doc.modifiedTime), "MMM d, yyyy 'at' h:mm a")}
                         </p>

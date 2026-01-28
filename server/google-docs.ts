@@ -69,6 +69,7 @@ export interface GoogleDoc {
   modifiedTime: string;
   createdTime: string;
   webViewLink: string;
+  ownerName?: string;
 }
 
 export async function listGoogleDocs(pageSize: number = 20): Promise<GoogleDoc[]> {
@@ -78,7 +79,7 @@ export async function listGoogleDocs(pageSize: number = 20): Promise<GoogleDoc[]
     q: "mimeType='application/vnd.google-apps.document' and trashed=false",
     pageSize,
     orderBy: 'modifiedTime desc',
-    fields: 'files(id, name, modifiedTime, createdTime, webViewLink)'
+    fields: 'files(id, name, modifiedTime, createdTime, webViewLink, owners)'
   });
 
   return (response.data.files || []).map(file => ({
@@ -86,7 +87,8 @@ export async function listGoogleDocs(pageSize: number = 20): Promise<GoogleDoc[]
     name: file.name!,
     modifiedTime: file.modifiedTime!,
     createdTime: file.createdTime!,
-    webViewLink: file.webViewLink!
+    webViewLink: file.webViewLink!,
+    ownerName: file.owners?.[0]?.displayName || file.owners?.[0]?.emailAddress || undefined
   }));
 }
 
