@@ -254,14 +254,14 @@ export default function GoogleDocsPage() {
               {filteredDocs.map((doc) => (
                 <div
                   key={doc.id}
-                  className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                  className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow overflow-hidden"
                   data-testid={`doc-item-${doc.id}`}
                 >
                   <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3 flex-1 min-w-0 overflow-hidden">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
                       <File className="w-8 h-8 text-blue-600 flex-shrink-0" />
-                      <div className="min-w-0 flex-1 overflow-hidden">
-                        <h3 className="font-medium text-gray-900 truncate" title={doc.name}>{doc.name}</h3>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-medium text-gray-900 truncate max-w-[calc(100vw-300px)]" title={doc.name}>{doc.name}</h3>
                         <p className="text-sm text-gray-500">
                           Modified {format(new Date(doc.modifiedTime), "MMM d, yyyy 'at' h:mm a")}
                         </p>

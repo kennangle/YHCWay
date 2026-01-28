@@ -120,12 +120,11 @@ export interface GoogleDocContent {
 
 export async function getGoogleDocContent(documentId: string): Promise<GoogleDocContent> {
   const docs = await getGoogleDocsClient();
-  const drive = await getGoogleDriveClientForDocs();
   
-  const [docResponse, fileResponse] = await Promise.all([
-    docs.documents.get({ documentId }),
-    drive.files.get({ fileId: documentId, fields: 'webViewLink' })
-  ]);
+  const docResponse = await docs.documents.get({ documentId });
+  
+  // Construct webViewLink directly instead of calling Drive API (which may lack scopes)
+  const webViewLink = `https://docs.google.com/document/d/${documentId}/edit`;
 
   let textContent = '';
   const body = docResponse.data.body;
@@ -146,7 +145,7 @@ export async function getGoogleDocContent(documentId: string): Promise<GoogleDoc
     id: documentId,
     title: docResponse.data.title || 'Untitled',
     content: textContent,
-    webViewLink: fileResponse.data.webViewLink!
+    webViewLink
   };
 }
 
