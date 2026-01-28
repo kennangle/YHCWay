@@ -245,5 +245,10 @@ export async function updateGoogleDoc(documentId: string, newContent: string): P
 
 export async function deleteGoogleDoc(documentId: string): Promise<void> {
   const drive = await getGoogleDriveClientForDocs();
-  await drive.files.delete({ fileId: documentId });
+  // Use files.update to move to trash instead of permanent delete
+  // This is more likely to work with limited scopes
+  await drive.files.update({ 
+    fileId: documentId,
+    requestBody: { trashed: true }
+  });
 }
