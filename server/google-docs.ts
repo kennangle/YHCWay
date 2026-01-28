@@ -92,25 +92,22 @@ export async function listGoogleDocs(pageSize: number = 20): Promise<GoogleDoc[]
 
 export async function createGoogleDoc(title: string): Promise<GoogleDoc> {
   const docs = await getGoogleDocsClient();
-  const drive = await getGoogleDriveClientForDocs();
   
   const response = await docs.documents.create({
     requestBody: { title }
   });
 
   const docId = response.data.documentId!;
+  const now = new Date().toISOString();
   
-  const fileResponse = await drive.files.get({
-    fileId: docId,
-    fields: 'id, name, modifiedTime, createdTime, webViewLink'
-  });
-
+  // Return document info directly from the Docs API response
+  // This avoids the need for a separate Drive API call which may fail due to scopes
   return {
-    id: fileResponse.data.id!,
-    name: fileResponse.data.name!,
-    modifiedTime: fileResponse.data.modifiedTime!,
-    createdTime: fileResponse.data.createdTime!,
-    webViewLink: fileResponse.data.webViewLink!
+    id: docId,
+    name: response.data.title || title,
+    modifiedTime: now,
+    createdTime: now,
+    webViewLink: `https://docs.google.com/document/d/${docId}/edit`
   };
 }
 
