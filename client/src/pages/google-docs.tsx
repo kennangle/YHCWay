@@ -2,9 +2,9 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { File, Plus, ExternalLink, Trash2, Edit3, Eye, Search, RefreshCw, FileText, X } from "lucide-react";
+import { RichTextEditor } from "@/components/rich-text-editor";
 import { getQueryFn } from "@/lib/queryClient";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -342,13 +342,14 @@ export default function GoogleDocsPage() {
           <DialogHeader>
             <DialogTitle>Edit: {docContent?.title}</DialogTitle>
           </DialogHeader>
-          <Textarea
-            value={editContent}
-            onChange={(e) => setEditContent(e.target.value)}
-            className="min-h-[400px] font-mono"
-            placeholder="Enter document content..."
-            data-testid="textarea-edit-content"
-          />
+          <div className="overflow-y-auto max-h-[50vh] border rounded-md" data-testid="editor-edit-content">
+            <RichTextEditor
+              value={editContent}
+              onChange={setEditContent}
+              placeholder="Enter document content..."
+              minHeight="400px"
+            />
+          </div>
           <DialogFooter className="gap-2">
             <Button
               variant="outline"
