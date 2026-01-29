@@ -1,5 +1,5 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { projectsApi } from "./api";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { projectsApi, columnsApi } from "./api";
 
 export const projectKeys = {
   board: (projectId: number) => ["projectBoard", projectId] as const,
@@ -27,4 +27,45 @@ export function useProject(projectId: number) {
 export function useInvalidateProjectBoard() {
   const qc = useQueryClient();
   return (projectId: number) => qc.invalidateQueries({ queryKey: projectKeys.board(projectId) });
+}
+
+export function useCreateColumn(projectId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { name: string; color?: string }) => columnsApi.create(projectId, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: projectKeys.board(projectId) });
+    },
+  });
+}
+
+export function useUpdateColumn(projectId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ columnId, data }: { columnId: number; data: { name?: string; color?: string } }) =>
+      columnsApi.update(columnId, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: projectKeys.board(projectId) });
+    },
+  });
+}
+
+export function useDeleteColumn(projectId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (columnId: number) => columnsApi.delete(columnId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: projectKeys.board(projectId) });
+    },
+  });
+}
+
+export function useReorderColumns(projectId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (columnIds: number[]) => columnsApi.reorder(projectId, columnIds),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: projectKeys.board(projectId) });
+    },
+  });
 }
