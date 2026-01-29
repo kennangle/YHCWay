@@ -770,10 +770,102 @@ The YHC Way includes automated tests to ensure code quality.
 
 ---
 
+## Troubleshooting
+
+### Reconnecting Services to Fix Issues
+
+Sometimes connected services may stop working correctly. This can happen when:
+- Permissions change or expire
+- You change your password on the external service
+- The service adds new features that require additional permissions
+- Your session or token becomes invalid
+
+**The solution is often to disconnect and reconnect the service.** This refreshes your connection and ensures you have all required permissions.
+
+#### How to Reconnect a Service
+
+1. Go to **Settings** or **Connect App** in the sidebar
+2. Find the service that's having issues
+3. Click **Disconnect** to remove the current connection
+4. Wait a few seconds, then click **Connect** again
+5. Follow the authorization prompts and **approve all requested permissions**
+6. Try using the feature again
+
+### Common Issues and Solutions
+
+#### Slack: "Please reconnect your Slack account to enable sending messages"
+
+**Problem:** You can read Slack messages but cannot reply to them.
+
+**Cause:** Your Slack connection is missing the "chat:write" permission needed to send messages. This happens if you connected Slack before this permission was added, or if you didn't approve all permissions during setup.
+
+**Solution:**
+1. Go to **Settings** → **Connections**
+2. Find **Slack** and click **Disconnect**
+3. Click **Connect** to reconnect
+4. When Slack asks for permissions, make sure to approve **all** of them, including "Send messages on your behalf"
+5. Try sending your reply again
+
+#### Gmail: "Insufficient Permission" or emails not loading
+
+**Problem:** Gmail shows an error or your emails aren't appearing.
+
+**Cause:** Your Gmail connection may have expired or needs additional permissions.
+
+**Solution:**
+1. Go to **Connect App** in the sidebar
+2. Find **Gmail** and click **Disconnect**
+3. Click **Connect** and sign in with your Google account again
+4. Approve all requested permissions
+5. Your emails should now load correctly
+
+#### Asana: Tasks not syncing or showing outdated information
+
+**Problem:** Asana tasks aren't updating or new tasks aren't appearing.
+
+**Solution:**
+1. Go to **Connect App** in the sidebar
+2. Find **Asana** and click **Disconnect**
+3. Click **Connect** and sign in to Asana again
+4. Your tasks will refresh with the latest data
+
+#### Apple Calendar: Events not appearing
+
+**Problem:** Your iCloud calendar events aren't showing up.
+
+**Cause:** App-specific passwords can expire or become invalid.
+
+**Solution:**
+1. Go to **Connect App** in the sidebar
+2. Find **Apple Calendar** and click **Disconnect**
+3. Go to appleid.apple.com and create a new App-Specific Password
+4. Click **Connect** in The YHC Way and enter your new credentials
+5. Your calendar events should now sync
+
+#### Google Docs/Sheets: "Access Denied" or documents not loading
+
+**Problem:** You can't access your Google documents.
+
+**Solution:**
+1. Go to **Connect App** in the sidebar
+2. Find **Google Docs** or **Google Sheets** and reconnect
+3. Make sure to approve all permissions when prompted
+
+### General Tips
+
+- **When in doubt, reconnect** - Most connection issues can be resolved by disconnecting and reconnecting the service
+- **Approve all permissions** - Some features require specific permissions. Always approve everything the service asks for during setup
+- **Check your credentials** - If you recently changed your password on an external service, you'll need to reconnect
+- **Clear your browser cache** - Sometimes clearing your browser's cache and cookies can resolve display issues
+- **Try a different browser** - If issues persist, try accessing The YHC Way in a different browser or incognito window
+
+---
+
 ## Getting Help
 
 If you have questions or run into issues:
 - Check the **Setup Guide** for connection help
+- Try the **Troubleshooting** section above
 - Contact your administrator at ken@kennangle.com
 
 ---
