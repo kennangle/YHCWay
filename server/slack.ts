@@ -963,8 +963,10 @@ export async function sendUserSlackMessage(
   }
 ): Promise<SlackNotificationResult> {
   try {
+    console.log('[Slack] sendUserSlackMessage called:', { userId, channelId, hasThreadTs: !!options?.threadTs });
     const token = await getUserSlackToken(userId);
     if (!token) {
+      console.error('[Slack] No token found for user:', userId);
       return { success: false, error: 'User Slack not connected' };
     }
     
@@ -977,6 +979,7 @@ export async function sendUserSlackMessage(
       payload.thread_ts = options.threadTs;
     }
 
+    console.log('[Slack] Sending chat.postMessage with payload:', JSON.stringify(payload));
     const response = await fetch('https://slack.com/api/chat.postMessage', {
       method: 'POST',
       headers: {
@@ -987,9 +990,10 @@ export async function sendUserSlackMessage(
     });
 
     const data = await response.json();
+    console.log('[Slack] chat.postMessage response:', { ok: data.ok, error: data.error, channel: data.channel });
 
     if (!data.ok) {
-      console.error('Slack user postMessage error:', data.error);
+      console.error('[Slack] user postMessage error:', data.error, data);
       return { success: false, error: data.error };
     }
 

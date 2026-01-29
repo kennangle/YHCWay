@@ -27,6 +27,7 @@ export function SlackDmDetailPanel({ message, onClose }: SlackDmDetailPanelProps
 
   const replyMutation = useMutation({
     mutationFn: async (text: string) => {
+      console.log("Sending Slack reply:", { channelId: message.channelId, message: text, threadTs: message.threadTs });
       const res = await fetch("/api/v2/slack/reply", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -37,11 +38,12 @@ export function SlackDmDetailPanel({ message, onClose }: SlackDmDetailPanelProps
           threadTs: message.threadTs,
         }),
       });
+      const data = await res.json();
+      console.log("Slack reply response:", res.status, data);
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || "Failed to send reply");
+        throw new Error(data.error || data.message || "Failed to send reply");
       }
-      return res.json();
+      return data;
     },
     onSuccess: () => {
       toast.success("Reply sent successfully");
