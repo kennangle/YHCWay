@@ -97,6 +97,7 @@ import GoogleDrive from "@/pages/google-drive";
 import DependencyTracker from "@/pages/dependency-tracker";
 import DailyHub from "@/pages/daily-hub";
 import SystemHealth from "@/pages/system-health";
+import AdminReports from "@/pages/admin-reports";
 import Privacy from "@/pages/privacy";
 import Terms from "@/pages/terms";
 import Support from "@/pages/support";
@@ -169,6 +170,7 @@ function Router() {
           <Route path="/connect" component={Connect} />
           <Route path="/settings" component={Settings} />
           <Route path="/admin" component={Admin} />
+          <Route path="/admin/reports" component={AdminReports} />
           <Route path="/email-builder" component={EmailBuilderPage} />
           <Route path="/intro-offers" component={IntroOffers} />
           <Route path="/scoreboard" component={Scoreboard} />

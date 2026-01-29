@@ -4,7 +4,9 @@ import { createServer, type Server } from "http";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import { storage } from "./storage";
+import { storage, db } from "./storage";
+import { auditLogs } from "@shared/schema";
+import { eq, desc, and, gte, lte } from "drizzle-orm";
 import { insertServiceSchema, insertFeedItemSchema, ADMIN_EMAIL, adminCreateUserSchema, integrationApiKeySchema, sendMessageSchema, createConversationSchema, createTenantSchema, inviteUserSchema, createProjectSchema, createTaskSchema, updateTaskSchema, createSubtaskSchema, createCommentSchema, addCollaboratorSchema, type User } from "@shared/schema";
 import { setupAuth, isAuthenticated } from "./auth";
 import { tenantMiddleware, requireTenant, requireTenantRole } from "./tenantMiddleware";
@@ -1050,6 +1052,58 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error rejecting user:", error);
       res.status(500).json({ error: "Failed to reject user" });
+    }
+  });
+
+  // Admin user activity report
+  app.get("/api/admin/reports/user-activity", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { userId, startDate, endDate } = req.query;
+      
+      if (!userId || !startDate || !endDate) {
+        return res.status(400).json({ error: "userId, startDate, and endDate are required" });
+      }
+      
+      const start = new Date(startDate as string);
+      const end = new Date(endDate as string);
+      end.setHours(23, 59, 59, 999);
+      
+      const timeEntries = await storage.getUserTimeEntries(userId as string, start, end);
+      
+      const timeEntriesWithDetails = await Promise.all(
+        timeEntries.map(async (entry) => {
+          let taskTitle: string | undefined;
+          let projectName: string | undefined;
+          
+          if (entry.taskId) {
+            const task = await storage.getTask(entry.taskId);
+            taskTitle = task?.title;
+          }
+          if (entry.projectId) {
+            const project = await storage.getProject(entry.projectId);
+            projectName = project?.name;
+          }
+          
+          return { ...entry, taskTitle, projectName };
+        })
+      );
+      
+      const userAuditLogs = await db.select()
+        .from(auditLogs)
+        .where(
+          and(
+            eq(auditLogs.userId, userId as string),
+            gte(auditLogs.createdAt, start),
+            lte(auditLogs.createdAt, end)
+          )
+        )
+        .orderBy(desc(auditLogs.createdAt))
+        .limit(100);
+      
+      res.json({ timeEntries: timeEntriesWithDetails, auditLogs: userAuditLogs });
+    } catch (error) {
+      console.error("Error fetching user activity report:", error);
+      res.status(500).json({ error: "Failed to fetch user activity report" });
     }
   });
 
