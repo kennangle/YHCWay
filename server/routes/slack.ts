@@ -311,7 +311,12 @@ router.post("/reply", asyncHandler(async (req: any, res: any) => {
   if (result.success) {
     res.json(result);
   } else {
-    throw new ExternalServiceError("Slack", new Error(result.error || "Failed to send reply"));
+    // Return specific error for debugging
+    console.error('[Slack Reply] Failed:', result.error);
+    res.status(400).json({ 
+      error: result.error || "Failed to send reply",
+      details: `Slack API error: ${result.error}`
+    });
   }
 }));
 
