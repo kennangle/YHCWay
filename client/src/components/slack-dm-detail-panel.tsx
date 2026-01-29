@@ -52,7 +52,11 @@ export function SlackDmDetailPanel({ message, onClose }: SlackDmDetailPanelProps
       queryClient.invalidateQueries({ queryKey: ["slack-dms"] });
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to send reply");
+      if (error.message === "missing_scope") {
+        toast.error("Please reconnect your Slack account in Settings to enable sending messages.");
+      } else {
+        toast.error(error.message || "Failed to send reply");
+      }
     },
   });
 
