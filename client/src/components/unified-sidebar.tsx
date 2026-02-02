@@ -37,7 +37,8 @@ import {
   ExternalLink,
   Dumbbell,
   GitBranch,
-  MessageSquare
+  MessageSquare,
+  Video
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
@@ -112,6 +113,7 @@ export function UnifiedSidebar() {
       defaultCollapsed: false,
       items: [
         { icon: MessageCircle, label: "Chat", href: "/chat", tourId: "nav-chat" },
+        { icon: Video, label: "Fathom Meetings", href: "/fathom", tourId: "nav-fathom" },
         { icon: ListTodo, label: "Tasks", href: "/tasks", tourId: "nav-tasks" },
         { icon: FolderKanban, label: "Projects", href: "/projects", tourId: "nav-projects" },
         { icon: HardDrive, label: "Google Drive", href: "/google-drive", tourId: "nav-google-drive" },
