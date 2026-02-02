@@ -81,7 +81,7 @@ export default function Tasks() {
   });
 
   const { data: usersRaw = [] } = useQuery<User[]>({
-    queryKey: ["users"],
+    queryKey: ["/api/users"],
     queryFn: async () => {
       const res = await fetch("/api/users", { credentials: "include" });
       if (!res.ok) return [];
