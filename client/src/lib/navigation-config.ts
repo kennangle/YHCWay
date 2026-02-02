@@ -26,6 +26,7 @@ import {
   Shield,
   ClipboardList,
   BookOpen,
+  Video,
   LucideIcon,
 } from "lucide-react";
 
@@ -69,6 +70,7 @@ export const navigationTabs: NavTab[] = [
     icon: FileText,
     items: [
       { id: "chat", icon: MessageCircle, label: "Chat", href: "/chat" },
+      { id: "fathom", icon: Video, label: "Fathom Meetings", href: "/fathom" },
       { id: "dependencies", icon: GitBranch, label: "Dependencies", href: "/dependency-tracker" },
       { id: "google-docs", icon: File, label: "Google Docs", href: "/google-docs" },
       { id: "google-sheets", icon: FileSpreadsheet, label: "Google Sheets", href: "/google-sheets" },

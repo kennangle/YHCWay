@@ -7,6 +7,7 @@ import gmailRoutes from "./gmail";
 import tasksRoutes from "./tasks";
 import slackRoutes from "./slack";
 import projectsRoutes from "./projects";
+import fathomRoutes from "./fathom";
 
 export function registerModularRoutes(app: Express, isAuthenticated: RequestHandler, isAdmin: RequestHandler) {
   // OAuth callbacks must be registered without auth middleware
@@ -108,6 +109,9 @@ export function registerModularRoutes(app: Express, isAuthenticated: RequestHand
   
   // Register projects routes with auth check
   app.use("/api/v2/projects", isAuthenticated, projectsRoutes);
+  
+  // Register Fathom routes with auth check
+  app.use("/api/fathom", isAuthenticated, fathomRoutes);
 }
 
-export { adminRoutes, gmailRoutes, tasksRoutes, slackRoutes, projectsRoutes };
+export { adminRoutes, gmailRoutes, tasksRoutes, slackRoutes, projectsRoutes, fathomRoutes };
