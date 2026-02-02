@@ -1,6 +1,6 @@
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, pointerWithin, rectIntersection, CollisionDetection, closestCenter } from "@dnd-kit/core";
 import { SortableContext, horizontalListSortingStrategy, arrayMove } from "@dnd-kit/sortable";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { BoardColumn } from "./BoardColumn";
@@ -74,7 +74,7 @@ export function ProjectBoardView({
   const [newColumnName, setNewColumnName] = useState("");
   const [newColumnColor, setNewColumnColor] = useState("#6b7280");
 
-  const { data: users = [] } = useQuery<TeamUser[]>({
+  const { data: usersRaw = [] } = useQuery<TeamUser[]>({
     queryKey: ["/api/users"],
     queryFn: async () => {
       const res = await fetch("/api/users", { credentials: "include" });
@@ -82,6 +82,16 @@ export function ProjectBoardView({
       return res.json();
     },
   });
+
+  // Deduplicate users by ID to prevent duplicate entries in dropdowns
+  const users = useMemo(() => {
+    const seen = new Set<string>();
+    return usersRaw.filter(user => {
+      if (seen.has(user.id)) return false;
+      seen.add(user.id);
+      return true;
+    });
+  }, [usersRaw]);
 
   const handleDragStart = (event: DragStartEvent) => {
     const activeData = event.active.data.current;

@@ -423,16 +423,6 @@ export default function Admin() {
                             You
                           </span>
                         )}
-                        {hasLoggedIn ? (
-                          <span className="text-xs px-1.5 py-0.5 bg-green-100 text-green-600 rounded font-normal flex items-center gap-1" title={`Last login: ${u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : 'Unknown'}`}>
-                            <Check className="w-3 h-3" />
-                            Logged in
-                          </span>
-                        ) : (
-                          <span className="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded font-normal" title="Never logged in">
-                            Never logged in
-                          </span>
-                        )}
                       </div>
                       <div className="text-sm text-muted-foreground">{u.email}</div>
                     </div>
