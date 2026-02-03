@@ -51,13 +51,11 @@ The left sidebar is your main navigation. Here's what you'll find:
 - **Settings** - Customize your preferences
 - **Connect App** - Add or manage your connected services
 - **Setup Guide** - Step-by-step help connecting your services
-
-**Operations** (Admin only)
-- **HR & Payroll** - Gusto integration for HR management
-- **Announcements** - Create system-wide announcements
-- **Feedback** - View user feedback and feature requests
-- **System Health** - Monitor application health and performance
-- **Admin** - User management, approvals, and system settings
+- **Admin Panel** (Admin only) - User management, approvals, and system settings
+- **HR & Payroll** (Admin only) - Gusto integration for HR management
+- **Announcements** (Admin only) - Create system-wide announcements
+- **Feedback** (Admin only) - View user feedback and feature requests
+- **System Health** (Admin only) - Monitor application health and performance
 
 ### User Roles
 
@@ -878,7 +876,7 @@ Administrators can add and manage users through the Admin panel.
 
 ### Accessing User Management
 
-1. Go to **Operations** → **Admin** in the sidebar (requires Admin role)
+1. Go to **Settings** → **Admin Panel** in the sidebar (requires Admin role)
 2. Click the **Users** tab
 3. You'll see a list of all users in the system
 
