@@ -92,7 +92,7 @@ The YHC Way works best when you connect all your productivity tools. Here's how 
 1. Go to **Connect App** in the sidebar
 2. Find **Gmail** and click **Connect**
 3. Sign in with your Google account and grant permission
-4. Your emails will now appear in the Unified Inbox
+4. Your emails will now appear in the Mailbox
 
 ### Google Calendar
 
@@ -114,7 +114,7 @@ The YHC Way works best when you connect all your productivity tools. Here's how 
 1. Go to **Connect App** in the sidebar
 2. Find **Slack** and click **Connect**
 3. Authorize The YHC Way to access your Slack workspace
-4. Your Slack messages and DMs will appear in the Unified Inbox
+4. Your Slack messages and DMs will appear in the Mailbox
 
 ### Zoom
 
@@ -165,9 +165,9 @@ The dashboard also shows summary cards with:
 
 ---
 
-## The Unified Inbox
+## Mailbox
 
-The Unified Inbox brings together messages from Gmail and Slack in one view.
+The Mailbox brings together messages from Gmail and Slack in one unified view.
 
 ### Filtering Messages
 
@@ -271,21 +271,19 @@ Click any meeting to see:
 
 ---
 
-## Asana Tasks
+## Asana Integration
 
-If you use Asana for project management, this page shows all your assigned tasks.
+If you previously used Asana for project management, you can import your projects and tasks into The YHC Way's native project management system.
 
-### Task List
+### Importing from Asana
 
-Each task shows:
-- Task name
-- Due date (if set)
-- Project name
-- A link to open the task directly in Asana
+1. Go to **Projects** in the sidebar
+2. Click **Import from Asana**
+3. Connect your Asana account if not already connected
+4. Select the Asana project to import
+5. Your sections become columns and tasks are imported automatically
 
-### Completing Tasks
-
-Click on any task to see its details. To mark it complete or make changes, click the link to open it in Asana.
+Once imported, manage your tasks natively within The YHC Way's Projects feature (see Projects & Tasks section below).
 
 ---
 
@@ -631,7 +629,7 @@ The YHC Way supports keyboard shortcuts to help you navigate quickly without usi
 ### Navigation Shortcuts
 
 Press **G** followed by a letter to navigate:
-- **G + I** - Go to Unified Inbox
+- **G + I** - Go to Mailbox
 - **G + C** - Go to Calendar
 - **G + P** - Go to Projects
 - **G + T** - Go to Tasks
@@ -861,7 +859,7 @@ The AI Assistant processes your data securely and only accesses services you've 
 
 1. **Connect everything** - The more services you connect, the more useful The YHC Way becomes
 2. **Check the Dashboard daily** - Start your day with a quick overview of what needs attention
-3. **Use the Unified Inbox** - Stop switching between email and Slack tabs
+3. **Use the Mailbox** - Stop switching between email and Slack tabs
 4. **Keep the Calendar open** - Never miss a meeting with all your events in one place
 5. **Add to your home screen** - Create a shortcut for quick mobile access
 6. **Use Projects** - Manage your tasks natively without leaving The YHC Way
