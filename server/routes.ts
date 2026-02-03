@@ -1194,6 +1194,7 @@ export async function registerRoutes(
         firstName: validatedData.firstName,
         lastName: validatedData.lastName,
         isAdmin: validatedData.isAdmin,
+        role: validatedData.role || (validatedData.isAdmin ? 'admin' : 'user'),
         emailVerified: true,
         approvalStatus: "approved",
       });

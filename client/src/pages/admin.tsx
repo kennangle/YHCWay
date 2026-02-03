@@ -1160,7 +1160,7 @@ function UserModal({
   const [confirmPassword, setConfirmPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [role, setRole] = useState<"admin" | "user" | "staff">("user");
   const [error, setError] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -1174,7 +1174,7 @@ function UserModal({
       return;
     }
     setError("");
-    onSave({ email, password, firstName: firstName || undefined, lastName: lastName || undefined, isAdmin });
+    onSave({ email, password, firstName: firstName || undefined, lastName: lastName || undefined, isAdmin: role === 'admin', role });
   };
 
   return (
@@ -1247,15 +1247,18 @@ function UserModal({
               data-testid="input-user-confirm-password"
             />
           </div>
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="isAdmin"
-              checked={isAdmin}
-              onChange={(e) => setIsAdmin(e.target.checked)}
-              data-testid="input-user-admin"
-            />
-            <label htmlFor="isAdmin" className="text-sm">Make this user an admin</label>
+          <div>
+            <label className="block text-sm font-medium mb-1">Role</label>
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value as "admin" | "user" | "staff")}
+              className="w-full px-3 py-2 border rounded-lg"
+              data-testid="input-user-role"
+            >
+              <option value="staff">Staff - Limited access (Mailbox, Calendar, Daily Hub, Projects, Tasks)</option>
+              <option value="user">User - Full access to all features</option>
+              <option value="admin">Admin - Full access plus admin controls</option>
+            </select>
           </div>
           {error && <p className="text-sm text-red-500">{error}</p>}
           <div className="flex gap-2 justify-end">
