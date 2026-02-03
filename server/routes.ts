@@ -577,12 +577,15 @@ export async function registerRoutes(
       }
       
       // Auto-approve and set admin for the admin email if not already approved
-      if (user.email === ADMIN_EMAIL && (user.approvalStatus !== "approved" || !user.isAdmin)) {
+      if (user.email === ADMIN_EMAIL && (user.approvalStatus !== "approved" || !user.isAdmin || user.role !== "admin")) {
         if (user.approvalStatus !== "approved") {
           await storage.updateUserApprovalStatus(userId, "approved");
         }
         if (!user.isAdmin) {
           await storage.updateUserAdmin(userId, true);
+        }
+        if (user.role !== "admin") {
+          await storage.updateUserProfile(userId, user.firstName || "", user.lastName || "", "admin");
         }
         user = await storage.getUser(userId);
         if (!user) {
