@@ -111,9 +111,10 @@ export default function TimeTrackingPage() {
 
   const [formData, setFormData] = useState({
     date: format(new Date(), 'yyyy-MM-dd'),
-    startTime: "09:00",
-    endTime: "17:00",
-    breakDuration: "0",
+    startHour: new Date().getHours().toString(),
+    startMinute: "0",
+    hours: "0",
+    minutes: "0",
     notes: "",
   });
 
@@ -218,8 +219,14 @@ export default function TimeTrackingPage() {
         throw new Error("Could not find your employee record in YHCTime");
       }
       
-      const startDateTime = new Date(`${data.date}T${data.startTime}:00`);
-      const endDateTime = new Date(`${data.date}T${data.endTime}:00`);
+      const startHour = parseInt(data.startHour, 10);
+      const startMinute = parseInt(data.startMinute, 10);
+      const durationHours = parseInt(data.hours, 10);
+      const durationMinutes = parseInt(data.minutes, 10);
+      
+      const startDateTime = new Date(`${data.date}T${startHour.toString().padStart(2, '0')}:${startMinute.toString().padStart(2, '0')}:00`);
+      const durationMs = (durationHours * 60 + durationMinutes) * 60000;
+      const endDateTime = new Date(startDateTime.getTime() + durationMs);
       
       const res = await fetch("/api/yhctime/sessions", {
         method: "POST",
@@ -228,7 +235,7 @@ export default function TimeTrackingPage() {
           employeeId: currentUserEmployee.employeeId,
           startTime: startDateTime.toISOString(),
           endTime: endDateTime.toISOString(),
-          breakDuration: parseInt(data.breakDuration, 10) * 60000,
+          breakDuration: 0,
           notes: data.notes || undefined,
         }),
         credentials: "include",
@@ -244,9 +251,10 @@ export default function TimeTrackingPage() {
       setIsCreateOpen(false);
       setFormData({
         date: format(new Date(), 'yyyy-MM-dd'),
-        startTime: "09:00",
-        endTime: "17:00",
-        breakDuration: "0",
+        startHour: new Date().getHours().toString(),
+        startMinute: "0",
+        hours: "0",
+        minutes: "0",
         notes: "",
       });
       toast.success("Time entry created successfully");
@@ -334,9 +342,15 @@ export default function TimeTrackingPage() {
                     Add Time Entry
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="sm:max-w-lg">
                   <DialogHeader>
-                    <DialogTitle>Create Time Entry</DialogTitle>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Clock className="w-5 h-5" />
+                      Add Work Session by Duration
+                    </DialogTitle>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Enter the date, start time, and how long you worked.
+                    </p>
                   </DialogHeader>
                   <form 
                     onSubmit={(e) => {
@@ -345,91 +359,83 @@ export default function TimeTrackingPage() {
                     }}
                     className="space-y-4"
                   >
-                    <div>
-                      <Label>Employee</Label>
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 flex items-center gap-2 h-10 px-3 rounded-md border border-input bg-background text-sm">
-                          {linkedEmployee?.linked ? (
-                            <span data-testid="text-current-employee" className="text-green-600 font-medium">
-                              {linkedEmployee.employeeName} (linked)
-                            </span>
-                          ) : currentUserEmployee ? (
-                            <span data-testid="text-current-employee">{currentUserEmployee.employeeName}</span>
-                          ) : (
-                            <span className="text-muted-foreground">
-                              {user?.firstName} {user?.lastName} (not found in YHCTime)
-                            </span>
-                          )}
-                        </div>
-                        {linkedEmployee?.linked ? (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => unlinkMutation.mutate()}
-                            disabled={unlinkMutation.isPending}
-                            data-testid="button-unlink-employee"
-                          >
-                            <Unlink className="w-4 h-4" />
-                          </Button>
-                        ) : (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setIsLinkOpen(true)}
-                            data-testid="button-link-employee"
-                          >
-                            <Link2 className="w-4 h-4" />
-                          </Button>
-                        )}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="date">Date</Label>
+                        <Input
+                          id="date"
+                          type="date"
+                          value={formData.date}
+                          onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                          className="bg-muted/50"
+                          data-testid="input-date"
+                        />
                       </div>
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="date">Date</Label>
-                      <Input
-                        id="date"
-                        type="date"
-                        value={formData.date}
-                        onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-                        data-testid="input-date"
-                      />
+                      <div>
+                        <Label>Start Time (24h)</Label>
+                        <div className="flex items-center gap-1">
+                          <Select
+                            value={formData.startHour}
+                            onValueChange={(value) => setFormData(prev => ({ ...prev, startHour: value }))}
+                          >
+                            <SelectTrigger className="w-20 bg-muted/50" data-testid="select-start-hour">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Array.from({ length: 24 }, (_, i) => (
+                                <SelectItem key={i} value={i.toString()}>
+                                  {i.toString().padStart(2, '0')}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <span className="text-lg font-medium">:</span>
+                          <Select
+                            value={formData.startMinute}
+                            onValueChange={(value) => setFormData(prev => ({ ...prev, startMinute: value }))}
+                          >
+                            <SelectTrigger className="w-20 bg-muted/50" data-testid="select-start-minute">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {[0, 15, 30, 45].map((min) => (
+                                <SelectItem key={min} value={min.toString()}>
+                                  {min.toString().padStart(2, '0')}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
                     </div>
                     
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="startTime">Start Time</Label>
+                        <Label htmlFor="hours">Hours</Label>
                         <Input
-                          id="startTime"
-                          type="time"
-                          value={formData.startTime}
-                          onChange={(e) => setFormData(prev => ({ ...prev, startTime: e.target.value }))}
-                          data-testid="input-start-time"
+                          id="hours"
+                          type="number"
+                          min="0"
+                          max="24"
+                          value={formData.hours}
+                          onChange={(e) => setFormData(prev => ({ ...prev, hours: e.target.value }))}
+                          className="bg-muted/50"
+                          data-testid="input-hours"
                         />
                       </div>
                       <div>
-                        <Label htmlFor="endTime">End Time</Label>
+                        <Label htmlFor="minutes">Minutes</Label>
                         <Input
-                          id="endTime"
-                          type="time"
-                          value={formData.endTime}
-                          onChange={(e) => setFormData(prev => ({ ...prev, endTime: e.target.value }))}
-                          data-testid="input-end-time"
+                          id="minutes"
+                          type="number"
+                          min="0"
+                          max="59"
+                          value={formData.minutes}
+                          onChange={(e) => setFormData(prev => ({ ...prev, minutes: e.target.value }))}
+                          className="bg-muted/50"
+                          data-testid="input-minutes"
                         />
                       </div>
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="breakDuration">Break Duration (minutes)</Label>
-                      <Input
-                        id="breakDuration"
-                        type="number"
-                        min="0"
-                        value={formData.breakDuration}
-                        onChange={(e) => setFormData(prev => ({ ...prev, breakDuration: e.target.value }))}
-                        data-testid="input-break-duration"
-                      />
                     </div>
                     
                     <div>
@@ -438,15 +444,32 @@ export default function TimeTrackingPage() {
                         id="notes"
                         value={formData.notes}
                         onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                        placeholder="Add any notes about this session..."
+                        placeholder="Add any notes about this entry..."
+                        className="bg-muted/50 min-h-[80px]"
                         data-testid="input-notes"
                       />
                     </div>
+
+                    {!currentUserEmployee && (
+                      <div className="flex items-center gap-2 p-3 rounded-md bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm">
+                        <span>Your account is not linked to a YHCTime employee.</span>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setIsLinkOpen(true)}
+                          data-testid="button-link-employee"
+                        >
+                          <Link2 className="w-4 h-4 mr-1" />
+                          Link
+                        </Button>
+                      </div>
+                    )}
                     
                     <Button 
                       type="submit" 
                       className="w-full"
-                      disabled={createMutation.isPending || !currentUserEmployee}
+                      disabled={createMutation.isPending || !currentUserEmployee || (parseInt(formData.hours) === 0 && parseInt(formData.minutes) === 0)}
                       data-testid="button-submit-session"
                     >
                       {createMutation.isPending ? (
@@ -455,7 +478,7 @@ export default function TimeTrackingPage() {
                           Creating...
                         </>
                       ) : (
-                        "Create Time Entry"
+                        "Add Time Entry"
                       )}
                     </Button>
                   </form>
