@@ -149,8 +149,27 @@ export default function TimeTrackingPage() {
     enabled: status?.connected,
   });
 
+  const today = format(new Date(), 'yyyy-MM-dd');
+  const { data: todaySessionsData } = useQuery<SessionHistoryResponse>({
+    queryKey: ["/api/yhctime/sessions", today, today],
+    queryFn: async () => {
+      const res = await fetch(
+        `/api/yhctime/sessions?start=${today}&end=${today}`,
+        { credentials: "include" }
+      );
+      if (!res.ok) throw new Error("Failed to fetch today's sessions");
+      return res.json();
+    },
+    enabled: status?.connected,
+  });
+
   const employees = employeesStatus?.employees || [];
   const sessions = sessionsData?.sessions || [];
+  const todaySessions = todaySessionsData?.sessions || [];
+  
+  const todayTotalMs = todaySessions.reduce((sum, s) => sum + (s.netDuration || 0), 0);
+  const todayHours = Math.floor(todayTotalMs / 3600000);
+  const todayMinutes = Math.floor((todayTotalMs % 3600000) / 60000);
 
   // Use linked employee if available, otherwise try auto-detection
   const currentUserEmployee = linkedEmployee?.linked 
@@ -334,6 +353,14 @@ export default function TimeTrackingPage() {
                   View employee status and manage work sessions
                 </p>
               </div>
+              
+              <div className="flex items-center gap-4">
+                <div className="glass-card px-4 py-2 rounded-xl">
+                  <div className="text-xs text-muted-foreground">Today's Hours</div>
+                  <div className="text-lg font-bold text-primary" data-testid="text-today-hours">
+                    {todayHours}h {todayMinutes}m
+                  </div>
+                </div>
               
               <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
                 <DialogTrigger asChild>
@@ -534,6 +561,7 @@ export default function TimeTrackingPage() {
                   </div>
                 </DialogContent>
               </Dialog>
+              </div>
             </div>
 
             <Tabs defaultValue="status" className="space-y-6">
