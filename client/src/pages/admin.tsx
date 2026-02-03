@@ -448,7 +448,12 @@ export default function Admin() {
                       <Key className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => toggleAdminMutation.mutate({ id: u.id, isAdmin: !u.isAdmin })}
+                      onClick={() => {
+                        const action = u.isAdmin ? "remove admin privileges from" : "grant admin privileges to";
+                        if (confirm(`Are you sure you want to ${action} ${u.firstName || u.email}?`)) {
+                          toggleAdminMutation.mutate({ id: u.id, isAdmin: !u.isAdmin });
+                        }
+                      }}
                       className={`p-2 rounded-lg transition-all ${
                         u.isAdmin ? "hover:bg-red-50 text-red-500" : "hover:bg-green-50 text-green-500"
                       }`}
