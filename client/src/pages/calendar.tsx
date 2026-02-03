@@ -292,7 +292,7 @@ export default function Calendar() {
         </header>
 
         {/* Upcoming Events - Horizontal scroll at top */}
-        <div className="glass-panel p-4 rounded-2xl mb-6">
+        <div className="glass-panel p-4 rounded-2xl mb-6 overflow-hidden">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-display font-semibold text-sm">Upcoming Events</h3>
             <button 
@@ -309,7 +309,7 @@ export default function Calendar() {
           ) : upcomingEvents.length === 0 ? (
             <div className="text-center text-muted-foreground py-4">No upcoming events</div>
           ) : (
-            <div className="flex gap-3 overflow-x-auto pb-2">
+            <div className="flex gap-3 overflow-x-auto pb-2 max-w-full">
               {upcomingEvents.slice(0, 8).map((event) => {
                 const eventColor = event.type === 'zoom' 
                   ? colors.zoom 
