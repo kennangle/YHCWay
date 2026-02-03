@@ -262,7 +262,15 @@ export default function Calendar() {
     }))
   ].sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
 
-  const upcomingEvents = allEvents.filter(e => new Date(e.start) >= new Date()).slice(0, 10);
+  const now = new Date();
+  const dayAfterTomorrow = new Date(now);
+  dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
+  dayAfterTomorrow.setHours(23, 59, 59, 999);
+  
+  const upcomingEvents = allEvents.filter(e => {
+    const eventDate = new Date(e.start);
+    return eventDate >= now && eventDate <= dayAfterTomorrow;
+  }).slice(0, 6);
 
   return (
     <div className="min-h-screen bg-background text-foreground font-sans">
@@ -307,10 +315,10 @@ export default function Calendar() {
           {(calendarLoading || zoomLoading) ? (
             <div className="text-center text-muted-foreground py-4">Loading...</div>
           ) : upcomingEvents.length === 0 ? (
-            <div className="text-center text-muted-foreground py-4">No upcoming events</div>
+            <div className="text-center text-muted-foreground py-4">No upcoming events for today or tomorrow</div>
           ) : (
-            <div className="flex gap-3 overflow-x-auto pb-2 max-w-full">
-              {upcomingEvents.slice(0, 8).map((event) => {
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+              {upcomingEvents.map((event) => {
                 const eventColor = event.type === 'zoom' 
                   ? colors.zoom 
                   : event.type === 'apple' 
@@ -337,22 +345,20 @@ export default function Calendar() {
                   <div
                     key={event.id}
                     onClick={handleEventClick}
-                    className="flex-shrink-0 p-3 rounded-lg border-l-2 hover:opacity-80 transition-opacity cursor-pointer"
+                    className="p-3 rounded-lg border-l-2 hover:opacity-80 transition-opacity cursor-pointer"
                     style={{
                       borderLeftColor: eventColor,
                       backgroundColor: getLightBg(eventColor),
                     }}
                     data-testid={`upcoming-event-${event.id}`}
                   >
-                    <div className="min-w-[160px] max-w-[200px]">
-                      <h4 className="text-xs font-semibold text-foreground truncate">{event.title}</h4>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">
-                        {new Date(event.start).toLocaleDateString("en-US", { weekday: 'short', month: 'short', day: 'numeric' })}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground">
-                        {formatEventTime(event.start, event.end, event.isAllDay)}
-                      </p>
-                    </div>
+                    <h4 className="text-xs font-semibold text-foreground truncate">{event.title}</h4>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      {new Date(event.start).toLocaleDateString("en-US", { weekday: 'short', month: 'short', day: 'numeric' })}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {formatEventTime(event.start, event.end, event.isAllDay)}
+                    </p>
                   </div>
                 );
               })}
