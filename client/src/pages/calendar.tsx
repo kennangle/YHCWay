@@ -60,10 +60,23 @@ function getMediumBg(hex: string) {
   return `rgba(${r}, ${g}, ${b}, 0.15)`;
 }
 
+interface EventDetailData {
+  id: string;
+  title: string;
+  start: string;
+  end: string;
+  location?: string;
+  description?: string;
+  isAllDay: boolean;
+  source?: 'google' | 'apple' | 'calendly' | 'zoom';
+  joinUrl?: string;
+}
+
 export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<number | null>(new Date().getDate());
   const [showNewEventDialog, setShowNewEventDialog] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<EventDetailData | null>(null);
   const [newEvent, setNewEvent] = useState({
     title: "",
     start: "",
@@ -306,35 +319,24 @@ export default function Calendar() {
                       ? colors.calendly
                       : colors.google;
                 
-                const getEventUrl = () => {
-                  if (event.type === 'zoom' && 'joinUrl' in event) {
-                    return event.joinUrl;
-                  }
-                  if (event.type === 'calendar') {
-                    return `https://calendar.google.com/calendar/event?eid=${btoa(event.id + ' primary').replace(/=/g, '')}`;
-                  }
-                  return null;
+                const handleEventClick = () => {
+                  setSelectedEvent({
+                    id: event.id,
+                    title: event.title,
+                    start: event.start,
+                    end: event.end,
+                    location: 'location' in event ? event.location : undefined,
+                    description: 'description' in event ? event.description : undefined,
+                    isAllDay: event.isAllDay,
+                    source: event.type === 'zoom' ? 'zoom' : event.type === 'apple' ? 'apple' : event.type === 'calendly' ? 'calendly' : 'google',
+                    joinUrl: event.type === 'zoom' && 'joinUrl' in event ? event.joinUrl : undefined,
+                  });
                 };
-                const eventUrl = getEventUrl();
                 
-                const content = (
-                  <div className="min-w-[160px] max-w-[200px]">
-                    <h4 className="text-xs font-semibold text-foreground truncate">{event.title}</h4>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">
-                      {new Date(event.start).toLocaleDateString("en-US", { weekday: 'short', month: 'short', day: 'numeric' })}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground">
-                      {formatEventTime(event.start, event.end, event.isAllDay)}
-                    </p>
-                  </div>
-                );
-                
-                return eventUrl ? (
-                  <a
+                return (
+                  <div
                     key={event.id}
-                    href={eventUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    onClick={handleEventClick}
                     className="flex-shrink-0 p-3 rounded-lg border-l-2 hover:opacity-80 transition-opacity cursor-pointer"
                     style={{
                       borderLeftColor: eventColor,
@@ -342,19 +344,15 @@ export default function Calendar() {
                     }}
                     data-testid={`upcoming-event-${event.id}`}
                   >
-                    {content}
-                  </a>
-                ) : (
-                  <div 
-                    key={event.id}
-                    className="flex-shrink-0 p-3 rounded-lg border-l-2"
-                    style={{
-                      borderLeftColor: eventColor,
-                      backgroundColor: getLightBg(eventColor),
-                    }}
-                    data-testid={`upcoming-event-${event.id}`}
-                  >
-                    {content}
+                    <div className="min-w-[160px] max-w-[200px]">
+                      <h4 className="text-xs font-semibold text-foreground truncate">{event.title}</h4>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        {new Date(event.start).toLocaleDateString("en-US", { weekday: 'short', month: 'short', day: 'numeric' })}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {formatEventTime(event.start, event.end, event.isAllDay)}
+                      </p>
+                    </div>
                   </div>
                 );
               })}
@@ -534,10 +532,25 @@ export default function Calendar() {
                           ? colors.calendly
                           : colors.google;
                     
+                    const handleMobileEventClick = () => {
+                      setSelectedEvent({
+                        id: event.id,
+                        title: event.title,
+                        start: event.start,
+                        end: event.end,
+                        location: 'location' in event ? event.location as string : undefined,
+                        description: 'description' in event ? event.description as string : undefined,
+                        isAllDay: event.isAllDay,
+                        source: event.type === 'zoom' ? 'zoom' : event.type === 'apple' ? 'apple' : event.type === 'calendly' ? 'calendly' : 'google',
+                        joinUrl: event.type === 'zoom' && 'joinUrl' in event ? event.joinUrl as string : undefined,
+                      });
+                    };
+                    
                     return (
                       <div 
                         key={event.id}
-                        className="p-3 rounded-lg border-l-2"
+                        onClick={handleMobileEventClick}
+                        className="p-3 rounded-lg border-l-2 cursor-pointer hover:opacity-80 transition-opacity"
                         style={{
                           borderLeftColor: eventColor,
                           backgroundColor: getLightBg(eventColor),
@@ -644,6 +657,91 @@ export default function Calendar() {
                 </Button>
               </div>
             </form>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={!!selectedEvent} onOpenChange={() => setSelectedEvent(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <div 
+                  className="w-3 h-3 rounded-full" 
+                  style={{ 
+                    backgroundColor: selectedEvent?.source === 'zoom' 
+                      ? colors.zoom 
+                      : selectedEvent?.source === 'apple' 
+                        ? colors.apple 
+                        : selectedEvent?.source === 'calendly'
+                          ? colors.calendly
+                          : colors.google 
+                  }} 
+                />
+                {selectedEvent?.title}
+              </DialogTitle>
+            </DialogHeader>
+            {selectedEvent && (
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <Clock className="w-4 h-4 mt-0.5 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium">
+                      {new Date(selectedEvent.start).toLocaleDateString("en-US", { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedEvent.isAllDay 
+                        ? "All day" 
+                        : `${new Date(selectedEvent.start).toLocaleTimeString("en-US", { hour: 'numeric', minute: '2-digit' })} - ${new Date(selectedEvent.end).toLocaleTimeString("en-US", { hour: 'numeric', minute: '2-digit' })}`
+                      }
+                    </p>
+                  </div>
+                </div>
+
+                {selectedEvent.location && (
+                  <div className="flex items-start gap-3">
+                    <MapPin className="w-4 h-4 mt-0.5 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm">{selectedEvent.location}</p>
+                    </div>
+                  </div>
+                )}
+
+                {selectedEvent.description && (
+                  <div className="border-t pt-4">
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: selectedEvent.description }} />
+                  </div>
+                )}
+
+                <div className="flex gap-2 pt-2">
+                  {selectedEvent.joinUrl && (
+                    <Button asChild className="flex-1">
+                      <a href={selectedEvent.joinUrl} target="_blank" rel="noopener noreferrer">
+                        <Video className="w-4 h-4 mr-2" />
+                        Join Meeting
+                      </a>
+                    </Button>
+                  )}
+                  {selectedEvent.source === 'google' && (
+                    <Button variant="outline" asChild className="flex-1">
+                      <a 
+                        href={`https://calendar.google.com/calendar/r/day/${new Date(selectedEvent.start).getFullYear()}/${new Date(selectedEvent.start).getMonth() + 1}/${new Date(selectedEvent.start).getDate()}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                      >
+                        Open in Google Calendar
+                      </a>
+                    </Button>
+                  )}
+                  <Button variant="outline" onClick={() => setSelectedEvent(null)}>
+                    Close
+                  </Button>
+                </div>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
         </div>
