@@ -89,7 +89,36 @@ export class FathomClient {
     if (options?.createdBefore) params.created_before = options.createdBefore;
     if (options?.cursor) params.cursor = options.cursor;
 
-    return this.request<FathomMeetingsResponse>("/meetings", params);
+    const rawResponse = await this.request<any>("/meetings", params);
+    
+    // Transform Fathom API response (items) to our expected format (meetings)
+    const meetings = (rawResponse.items || []).map((item: any) => ({
+      id: item.recording_id?.toString() || item.url?.split('/').pop() || '',
+      title: item.meeting_title || item.title || 'Untitled Meeting',
+      created_at: item.created_at,
+      duration_seconds: item.recording_end_time && item.recording_start_time 
+        ? Math.round((new Date(item.recording_end_time).getTime() - new Date(item.recording_start_time).getTime()) / 1000)
+        : undefined,
+      recording_url: item.url || item.share_url,
+      participants: item.calendar_invitees?.map((inv: any) => ({ 
+        name: inv.name, 
+        email: inv.email 
+      })) || [],
+      summary: item.default_summary?.markdown_formatted || null,
+      action_items: item.action_items?.map((ai: any, idx: number) => ({
+        id: `${item.recording_id}-${idx}`,
+        text: ai.description,
+        assignee: ai.assignee?.name || ai.assignee?.email,
+        completed: ai.completed,
+      })) || [],
+      platform: 'zoom',
+    }));
+
+    return {
+      meetings,
+      cursor: rawResponse.next_cursor || undefined,
+      has_more: !!rawResponse.next_cursor,
+    };
   }
 
   async getMeeting(meetingId: string, options?: {
