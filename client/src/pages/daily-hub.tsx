@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import { format, addDays, subDays, parseISO } from "date-fns";
+import { format, addDays, subDays, parseISO, startOfWeek, endOfWeek, eachDayOfInterval } from "date-fns";
 import { 
   ChevronLeft, 
   ChevronRight, 
   Calendar,
+  CalendarDays,
   Plus,
   Trash2,
   Edit2,
@@ -17,7 +18,8 @@ import {
   Phone,
   DollarSign,
   ShoppingBag,
-  Package
+  Package,
+  LayoutGrid
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -69,10 +71,13 @@ const SECTIONS = [
   { id: "lost_and_found", label: "Lost & Found", icon: Package, description: "Lost and found items" },
 ];
 
+type ViewMode = "day" | "week";
+
 export default function DailyHub() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [viewMode, setViewMode] = useState<ViewMode>("day");
   const [newEntry, setNewEntry] = useState<{ section: string; content: string } | null>(null);
   const [editingEntry, setEditingEntry] = useState<{ id: number; content: string } | null>(null);
   const [pinnedDialogOpen, setPinnedDialogOpen] = useState(false);
@@ -85,6 +90,26 @@ export default function DailyHub() {
       if (!res.ok) throw new Error("Failed to fetch daily hub");
       return res.json();
     },
+  });
+
+  const weekStart = startOfWeek(parseISO(selectedDate), { weekStartsOn: 0 });
+  const weekEnd = endOfWeek(parseISO(selectedDate), { weekStartsOn: 0 });
+  const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
+
+  const { data: weekData, isLoading: weekLoading } = useQuery<{ entries: DailyHubEntry[]; pinnedAnnouncements: PinnedAnnouncement[] }[]>({
+    queryKey: ["/api/daily-hub/week", format(weekStart, "yyyy-MM-dd")],
+    queryFn: async () => {
+      const results = await Promise.all(
+        weekDays.map(async (day) => {
+          const dateStr = format(day, "yyyy-MM-dd");
+          const res = await fetch(`/api/daily-hub/${dateStr}`, { credentials: "include" });
+          if (!res.ok) return { entries: [], pinnedAnnouncements: [] };
+          return res.json();
+        })
+      );
+      return results;
+    },
+    enabled: viewMode === "week",
   });
 
   const createMutation = useMutation({
@@ -285,9 +310,11 @@ export default function DailyHub() {
       </div>
 
       <div className="flex items-center justify-between bg-card rounded-lg p-4 mb-6 shadow-sm border">
-        <Button variant="ghost" size="icon" onClick={goToPrevDay} data-testid="button-prev-day">
-          <ChevronLeft className="w-5 h-5" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" onClick={goToPrevDay} data-testid="button-prev-day">
+            <ChevronLeft className="w-5 h-5" />
+          </Button>
+        </div>
         
         <div className="flex items-center gap-4">
           <Calendar className="w-5 h-5 text-muted-foreground" />
@@ -299,11 +326,48 @@ export default function DailyHub() {
           )}
         </div>
         
-        <Button variant="ghost" size="icon" onClick={goToNextDay} data-testid="button-next-day">
-          <ChevronRight className="w-5 h-5" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" onClick={goToNextDay} data-testid="button-next-day">
+            <ChevronRight className="w-5 h-5" />
+          </Button>
+          <div className="h-6 w-px bg-border mx-1" />
+          <div className="flex bg-muted rounded-lg p-1">
+            <Button
+              variant={viewMode === "day" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("day")}
+              className="h-7 px-3"
+              data-testid="button-day-view"
+            >
+              <CalendarDays className="w-4 h-4 mr-1" />
+              Day
+            </Button>
+            <Button
+              variant={viewMode === "week" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("week")}
+              className="h-7 px-3"
+              data-testid="button-week-view"
+            >
+              <LayoutGrid className="w-4 h-4 mr-1" />
+              Week
+            </Button>
+          </div>
+        </div>
       </div>
 
+      {viewMode === "week" ? (
+        <WeekSummaryView
+          weekDays={weekDays}
+          weekData={weekData || []}
+          isLoading={weekLoading}
+          sections={SECTIONS}
+          onDayClick={(date) => {
+            setSelectedDate(format(date, "yyyy-MM-dd"));
+            setViewMode("day");
+          }}
+        />
+      ) : (
       <div className="space-y-6">
         {SECTIONS.map((section) => {
           const entries = getEntriesForSection(section.id);
@@ -471,6 +535,140 @@ export default function DailyHub() {
           );
         })}
       </div>
+      )}
+    </div>
+  );
+}
+
+interface WeekSummaryViewProps {
+  weekDays: Date[];
+  weekData: { entries: DailyHubEntry[]; pinnedAnnouncements: PinnedAnnouncement[] }[];
+  isLoading: boolean;
+  sections: typeof SECTIONS;
+  onDayClick: (date: Date) => void;
+}
+
+function WeekSummaryView({ weekDays, weekData, isLoading, sections, onDayClick }: WeekSummaryViewProps) {
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[200px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  const getDayData = (dayIndex: number) => weekData[dayIndex] || { entries: [], pinnedAnnouncements: [] };
+  
+  const getTotalEntriesForDay = (dayIndex: number) => {
+    const dayData = getDayData(dayIndex);
+    return dayData.entries.length;
+  };
+
+  const getEntriesBySection = (dayIndex: number) => {
+    const dayData = getDayData(dayIndex);
+    const grouped: Record<string, DailyHubEntry[]> = {};
+    sections.forEach(s => { grouped[s.id] = []; });
+    dayData.entries.forEach(entry => {
+      if (grouped[entry.section]) {
+        grouped[entry.section].push(entry);
+      }
+    });
+    return grouped;
+  };
+
+  const isToday = (date: Date) => format(date, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-7 gap-2">
+        {weekDays.map((day, idx) => {
+          const totalEntries = getTotalEntriesForDay(idx);
+          const entriesBySection = getEntriesBySection(idx);
+          const dayIsToday = isToday(day);
+          
+          return (
+            <Card 
+              key={idx} 
+              className={`cursor-pointer hover:shadow-md transition-shadow ${dayIsToday ? 'ring-2 ring-primary' : ''}`}
+              onClick={() => onDayClick(day)}
+              data-testid={`week-day-${format(day, "yyyy-MM-dd")}`}
+            >
+              <CardHeader className="p-3 pb-2">
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground uppercase">{format(day, "EEE")}</p>
+                  <p className={`text-lg font-bold ${dayIsToday ? 'text-primary' : ''}`}>{format(day, "d")}</p>
+                </div>
+              </CardHeader>
+              <CardContent className="p-3 pt-0">
+                {totalEntries === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center italic">No entries</p>
+                ) : (
+                  <div className="space-y-1">
+                    {sections.map(section => {
+                      const sectionEntries = entriesBySection[section.id];
+                      if (sectionEntries.length === 0) return null;
+                      const SectionIcon = section.icon;
+                      return (
+                        <div key={section.id} className="flex items-center gap-1 text-xs">
+                          <SectionIcon className="w-3 h-3 text-muted-foreground" />
+                          <span className="truncate">{sectionEntries.length}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Week Summary</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {sections.map(section => {
+              const SectionIcon = section.icon;
+              const allEntries = weekData.flatMap((d, idx) => 
+                (d?.entries || [])
+                  .filter(e => e.section === section.id)
+                  .map(e => ({ ...e, dayIndex: idx }))
+              );
+              
+              if (allEntries.length === 0) return null;
+              
+              return (
+                <div key={section.id} className="border-b pb-3 last:border-0">
+                  <div className="flex items-center gap-2 mb-2">
+                    <SectionIcon className="w-4 h-4 text-primary" />
+                    <h4 className="font-medium text-sm">{section.label}</h4>
+                    <span className="text-xs text-muted-foreground">({allEntries.length} entries)</span>
+                  </div>
+                  <div className="space-y-2 pl-6">
+                    {allEntries.slice(0, 5).map((entry) => (
+                      <div key={entry.id} className="text-sm bg-muted/50 rounded p-2">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                          <span>{format(weekDays[entry.dayIndex], "EEE, MMM d")}</span>
+                          {entry.authorInitials && <span>- {entry.authorInitials}</span>}
+                        </div>
+                        <p className="text-sm line-clamp-2">{entry.content}</p>
+                      </div>
+                    ))}
+                    {allEntries.length > 5 && (
+                      <p className="text-xs text-muted-foreground">+ {allEntries.length - 5} more entries</p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+            {weekData.every(d => !d?.entries || d.entries.length === 0) && (
+              <p className="text-muted-foreground text-center py-4">No entries for this week</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
