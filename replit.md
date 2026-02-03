@@ -6,6 +6,7 @@ The YHC Way is a unified workspace application designed to centralize productivi
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 Documentation updates (!updatedocumentation): Include both technical documentation and User Guide sections.
+**Bang Commands**: When the user invokes any command starting with `!` (e.g., `!timereport`, `!analyze`, `!debug`), ALWAYS reference `docs/bangcommands.md` first to understand the expected behavior and output format.
 
 ## Daily Announcement Process
 **IMPORTANT**: At the end of each working session (or at 5 PM PST if session is active), create a notification announcement summarizing:
