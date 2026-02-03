@@ -47,7 +47,17 @@ const isAdmin: RequestHandler = async (req: any, res, next) => {
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    const user = await storage.getUser(userId);
+    let user = await storage.getUser(userId);
+    
+    // Auto-promote admin email if not already admin
+    if (user && user.email === ADMIN_EMAIL && !user.isAdmin) {
+      await storage.updateUserAdmin(userId, true);
+      if (user.role !== "admin") {
+        await storage.updateUserProfile(userId, user.firstName || "", user.lastName || "", "admin");
+      }
+      user = await storage.getUser(userId);
+    }
+    
     if (!user?.isAdmin) {
       return res.status(403).json({ message: "Forbidden: Admin access required" });
     }
