@@ -75,6 +75,7 @@ export const users = pgTable("users", {
   passwordHash: varchar("password_hash"),
   emailVerified: boolean("email_verified").default(false),
   isAdmin: boolean("is_admin").default(false),
+  role: varchar("role").notNull().default("user"), // "admin", "user", "staff"
   approvalStatus: varchar("approval_status").default("pending"),
   approvalDate: timestamp("approval_date"),
   approvedBy: varchar("approved_by"),
@@ -271,12 +272,20 @@ export type InsertFeedItem = z.infer<typeof insertFeedItemSchema>;
 export type FeedItem = typeof feedItems.$inferSelect;
 
 // Admin create user schema (with plain-text password that will be hashed)
+export const UserRole = {
+  ADMIN: "admin",
+  USER: "user", 
+  STAFF: "staff",
+} as const;
+export type UserRoleType = typeof UserRole[keyof typeof UserRole];
+
 export const adminCreateUserSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
   isAdmin: z.boolean().default(false),
+  role: z.enum(["admin", "user", "staff"]).default("user"),
 });
 export type AdminCreateUser = z.infer<typeof adminCreateUserSchema>;
 

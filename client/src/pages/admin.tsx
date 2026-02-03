@@ -129,12 +129,12 @@ export default function Admin() {
   });
 
   const updateUserProfileMutation = useMutation({
-    mutationFn: async ({ id, firstName, lastName }: { id: string; firstName: string; lastName: string }) => {
-      return apiRequest("PATCH", `/api/admin/users/${id}/profile`, { firstName, lastName });
+    mutationFn: async ({ id, firstName, lastName, role }: { id: string; firstName: string; lastName: string; role?: string }) => {
+      return apiRequest("PATCH", `/api/admin/users/${id}/profile`, { firstName, lastName, role });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
-      toast({ title: "Profile updated", description: "User name has been updated successfully." });
+      toast({ title: "Profile updated", description: "User profile has been updated successfully." });
       setEditingUser(null);
     },
     onError: () => {
@@ -669,7 +669,7 @@ export default function Admin() {
           <EditUserModal
             user={editingUser}
             onClose={() => setEditingUser(null)}
-            onSave={(firstName, lastName) => updateUserProfileMutation.mutate({ id: editingUser.id, firstName, lastName })}
+            onSave={(firstName, lastName, role) => updateUserProfileMutation.mutate({ id: editingUser.id, firstName, lastName, role })}
             isLoading={updateUserProfileMutation.isPending}
           />
         )}
@@ -1285,15 +1285,16 @@ function EditUserModal({
 }: {
   user: User;
   onClose: () => void;
-  onSave: (firstName: string, lastName: string) => void;
+  onSave: (firstName: string, lastName: string, role: string) => void;
   isLoading: boolean;
 }) {
   const [firstName, setFirstName] = useState(user.firstName || "");
   const [lastName, setLastName] = useState(user.lastName || "");
+  const [role, setRole] = useState(user.role || "user");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(firstName, lastName);
+    onSave(firstName, lastName, role);
   };
 
   return (
@@ -1330,6 +1331,24 @@ function EditUserModal({
                 data-testid="input-edit-lastname"
               />
             </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Role</label>
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              className="w-full px-3 py-2 border rounded-lg bg-white"
+              data-testid="select-user-role"
+            >
+              <option value="admin">Admin - Full access to all features and settings</option>
+              <option value="user">User - Full access to all features</option>
+              <option value="staff">Staff - Limited access (Mailbox, Calendar, Daily Hub, Projects, Tasks)</option>
+            </select>
+            <p className="text-xs text-muted-foreground mt-1">
+              {role === "admin" && "Admins can manage users, settings, and have full system access."}
+              {role === "user" && "Users have access to all features but cannot manage system settings."}
+              {role === "staff" && "Staff members can only see Mailbox, Calendar, Daily Hub, Projects, and Tasks."}
+            </p>
           </div>
           <div className="flex gap-2 justify-end">
             <button type="button" onClick={onClose} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">

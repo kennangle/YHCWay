@@ -173,7 +173,7 @@ export interface IStorage {
   updateUserAdmin(id: string, isAdmin: boolean): Promise<User | undefined>;
   updateUserPassword(id: string, passwordHash: string): Promise<User | undefined>;
   updateUserApprovalStatus(id: string, status: string, approvedBy?: string): Promise<User | undefined>;
-  updateUserProfile(id: string, firstName: string, lastName: string): Promise<User | undefined>;
+  updateUserProfile(id: string, firstName: string, lastName: string, role?: string): Promise<User | undefined>;
   updateUserYHCTimeLink(id: string, employeeId: string | null, employeeName: string | null): Promise<User | undefined>;
   markTourCompleted(id: string): Promise<User | undefined>;
   recordUserLogin(id: string): Promise<User | undefined>;
@@ -649,10 +649,19 @@ export class DbStorage implements IStorage {
     return user;
   }
 
-  async updateUserProfile(id: string, firstName: string, lastName: string): Promise<User | undefined> {
+  async updateUserProfile(id: string, firstName: string, lastName: string, role?: string): Promise<User | undefined> {
+    const updateData: { firstName: string; lastName: string; updatedAt: Date; role?: string; isAdmin?: boolean } = { 
+      firstName, 
+      lastName, 
+      updatedAt: new Date() 
+    };
+    if (role) {
+      updateData.role = role;
+      updateData.isAdmin = role === 'admin';
+    }
     const [user] = await db
       .update(users)
-      .set({ firstName, lastName, updatedAt: new Date() })
+      .set(updateData)
       .where(eq(users.id, id))
       .returning();
     return user;

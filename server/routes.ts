@@ -984,11 +984,14 @@ export async function registerRoutes(
 
   app.patch("/api/admin/users/:id/profile", isAuthenticated, isAdmin, async (req, res) => {
     try {
-      const { firstName, lastName } = req.body;
+      const { firstName, lastName, role } = req.body;
       if (typeof firstName !== 'string' || typeof lastName !== 'string') {
         return res.status(400).json({ error: "First name and last name are required" });
       }
-      const updatedUser = await storage.updateUserProfile(req.params.id, firstName, lastName);
+      if (role && !['admin', 'user', 'staff'].includes(role)) {
+        return res.status(400).json({ error: "Invalid role. Must be 'admin', 'user', or 'staff'" });
+      }
+      const updatedUser = await storage.updateUserProfile(req.params.id, firstName, lastName, role);
       if (!updatedUser) {
         return res.status(404).json({ error: "User not found" });
       }

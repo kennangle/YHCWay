@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
-import { getNavigationTabs, NavTab, NavItem } from "@/lib/navigation-config";
+import { getNavigationTabs, NavTab, NavItem, UserRole } from "@/lib/navigation-config";
 import { ChevronDown, Clock, HelpCircle, ExternalLink } from "lucide-react";
 import yhcLogo from "@assets/logo_bug_1024_1767889616107.jpg";
 import {
@@ -21,7 +21,8 @@ export function HorizontalNav({ onStartTour }: HorizontalNavProps) {
   const [location] = useLocation();
   const { user } = useAuth();
   const isAdmin = user?.isAdmin || false;
-  const tabs = getNavigationTabs(isAdmin);
+  const userRole = (user?.role as UserRole) || (isAdmin ? 'admin' : 'user');
+  const tabs = getNavigationTabs(isAdmin, userRole);
 
   const isTabActive = (tab: NavTab) => {
     if (tab.href && location === tab.href) return true;
