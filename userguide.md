@@ -1,5 +1,7 @@
 # The YHC Way User Guide
 
+**Last Updated:** February 3, 2026
+
 Welcome to The YHC Way! This guide will help you get started with your unified workspace and make the most of all its features.
 
 ---
@@ -16,19 +18,68 @@ Before diving in, we recommend visiting the **Setup Guide** (found in the left s
 
 The left sidebar is your main navigation. Here's what you'll find:
 
-**Main Menu**
-- **Overview** - Your dashboard with a unified activity feed
-- **Unified Inbox** - All your emails and messages in one place
+**Dashboard**
+- **Mailbox** - All your emails and messages in one place
 - **Calendar** - Events from Google Calendar, Apple Calendar, and Zoom
-- **Asana Tasks** - Your tasks and projects from Asana
+- **Daily Hub** - Your daily summary with Day/Week views
 - **Intro Offers** - Mindbody Analytics intro offer tracking
-- **Chat** - Internal messaging with your team
+- **Projects** - Native project management with Kanban boards
+- **Tasks** - Your personal task list
+- **Scoreboard** - Team performance metrics
 
-**Bottom Menu**
-- **Setup Guide** - Step-by-step help connecting your services
-- **Connect App** - Add or manage your connected services
+**Productivity**
+- **Chat** - Internal messaging with your team
+- **Fathom Meetings** - AI meeting summaries and transcripts
+- **Dependencies** - Task dependency tracking
+- **Google Docs** - Access your Google documents
+- **Google Sheets** - Access your spreadsheets
+- **Google Drive** - Browse your Drive files
+- **AI Summarize** - AI-powered content summarization
+
+**Marketing**
 - **Email Builder** - Create and manage email templates
+- **Brevo** - Email activity and analytics
+- **Perkville** - Loyalty rewards management
+- **Typeform** - Form management
+- **QR Codes** - Dynamic QR code generation
+
+**External Sites**
+- **NetGym** - Quick access to NetGym
+- **Mindbody Analytics** - Quick access to Mindbody
+
+**Settings**
 - **Settings** - Customize your preferences
+- **Connect App** - Add or manage your connected services
+- **Setup Guide** - Step-by-step help connecting your services
+
+**Operations** (Admin only)
+- **HR & Payroll** - Gusto integration for HR management
+- **Announcements** - Create system-wide announcements
+- **Feedback** - View user feedback and feature requests
+- **System Health** - Monitor application health and performance
+- **Admin** - User management, approvals, and system settings
+
+### User Roles
+
+The YHC Way uses three user roles to control access to features:
+
+**Staff**
+- Limited access designed for team members who need basic tools
+- Can access: Mailbox, Calendar, Daily Hub, Projects, and Tasks
+- Cannot access: Intro Offers, Scoreboard, Productivity tools, Marketing tools, or Admin features
+
+**User**
+- Standard access to all features except admin functions
+- Can access: All Dashboard, Productivity, Marketing, External Sites, and Settings features
+- Cannot access: Operations/Admin panel
+
+**Admin**
+- Full access to all features including system administration
+- Can access: Everything including the Operations section
+- Can manage: Users, approvals, announcements, system health, and settings
+- Can add new users and assign roles
+
+Your role is assigned by an administrator when your account is created.
 
 ---
 
@@ -145,6 +196,78 @@ The Calendar page shows events from all your connected calendar services.
 ### Navigating Dates
 
 Use the arrows at the top to move between days, or click "Today" to jump back to the current date.
+
+---
+
+## Daily Hub
+
+The Daily Hub is your command center for staying organized throughout the day. It provides a quick overview of what needs your attention.
+
+### Day View
+
+The default Day View shows:
+- **Today's date and greeting** - Personalized welcome message
+- **Insights & Stats** - Quick summary cards showing:
+  - Students needing attention (at-risk and lapsed)
+  - New students this week
+  - Upcoming tasks count
+- **Quick Actions** - One-click access to common actions like Compose Email, New Event, and View Projects
+- **Upcoming Events** - Your meetings and appointments for the day
+- **Upcoming Tasks** - Tasks due soon
+- **Pinned Items** - Important links and resources (admin can customize)
+
+### Week View
+
+Click **Week** at the top to switch to the 7-day view:
+- **Weekly calendar grid** - See entry counts for each day at a glance
+- **Click any day** - Select a day to see its details
+- **Summary section** - Shows events and tasks for the selected day
+
+The Week View helps you plan ahead and identify busy days before they arrive.
+
+### Switching Views
+
+Use the **Day** and **Week** buttons at the top of the Daily Hub to toggle between views. Your preference is remembered for your next visit.
+
+---
+
+## Fathom Meetings
+
+Fathom is an AI meeting assistant that records and summarizes your video meetings. The YHC Way integrates with Fathom to give you easy access to your meeting intelligence.
+
+### Connecting Fathom
+
+Fathom is configured by your administrator using an API key. Once connected, your recorded meetings will appear automatically.
+
+### Viewing Meetings
+
+1. Go to **Fathom Meetings** in the Productivity section
+2. Browse your list of recorded meetings
+3. Use the search bar to find specific meetings
+4. Filter by date range if needed
+
+### Meeting Details
+
+Click any meeting to see:
+
+**Summary Tab**
+- AI-generated summary of the meeting
+- Key discussion points and decisions
+
+**Transcript Tab**
+- Full meeting transcript with speaker labels
+- Searchable conversation history
+
+**Action Items Tab**
+- Tasks identified from the meeting
+- Assignee information (if detected)
+- Completion status
+
+### Tips
+
+- Meetings are sorted by date with the most recent first
+- The summary is available immediately after Fathom processes your recording
+- Use meeting summaries for quick catch-ups instead of watching full recordings
 
 ---
 
@@ -748,6 +871,53 @@ The AI Assistant processes your data securely and only accesses services you've 
 10. **Track your time** - Use the time tracker to understand where your time goes
 11. **Use the AI Assistant** - Click the brain icon to get daily briefings, draft emails, and prioritize tasks
 12. **Set recurring tasks** - Use the repeat feature for tasks you do regularly
+
+---
+
+## Admin: User Management
+
+Administrators can add and manage users through the Admin panel.
+
+### Accessing User Management
+
+1. Go to **Operations** → **Admin** in the sidebar (requires Admin role)
+2. Click the **Users** tab
+3. You'll see a list of all users in the system
+
+### Adding a New User
+
+1. Click **Add User** button
+2. Fill in the required information:
+   - **Email** - The user's email address (used for login)
+   - **Password** - Set an initial password for the user
+   - **First Name** - User's first name
+   - **Last Name** - User's last name (optional)
+   - **Role** - Choose from:
+     - **Staff** - Limited access (Mailbox, Calendar, Daily Hub, Projects, Tasks only)
+     - **User** - Standard access to all features except admin
+     - **Admin** - Full access including admin panel
+3. Click **Create User**
+
+The new user can immediately log in with their email and the password you set.
+
+### Managing Existing Users
+
+From the Users tab, you can:
+- **View user details** - See email, role, approval status, and last login
+- **Toggle admin status** - Click the shield icon to grant or revoke admin privileges
+- **Reset password** - Generate a new password for a user
+- **Delete user** - Remove a user from the system
+
+### Approving New Signups
+
+When users sign up themselves, they require admin approval:
+1. Go to **Admin** → **Users** → **Pending Approvals**
+2. Review the signup request
+3. Click **Approve** to grant access or **Reject** to deny
+
+### Viewing Active Sessions
+
+The Admin panel shows currently active user sessions, helping you monitor who is logged in to the system.
 
 ---
 
