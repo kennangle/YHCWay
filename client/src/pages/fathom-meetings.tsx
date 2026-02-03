@@ -101,21 +101,11 @@ export default function FathomMeetings() {
     retry: false,
   });
 
-  const { data: meetingDetail, isLoading: detailLoading, error: detailError, refetch: refetchDetail } = useQuery<FathomMeeting>({
-    queryKey: ["/api/fathom/meetings", selectedMeeting?.id],
-    queryFn: async () => {
-      const res = await fetch(`/api/fathom/meetings/${selectedMeeting?.id}`, { 
-        credentials: "include" 
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Failed to fetch meeting details");
-      }
-      return res.json();
-    },
-    enabled: !!selectedMeeting?.id,
-    retry: false,
-  });
+  // Use the selected meeting data directly from the list (which includes summary and action items)
+  // instead of making a separate API call that may fail
+  const meetingDetail = selectedMeeting;
+  const detailLoading = false;
+  const detailError = null;
 
   const meetings = meetingsData?.meetings || [];
   
@@ -363,15 +353,6 @@ export default function FathomMeetings() {
                             <div className="flex items-center justify-center py-12">
                               <RefreshCw className="w-6 h-6 animate-spin text-gray-400" />
                             </div>
-                          ) : detailError ? (
-                            <div className="text-center py-12">
-                              <FileText className="w-12 h-12 text-red-300 mx-auto mb-3" />
-                              <p className="text-red-600 font-medium mb-2">Failed to load meeting details</p>
-                              <p className="text-gray-500 text-sm mb-4">{(detailError as Error).message}</p>
-                              <Button variant="outline" size="sm" onClick={() => refetchDetail()}>
-                                Try Again
-                              </Button>
-                            </div>
                           ) : meetingDetail?.summary ? (
                             <div className="prose prose-sm max-w-none">
                               <p className="text-gray-700 whitespace-pre-wrap">{meetingDetail.summary}</p>
@@ -390,15 +371,6 @@ export default function FathomMeetings() {
                           {detailLoading ? (
                             <div className="flex items-center justify-center py-12">
                               <RefreshCw className="w-6 h-6 animate-spin text-gray-400" />
-                            </div>
-                          ) : detailError ? (
-                            <div className="text-center py-12">
-                              <FileText className="w-12 h-12 text-red-300 mx-auto mb-3" />
-                              <p className="text-red-600 font-medium mb-2">Failed to load meeting details</p>
-                              <p className="text-gray-500 text-sm mb-4">{(detailError as Error).message}</p>
-                              <Button variant="outline" size="sm" onClick={() => refetchDetail()}>
-                                Try Again
-                              </Button>
                             </div>
                           ) : meetingDetail?.transcript && meetingDetail.transcript.length > 0 ? (
                             <div className="space-y-3">
@@ -427,15 +399,6 @@ export default function FathomMeetings() {
                           {detailLoading ? (
                             <div className="flex items-center justify-center py-12">
                               <RefreshCw className="w-6 h-6 animate-spin text-gray-400" />
-                            </div>
-                          ) : detailError ? (
-                            <div className="text-center py-12">
-                              <CheckSquare className="w-12 h-12 text-red-300 mx-auto mb-3" />
-                              <p className="text-red-600 font-medium mb-2">Failed to load meeting details</p>
-                              <p className="text-gray-500 text-sm mb-4">{(detailError as Error).message}</p>
-                              <Button variant="outline" size="sm" onClick={() => refetchDetail()}>
-                                Try Again
-                              </Button>
                             </div>
                           ) : meetingDetail?.action_items && meetingDetail.action_items.length > 0 ? (
                             <div className="space-y-2">
