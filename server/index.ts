@@ -20,7 +20,7 @@ app.use((_req, res, next) => {
   const isDev = process.env.NODE_ENV !== 'production';
   const csp = isDev
     ? "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https: wss:; frame-ancestors 'self';"
-    : "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https: wss: *.google.com *.googleapis.com *.zoom.us *.slack.com; frame-src 'self' accounts.google.com; frame-ancestors 'self';";
+    : "default-src 'self'; script-src 'self' 'unsafe-inline' https://s3.amazonaws.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https: wss: *.google.com *.googleapis.com *.zoom.us *.slack.com; frame-src 'self' accounts.google.com; frame-ancestors 'self';";
   res.setHeader('Content-Security-Policy', csp);
   next();
 });
