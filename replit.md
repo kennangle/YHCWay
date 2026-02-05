@@ -6,7 +6,36 @@ The YHC Way is a unified workspace application designed to centralize productivi
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 Documentation updates (!updatedocumentation): Include both technical documentation and User Guide sections.
-**Bang Commands**: When the user invokes any command starting with `!` (e.g., `!timereport`, `!analyze`, `!debug`), ALWAYS reference `docs/bangcommands.md` first to understand the expected behavior and output format.
+
+## Bang Commands (CRITICAL)
+**IMPORTANT**: This project uses bang commands for AI workflow automation. When the user types ANY message starting with `!`, you MUST:
+
+1. **FIRST**: Read `docs/bangcommands.md` to understand the command's purpose, behavior, and expected output format
+2. **THEN**: Execute the command according to its specification
+
+### Available Commands Reference
+| Command | Purpose |
+|---------|---------|
+| `!timereport [date]` | Generate time and progress report (today, yesterday, specific date) |
+| `!analyze` | Comprehensive analysis with structured reporting |
+| `!arch` | Consult architect agent for code review/guidance |
+| `!ask` | Get confirmation before implementing changes |
+| `!bug` | Capture and document issues systematically |
+| `!codecheck` | Full quality audit (Prettier, ESLint, TypeScript) |
+| `!debug` | Multi-tenant aware debugging |
+| `!deep` | Thorough investigation and root cause analysis |
+| `!design` | Apply design standards from design.md |
+| `!diagnose` | Systematic problem diagnosis |
+| `!gr` | Guardrails compliance review |
+| `!mobile [subcommand]` | Mobile-first optimization (touch, forms, navigation, etc.) |
+| `!narrative` | Update PROJECT_NARRATIVE_REPORT.md |
+| `!security` | Comprehensive security audit |
+| `!suggest` | Solution proposals without implementation |
+| `!unanswered` | Find pending questions in conversation |
+| `!updatedocumentation` | Update all documentation files |
+
+### Command Documentation Location
+Full command specifications: `docs/bangcommands.md`
 
 ## Daily Announcement Process
 **IMPORTANT**: At the end of each working session (or at 5 PM PST if session is active), create a notification announcement summarizing:
