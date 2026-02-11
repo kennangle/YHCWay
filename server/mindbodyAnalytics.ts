@@ -1,4 +1,4 @@
-const MINDBODY_ANALYTICS_BASE_URL = process.env.MINDBODY_ANALYTICS_URL || "https://mind-body-analytics-ken196.replit.app";
+const MINDBODY_ANALYTICS_BASE_URL = process.env.MINDBODY_ANALYTICS_URL || "https://mind-body-analytics-remix.replit.app";
 const API_KEY = process.env.MINDBODY_API_KEY;
 
 interface IntroOffer {
