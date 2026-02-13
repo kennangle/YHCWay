@@ -131,25 +131,27 @@ export default function Scoreboard() {
 
   const offers = offersData?.data || [];
   
-  // Filter offers based on selected date range using actual purchase date
+  // Filter offers purchased within the selected date range (for period-specific metrics)
   const filteredOffers = offers.filter(o => {
     const purchaseDate = new Date(o.purchaseDate);
     return purchaseDate >= startDate && purchaseDate <= endDate;
   });
   
-  // Calculate metrics from filtered data only
-  const newInPeriod = filteredOffers.length;
-  const convertedCount = filteredOffers.filter(o => o.hasConverted).length;
-  const atRiskCount = filteredOffers.filter(o => o.memberStatus === "at_risk").length;
-  const lapsedCount = filteredOffers.filter(o => o.memberStatus === "lapsed").length;
-  const lapsedInPeriod = filteredOffers.filter(o => o.memberStatus === "lapsed").length;
-  const engagedCount = filteredOffers.filter(o => o.memberStatus === "engaged").length;
-  const newCount = filteredOffers.filter(o => o.memberStatus === "new").length;
-  const activeCount = engagedCount + newCount;
+  // Current status metrics across ALL offers (not date-filtered)
+  const totalConvertedCount = offers.filter(o => o.hasConverted).length;
+  const totalAtRiskCount = offers.filter(o => o.memberStatus === "at_risk").length;
+  const totalLapsedCount = offers.filter(o => o.memberStatus === "lapsed").length;
+  const totalEngagedCount = offers.filter(o => o.memberStatus === "engaged").length;
+  const totalNewCount = offers.filter(o => o.memberStatus === "new").length;
+  const totalActiveCount = totalEngagedCount + totalNewCount;
   
-  // Calculate conversion rate from filtered offers
-  const conversionRate = filteredOffers.length > 0 
-    ? Math.round((convertedCount / filteredOffers.length) * 100) 
+  // Period-specific metrics (date-filtered)
+  const newInPeriod = filteredOffers.length;
+  const lapsedInPeriod = filteredOffers.filter(o => o.memberStatus === "lapsed").length;
+  
+  // Conversion rate across all offers
+  const conversionRate = offers.length > 0 
+    ? Math.round((totalConvertedCount / offers.length) * 100) 
     : 0;
 
   // Net adds calculation based on selected period
@@ -304,8 +306,8 @@ export default function Scoreboard() {
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
                   <MetricCard
                     title="Active Members"
-                    value={activeCount}
-                    subtitle="In selected period"
+                    value={totalActiveCount}
+                    subtitle="Current status"
                     icon={<Users className="w-5 h-5 text-blue-600" />}
                     color="text-blue-600"
                     bgColor="bg-blue-100"
@@ -324,7 +326,7 @@ export default function Scoreboard() {
                   />
                   <MetricCard
                     title="At Risk"
-                    value={atRiskCount}
+                    value={totalAtRiskCount}
                     subtitle="Need follow-up"
                     icon={<TrendingDown className="w-5 h-5 text-amber-600" />}
                     color="text-amber-600"
@@ -333,7 +335,7 @@ export default function Scoreboard() {
                   />
                   <MetricCard
                     title="Lapsed"
-                    value={lapsedCount}
+                    value={totalLapsedCount}
                     subtitle="Lost engagement"
                     icon={<UserMinus className="w-5 h-5 text-red-600" />}
                     color="text-red-600"
@@ -342,7 +344,7 @@ export default function Scoreboard() {
                   />
                   <MetricCard
                     title="Converted"
-                    value={convertedCount}
+                    value={totalConvertedCount}
                     subtitle="Became members"
                     icon={<TrendingUp className="w-5 h-5 text-emerald-600" />}
                     color="text-emerald-600"
@@ -373,8 +375,8 @@ export default function Scoreboard() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   <MetricCard
                     title="Total Intro Offers"
-                    value={filteredOffers.length}
-                    subtitle={dateRangeLabels[dateRange]}
+                    value={offers.length}
+                    subtitle="All time"
                     icon={<Gift className="w-5 h-5 text-purple-600" />}
                     color="text-purple-600"
                     bgColor="bg-purple-100"
@@ -401,7 +403,7 @@ export default function Scoreboard() {
                   />
                   <MetricCard
                     title="Awaiting First Class"
-                    value={newCount}
+                    value={totalNewCount}
                     subtitle="Not yet engaged"
                     icon={<Users className="w-5 h-5 text-pink-600" />}
                     color="text-pink-600"
@@ -467,19 +469,19 @@ export default function Scoreboard() {
                     ) : (
                       <>No new intro offers {dateRangeLabels[dateRange].toLowerCase()}. </>
                     )}
-                    {convertedCount > 0 && (
+                    {totalConvertedCount > 0 && (
                       <>
-                        <strong className="text-emerald-600">{convertedCount} students</strong> have converted to full memberships ({conversionRate}% conversion rate).{' '}
+                        <strong className="text-emerald-600">{totalConvertedCount} students</strong> have converted to full memberships ({conversionRate}% conversion rate).{' '}
                       </>
                     )}
-                    {atRiskCount > 0 && (
+                    {totalAtRiskCount > 0 && (
                       <>
-                        <strong className="text-amber-600">{atRiskCount} students</strong> are at risk and need follow-up.{' '}
+                        <strong className="text-amber-600">{totalAtRiskCount} students</strong> are at risk and need follow-up.{' '}
                       </>
                     )}
-                    {lapsedCount > 0 && (
+                    {totalLapsedCount > 0 && (
                       <>
-                        <strong className="text-red-600">{lapsedCount} students</strong> have lapsed.{' '}
+                        <strong className="text-red-600">{totalLapsedCount} students</strong> have lapsed.{' '}
                       </>
                     )}
                     {netAdds >= 0 ? (
