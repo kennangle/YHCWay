@@ -149,7 +149,7 @@ export function ServiceSummaryWidget() {
               <Gift className="w-6 h-6 text-amber-600" />
             </div>
             <div>
-              <h3 className="font-semibold text-lg">Intro Offers</h3>
+              <h3 className="font-semibold text-lg">Intro Offer Funnel</h3>
               <p className="text-xs text-muted-foreground">New Students</p>
             </div>
           </div>

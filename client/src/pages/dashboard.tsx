@@ -672,7 +672,7 @@ export default function Dashboard() {
     { value: "gmail", label: "Gmail", count: gmailMessages.length },
     { value: "slack", label: "Slack", count: slackMessages.length },
     { value: "zoom", label: "Zoom", count: zoomMeetings.length },
-    { value: "intro-offer", label: "Intro Offers", count: introOffers.length },
+    { value: "intro-offer", label: "Intro Offer Funnel", count: introOffers.length },
   ] as const;
 
   return (

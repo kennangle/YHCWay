@@ -277,7 +277,7 @@ export default function IntroOffers() {
               <Gift className="w-6 h-6 text-purple-500" />
             </div>
             <div>
-              <h1 className="font-display font-bold text-3xl" data-testid="text-intro-offers-title">Intro Offers</h1>
+              <h1 className="font-display font-bold text-3xl" data-testid="text-intro-offers-title">Intro Offer Funnel</h1>
               <p className="text-muted-foreground">Track and manage intro offer conversions</p>
             </div>
           </div>

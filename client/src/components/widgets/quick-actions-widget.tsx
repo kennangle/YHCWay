@@ -28,7 +28,7 @@ export function QuickActionsWidget() {
       <Link href="/intro-offers" data-testid="quick-action-students">
         <button className="flex flex-col items-center gap-2 p-4 text-sm font-medium bg-purple-100 text-purple-700 rounded-xl hover:bg-purple-200 transition-colors w-full">
           <Users className="w-5 h-5" />
-          <span>Intro Offers</span>
+          <span>Intro Offer Funnel</span>
         </button>
       </Link>
       

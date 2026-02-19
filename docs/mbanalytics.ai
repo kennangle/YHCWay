@@ -1,0 +1,115 @@
+# Mindbody Analytics API Reference
+
+## Overview
+The Mindbody Analytics API provides intro offer tracking and student data for Yoga Health Center.
+It is hosted at: `https://mind-body-analytics-remix.replit.app`
+Authentication: Bearer token via `MINDBODY_API_KEY` environment variable.
+
+## Base Configuration
+- Base URL: `https://mind-body-analytics-remix.replit.app`
+- Auth Header: `Authorization: Bearer <MINDBODY_API_KEY>`
+- Content-Type: `application/json`
+
+## Endpoints
+
+### GET /api/v1/intro-offers
+Returns paginated list of intro offer records.
+
+**Query Parameters:**
+| Parameter | Type   | Description                          |
+|-----------|--------|--------------------------------------|
+| status    | string | Filter by member status              |
+| since     | string | Filter by date (ISO 8601)            |
+| limit     | number | Max records to return (default varies)|
+| offset    | number | Pagination offset                    |
+
+**Response Shape:**
+```json
+{
+  "data": [IntroOffer],
+  "meta": {
+    "count": number,
+    "limit": number,
+    "offset": number
+  }
+}
+```
+
+**IntroOffer Object:**
+| Field                        | Type    | Description                                      |
+|------------------------------|---------|--------------------------------------------------|
+| id                           | string  | Unique offer ID                                  |
+| studentId                    | string  | Associated student ID                            |
+| firstName                    | string  | Student first name                               |
+| lastName                     | string  | Student last name                                |
+| email                        | string  | Student email                                    |
+| phone                        | string  | Student phone number                             |
+| offerName                    | string  | Name of the intro offer purchased                |
+| offerCategory                | string  | Category (e.g., "IntroOffer")                    |
+| purchaseAmount               | string  | Dollar amount paid (e.g., "75.00")               |
+| purchaseDate                 | string  | ISO 8601 datetime of purchase                    |
+| classesAttendedSincePurchase | number  | Number of classes attended since purchase         |
+| lastAttendanceDate           | string? | ISO 8601 datetime of last class attended          |
+| daysSinceLastAttendance      | number? | Days since last class (null if never attended)    |
+| daysSincePurchase            | number  | Days elapsed since purchase                      |
+| hasConverted                 | boolean | Whether student converted to full membership     |
+| conversionDate               | string? | ISO 8601 datetime of conversion (null if not)    |
+| conversionType               | string? | Type of conversion (null if not converted)       |
+| conversionAmount             | string? | Dollar amount of conversion purchase             |
+| memberStatus                 | string  | Current status: "new", "engaged", "at_risk", "lapsed", "converted" |
+| expirationDate               | string? | Offer expiration date (null if not set)          |
+
+**Member Status Values:**
+- `new` - Purchased but hasn't attended any classes yet
+- `engaged` - Actively attending classes
+- `at_risk` - Attendance has dropped off, needs follow-up
+- `lapsed` - No recent attendance, likely lost
+- `converted` - Converted to a full membership
+
+### PATCH /api/v1/intro-offers/:id
+Update an intro offer record.
+
+**Request Body:**
+```json
+{
+  "status": "string (optional)",
+  "notes": "string (optional)"
+}
+```
+
+**Response:** Updated IntroOffer object.
+
+## Integration in The YHC Way
+
+### Server Layer
+- File: `server/mindbodyAnalytics.ts` - API client functions
+- File: `server/routes.ts` - Express routes that proxy to the API
+
+### Server Routes
+| Route                                  | Method | Description                |
+|----------------------------------------|--------|----------------------------|
+| /api/mindbody-analytics/status         | GET    | Check if API is configured |
+| /api/mindbody-analytics/intro-offers   | GET    | Get intro offers (proxied) |
+| /api/mindbody-analytics/intro-offers/:id | PATCH | Update an intro offer      |
+
+### Frontend Pages
+- `client/src/pages/intro-offers.tsx` - **Intro Offer Funnel** page (detailed list/table view)
+- `client/src/pages/scoreboard.tsx` - **Business Scoreboard** (aggregated metrics dashboard)
+
+### Scoreboard Metric Logic
+The Business Scoreboard separates metrics into two categories:
+
+**Current Status Metrics (not date-filtered, show all-time current state):**
+- Active Members = engaged + new status count
+- At Risk = at_risk status count
+- Lapsed = lapsed status count
+- Converted = hasConverted === true count
+- Conversion Rate = converted / total offers
+- Awaiting First Class = new status count
+
+**Period-Specific Metrics (filtered by selected date range):**
+- New [Period] = offers purchased within selected date range
+- Intro Offers Sold = same as New [Period]
+- Net Adds = new in period - lapsed in period
+
+**Date Range Options:** Last Week, Last Month, Last 90 Days, Year to Date, Custom Range

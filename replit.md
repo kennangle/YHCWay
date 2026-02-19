@@ -123,7 +123,7 @@ Test files are located in the `tests/` directory:
 - **Apple Calendar**: CalDAV via `tsdav` for synchronization.
 - **Asana**: OAuth for project/task import.
 - **Calendly**: Personal Access Token for scheduling.
-- **Mindbody Analytics**: External API for intro offer tracking.
+- **Mindbody Analytics**: External API for intro offer tracking. Full API documentation: `docs/mbanalytics.ai`
 - **Perkville**: Resource Owner Grant for loyalty rewards.
 - **YHCTime**: Employee time tracking integration.
 - **QR Tiger**: API for dynamic QR code generation.
