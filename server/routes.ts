@@ -5,7 +5,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { storage, db } from "./storage";
-import { auditLogs } from "@shared/schema";
+import { auditLogs, introOfferReminders } from "@shared/schema";
 import { eq, desc, and, gte, lte } from "drizzle-orm";
 import { insertServiceSchema, insertFeedItemSchema, ADMIN_EMAIL, adminCreateUserSchema, integrationApiKeySchema, sendMessageSchema, createConversationSchema, createTenantSchema, inviteUserSchema, createProjectSchema, createTaskSchema, updateTaskSchema, createSubtaskSchema, createCommentSchema, addCollaboratorSchema, type User } from "@shared/schema";
 import { setupAuth, isAuthenticated } from "./auth";
@@ -553,6 +553,76 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error updating intro offer:", error);
       res.status(500).json({ error: "Failed to update intro offer" });
+    }
+  });
+
+  app.get('/api/mindbody-analytics/intro-offers/:id/reminders', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const tenantId = req.tenantId || null;
+      const conditions = tenantId
+        ? and(eq(introOfferReminders.offerId, id), eq(introOfferReminders.tenantId, tenantId))
+        : eq(introOfferReminders.offerId, id);
+      const reminders = await db.select().from(introOfferReminders).where(conditions).orderBy(introOfferReminders.createdAt);
+      res.json(reminders);
+    } catch (error) {
+      console.error("Error fetching reminders:", error);
+      res.status(500).json({ error: "Failed to fetch reminders" });
+    }
+  });
+
+  app.post('/api/mindbody-analytics/intro-offers/:id/reminders', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { title, description } = req.body;
+      if (!title) return res.status(400).json({ error: "Title is required" });
+      const userName = req.user?.name || req.user?.username || "Unknown";
+      const tenantId = req.tenantId || null;
+      const [reminder] = await db.insert(introOfferReminders).values({
+        offerId: id,
+        tenantId,
+        title,
+        description: description || null,
+        createdBy: userName,
+      }).returning();
+      res.json(reminder);
+    } catch (error) {
+      console.error("Error creating reminder:", error);
+      res.status(500).json({ error: "Failed to create reminder" });
+    }
+  });
+
+  app.patch('/api/mindbody-analytics/intro-offers/:offerId/reminders/:reminderId', isAuthenticated, async (req: any, res) => {
+    try {
+      const { reminderId } = req.params;
+      const { completed } = req.body;
+      const tenantId = req.tenantId || null;
+      const conditions = tenantId
+        ? and(eq(introOfferReminders.id, parseInt(reminderId)), eq(introOfferReminders.tenantId, tenantId))
+        : eq(introOfferReminders.id, parseInt(reminderId));
+      const [updated] = await db.update(introOfferReminders)
+        .set({ completed })
+        .where(conditions)
+        .returning();
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating reminder:", error);
+      res.status(500).json({ error: "Failed to update reminder" });
+    }
+  });
+
+  app.delete('/api/mindbody-analytics/intro-offers/:offerId/reminders/:reminderId', isAuthenticated, async (req: any, res) => {
+    try {
+      const { reminderId } = req.params;
+      const tenantId = req.tenantId || null;
+      const conditions = tenantId
+        ? and(eq(introOfferReminders.id, parseInt(reminderId)), eq(introOfferReminders.tenantId, tenantId))
+        : eq(introOfferReminders.id, parseInt(reminderId));
+      await db.delete(introOfferReminders).where(conditions);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting reminder:", error);
+      res.status(500).json({ error: "Failed to delete reminder" });
     }
   });
 

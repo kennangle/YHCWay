@@ -1621,3 +1621,21 @@ export const notificationGroups = pgTable("notification_groups", {
 
 export type NotificationGroup = typeof notificationGroups.$inferSelect;
 export type InsertNotificationGroup = typeof notificationGroups.$inferInsert;
+
+export const introOfferReminders = pgTable("intro_offer_reminders", {
+  id: serial("id").primaryKey(),
+  offerId: text("offer_id").notNull(),
+  tenantId: integer("tenant_id"),
+  title: text("title").notNull(),
+  description: text("description"),
+  completed: boolean("completed").default(false),
+  createdBy: text("created_by"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("intro_offer_reminders_offer").on(table.offerId),
+  index("intro_offer_reminders_tenant").on(table.tenantId),
+]);
+
+export const insertIntroOfferReminderSchema = createInsertSchema(introOfferReminders).omit({ id: true, createdAt: true });
+export type IntroOfferReminder = typeof introOfferReminders.$inferSelect;
+export type InsertIntroOfferReminder = typeof introOfferReminders.$inferInsert;

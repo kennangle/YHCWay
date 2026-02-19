@@ -1,10 +1,13 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Gift, RefreshCw, Users, TrendingUp, Clock, CheckCircle, XCircle, AlertCircle, Search, Edit2, Save, X, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Gift, RefreshCw, Users, TrendingUp, Clock, CheckCircle, XCircle, AlertCircle, Search, Edit2, Save, X, ArrowUpDown, ArrowUp, ArrowDown, User, DollarSign, Calendar, Mail, Phone, Bell, BookOpen, ShoppingBag, FileText, Plus, Trash2, Minus } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 
@@ -20,22 +23,16 @@ interface IntroOffer {
   purchaseAmount: string;
   purchaseDate: string;
   classesAttendedSincePurchase: number;
-  lastAttendanceDate?: string;
-  daysSinceLastAttendance?: number;
+  lastAttendanceDate?: string | null;
+  daysSinceLastAttendance?: number | null;
   daysSincePurchase: number;
   hasConverted: boolean;
-  conversionDate?: string;
-  conversionType?: string;
+  conversionDate?: string | null;
+  conversionType?: string | null;
+  conversionAmount?: string | null;
   memberStatus: string;
+  expirationDate?: string | null;
   notes?: string;
-}
-
-interface IntroOfferSummary {
-  totalOffers: number;
-  activeOffers: number;
-  convertedOffers: number;
-  expiredOffers: number;
-  conversionRate: number;
 }
 
 interface PaginatedResponse<T> {
@@ -48,14 +45,414 @@ interface PaginatedResponse<T> {
 }
 
 type StatusFilter = "all" | "new" | "engaged" | "at_risk" | "lapsed" | "needs_attention" | "converted";
-type SortField = "student" | "offer" | "purchaseDate" | "days" | "status" | "classes";
+type SortField = "student" | "offer" | "amount" | "purchaseDate" | "expires" | "classes" | "lastClass" | "status" | "conversion";
 type SortDirection = "asc" | "desc";
+
+function formatDate(dateString: string | null | undefined): string {
+  if (!dateString) return "—";
+  return new Date(dateString).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function daysAgoText(days: number): string {
+  if (days === 0) return "Today";
+  if (days === 1) return "1d ago";
+  return `${days}d ago`;
+}
+
+function getStageLabel(status: string): string {
+  switch (status) {
+    case "new": return "purchased";
+    case "engaged": return "engaged";
+    case "at_risk": return "at risk";
+    case "lapsed": return "lapsed";
+    case "converted": return "converted";
+    default: return status;
+  }
+}
+
+function getStageBadgeClass(status: string): string {
+  switch (status) {
+    case "new": return "bg-slate-100 text-slate-600 border border-slate-200";
+    case "engaged": return "bg-green-100 text-green-700 border border-green-200";
+    case "at_risk": return "bg-orange-100 text-orange-700 border border-orange-200";
+    case "lapsed": return "bg-red-100 text-red-700 border border-red-200";
+    case "converted": return "bg-purple-100 text-purple-700 border border-purple-200";
+    default: return "bg-gray-100 text-gray-600 border border-gray-200";
+  }
+}
+
+function StudentDetailModal({ offer, open, onClose }: { offer: IntroOffer | null; open: boolean; onClose: () => void }) {
+  const [activeTab, setActiveTab] = useState("reminders");
+
+  if (!offer) return null;
+
+  const totalRevenue = parseFloat(offer.purchaseAmount || "0") + (offer.conversionAmount ? parseFloat(offer.conversionAmount) : 0);
+  const membershipStatus = offer.hasConverted ? "Member" : "Non-Member";
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-xl">
+            <User className="w-5 h-5" />
+            {offer.firstName} {offer.lastName}
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="grid grid-cols-4 gap-3 mt-2">
+          <div className="bg-gray-50 rounded-xl p-3 text-center">
+            <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground mb-1">
+              <BookOpen className="w-3.5 h-3.5" />
+              Total Classes
+            </div>
+            <p className="text-2xl font-bold" data-testid="modal-total-classes">{offer.classesAttendedSincePurchase}</p>
+          </div>
+          <div className="bg-gray-50 rounded-xl p-3 text-center">
+            <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground mb-1">
+              <DollarSign className="w-3.5 h-3.5" />
+              Total Revenue
+            </div>
+            <p className="text-2xl font-bold" data-testid="modal-total-revenue">${totalRevenue.toFixed(2)}</p>
+          </div>
+          <div className="bg-gray-50 rounded-xl p-3 text-center">
+            <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground mb-1">
+              <Clock className="w-3.5 h-3.5" />
+              Last Class
+            </div>
+            <p className="text-2xl font-bold" data-testid="modal-last-class">{offer.lastAttendanceDate ? formatDate(offer.lastAttendanceDate) : "—"}</p>
+          </div>
+          <div className="bg-gray-50 rounded-xl p-3 text-center">
+            <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground mb-1">
+              <ShoppingBag className="w-3.5 h-3.5" />
+              Purchases
+            </div>
+            <p className="text-2xl font-bold" data-testid="modal-purchases">1</p>
+          </div>
+        </div>
+
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mt-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Gift className="w-4 h-4 text-slate-500" />
+                <span className="font-semibold text-sm">Intro Offer</span>
+              </div>
+              <p className="text-sm text-muted-foreground">{offer.offerName}</p>
+            </div>
+            <div className="flex gap-6 text-sm">
+              <div>
+                <p className="text-xs text-muted-foreground">Purchase Date</p>
+                <p className="font-medium">{formatDate(offer.purchaseDate)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Amount</p>
+                <p className="font-medium">${parseFloat(offer.purchaseAmount).toFixed(2)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Expires</p>
+                <p className="font-medium">{formatDate(offer.expirationDate)}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="border rounded-xl p-4 mt-2">
+          <h3 className="font-semibold text-sm mb-3">Contact Information</h3>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex items-center gap-2 text-sm">
+              <Mail className="w-4 h-4 text-muted-foreground" />
+              {offer.email || "No email"}
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <Phone className="w-4 h-4 text-muted-foreground" />
+              {offer.phone || "No phone"}
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <Calendar className="w-4 h-4 text-muted-foreground" />
+              Joined: {formatDate(offer.purchaseDate)}
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <User className="w-4 h-4 text-muted-foreground" />
+              Status: <span className="font-medium">{membershipStatus}</span>
+            </div>
+          </div>
+        </div>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-2">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="reminders" data-testid="tab-reminders">
+              <Bell className="w-3.5 h-3.5 mr-1.5" />
+              Reminders
+            </TabsTrigger>
+            <TabsTrigger value="classes" data-testid="tab-classes">
+              <BookOpen className="w-3.5 h-3.5 mr-1.5" />
+              Classes
+            </TabsTrigger>
+            <TabsTrigger value="purchases" data-testid="tab-purchases">
+              <ShoppingBag className="w-3.5 h-3.5 mr-1.5" />
+              Purchases
+            </TabsTrigger>
+            <TabsTrigger value="notes" data-testid="tab-notes">
+              <FileText className="w-3.5 h-3.5 mr-1.5" />
+              Notes
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="reminders" className="mt-4">
+            <RemindersList offer={offer} />
+          </TabsContent>
+
+          <TabsContent value="classes" className="mt-4">
+            <div className="text-center py-8 text-muted-foreground">
+              <BookOpen className="w-8 h-8 mx-auto mb-2 opacity-30" />
+              <p className="text-sm">{offer.classesAttendedSincePurchase > 0 
+                ? `${offer.classesAttendedSincePurchase} class${offer.classesAttendedSincePurchase > 1 ? 'es' : ''} attended`
+                : "No classes attended yet"}</p>
+              {offer.lastAttendanceDate && (
+                <p className="text-xs mt-1">Last attended: {formatDate(offer.lastAttendanceDate)}</p>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="purchases" className="mt-4">
+            <div className="border rounded-lg p-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-sm">{offer.offerName}</p>
+                  <p className="text-xs text-muted-foreground">{formatDate(offer.purchaseDate)}</p>
+                </div>
+                <p className="font-semibold">${parseFloat(offer.purchaseAmount).toFixed(2)}</p>
+              </div>
+            </div>
+            {offer.hasConverted && offer.conversionDate && (
+              <div className="border rounded-lg p-3 mt-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-sm">Membership Conversion</p>
+                    <p className="text-xs text-muted-foreground">{formatDate(offer.conversionDate)}</p>
+                  </div>
+                  <p className="font-semibold">{offer.conversionAmount ? `$${parseFloat(offer.conversionAmount).toFixed(2)}` : "—"}</p>
+                </div>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="notes" className="mt-4">
+            <NotesSection offer={offer} />
+          </TabsContent>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function RemindersList({ offer }: { offer: IntroOffer }) {
+  const queryClient = useQueryClient();
+  const [showAdd, setShowAdd] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [newDescription, setNewDescription] = useState("");
+
+  const { data: reminders = [] } = useQuery<any[]>({
+    queryKey: ["reminders", offer.id],
+    queryFn: async () => {
+      const res = await fetch(`/api/mindbody-analytics/intro-offers/${offer.id}/reminders`, { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+
+  const addMutation = useMutation({
+    mutationFn: async (data: { title: string; description: string }) => {
+      const res = await fetch(`/api/mindbody-analytics/intro-offers/${offer.id}/reminders`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to add reminder");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["reminders", offer.id] });
+      setShowAdd(false);
+      setNewTitle("");
+      setNewDescription("");
+      toast({ title: "Reminder added" });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (reminderId: string) => {
+      const res = await fetch(`/api/mindbody-analytics/intro-offers/${offer.id}/reminders/${reminderId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to delete reminder");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["reminders", offer.id] });
+      toast({ title: "Reminder removed" });
+    },
+  });
+
+  const toggleMutation = useMutation({
+    mutationFn: async ({ reminderId, completed }: { reminderId: string; completed: boolean }) => {
+      const res = await fetch(`/api/mindbody-analytics/intro-offers/${offer.id}/reminders/${reminderId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ completed }),
+      });
+      if (!res.ok) throw new Error("Failed to update reminder");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["reminders", offer.id] });
+    },
+  });
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-semibold text-sm flex items-center gap-2">
+          <Bell className="w-4 h-4" />
+          Reminders
+        </h3>
+        <Button size="sm" onClick={() => setShowAdd(true)} data-testid="button-add-reminder">
+          <Plus className="w-3.5 h-3.5 mr-1" />
+          Add
+        </Button>
+      </div>
+
+      {showAdd && (
+        <div className="border rounded-lg p-3 mb-3 bg-gray-50">
+          <Input
+            placeholder="Reminder title..."
+            value={newTitle}
+            onChange={(e) => setNewTitle(e.target.value)}
+            className="mb-2"
+            data-testid="input-reminder-title"
+          />
+          <Textarea
+            placeholder="Description (optional)..."
+            value={newDescription}
+            onChange={(e) => setNewDescription(e.target.value)}
+            className="mb-2"
+            rows={2}
+            data-testid="input-reminder-description"
+          />
+          <div className="flex gap-2 justify-end">
+            <Button size="sm" variant="outline" onClick={() => setShowAdd(false)}>Cancel</Button>
+            <Button
+              size="sm"
+              onClick={() => addMutation.mutate({ title: newTitle, description: newDescription })}
+              disabled={!newTitle.trim() || addMutation.isPending}
+              data-testid="button-save-reminder"
+            >
+              Save
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {reminders.length === 0 ? (
+        <div className="text-center py-6 text-muted-foreground">
+          <Bell className="w-6 h-6 mx-auto mb-2 opacity-30" />
+          <p className="text-sm">No reminders yet</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {reminders.map((r: any) => (
+            <div key={r.id} className="border rounded-lg p-3 flex items-start gap-3" data-testid={`reminder-${r.id}`}>
+              <button
+                onClick={() => toggleMutation.mutate({ reminderId: r.id, completed: !r.completed })}
+                className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                  r.completed ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300'
+                }`}
+                data-testid={`toggle-reminder-${r.id}`}
+              >
+                {r.completed && <CheckCircle className="w-3 h-3" />}
+              </button>
+              <div className="flex-1 min-w-0">
+                <p className={`font-medium text-sm ${r.completed ? 'line-through text-muted-foreground' : ''}`}>{r.title}</p>
+                {r.description && <p className="text-xs text-muted-foreground mt-0.5">{r.description}</p>}
+                <p className="text-xs text-muted-foreground mt-1">
+                  {formatDate(r.createdAt)}{r.createdBy ? ` by ${r.createdBy}` : ''}
+                </p>
+              </div>
+              <button
+                onClick={() => deleteMutation.mutate(r.id)}
+                className="text-muted-foreground hover:text-red-500 transition-colors shrink-0"
+                data-testid={`delete-reminder-${r.id}`}
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function NotesSection({ offer }: { offer: IntroOffer }) {
+  const queryClient = useQueryClient();
+  const [noteText, setNoteText] = useState("");
+
+  const updateMutation = useMutation({
+    mutationFn: async (notes: string) => {
+      const res = await fetch(`/api/mindbody-analytics/intro-offers/${offer.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ notes }),
+      });
+      if (!res.ok) throw new Error("Failed to update notes");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/mindbody-analytics/intro-offers"], exact: false });
+      toast({ title: "Notes saved" });
+    },
+  });
+
+  useEffect(() => {
+    setNoteText(offer.notes || "");
+  }, [offer.notes]);
+
+  return (
+    <div>
+      <Textarea
+        placeholder="Add notes about this student..."
+        value={noteText}
+        onChange={(e) => setNoteText(e.target.value)}
+        rows={4}
+        data-testid="textarea-notes"
+      />
+      <div className="flex justify-end mt-2">
+        <Button
+          size="sm"
+          onClick={() => updateMutation.mutate(noteText)}
+          disabled={updateMutation.isPending || noteText === (offer.notes || "")}
+          data-testid="button-save-notes"
+        >
+          <Save className="w-3.5 h-3.5 mr-1.5" />
+          Save Notes
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 export default function IntroOffers() {
   const queryClient = useQueryClient();
   const [location] = useLocation();
+  const [selectedOffer, setSelectedOffer] = useState<IntroOffer | null>(null);
   
-  // Parse initial filter from URL
   const getInitialFilter = (): StatusFilter => {
     const params = new URLSearchParams(window.location.search);
     const filter = params.get("filter");
@@ -67,13 +464,9 @@ export default function IntroOffers() {
   
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(getInitialFilter);
   const [searchTerm, setSearchTerm] = useState("");
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editNotes, setEditNotes] = useState("");
-  const [editStatus, setEditStatus] = useState("");
   const [sortField, setSortField] = useState<SortField>("purchaseDate");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   
-  // Update filter when URL changes
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const filter = params.get("filter");
@@ -91,54 +484,19 @@ export default function IntroOffers() {
     },
   });
 
-  const { data: summary, isLoading: summaryLoading } = useQuery<IntroOfferSummary>({
-    queryKey: ["/api/mindbody-analytics/intro-offers/summary"],
-    queryFn: async () => {
-      const res = await fetch("/api/mindbody-analytics/intro-offers/summary", { credentials: "include" });
-      if (!res.ok) throw new Error("Failed to fetch summary");
-      return res.json();
-    },
-    enabled: statusData?.configured,
-  });
-
   const { data: offersData, isLoading: offersLoading, isFetching, refetch } = useQuery<PaginatedResponse<IntroOffer>>({
     queryKey: ["/api/mindbody-analytics/intro-offers", statusFilter],
     queryFn: async () => {
       const params = new URLSearchParams();
-      // Don't pass 'needs_attention' to API - it's a frontend-only filter that combines at_risk + lapsed
       if (statusFilter !== "all" && statusFilter !== "needs_attention") {
         params.append("status", statusFilter);
       }
-      // Use limit=100 to match dashboard and ensure accurate counts
-      params.append("limit", "100");
+      params.append("limit", "500");
       const res = await fetch(`/api/mindbody-analytics/intro-offers?${params}`, { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch intro offers");
       return res.json();
     },
     enabled: statusData?.configured,
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, status, notes }: { id: string; status?: string; notes?: string }) => {
-      const res = await fetch(`/api/mindbody-analytics/intro-offers/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ status, notes }),
-      });
-      if (!res.ok) throw new Error("Failed to update offer");
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/mindbody-analytics/intro-offers"], exact: false });
-      queryClient.invalidateQueries({ queryKey: ["/api/mindbody-analytics/intro-offers/summary"] });
-      queryClient.invalidateQueries({ queryKey: ["intro-offers-feed"] });
-      setEditingId(null);
-      toast({ title: "Updated", description: "Intro offer updated successfully" });
-    },
-    onError: () => {
-      toast({ title: "Error", description: "Failed to update offer", variant: "destructive" });
-    },
   });
 
   const offers = offersData?.data || [];
@@ -149,7 +507,6 @@ export default function IntroOffers() {
       offer.offerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (offer.email && offer.email.toLowerCase().includes(searchTerm.toLowerCase()));
     
-    // Apply status filter
     if (!matchesSearch) return false;
     if (statusFilter === "all") return true;
     if (statusFilter === "needs_attention") {
@@ -167,17 +524,26 @@ export default function IntroOffers() {
       case "offer":
         comparison = a.offerName.localeCompare(b.offerName);
         break;
+      case "amount":
+        comparison = parseFloat(a.purchaseAmount) - parseFloat(b.purchaseAmount);
+        break;
       case "purchaseDate":
         comparison = new Date(a.purchaseDate).getTime() - new Date(b.purchaseDate).getTime();
         break;
-      case "days":
-        comparison = a.daysSincePurchase - b.daysSincePurchase;
+      case "expires":
+        comparison = (a.expirationDate || "").localeCompare(b.expirationDate || "");
+        break;
+      case "classes":
+        comparison = a.classesAttendedSincePurchase - b.classesAttendedSincePurchase;
+        break;
+      case "lastClass":
+        comparison = (a.lastAttendanceDate || "").localeCompare(b.lastAttendanceDate || "");
         break;
       case "status":
         comparison = (a.memberStatus || "").localeCompare(b.memberStatus || "");
         break;
-      case "classes":
-        comparison = a.classesAttendedSincePurchase - b.classesAttendedSincePurchase;
+      case "conversion":
+        comparison = (a.hasConverted ? 1 : 0) - (b.hasConverted ? 1 : 0);
         break;
     }
     return sortDirection === "asc" ? comparison : -comparison;
@@ -193,56 +559,10 @@ export default function IntroOffers() {
   };
 
   const SortIcon = ({ field }: { field: SortField }) => {
-    if (sortField !== field) return <ArrowUpDown className="w-4 h-4 ml-1 opacity-50" />;
+    if (sortField !== field) return <ArrowUpDown className="w-3 h-3 ml-1 opacity-40" />;
     return sortDirection === "asc" 
-      ? <ArrowUp className="w-4 h-4 ml-1" /> 
-      : <ArrowDown className="w-4 h-4 ml-1" />;
-  };
-
-  const handleEdit = (offer: IntroOffer) => {
-    setEditingId(offer.id);
-    setEditNotes(offer.notes || "");
-    setEditStatus(offer.memberStatus);
-  };
-
-  const handleSave = (id: string) => {
-    updateMutation.mutate({ id, status: editStatus, notes: editNotes });
-  };
-
-  const handleCancel = () => {
-    setEditingId(null);
-    setEditNotes("");
-    setEditStatus("");
-  };
-
-  const getStatusIcon = (status: string | undefined) => {
-    switch ((status || "").toLowerCase()) {
-      case "new": return <AlertCircle className="w-4 h-4 text-blue-500" />;
-      case "engaged": return <Clock className="w-4 h-4 text-green-500" />;
-      case "at_risk": return <XCircle className="w-4 h-4 text-orange-500" />;
-      case "lapsed": return <XCircle className="w-4 h-4 text-red-500" />;
-      case "converted": return <CheckCircle className="w-4 h-4 text-purple-500" />;
-      default: return <AlertCircle className="w-4 h-4 text-gray-500" />;
-    }
-  };
-
-  const getStatusBadgeClass = (status: string | undefined) => {
-    switch ((status || "").toLowerCase()) {
-      case "new": return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
-      case "engaged": return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
-      case "at_risk": return "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400";
-      case "lapsed": return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
-      case "converted": return "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400";
-      default: return "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400";
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
+      ? <ArrowUp className="w-3 h-3 ml-1" /> 
+      : <ArrowDown className="w-3 h-3 ml-1" />;
   };
 
   if (!statusData?.configured) {
@@ -262,6 +582,13 @@ export default function IntroOffers() {
       </div>
     );
   }
+
+  const summaryStats = {
+    total: offers.length,
+    active: offers.filter(o => o.memberStatus === "new" || o.memberStatus === "engaged").length,
+    converted: offers.filter(o => o.hasConverted).length,
+    conversionRate: offers.length > 0 ? (offers.filter(o => o.hasConverted).length / offers.length * 100) : 0,
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground font-sans">
@@ -300,9 +627,7 @@ export default function IntroOffers() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Offers</p>
-                <p className="text-2xl font-bold" data-testid="stat-total-offers">
-                  {summaryLoading ? "..." : summary?.totalOffers || 0}
-                </p>
+                <p className="text-2xl font-bold" data-testid="stat-total-offers">{summaryStats.total}</p>
               </div>
             </div>
           </div>
@@ -313,9 +638,7 @@ export default function IntroOffers() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Active</p>
-                <p className="text-2xl font-bold" data-testid="stat-active-offers">
-                  {summaryLoading ? "..." : summary?.activeOffers || 0}
-                </p>
+                <p className="text-2xl font-bold" data-testid="stat-active-offers">{summaryStats.active}</p>
               </div>
             </div>
           </div>
@@ -326,9 +649,7 @@ export default function IntroOffers() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Converted</p>
-                <p className="text-2xl font-bold" data-testid="stat-converted-offers">
-                  {summaryLoading ? "..." : summary?.convertedOffers || 0}
-                </p>
+                <p className="text-2xl font-bold" data-testid="stat-converted-offers">{summaryStats.converted}</p>
               </div>
             </div>
           </div>
@@ -339,9 +660,7 @@ export default function IntroOffers() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Conversion Rate</p>
-                <p className="text-2xl font-bold" data-testid="stat-conversion-rate">
-                  {summaryLoading ? "..." : `${(summary?.conversionRate || 0).toFixed(1)}%`}
-                </p>
+                <p className="text-2xl font-bold" data-testid="stat-conversion-rate">{summaryStats.conversionRate.toFixed(1)}%</p>
               </div>
             </div>
           </div>
@@ -399,132 +718,75 @@ export default function IntroOffers() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border">
-                    <th 
-                      className="text-left py-3 px-4 text-sm font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
-                      onClick={() => handleSort("student")}
-                      data-testid="sort-student"
-                    >
-                      <span className="flex items-center">Student<SortIcon field="student" /></span>
-                    </th>
-                    <th 
-                      className="text-left py-3 px-4 text-sm font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
-                      onClick={() => handleSort("offer")}
-                      data-testid="sort-offer"
-                    >
-                      <span className="flex items-center">Offer<SortIcon field="offer" /></span>
-                    </th>
-                    <th 
-                      className="text-left py-3 px-4 text-sm font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
-                      onClick={() => handleSort("purchaseDate")}
-                      data-testid="sort-purchase"
-                    >
-                      <span className="flex items-center">Purchase<SortIcon field="purchaseDate" /></span>
-                    </th>
-                    <th 
-                      className="text-left py-3 px-4 text-sm font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
-                      onClick={() => handleSort("days")}
-                      data-testid="sort-days"
-                    >
-                      <span className="flex items-center">Days<SortIcon field="days" /></span>
-                    </th>
-                    <th 
-                      className="text-left py-3 px-4 text-sm font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
-                      onClick={() => handleSort("status")}
-                      data-testid="sort-status"
-                    >
-                      <span className="flex items-center">Status<SortIcon field="status" /></span>
-                    </th>
-                    <th 
-                      className="text-left py-3 px-4 text-sm font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
-                      onClick={() => handleSort("classes")}
-                      data-testid="sort-classes"
-                    >
-                      <span className="flex items-center">Classes<SortIcon field="classes" /></span>
-                    </th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Notes</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Actions</th>
+                    {[
+                      { field: "student" as SortField, label: "Name" },
+                      { field: "offer" as SortField, label: "Offer" },
+                      { field: "amount" as SortField, label: "Amount" },
+                      { field: "purchaseDate" as SortField, label: "Purchase" },
+                      { field: "expires" as SortField, label: "Expires" },
+                      { field: "classes" as SortField, label: "Classes" },
+                      { field: "lastClass" as SortField, label: "Last Class" },
+                      { field: "status" as SortField, label: "Stage" },
+                      { field: "conversion" as SortField, label: "Conversion" },
+                    ].map(col => (
+                      <th
+                        key={col.field}
+                        className="text-left py-3 px-3 text-sm font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors whitespace-nowrap"
+                        onClick={() => handleSort(col.field)}
+                        data-testid={`sort-${col.field}`}
+                      >
+                        <span className="flex items-center">{col.label}<SortIcon field={col.field} /></span>
+                      </th>
+                    ))}
+                    <th className="text-left py-3 px-3 text-sm font-medium text-muted-foreground">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {sortedOffers.map((offer) => (
-                    <tr key={offer.id} className="border-b border-border/50 hover:bg-muted/30" data-testid={`row-offer-${offer.id}`}>
-                      <td className="py-3 px-4">
-                        <div>
-                          <p className="font-medium">{offer.firstName} {offer.lastName}</p>
-                          {offer.email && (
-                            <p className="text-sm text-muted-foreground">{offer.email}</p>
-                          )}
-                        </div>
+                    <tr
+                      key={offer.id}
+                      className="border-b border-border/50 hover:bg-muted/30 cursor-pointer transition-colors"
+                      onClick={() => setSelectedOffer(offer)}
+                      data-testid={`row-offer-${offer.id}`}
+                    >
+                      <td className="py-3 px-3">
+                        <p className="font-medium text-sm">{offer.firstName} {offer.lastName}</p>
                       </td>
-                      <td className="py-3 px-4 text-sm">{offer.offerName}</td>
-                      <td className="py-3 px-4 text-sm">{formatDate(offer.purchaseDate)}</td>
-                      <td className="py-3 px-4 text-sm">
-                        {offer.daysSincePurchase}d ago
+                      <td className="py-3 px-3 text-sm text-muted-foreground max-w-[200px]">
+                        <span className="line-clamp-2">{offer.offerName}</span>
                       </td>
-                      <td className="py-3 px-4">
-                        {editingId === offer.id ? (
-                          <Select value={editStatus} onValueChange={setEditStatus}>
-                            <SelectTrigger className="w-28 h-8">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="new">New</SelectItem>
-                              <SelectItem value="engaged">Engaged</SelectItem>
-                              <SelectItem value="at_risk">At Risk</SelectItem>
-                              <SelectItem value="converted">Converted</SelectItem>
-                            </SelectContent>
-                          </Select>
+                      <td className="py-3 px-3 text-sm font-medium">${parseFloat(offer.purchaseAmount).toFixed(2)}</td>
+                      <td className="py-3 px-3 text-sm">
+                        <div>{formatDate(offer.purchaseDate)}</div>
+                        <div className="text-xs text-muted-foreground">{daysAgoText(offer.daysSincePurchase)}</div>
+                      </td>
+                      <td className="py-3 px-3 text-sm">{formatDate(offer.expirationDate)}</td>
+                      <td className="py-3 px-3 text-sm text-center">{offer.classesAttendedSincePurchase}</td>
+                      <td className="py-3 px-3 text-sm">{offer.lastAttendanceDate ? formatDate(offer.lastAttendanceDate) : "Never"}</td>
+                      <td className="py-3 px-3">
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${getStageBadgeClass(offer.memberStatus)}`}>
+                          {getStageLabel(offer.memberStatus)}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3 text-sm">
+                        {offer.hasConverted ? (
+                          <span className="text-green-600 font-medium">{formatDate(offer.conversionDate)}</span>
                         ) : (
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(offer.memberStatus)}`}>
-                            {getStatusIcon(offer.memberStatus)}
-                            {offer.memberStatus}
-                          </span>
+                          <span className="text-muted-foreground">—</span>
                         )}
                       </td>
-                      <td className="py-3 px-4 text-sm">{offer.classesAttendedSincePurchase}</td>
-                      <td className="py-3 px-4 text-sm max-w-[200px]">
-                        {editingId === offer.id ? (
-                          <Input
-                            value={editNotes}
-                            onChange={(e) => setEditNotes(e.target.value)}
-                            placeholder="Add notes..."
-                            className="h-8"
-                          />
-                        ) : (
-                          <span className="truncate block">{offer.notes || "-"}</span>
-                        )}
-                      </td>
-                      <td className="py-3 px-4">
-                        {editingId === offer.id ? (
-                          <div className="flex gap-1">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleSave(offer.id)}
-                              disabled={updateMutation.isPending}
-                              data-testid={`button-save-${offer.id}`}
-                            >
-                              <Save className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={handleCancel}
-                              data-testid={`button-cancel-${offer.id}`}
-                            >
-                              <X className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleEdit(offer)}
-                            data-testid={`button-edit-${offer.id}`}
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </Button>
-                        )}
+                      <td className="py-3 px-3" onClick={(e) => e.stopPropagation()}>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedOffer(offer);
+                          }}
+                          data-testid={`button-view-${offer.id}`}
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
                       </td>
                     </tr>
                   ))}
@@ -534,6 +796,12 @@ export default function IntroOffers() {
           )}
         </div>
         </div>
+
+      <StudentDetailModal
+        offer={selectedOffer}
+        open={!!selectedOffer}
+        onClose={() => setSelectedOffer(null)}
+      />
     </div>
   );
 }

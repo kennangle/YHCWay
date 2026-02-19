@@ -42,29 +42,29 @@ Returns paginated list of intro offer records.
 | studentId                    | string  | Associated student ID                            |
 | firstName                    | string  | Student first name                               |
 | lastName                     | string  | Student last name                                |
-| email                        | string  | Student email                                    |
-| phone                        | string  | Student phone number                             |
+| email                        | string? | Student email                                    |
+| phone                        | string? | Student phone number                             |
 | offerName                    | string  | Name of the intro offer purchased                |
 | offerCategory                | string  | Category (e.g., "IntroOffer")                    |
 | purchaseAmount               | string  | Dollar amount paid (e.g., "75.00")               |
 | purchaseDate                 | string  | ISO 8601 datetime of purchase                    |
 | classesAttendedSincePurchase | number  | Number of classes attended since purchase         |
-| lastAttendanceDate           | string? | ISO 8601 datetime of last class attended          |
+| lastAttendanceDate           | string? | ISO 8601 datetime of last class attended (null if never) |
 | daysSinceLastAttendance      | number? | Days since last class (null if never attended)    |
 | daysSincePurchase            | number  | Days elapsed since purchase                      |
 | hasConverted                 | boolean | Whether student converted to full membership     |
 | conversionDate               | string? | ISO 8601 datetime of conversion (null if not)    |
 | conversionType               | string? | Type of conversion (null if not converted)       |
-| conversionAmount             | string? | Dollar amount of conversion purchase             |
-| memberStatus                 | string  | Current status: "new", "engaged", "at_risk", "lapsed", "converted" |
-| expirationDate               | string? | Offer expiration date (null if not set)          |
+| conversionAmount             | string? | Dollar amount of conversion purchase (null if not)|
+| memberStatus                 | string  | Current status (see values below)                |
+| expirationDate               | string? | Intro offer expiration date (null if not set)    |
 
-**Member Status Values:**
-- `new` - Purchased but hasn't attended any classes yet
-- `engaged` - Actively attending classes
-- `at_risk` - Attendance has dropped off, needs follow-up
-- `lapsed` - No recent attendance, likely lost
-- `converted` - Converted to a full membership
+**Member Status Values (maps to "Stage" in UI):**
+- `new` - Purchased but hasn't attended any classes yet (shown as "purchased" badge)
+- `engaged` - Actively attending classes (shown as "engaged" badge)
+- `at_risk` - Attendance has dropped off, needs follow-up (shown as "at risk" badge)
+- `lapsed` - No recent attendance, likely lost (shown as "lapsed" badge)
+- `converted` - Converted to a full membership (shown as "converted" badge)
 
 ### PATCH /api/v1/intro-offers/:id
 Update an intro offer record.
@@ -82,18 +82,41 @@ Update an intro offer record.
 ## Integration in The YHC Way
 
 ### Server Layer
-- File: `server/mindbodyAnalytics.ts` - API client functions
-- File: `server/routes.ts` - Express routes that proxy to the API
+- File: `server/mindbodyAnalytics.ts` - API client functions (proxies to external API)
+- File: `server/routes.ts` - Express routes that proxy to the API + local reminder CRUD
 
-### Server Routes
+### Server Routes (Proxied to Mindbody Analytics API)
 | Route                                  | Method | Description                |
 |----------------------------------------|--------|----------------------------|
 | /api/mindbody-analytics/status         | GET    | Check if API is configured |
 | /api/mindbody-analytics/intro-offers   | GET    | Get intro offers (proxied) |
 | /api/mindbody-analytics/intro-offers/:id | PATCH | Update an intro offer      |
+| /api/mindbody-analytics/students       | GET    | Get students (proxied)     |
+
+### Server Routes (Local - Reminders stored in PostgreSQL)
+| Route                                                    | Method | Description              |
+|----------------------------------------------------------|--------|--------------------------|
+| /api/mindbody-analytics/intro-offers/:id/reminders       | GET    | Get reminders for offer  |
+| /api/mindbody-analytics/intro-offers/:id/reminders       | POST   | Create a reminder        |
+| /api/mindbody-analytics/intro-offers/:offerId/reminders/:reminderId | PATCH | Toggle reminder completed |
+| /api/mindbody-analytics/intro-offers/:offerId/reminders/:reminderId | DELETE | Delete a reminder        |
+
+**Reminder Object (local DB - `intro_offer_reminders` table):**
+| Field       | Type    | Description                    |
+|-------------|---------|--------------------------------|
+| id          | serial  | Auto-increment primary key     |
+| offerId     | text    | Links to intro offer ID        |
+| title       | text    | Reminder title                 |
+| description | text?   | Optional description           |
+| completed   | boolean | Whether reminder is done       |
+| createdBy   | text?   | Name of user who created it    |
+| createdAt   | timestamp | When reminder was created    |
 
 ### Frontend Pages
-- `client/src/pages/intro-offers.tsx` - **Intro Offer Funnel** page (detailed list/table view)
+- `client/src/pages/intro-offers.tsx` - **Intro Offer Funnel** page
+  - Table view matching mbanalytics layout: Name, Offer, Amount, Purchase, Expires, Classes, Last Class, Stage, Conversion, Actions
+  - Clicking a row opens a student detail modal
+  - Student modal includes: stat cards, offer info, contact info, and tabs for Reminders/Classes/Purchases/Notes
 - `client/src/pages/scoreboard.tsx` - **Business Scoreboard** (aggregated metrics dashboard)
 
 ### Scoreboard Metric Logic
