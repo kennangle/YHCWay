@@ -80,16 +80,44 @@ export async function getIntroOffers(params: {
   limit?: number;
   offset?: number;
 } = {}): Promise<PaginatedResponse<IntroOffer>> {
-  const queryParams = new URLSearchParams();
-  if (params.status) queryParams.append("status", params.status);
-  if (params.since) queryParams.append("since", params.since);
-  if (params.limit) queryParams.append("limit", params.limit.toString());
-  if (params.offset) queryParams.append("offset", params.offset.toString());
+  const pageSize = 100;
+  const allData: IntroOffer[] = [];
+  let currentOffset = params.offset || 0;
+  let totalCount = 0;
 
-  const query = queryParams.toString();
-  const endpoint = `/api/v1/intro-offers${query ? `?${query}` : ""}`;
-  
-  return makeRequest<PaginatedResponse<IntroOffer>>(endpoint);
+  while (true) {
+    const queryParams = new URLSearchParams();
+    if (params.status) queryParams.append("status", params.status);
+    if (params.since) queryParams.append("since", params.since);
+    queryParams.append("limit", pageSize.toString());
+    queryParams.append("offset", currentOffset.toString());
+
+    const query = queryParams.toString();
+    const endpoint = `/api/v1/intro-offers${query ? `?${query}` : ""}`;
+    const page = await makeRequest<PaginatedResponse<IntroOffer>>(endpoint);
+
+    allData.push(...page.data);
+    totalCount = page.meta.count;
+
+    if (allData.length >= totalCount || page.data.length < pageSize) {
+      break;
+    }
+
+    currentOffset += pageSize;
+
+    if (params.limit && allData.length >= params.limit) {
+      break;
+    }
+  }
+
+  return {
+    data: params.limit ? allData.slice(0, params.limit) : allData,
+    meta: {
+      count: totalCount,
+      limit: params.limit || totalCount,
+      offset: params.offset || 0,
+    },
+  };
 }
 
 export async function getIntroOfferSummary(): Promise<IntroOfferSummary> {
