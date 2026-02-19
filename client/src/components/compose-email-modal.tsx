@@ -44,11 +44,13 @@ function getAccountColor(accountId: number): { bg: string; border: string } {
 
 interface ComposeEmailModalProps {
   onClose: () => void;
+  initialTo?: string;
+  initialSubject?: string;
 }
 
-export function ComposeEmailModal({ onClose }: ComposeEmailModalProps) {
-  const [to, setTo] = useState("");
-  const [subject, setSubject] = useState("");
+export function ComposeEmailModal({ onClose, initialTo, initialSubject }: ComposeEmailModalProps) {
+  const [to, setTo] = useState(initialTo || "");
+  const [subject, setSubject] = useState(initialSubject || "");
   const [body, setBody] = useState("");
   const [signatureAppended, setSignatureAppended] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Gift, RefreshCw, Users, TrendingUp, Clock, CheckCircle, XCircle, AlertCircle, Search, Edit2, Save, X, ArrowUpDown, ArrowUp, ArrowDown, User, DollarSign, Calendar, Mail, Phone, Bell, BookOpen, ShoppingBag, FileText, Plus, Trash2, Minus } from "lucide-react";
+import { Gift, RefreshCw, Users, TrendingUp, Clock, CheckCircle, XCircle, AlertCircle, Search, Edit2, Save, X, ArrowUpDown, ArrowUp, ArrowDown, User, DollarSign, Calendar, Mail, Phone, Bell, BookOpen, ShoppingBag, FileText, Plus, Trash2, Minus, MessageSquare } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { ComposeEmailModal } from "@/components/compose-email-modal";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface IntroOffer {
   id: string;
@@ -85,7 +87,7 @@ function getStageBadgeClass(status: string): string {
   }
 }
 
-function StudentDetailModal({ offer, open, onClose }: { offer: IntroOffer | null; open: boolean; onClose: () => void }) {
+function StudentDetailModal({ offer, open, onClose, onComposeEmail }: { offer: IntroOffer | null; open: boolean; onClose: () => void; onComposeEmail?: (offer: IntroOffer) => void }) {
   const [activeTab, setActiveTab] = useState("reminders");
 
   if (!offer) return null;
@@ -165,11 +167,33 @@ function StudentDetailModal({ offer, open, onClose }: { offer: IntroOffer | null
           <div className="grid grid-cols-2 gap-3">
             <div className="flex items-center gap-2 text-sm">
               <Mail className="w-4 h-4 text-muted-foreground" />
-              {offer.email || "No email"}
+              {offer.email ? (
+                <button
+                  className="text-blue-600 hover:underline text-left"
+                  onClick={() => {
+                    if (onComposeEmail) {
+                      onComposeEmail(offer);
+                    }
+                  }}
+                  data-testid="modal-email-link"
+                >
+                  {offer.email}
+                </button>
+              ) : "No email"}
             </div>
             <div className="flex items-center gap-2 text-sm">
-              <Phone className="w-4 h-4 text-muted-foreground" />
-              {offer.phone || "No phone"}
+              <MessageSquare className="w-4 h-4 text-muted-foreground" />
+              {offer.phone ? (
+                <a
+                  href={`https://voice.google.com/u/0/messages?phoneNo=${offer.phone.replace(/\D/g, "")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline"
+                  data-testid="modal-sms-link"
+                >
+                  {offer.phone}
+                </a>
+              ) : "No phone"}
             </div>
             <div className="flex items-center gap-2 text-sm">
               <Calendar className="w-4 h-4 text-muted-foreground" />
@@ -452,6 +476,7 @@ export default function IntroOffers() {
   const queryClient = useQueryClient();
   const [location] = useLocation();
   const [selectedOffer, setSelectedOffer] = useState<IntroOffer | null>(null);
+  const [composeEmailOffer, setComposeEmailOffer] = useState<IntroOffer | null>(null);
   
   const getInitialFilter = (): StatusFilter => {
     const params = new URLSearchParams(window.location.search);
@@ -776,17 +801,60 @@ export default function IntroOffers() {
                         )}
                       </td>
                       <td className="py-3 px-3" onClick={(e) => e.stopPropagation()}>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedOffer(offer);
-                          }}
-                          data-testid={`button-view-${offer.id}`}
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-8 w-8 p-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (offer.email) {
+                                      setComposeEmailOffer(offer);
+                                    } else {
+                                      toast({ title: "No email address", description: `No email on file for ${offer.firstName} ${offer.lastName}`, variant: "destructive" });
+                                    }
+                                  }}
+                                  data-testid={`button-email-${offer.id}`}
+                                >
+                                  <Mail className="w-4 h-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{offer.email ? `Email ${offer.firstName}` : "No email on file"}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-8 w-8 p-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (offer.phone) {
+                                      const cleaned = offer.phone.replace(/\D/g, "");
+                                      const googleVoiceUrl = `https://voice.google.com/u/0/messages?phoneNo=${cleaned}`;
+                                      window.open(googleVoiceUrl, "_blank");
+                                    } else {
+                                      toast({ title: "No phone number", description: `No phone number on file for ${offer.firstName} ${offer.lastName}`, variant: "destructive" });
+                                    }
+                                  }}
+                                  data-testid={`button-sms-${offer.id}`}
+                                >
+                                  <MessageSquare className="w-4 h-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{offer.phone ? `SMS ${offer.firstName} via Google Voice` : "No phone on file"}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -801,7 +869,19 @@ export default function IntroOffers() {
         offer={selectedOffer}
         open={!!selectedOffer}
         onClose={() => setSelectedOffer(null)}
+        onComposeEmail={(o) => {
+          setSelectedOffer(null);
+          setComposeEmailOffer(o);
+        }}
       />
+
+      {composeEmailOffer && (
+        <ComposeEmailModal
+          onClose={() => setComposeEmailOffer(null)}
+          initialTo={composeEmailOffer.email || ""}
+          initialSubject={`Following up - ${composeEmailOffer.offerName}`}
+        />
+      )}
     </div>
   );
 }
