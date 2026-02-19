@@ -125,3 +125,63 @@ export async function getStudents(params: {
 export function isMindbodyAnalyticsConfigured(): boolean {
   return !!API_KEY;
 }
+
+export interface MBCommunication {
+  id: string;
+  offerId: string;
+  studentId: string;
+  channel: "email" | "sms";
+  direction: "outbound" | "inbound";
+  subject?: string;
+  body?: string;
+  recipientAddress?: string;
+  status?: string;
+  sentAt: string;
+  createdBy?: string;
+  idempotencyKey?: string;
+}
+
+export async function getOfferCommunications(offerId: string): Promise<MBCommunication[]> {
+  try {
+    const result = await makeRequest<{ data: MBCommunication[] }>(
+      `/api/v1/intro-offers/${offerId}/communications`
+    );
+    return result.data || [];
+  } catch (error: any) {
+    if (error.message?.includes("404") || error.message?.includes("<!doctype")) {
+      return [];
+    }
+    console.warn("[MBSync] Communications endpoint not available yet:", error.message);
+    return [];
+  }
+}
+
+export async function pushCommunication(offerId: string, comm: {
+  channel: string;
+  direction: string;
+  subject?: string;
+  body?: string;
+  recipientAddress?: string;
+  status?: string;
+  sentAt: string;
+  createdBy?: string;
+  idempotencyKey: string;
+}): Promise<MBCommunication | null> {
+  try {
+    const result = await makeRequest<{ data: MBCommunication }>(
+      `/api/v1/intro-offers/${offerId}/communications`,
+      {
+        method: "POST",
+        body: JSON.stringify(comm),
+      }
+    );
+    return result.data || null;
+  } catch (error: any) {
+    if (error.message?.includes("404") || error.message?.includes("<!doctype")) {
+      console.warn("[MBSync] Communications POST endpoint not available yet");
+      return null;
+    }
+    console.warn("[MBSync] Failed to push communication:", error.message);
+    return null;
+  }
+}

@@ -1639,3 +1639,33 @@ export const introOfferReminders = pgTable("intro_offer_reminders", {
 export const insertIntroOfferReminderSchema = createInsertSchema(introOfferReminders).omit({ id: true, createdAt: true });
 export type IntroOfferReminder = typeof introOfferReminders.$inferSelect;
 export type InsertIntroOfferReminder = typeof introOfferReminders.$inferInsert;
+
+export const introOfferCommunications = pgTable("intro_offer_communications", {
+  id: serial("id").primaryKey(),
+  tenantId: integer("tenant_id"),
+  offerId: text("offer_id").notNull(),
+  studentId: text("student_id").notNull(),
+  channel: text("channel").notNull(),
+  direction: text("direction").notNull().default("outbound"),
+  subject: text("subject"),
+  body: text("body"),
+  recipientAddress: text("recipient_address"),
+  status: text("status").default("sent"),
+  sentAt: timestamp("sent_at").defaultNow(),
+  createdBy: text("created_by"),
+  source: text("source").notNull().default("yhcway"),
+  externalId: text("external_id"),
+  syncStatus: text("sync_status").default("pending"),
+  syncedAt: timestamp("synced_at"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("intro_offer_comms_offer").on(table.offerId),
+  index("intro_offer_comms_tenant").on(table.tenantId),
+  index("intro_offer_comms_student").on(table.studentId),
+  index("intro_offer_comms_external").on(table.externalId, table.source),
+]);
+
+export const insertIntroOfferCommunicationSchema = createInsertSchema(introOfferCommunications).omit({ id: true, createdAt: true, syncedAt: true });
+export type IntroOfferCommunication = typeof introOfferCommunications.$inferSelect;
+export type InsertIntroOfferCommunication = typeof introOfferCommunications.$inferInsert;

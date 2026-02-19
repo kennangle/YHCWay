@@ -88,7 +88,7 @@ function getStageBadgeClass(status: string): string {
 }
 
 function StudentDetailModal({ offer, open, onClose, onComposeEmail }: { offer: IntroOffer | null; open: boolean; onClose: () => void; onComposeEmail?: (offer: IntroOffer) => void }) {
-  const [activeTab, setActiveTab] = useState("reminders");
+  const [activeTab, setActiveTab] = useState("communications");
 
   if (!offer) return null;
 
@@ -207,7 +207,11 @@ function StudentDetailModal({ offer, open, onClose, onComposeEmail }: { offer: I
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-2">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="communications" data-testid="tab-communications">
+              <MessageSquare className="w-3.5 h-3.5 mr-1.5" />
+              Comms
+            </TabsTrigger>
             <TabsTrigger value="reminders" data-testid="tab-reminders">
               <Bell className="w-3.5 h-3.5 mr-1.5" />
               Reminders
@@ -225,6 +229,10 @@ function StudentDetailModal({ offer, open, onClose, onComposeEmail }: { offer: I
               Notes
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="communications" className="mt-4">
+            <CommunicationsTimeline offer={offer} onComposeEmail={onComposeEmail} />
+          </TabsContent>
 
           <TabsContent value="reminders" className="mt-4">
             <RemindersList offer={offer} />
@@ -271,6 +279,182 @@ function StudentDetailModal({ offer, open, onClose, onComposeEmail }: { offer: I
         </Tabs>
       </DialogContent>
     </Dialog>
+  );
+}
+
+interface Communication {
+  id: number;
+  offerId: string;
+  studentId: string;
+  channel: string;
+  direction: string;
+  subject?: string;
+  body?: string;
+  recipientAddress?: string;
+  status?: string;
+  sentAt: string;
+  createdBy?: string;
+  source: string;
+  syncStatus?: string;
+}
+
+function CommunicationsTimeline({ offer, onComposeEmail }: { offer: IntroOffer; onComposeEmail?: (offer: IntroOffer) => void }) {
+  const queryClient = useQueryClient();
+  const { data: communications = [], isLoading } = useQuery<Communication[]>({
+    queryKey: ["communications", offer.id],
+    queryFn: async () => {
+      const res = await fetch(`/api/mindbody-analytics/intro-offers/${offer.id}/communications`, { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+
+  const syncMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/mindbody-analytics/intro-offers/${offer.id}/communications/sync`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Sync failed");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["communications", offer.id] });
+      toast({ title: "Sync complete", description: `Pulled ${data.pulled}, pushed ${data.pushed} communications` });
+    },
+    onError: () => {
+      toast({ title: "Sync failed", variant: "destructive" });
+    },
+  });
+
+  const getChannelIcon = (channel: string) => {
+    return channel === "email" ? <Mail className="w-4 h-4" /> : <MessageSquare className="w-4 h-4" />;
+  };
+
+  const getChannelColor = (channel: string) => {
+    return channel === "email" ? "text-blue-600 bg-blue-50 border-blue-200" : "text-green-600 bg-green-50 border-green-200";
+  };
+
+  const getDirectionLabel = (direction: string) => {
+    return direction === "outbound" ? "Sent" : "Received";
+  };
+
+  const getSourceBadge = (source: string) => {
+    if (source === "mbanalytics") return <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-600 border border-purple-200">MB Analytics</span>;
+    return <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 border border-blue-200">YHC Way</span>;
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              if (onComposeEmail) onComposeEmail(offer);
+            }}
+            disabled={!offer.email}
+            data-testid="button-compose-from-comms"
+          >
+            <Mail className="w-3.5 h-3.5 mr-1.5" />
+            Email
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={async () => {
+              if (offer.phone) {
+                const cleaned = offer.phone.replace(/\D/g, "");
+                window.open(`https://voice.google.com/u/0/messages?phoneNo=${cleaned}`, "_blank");
+                try {
+                  await fetch(`/api/mindbody-analytics/intro-offers/${offer.id}/communications`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify({
+                      studentId: offer.studentId,
+                      channel: "sms",
+                      direction: "outbound",
+                      recipientAddress: offer.phone,
+                      status: "initiated",
+                    }),
+                  });
+                  queryClient.invalidateQueries({ queryKey: ["communications", offer.id] });
+                } catch (err) {
+                  console.error("Failed to log SMS communication:", err);
+                }
+              }
+            }}
+            disabled={!offer.phone}
+            data-testid="button-sms-from-comms"
+          >
+            <MessageSquare className="w-3.5 h-3.5 mr-1.5" />
+            SMS
+          </Button>
+        </div>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => syncMutation.mutate()}
+          disabled={syncMutation.isPending}
+          data-testid="button-sync-comms"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${syncMutation.isPending ? "animate-spin" : ""}`} />
+          Sync
+        </Button>
+      </div>
+
+      {isLoading ? (
+        <div className="text-center py-6 text-muted-foreground">
+          <RefreshCw className="w-5 h-5 mx-auto mb-2 animate-spin opacity-30" />
+          <p className="text-sm">Loading communications...</p>
+        </div>
+      ) : communications.length === 0 ? (
+        <div className="text-center py-6 text-muted-foreground">
+          <MessageSquare className="w-6 h-6 mx-auto mb-2 opacity-30" />
+          <p className="text-sm">No communications recorded yet</p>
+          <p className="text-xs mt-1">Send an email or SMS to start tracking</p>
+        </div>
+      ) : (
+        <div className="space-y-2 max-h-[300px] overflow-y-auto">
+          {communications.map((comm) => (
+            <div key={comm.id} className="border rounded-lg p-3" data-testid={`comm-${comm.id}`}>
+              <div className="flex items-start gap-3">
+                <div className={`mt-0.5 p-1.5 rounded-lg border ${getChannelColor(comm.channel)}`}>
+                  {getChannelIcon(comm.channel)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="font-medium text-sm">
+                      {comm.channel === "email" ? "Email" : "SMS"} {getDirectionLabel(comm.direction)}
+                    </span>
+                    {getSourceBadge(comm.source)}
+                    {comm.syncStatus === "synced" && (
+                      <CheckCircle className="w-3 h-3 text-green-500" />
+                    )}
+                  </div>
+                  {comm.subject && (
+                    <p className="text-sm text-foreground">{comm.subject}</p>
+                  )}
+                  {comm.recipientAddress && (
+                    <p className="text-xs text-muted-foreground">To: {comm.recipientAddress}</p>
+                  )}
+                  <div className="flex items-center gap-2 mt-1">
+                    <p className="text-xs text-muted-foreground">
+                      {formatDate(comm.sentAt)}
+                    </p>
+                    {comm.createdBy && (
+                      <p className="text-xs text-muted-foreground">by {comm.createdBy}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -834,12 +1018,29 @@ export default function IntroOffers() {
                                   size="sm"
                                   variant="ghost"
                                   className="h-8 w-8 p-0"
-                                  onClick={(e) => {
+                                  onClick={async (e) => {
                                     e.stopPropagation();
                                     if (offer.phone) {
                                       const cleaned = offer.phone.replace(/\D/g, "");
                                       const googleVoiceUrl = `https://voice.google.com/u/0/messages?phoneNo=${cleaned}`;
                                       window.open(googleVoiceUrl, "_blank");
+                                      try {
+                                        await fetch(`/api/mindbody-analytics/intro-offers/${offer.id}/communications`, {
+                                          method: "POST",
+                                          headers: { "Content-Type": "application/json" },
+                                          credentials: "include",
+                                          body: JSON.stringify({
+                                            studentId: offer.studentId,
+                                            channel: "sms",
+                                            direction: "outbound",
+                                            recipientAddress: offer.phone,
+                                            status: "initiated",
+                                          }),
+                                        });
+                                        queryClient.invalidateQueries({ queryKey: ["communications", offer.id] });
+                                      } catch (err) {
+                                        console.error("Failed to log SMS:", err);
+                                      }
                                     } else {
                                       toast({ title: "No phone number", description: `No phone number on file for ${offer.firstName} ${offer.lastName}`, variant: "destructive" });
                                     }
@@ -880,6 +1081,27 @@ export default function IntroOffers() {
           onClose={() => setComposeEmailOffer(null)}
           initialTo={composeEmailOffer.email || ""}
           initialSubject={`Following up - ${composeEmailOffer.offerName}`}
+          onSent={async (sentData) => {
+            try {
+              await fetch(`/api/mindbody-analytics/intro-offers/${composeEmailOffer.id}/communications`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({
+                  studentId: composeEmailOffer.studentId,
+                  channel: "email",
+                  direction: "outbound",
+                  subject: sentData.subject,
+                  body: sentData.body,
+                  recipientAddress: sentData.to,
+                  status: "sent",
+                }),
+              });
+              queryClient.invalidateQueries({ queryKey: ["communications", composeEmailOffer.id] });
+            } catch (err) {
+              console.error("Failed to log email communication:", err);
+            }
+          }}
         />
       )}
     </div>

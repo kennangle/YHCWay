@@ -46,9 +46,10 @@ interface ComposeEmailModalProps {
   onClose: () => void;
   initialTo?: string;
   initialSubject?: string;
+  onSent?: (data: { to: string; subject: string; body: string }) => void;
 }
 
-export function ComposeEmailModal({ onClose, initialTo, initialSubject }: ComposeEmailModalProps) {
+export function ComposeEmailModal({ onClose, initialTo, initialSubject, onSent }: ComposeEmailModalProps) {
   const [to, setTo] = useState(initialTo || "");
   const [subject, setSubject] = useState(initialSubject || "");
   const [body, setBody] = useState("");
@@ -178,8 +179,11 @@ export function ComposeEmailModal({ onClose, initialTo, initialSubject }: Compos
       }
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["gmail-messages"] });
+      if (onSent) {
+        onSent({ to: variables.to, subject: variables.subject, body: variables.body });
+      }
       onClose();
     },
   });

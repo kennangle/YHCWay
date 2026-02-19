@@ -79,6 +79,80 @@ Update an intro offer record.
 
 **Response:** Updated IntroOffer object.
 
+## Proposed Communication Endpoints (For mbanalytics to implement)
+
+These endpoints need to be added to mbanalytics to enable two-way communication sync with YHC Way.
+
+### GET /api/v1/intro-offers/:id/communications
+Returns list of communications for an intro offer.
+
+**Query Parameters:**
+| Parameter | Type   | Description                          |
+|-----------|--------|--------------------------------------|
+| since     | string | Filter by date (ISO 8601)            |
+| limit     | number | Max records to return (default 50)   |
+| offset    | number | Pagination offset                    |
+| channel   | string | Filter by channel (email, sms)       |
+
+**Response Shape:**
+```json
+{
+  "data": [Communication],
+  "meta": {
+    "count": number,
+    "limit": number,
+    "offset": number
+  }
+}
+```
+
+**Communication Object:**
+| Field            | Type    | Description                                    |
+|------------------|---------|------------------------------------------------|
+| id               | string  | Unique communication ID                        |
+| offerId          | string  | Associated intro offer ID                      |
+| studentId        | string  | Associated student ID                          |
+| channel          | string  | "email" or "sms"                               |
+| direction        | string  | "outbound" or "inbound"                        |
+| subject          | string? | Email subject line (null for SMS)              |
+| body             | string? | Message body/content                           |
+| recipientAddress | string? | Email address or phone number                  |
+| status           | string? | "sent", "delivered", "initiated", "failed"     |
+| sentAt           | string  | ISO 8601 datetime when sent                    |
+| createdBy        | string? | Name of user who sent it                       |
+| idempotencyKey   | string? | Used for deduplication (format: "yhcway-{id}") |
+
+### POST /api/v1/intro-offers/:id/communications
+Create a communication record. Used by YHC Way to push outbound communications.
+
+**Request Body:**
+```json
+{
+  "channel": "email" | "sms",
+  "direction": "outbound" | "inbound",
+  "subject": "string (optional)",
+  "body": "string (optional)",
+  "recipientAddress": "string (optional)",
+  "status": "sent" | "delivered" | "initiated",
+  "sentAt": "ISO 8601 datetime",
+  "createdBy": "string (optional)",
+  "idempotencyKey": "string (required for dedup)"
+}
+```
+
+**Deduplication Rules:**
+- If `idempotencyKey` matches an existing record, return the existing record (200) without creating a duplicate
+- Format convention: `yhcway-{local_id}` for records originating from YHC Way
+- Format convention: `mb-{remote_id}` for records originating from mbanalytics
+
+**Response:** `{ "data": Communication }` (the created or existing record)
+
+### Sync Strategy
+1. **Pull**: YHC Way calls GET to fetch remote communications, deduplicates by `externalId + source`, and inserts new records locally
+2. **Push**: When email/SMS is sent from YHC Way, it logs locally first, then POSTs to mbanalytics with `idempotencyKey = "yhcway-{localId}"`
+3. **Source of Truth**: mbanalytics is authoritative. On conflict, mbanalytics data wins
+4. **Sync Trigger**: Manual "Sync" button per student, or automatic on student detail modal open
+
 ## Integration in The YHC Way
 
 ### Server Layer
@@ -101,11 +175,47 @@ Update an intro offer record.
 | /api/mindbody-analytics/intro-offers/:offerId/reminders/:reminderId | PATCH | Toggle reminder completed |
 | /api/mindbody-analytics/intro-offers/:offerId/reminders/:reminderId | DELETE | Delete a reminder        |
 
+### Server Routes (Local - Communications with two-way sync)
+| Route                                                           | Method | Description                    |
+|-----------------------------------------------------------------|--------|--------------------------------|
+| /api/mindbody-analytics/intro-offers/:id/communications         | GET    | Get communications for offer   |
+| /api/mindbody-analytics/intro-offers/:id/communications         | POST   | Create communication + push to mbanalytics |
+| /api/mindbody-analytics/intro-offers/:offerId/communications/:commId | DELETE | Delete a communication    |
+| /api/mindbody-analytics/intro-offers/:id/communications/sync    | POST   | Pull from mbanalytics + push unsynced |
+
+**Communication Object (local DB - `intro_offer_communications` table):**
+| Field            | Type      | Description                              |
+|------------------|-----------|------------------------------------------|
+| id               | serial    | Auto-increment primary key               |
+| tenantId         | integer?  | Tenant isolation                         |
+| offerId          | text      | Links to intro offer ID                  |
+| studentId        | text      | Links to student ID                      |
+| channel          | text      | "email" or "sms"                         |
+| direction        | text      | "outbound" or "inbound"                  |
+| subject          | text?     | Email subject line                       |
+| body             | text?     | Message body/content                     |
+| recipientAddress | text?     | Email address or phone number            |
+| status           | text?     | "sent", "delivered", "initiated"         |
+| sentAt           | timestamp | When the communication was sent          |
+| createdBy        | text?     | Name of user who created it              |
+| source           | text      | "yhcway" or "mbanalytics"                |
+| externalId       | text?     | ID from mbanalytics for synced records   |
+| syncStatus       | text?     | "pending" or "synced"                    |
+| syncedAt         | timestamp?| When last synced with mbanalytics        |
+| metadata         | jsonb?    | Additional data                          |
+| createdAt        | timestamp | When record was created                  |
+
+**Auto-logging Behavior:**
+- Email: When an email is sent via Gmail compose, a communication record is auto-created with channel="email", direction="outbound"
+- SMS: When SMS is initiated via Google Voice link, a communication record is auto-created with channel="sms", direction="outbound", status="initiated"
+- Both are automatically pushed to mbanalytics (when the API endpoints exist) with idempotency keys
+
 **Reminder Object (local DB - `intro_offer_reminders` table):**
 | Field       | Type    | Description                    |
 |-------------|---------|--------------------------------|
 | id          | serial  | Auto-increment primary key     |
 | offerId     | text    | Links to intro offer ID        |
+| tenantId    | integer?| Tenant isolation               |
 | title       | text    | Reminder title                 |
 | description | text?   | Optional description           |
 | completed   | boolean | Whether reminder is done       |
@@ -115,8 +225,10 @@ Update an intro offer record.
 ### Frontend Pages
 - `client/src/pages/intro-offers.tsx` - **Intro Offer Funnel** page
   - Table view matching mbanalytics layout: Name, Offer, Amount, Purchase, Expires, Classes, Last Class, Stage, Conversion, Actions
+  - Actions column: Email (Gmail compose) and SMS (Google Voice) buttons
   - Clicking a row opens a student detail modal
-  - Student modal includes: stat cards, offer info, contact info, and tabs for Reminders/Classes/Purchases/Notes
+  - Student modal includes: stat cards, offer info, contact info, and tabs for Communications/Reminders/Classes/Purchases/Notes
+  - Communications tab: Timeline view of all email/SMS interactions with sync button, source badges, and quick compose actions
 - `client/src/pages/scoreboard.tsx` - **Business Scoreboard** (aggregated metrics dashboard)
 
 ### Scoreboard Metric Logic

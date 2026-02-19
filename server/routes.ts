@@ -5,7 +5,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { storage, db } from "./storage";
-import { auditLogs, introOfferReminders } from "@shared/schema";
+import { auditLogs, introOfferReminders, introOfferCommunications } from "@shared/schema";
 import { eq, desc, and, gte, lte } from "drizzle-orm";
 import { insertServiceSchema, insertFeedItemSchema, ADMIN_EMAIL, adminCreateUserSchema, integrationApiKeySchema, sendMessageSchema, createConversationSchema, createTenantSchema, inviteUserSchema, createProjectSchema, createTaskSchema, updateTaskSchema, createSubtaskSchema, createCommentSchema, addCollaboratorSchema, type User } from "@shared/schema";
 import { setupAuth, isAuthenticated } from "./auth";
@@ -25,7 +25,7 @@ import { getTypeformForms, getTypeformForm, createTypeformForm, updateTypeformFo
 import { sendInvitationEmail, getTemplateTypes, getDefaultTemplate, sendTaskAssignedNotification, sendYHCTimeLinkChangeNotification } from "./email";
 import { appleCalendarConnectSchema, slackPreferencesUpdateSchema, slackDmPreferencesUpdateSchema, emailTemplateSchema, updateNotificationPrefsSchema, createTimeEntrySchema, updateTimeEntrySchema, createDailyHubEntrySchema, createPinnedAnnouncementSchema, DailyHubSection } from "@shared/schema";
 import { broadcastToUsers, generateWsAuthToken } from "./websocket";
-import { getIntroOffers, getIntroOfferSummary, updateIntroOffer, getStudents, isMindbodyAnalyticsConfigured } from "./mindbodyAnalytics";
+import { getIntroOffers, getIntroOfferSummary, updateIntroOffer, getStudents, isMindbodyAnalyticsConfigured, getOfferCommunications, pushCommunication } from "./mindbodyAnalytics";
 import { generateEmailReplySuggestions, summarizeEmail, summarizeEmailThread, summarizeMeetingTranscript } from "./ai-email";
 import { extractTasksFromContent, generateDailyBriefing, generateMeetingPrep, smartSearch, draftEmail, analyzeCalendar, prioritizeTasks } from "./ai-assistant";
 import { isQrTigerConfigured, createDynamicQRCode, createStaticQRCode, listQRCodes, getQRCodeAnalytics, deleteQRCode } from "./qr-tiger";
@@ -623,6 +623,178 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error deleting reminder:", error);
       res.status(500).json({ error: "Failed to delete reminder" });
+    }
+  });
+
+  app.get('/api/mindbody-analytics/intro-offers/:id/communications', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const tenantId = req.tenantId || null;
+      const { limit = "50", offset = "0" } = req.query;
+      const conditions = tenantId
+        ? and(eq(introOfferCommunications.offerId, id), eq(introOfferCommunications.tenantId, tenantId))
+        : eq(introOfferCommunications.offerId, id);
+      const comms = await db.select().from(introOfferCommunications)
+        .where(conditions)
+        .orderBy(desc(introOfferCommunications.sentAt))
+        .limit(parseInt(limit as string))
+        .offset(parseInt(offset as string));
+      res.json(comms);
+    } catch (error) {
+      console.error("Error fetching communications:", error);
+      res.status(500).json({ error: "Failed to fetch communications" });
+    }
+  });
+
+  app.post('/api/mindbody-analytics/intro-offers/:id/communications', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { studentId, channel, direction, subject, body, recipientAddress, status, metadata } = req.body;
+      if (!channel) return res.status(400).json({ error: "Channel is required (email or sms)" });
+      if (!studentId) return res.status(400).json({ error: "studentId is required" });
+      const userName = req.user?.name || req.user?.username || "Unknown";
+      const tenantId = req.tenantId || null;
+      const [comm] = await db.insert(introOfferCommunications).values({
+        offerId: id,
+        tenantId,
+        studentId,
+        channel,
+        direction: direction || "outbound",
+        subject: subject || null,
+        body: body || null,
+        recipientAddress: recipientAddress || null,
+        status: status || "sent",
+        createdBy: userName,
+        source: "yhcway",
+        syncStatus: "pending",
+        metadata: metadata || null,
+      }).returning();
+
+      if (isMindbodyAnalyticsConfigured()) {
+        pushCommunication(id, {
+          channel,
+          direction: direction || "outbound",
+          subject: subject || null,
+          body: body || null,
+          recipientAddress: recipientAddress || null,
+          status: status || "sent",
+          sentAt: comm.sentAt?.toISOString() || new Date().toISOString(),
+          createdBy: userName,
+          idempotencyKey: `yhcway-${comm.id}`,
+        }).then(async (mbResult) => {
+          if (mbResult) {
+            await db.update(introOfferCommunications)
+              .set({ syncStatus: "synced", syncedAt: new Date(), externalId: mbResult.id })
+              .where(eq(introOfferCommunications.id, comm.id));
+          }
+        }).catch((err) => {
+          console.warn("[MBSync] Background push failed:", err.message);
+        });
+      }
+
+      res.json(comm);
+    } catch (error) {
+      console.error("Error creating communication:", error);
+      res.status(500).json({ error: "Failed to create communication" });
+    }
+  });
+
+  app.delete('/api/mindbody-analytics/intro-offers/:offerId/communications/:commId', isAuthenticated, async (req: any, res) => {
+    try {
+      const { commId } = req.params;
+      const tenantId = req.tenantId || null;
+      const conditions = tenantId
+        ? and(eq(introOfferCommunications.id, parseInt(commId)), eq(introOfferCommunications.tenantId, tenantId))
+        : eq(introOfferCommunications.id, parseInt(commId));
+      await db.delete(introOfferCommunications).where(conditions);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting communication:", error);
+      res.status(500).json({ error: "Failed to delete communication" });
+    }
+  });
+
+  app.post('/api/mindbody-analytics/intro-offers/:id/communications/sync', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const tenantId = req.tenantId || null;
+      let pulled = 0;
+      let pushed = 0;
+
+      if (isMindbodyAnalyticsConfigured()) {
+        const remoteCommunications = await getOfferCommunications(id);
+        for (const remote of remoteCommunications) {
+          const existingConditions = tenantId
+            ? and(
+                eq(introOfferCommunications.externalId, remote.id),
+                eq(introOfferCommunications.source, "mbanalytics"),
+                eq(introOfferCommunications.tenantId, tenantId)
+              )
+            : and(
+                eq(introOfferCommunications.externalId, remote.id),
+                eq(introOfferCommunications.source, "mbanalytics")
+              );
+          const existing = await db.select().from(introOfferCommunications).where(existingConditions).limit(1);
+          if (existing.length === 0) {
+            await db.insert(introOfferCommunications).values({
+              offerId: id,
+              tenantId,
+              studentId: remote.studentId,
+              channel: remote.channel,
+              direction: remote.direction,
+              subject: remote.subject || null,
+              body: remote.body || null,
+              recipientAddress: remote.recipientAddress || null,
+              status: remote.status || "sent",
+              sentAt: new Date(remote.sentAt),
+              createdBy: remote.createdBy || null,
+              source: "mbanalytics",
+              externalId: remote.id,
+              syncStatus: "synced",
+              syncedAt: new Date(),
+            });
+            pulled++;
+          }
+        }
+
+        const unsyncedConditions = tenantId
+          ? and(
+              eq(introOfferCommunications.offerId, id),
+              eq(introOfferCommunications.source, "yhcway"),
+              eq(introOfferCommunications.syncStatus, "pending"),
+              eq(introOfferCommunications.tenantId, tenantId)
+            )
+          : and(
+              eq(introOfferCommunications.offerId, id),
+              eq(introOfferCommunications.source, "yhcway"),
+              eq(introOfferCommunications.syncStatus, "pending")
+            );
+        const unsynced = await db.select().from(introOfferCommunications).where(unsyncedConditions);
+        for (const local of unsynced) {
+          const mbResult = await pushCommunication(id, {
+            channel: local.channel,
+            direction: local.direction,
+            subject: local.subject || undefined,
+            body: local.body || undefined,
+            recipientAddress: local.recipientAddress || undefined,
+            status: local.status || "sent",
+            sentAt: local.sentAt?.toISOString() || new Date().toISOString(),
+            createdBy: local.createdBy || undefined,
+            idempotencyKey: `yhcway-${local.id}`,
+          });
+          if (mbResult) {
+            await db.update(introOfferCommunications)
+              .set({ syncStatus: "synced", syncedAt: new Date(), externalId: mbResult.id })
+              .where(eq(introOfferCommunications.id, local.id));
+            pushed++;
+          }
+        }
+      }
+
+      res.json({ success: true, pulled, pushed });
+    } catch (error) {
+      console.error("Error syncing communications:", error);
+      res.status(500).json({ error: "Failed to sync communications" });
     }
   });
 
