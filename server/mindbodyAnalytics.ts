@@ -141,22 +141,20 @@ export interface MBCommunication {
   idempotencyKey?: string;
 }
 
-export async function getOfferCommunications(offerId: string): Promise<MBCommunication[]> {
+export async function getOfferCommunications(studentId: string): Promise<MBCommunication[]> {
   try {
     const result = await makeRequest<{ data: MBCommunication[] }>(
-      `/api/v1/intro-offers/${offerId}/communications`
+      `/api/v1/intro-offers/${studentId}/communications`
     );
     return result.data || [];
   } catch (error: any) {
-    if (error.message?.includes("404") || error.message?.includes("<!doctype")) {
-      return [];
-    }
-    console.warn("[MBSync] Communications endpoint not available yet:", error.message);
+    console.warn("[MBSync] Failed to fetch communications:", error.message);
     return [];
   }
 }
 
-export async function pushCommunication(offerId: string, comm: {
+export async function pushCommunication(studentId: string, comm: {
+  studentId: string;
   channel: string;
   direction: string;
   subject?: string;
@@ -169,7 +167,7 @@ export async function pushCommunication(offerId: string, comm: {
 }): Promise<MBCommunication | null> {
   try {
     const result = await makeRequest<{ data: MBCommunication }>(
-      `/api/v1/intro-offers/${offerId}/communications`,
+      `/api/v1/intro-offers/${studentId}/communications`,
       {
         method: "POST",
         body: JSON.stringify(comm),
@@ -177,10 +175,6 @@ export async function pushCommunication(offerId: string, comm: {
     );
     return result.data || null;
   } catch (error: any) {
-    if (error.message?.includes("404") || error.message?.includes("<!doctype")) {
-      console.warn("[MBSync] Communications POST endpoint not available yet");
-      return null;
-    }
     console.warn("[MBSync] Failed to push communication:", error.message);
     return null;
   }

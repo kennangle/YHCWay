@@ -79,9 +79,9 @@ Update an intro offer record.
 
 **Response:** Updated IntroOffer object.
 
-## Proposed Communication Endpoints (For mbanalytics to implement)
+## Communication Endpoints (Live on mbanalytics)
 
-These endpoints need to be added to mbanalytics to enable two-way communication sync with YHC Way.
+These endpoints are implemented on mbanalytics and enable two-way communication sync with YHC Way. The `:id` parameter is the **studentId** (not the offer ID).
 
 ### GET /api/v1/intro-offers/:id/communications
 Returns list of communications for an intro offer.
@@ -141,17 +141,23 @@ Create a communication record. Used by YHC Way to push outbound communications.
 ```
 
 **Deduplication Rules:**
-- If `idempotencyKey` matches an existing record, return the existing record (200) without creating a duplicate
+- Idempotency is scoped by `(organization_id, student_id, idempotency_key)` — same key for different students won't collide
+- If `idempotencyKey` matches an existing record for the same student/org, return the existing record (200) without creating a duplicate
 - Format convention: `yhcway-{local_id}` for records originating from YHC Way
 - Format convention: `mb-{remote_id}` for records originating from mbanalytics
+- `sentAt` must be a valid ISO 8601 date string; invalid dates return 400
 
 **Response:** `{ "data": Communication }` (the created or existing record)
 
+### Path Parameter Note
+The `:id` in the communication endpoints is the **studentId**, not the intro offer ID. YHC Way maps offer → student when making these calls, passing `studentId` both in the URL path and in the POST body.
+
 ### Sync Strategy
-1. **Pull**: YHC Way calls GET to fetch remote communications, deduplicates by `externalId + source`, and inserts new records locally
-2. **Push**: When email/SMS is sent from YHC Way, it logs locally first, then POSTs to mbanalytics with `idempotencyKey = "yhcway-{localId}"`
+1. **Pull**: YHC Way calls GET with `studentId` to fetch remote communications, deduplicates by `externalId + source`, and inserts new records locally
+2. **Push**: When email/SMS is sent from YHC Way, it logs locally first, then POSTs to mbanalytics with `studentId` and `idempotencyKey = "yhcway-{localId}"`
 3. **Source of Truth**: mbanalytics is authoritative. On conflict, mbanalytics data wins
 4. **Sync Trigger**: Manual "Sync" button per student, or automatic on student detail modal open
+5. **Permission Scopes**: Requires `communications:read` and `communications:write` scopes on the API key
 
 ## Integration in The YHC Way
 

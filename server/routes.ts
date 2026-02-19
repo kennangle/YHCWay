@@ -671,7 +671,8 @@ export async function registerRoutes(
       }).returning();
 
       if (isMindbodyAnalyticsConfigured()) {
-        pushCommunication(id, {
+        pushCommunication(studentId, {
+          studentId,
           channel,
           direction: direction || "outbound",
           subject: subject || null,
@@ -717,12 +718,17 @@ export async function registerRoutes(
   app.post('/api/mindbody-analytics/intro-offers/:id/communications/sync', isAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
+      const { studentId } = req.body || {};
       const tenantId = req.tenantId || null;
       let pulled = 0;
       let pushed = 0;
 
+      if (!studentId) {
+        return res.status(400).json({ error: "studentId is required for sync" });
+      }
+
       if (isMindbodyAnalyticsConfigured()) {
-        const remoteCommunications = await getOfferCommunications(id);
+        const remoteCommunications = await getOfferCommunications(studentId);
         for (const remote of remoteCommunications) {
           const existingConditions = tenantId
             ? and(
@@ -771,7 +777,8 @@ export async function registerRoutes(
             );
         const unsynced = await db.select().from(introOfferCommunications).where(unsyncedConditions);
         for (const local of unsynced) {
-          const mbResult = await pushCommunication(id, {
+          const mbResult = await pushCommunication(local.studentId, {
+            studentId: local.studentId,
             channel: local.channel,
             direction: local.direction,
             subject: local.subject || undefined,

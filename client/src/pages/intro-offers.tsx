@@ -313,7 +313,9 @@ function CommunicationsTimeline({ offer, onComposeEmail }: { offer: IntroOffer; 
     mutationFn: async () => {
       const res = await fetch(`/api/mindbody-analytics/intro-offers/${offer.id}/communications/sync`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         credentials: "include",
+        body: JSON.stringify({ studentId: offer.studentId }),
       });
       if (!res.ok) throw new Error("Sync failed");
       return res.json();
