@@ -1,5 +1,12 @@
+import { getCached, setCache, invalidateCachePattern } from "./cache";
+
 const MINDBODY_ANALYTICS_BASE_URL = process.env.MINDBODY_ANALYTICS_URL || "https://mind-body-analytics-remix.replit.app";
 const API_KEY = process.env.MINDBODY_API_KEY;
+
+const INTRO_OFFERS_CACHE_KEY = "mindbody:intro-offers:all";
+const INTRO_OFFERS_CACHE_TTL = 600;
+let lastFullFetchTime: string | null = null;
+let backgroundSyncInFlight = false;
 
 interface IntroOffer {
   id: string;
@@ -143,21 +150,14 @@ async function makeRequest<T>(endpoint: string, options: RequestInit = {}): Prom
   return response.json();
 }
 
-export async function getIntroOffers(params: {
-  status?: string;
-  since?: string;
-  limit?: number;
-  offset?: number;
-} = {}): Promise<PaginatedResponse<IntroOffer>> {
+async function fetchAllIntroOffersFromApi(since?: string): Promise<IntroOffer[]> {
   const pageSize = 100;
   const allData: IntroOffer[] = [];
-  let currentOffset = params.offset || 0;
-  let totalFromApi = 0;
+  let currentOffset = 0;
 
   while (true) {
     const queryParams = new URLSearchParams();
-    if (params.status) queryParams.append("status", params.status);
-    if (params.since) queryParams.append("since", params.since);
+    if (since) queryParams.append("since", since);
     queryParams.append("limit", pageSize.toString());
     queryParams.append("offset", currentOffset.toString());
 
@@ -166,31 +166,98 @@ export async function getIntroOffers(params: {
     const page = await makeRequest<PaginatedResponse<RawIntroOffer>>(endpoint);
 
     allData.push(...page.data.map(normalizeIntroOffer));
-    totalFromApi = page.meta.count;
     
-    console.log(`[IntroOffers] Fetched page at offset ${currentOffset}: ${page.data.length} records (meta.count=${page.meta.count}, total so far=${allData.length})`);
+    console.log(`[IntroOffers] Fetched page at offset ${currentOffset}: ${page.data.length} records (total so far=${allData.length})`);
 
     if (page.data.length < pageSize) {
       break;
     }
 
     currentOffset += pageSize;
-
-    if (params.limit && allData.length >= params.limit) {
-      break;
-    }
   }
 
-  console.log(`[IntroOffers] Pagination complete: ${allData.length} total records fetched`);
+  return allData;
+}
+
+export async function getIntroOffers(params: {
+  status?: string;
+  since?: string;
+  limit?: number;
+  offset?: number;
+  forceRefresh?: boolean;
+} = {}): Promise<PaginatedResponse<IntroOffer>> {
+  let allOffers: IntroOffer[];
+
+  const cached = getCached<IntroOffer[]>(INTRO_OFFERS_CACHE_KEY);
+
+  if (cached && !params.forceRefresh) {
+    console.log(`[IntroOffers] Returning ${cached.length} cached offers, checking for new ones in background`);
+    allOffers = cached;
+
+    if (lastFullFetchTime) {
+      fetchNewOffersInBackground();
+    }
+  } else {
+    console.log(`[IntroOffers] ${params.forceRefresh ? 'Force refresh' : 'No cache'}: fetching all offers from API`);
+    allOffers = await fetchAllIntroOffersFromApi(params.since);
+    setCache(INTRO_OFFERS_CACHE_KEY, allOffers, INTRO_OFFERS_CACHE_TTL);
+    lastFullFetchTime = new Date().toISOString();
+    console.log(`[IntroOffers] Cached ${allOffers.length} offers`);
+  }
+
+  let filtered = allOffers;
+  if (params.status) {
+    filtered = allOffers.filter(o => o.memberStatus === params.status);
+  }
+
+  const offset = params.offset || 0;
+  const limited = params.limit ? filtered.slice(offset, offset + params.limit) : filtered.slice(offset);
 
   return {
-    data: params.limit ? allData.slice(0, params.limit) : allData,
+    data: limited,
     meta: {
-      count: allData.length,
-      limit: params.limit || allData.length,
-      offset: params.offset || 0,
+      count: filtered.length,
+      limit: params.limit || filtered.length,
+      offset,
     },
   };
+}
+
+async function fetchNewOffersInBackground() {
+  if (backgroundSyncInFlight) return;
+  backgroundSyncInFlight = true;
+  try {
+    const since = lastFullFetchTime;
+    if (!since) { backgroundSyncInFlight = false; return; }
+
+    const newOffers = await fetchAllIntroOffersFromApi(since);
+    if (newOffers.length > 0) {
+      const cached = getCached<IntroOffer[]>(INTRO_OFFERS_CACHE_KEY) || [];
+      const existingIds = new Set(cached.map(o => o.id));
+      const uniqueNew = newOffers.filter(o => !existingIds.has(o.id));
+
+      const updatedFromApi = newOffers.filter(o => existingIds.has(o.id));
+      let merged = cached.map(existing => {
+        const updated = updatedFromApi.find(u => u.id === existing.id);
+        return updated || existing;
+      });
+      merged.push(...uniqueNew);
+
+      setCache(INTRO_OFFERS_CACHE_KEY, merged, INTRO_OFFERS_CACHE_TTL);
+      lastFullFetchTime = new Date().toISOString();
+      console.log(`[IntroOffers] Background sync: ${uniqueNew.length} new, ${updatedFromApi.length} updated (total: ${merged.length})`);
+    }
+  } catch (error: any) {
+    console.warn("[IntroOffers] Background sync failed:", error.message);
+  } finally {
+    backgroundSyncInFlight = false;
+  }
+}
+
+export function invalidateIntroOffersCache(): void {
+  invalidateCachePattern("mindbody:intro-offers:*");
+  lastFullFetchTime = null;
+  console.log("[IntroOffers] Cache invalidated");
 }
 
 export async function getIntroOfferSummary(): Promise<IntroOfferSummary> {

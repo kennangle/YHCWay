@@ -713,18 +713,26 @@ export default function IntroOffers() {
     },
   });
 
+  const [forceRefresh, setForceRefresh] = useState(false);
+
   const { data: offersData, isLoading: offersLoading, isFetching, refetch } = useQuery<PaginatedResponse<IntroOffer>>({
-    queryKey: ["/api/mindbody-analytics/intro-offers", statusFilter],
+    queryKey: ["/api/mindbody-analytics/intro-offers", statusFilter, forceRefresh],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (statusFilter !== "all" && statusFilter !== "needs_attention") {
         params.append("status", statusFilter);
       }
+      if (forceRefresh) {
+        params.append("refresh", "true");
+      }
       const res = await fetch(`/api/mindbody-analytics/intro-offers?${params}`, { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch intro offers");
-      return res.json();
+      const data = await res.json();
+      if (forceRefresh) setForceRefresh(false);
+      return data;
     },
     enabled: statusData?.configured,
+    staleTime: 5 * 60 * 1000,
   });
 
   const offers = offersData?.data || [];
@@ -888,7 +896,10 @@ export default function IntroOffers() {
           </div>
           <div className="flex items-center gap-2">
             <Button
-              onClick={() => refetch()}
+              onClick={() => {
+                setForceRefresh(true);
+                setTimeout(() => refetch(), 50);
+              }}
               disabled={isFetching}
               variant="outline"
               size="sm"
