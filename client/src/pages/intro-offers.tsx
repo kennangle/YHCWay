@@ -720,7 +720,6 @@ export default function IntroOffers() {
       if (statusFilter !== "all" && statusFilter !== "needs_attention") {
         params.append("status", statusFilter);
       }
-      params.append("limit", "500");
       const res = await fetch(`/api/mindbody-analytics/intro-offers?${params}`, { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch intro offers");
       return res.json();

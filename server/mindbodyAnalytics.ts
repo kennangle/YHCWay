@@ -83,7 +83,7 @@ export async function getIntroOffers(params: {
   const pageSize = 100;
   const allData: IntroOffer[] = [];
   let currentOffset = params.offset || 0;
-  let totalCount = 0;
+  let totalFromApi = 0;
 
   while (true) {
     const queryParams = new URLSearchParams();
@@ -97,9 +97,11 @@ export async function getIntroOffers(params: {
     const page = await makeRequest<PaginatedResponse<IntroOffer>>(endpoint);
 
     allData.push(...page.data);
-    totalCount = page.meta.count;
+    totalFromApi = page.meta.count;
+    
+    console.log(`[IntroOffers] Fetched page at offset ${currentOffset}: ${page.data.length} records (meta.count=${page.meta.count}, total so far=${allData.length})`);
 
-    if (allData.length >= totalCount || page.data.length < pageSize) {
+    if (page.data.length < pageSize) {
       break;
     }
 
@@ -110,11 +112,13 @@ export async function getIntroOffers(params: {
     }
   }
 
+  console.log(`[IntroOffers] Pagination complete: ${allData.length} total records fetched`);
+
   return {
     data: params.limit ? allData.slice(0, params.limit) : allData,
     meta: {
-      count: totalCount,
-      limit: params.limit || totalCount,
+      count: allData.length,
+      limit: params.limit || allData.length,
       offset: params.offset || 0,
     },
   };
