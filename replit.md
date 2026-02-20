@@ -133,3 +133,16 @@ Test files are located in the `tests/` directory:
 - **Vite**: Development server and build tool.
 - **esbuild**: Production server bundling.
 - **TypeScript**: Language for type checking.
+
+## Important Maintenance Notes
+
+### drizzle-kit Removed for Deployment (Feb 20, 2026)
+**CRITICAL**: `drizzle-kit` was removed from devDependencies to pass Replit's deployment security scan (it had 4 moderate vulnerabilities via its esbuild dependency chain). 
+
+**Before making ANY database schema changes** (adding/removing columns, creating new tables, modifying table structures in `shared/schema.ts`), you MUST:
+1. Re-install drizzle-kit: `npm install -D drizzle-kit`
+2. Make the schema changes
+3. Run `npm run db:push` to sync the database
+4. Uninstall drizzle-kit again before deploying: `npm uninstall drizzle-kit`
+
+The Drizzle ORM (runtime query library) is still installed — only the schema migration CLI tool was removed. The app runs fine without it.
