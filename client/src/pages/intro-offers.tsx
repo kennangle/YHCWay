@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Gift, RefreshCw, Users, TrendingUp, Clock, CheckCircle, XCircle, AlertCircle, Search, Edit2, Save, X, ArrowUpDown, ArrowUp, ArrowDown, User, DollarSign, Calendar, Mail, Phone, Bell, BookOpen, ShoppingBag, FileText, Plus, Trash2, Minus, MessageSquare } from "lucide-react";
+import { Gift, RefreshCw, Users, Clock, CheckCircle, XCircle, AlertCircle, Search, Edit2, Save, X, ArrowUpDown, ArrowUp, ArrowDown, User, DollarSign, Calendar, Mail, Phone, Bell, BookOpen, ShoppingBag, FileText, Plus, Trash2, Minus, MessageSquare } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -794,13 +794,6 @@ export default function IntroOffers() {
     );
   }
 
-  const summaryStats = {
-    total: offers.length,
-    active: offers.filter(o => o.memberStatus === "new" || o.memberStatus === "engaged").length,
-    converted: offers.filter(o => o.hasConverted).length,
-    conversionRate: offers.length > 0 ? (offers.filter(o => o.hasConverted).length / offers.length * 100) : 0,
-  };
-
   return (
     <div className="min-h-screen bg-background text-foreground font-sans">
       <div 
@@ -829,53 +822,6 @@ export default function IntroOffers() {
             Refresh
           </Button>
         </header>
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="glass-panel rounded-xl p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                <Users className="w-5 h-5 text-blue-500" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Total Offers</p>
-                <p className="text-2xl font-bold" data-testid="stat-total-offers">{summaryStats.total}</p>
-              </div>
-            </div>
-          </div>
-          <div className="glass-panel rounded-xl p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-yellow-500/10 flex items-center justify-center">
-                <Clock className="w-5 h-5 text-yellow-500" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Active</p>
-                <p className="text-2xl font-bold" data-testid="stat-active-offers">{summaryStats.active}</p>
-              </div>
-            </div>
-          </div>
-          <div className="glass-panel rounded-xl p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
-                <CheckCircle className="w-5 h-5 text-green-500" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Converted</p>
-                <p className="text-2xl font-bold" data-testid="stat-converted-offers">{summaryStats.converted}</p>
-              </div>
-            </div>
-          </div>
-          <div className="glass-panel rounded-xl p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-purple-500" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Conversion Rate</p>
-                <p className="text-2xl font-bold" data-testid="stat-conversion-rate">{summaryStats.conversionRate.toFixed(1)}%</p>
-              </div>
-            </div>
-          </div>
-        </div>
 
         <div className="glass-panel rounded-2xl p-6">
           <div className="flex items-center justify-between gap-4 mb-6">
