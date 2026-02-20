@@ -17,7 +17,7 @@ app.use((_req, res, next) => {
   
   // CSP varies by environment - stricter in production
   const isDev = process.env.NODE_ENV !== 'production';
-  const frameAncestors = "frame-ancestors 'self' https://*.replit.com https://*.replit.dev https://*.repl.co";
+  const frameAncestors = "frame-ancestors 'self' https://*.replit.com https://*.replit.dev https://*.repl.co https://*.replit.app";
   const csp = isDev
     ? `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://s3.amazonaws.com https://replit.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https: wss:; ${frameAncestors};`
     : `default-src 'self'; script-src 'self' 'unsafe-inline' https://s3.amazonaws.com https://replit.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https: wss: *.google.com *.googleapis.com *.zoom.us *.slack.com; frame-src 'self' accounts.google.com; ${frameAncestors};`;
