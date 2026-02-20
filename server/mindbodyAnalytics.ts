@@ -20,6 +20,8 @@ interface IntroOffer {
   conversionDate?: string;
   conversionType?: string;
   memberStatus: string;
+  expirationDate?: string | null;
+  conversionAmount?: string | null;
   notes?: string;
 }
 
@@ -39,6 +41,73 @@ interface Student {
   joinDate?: string;
   lastVisit?: string;
   totalVisits?: number;
+}
+
+interface RawIntroOffer {
+  id: string;
+  student_id?: string;
+  studentId?: string;
+  first_name?: string;
+  firstName?: string;
+  last_name?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  offer_name?: string;
+  offerName?: string;
+  offer_category?: string;
+  offerCategory?: string;
+  purchase_amount?: string;
+  purchaseAmount?: string;
+  purchase_date?: string;
+  purchaseDate?: string;
+  classes_attended_since_purchase?: number;
+  classesAttendedSincePurchase?: number;
+  last_attendance_date?: string;
+  lastAttendanceDate?: string;
+  days_since_last_attendance?: number;
+  daysSinceLastAttendance?: number;
+  days_since_purchase?: number;
+  daysSincePurchase?: number;
+  has_converted?: boolean;
+  hasConverted?: boolean;
+  conversion_date?: string;
+  conversionDate?: string;
+  conversion_type?: string;
+  conversionType?: string;
+  conversion_amount?: string | null;
+  conversionAmount?: string | null;
+  member_status?: string;
+  memberStatus?: string;
+  expiration_date?: string | null;
+  expirationDate?: string | null;
+  notes?: string;
+}
+
+function normalizeIntroOffer(raw: RawIntroOffer): IntroOffer {
+  return {
+    id: raw.id,
+    studentId: raw.studentId || raw.student_id || "",
+    firstName: raw.firstName || raw.first_name || "",
+    lastName: raw.lastName || raw.last_name || "",
+    email: raw.email,
+    phone: raw.phone,
+    offerName: raw.offerName || raw.offer_name || "",
+    offerCategory: raw.offerCategory || raw.offer_category || "",
+    purchaseAmount: raw.purchaseAmount || raw.purchase_amount || "0",
+    purchaseDate: raw.purchaseDate || raw.purchase_date || "",
+    classesAttendedSincePurchase: raw.classesAttendedSincePurchase ?? raw.classes_attended_since_purchase ?? 0,
+    lastAttendanceDate: raw.lastAttendanceDate || raw.last_attendance_date,
+    daysSinceLastAttendance: raw.daysSinceLastAttendance ?? raw.days_since_last_attendance,
+    daysSincePurchase: raw.daysSincePurchase ?? raw.days_since_purchase ?? 0,
+    hasConverted: raw.hasConverted ?? raw.has_converted ?? false,
+    conversionDate: raw.conversionDate || raw.conversion_date,
+    conversionType: raw.conversionType || raw.conversion_type,
+    memberStatus: raw.memberStatus || raw.member_status || "unknown",
+    expirationDate: raw.expirationDate || raw.expiration_date,
+    conversionAmount: raw.conversionAmount || raw.conversion_amount,
+    notes: raw.notes,
+  };
 }
 
 interface PaginatedResponse<T> {
@@ -94,9 +163,9 @@ export async function getIntroOffers(params: {
 
     const query = queryParams.toString();
     const endpoint = `/api/v1/intro-offers${query ? `?${query}` : ""}`;
-    const page = await makeRequest<PaginatedResponse<IntroOffer>>(endpoint);
+    const page = await makeRequest<PaginatedResponse<RawIntroOffer>>(endpoint);
 
-    allData.push(...page.data);
+    allData.push(...page.data.map(normalizeIntroOffer));
     totalFromApi = page.meta.count;
     
     console.log(`[IntroOffers] Fetched page at offset ${currentOffset}: ${page.data.length} records (meta.count=${page.meta.count}, total so far=${allData.length})`);
