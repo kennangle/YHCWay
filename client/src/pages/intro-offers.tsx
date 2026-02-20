@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Gift, RefreshCw, Users, Clock, CheckCircle, XCircle, AlertCircle, Search, Edit2, Save, X, ArrowUpDown, ArrowUp, ArrowDown, User, DollarSign, Calendar, Mail, Phone, Bell, BookOpen, ShoppingBag, FileText, Plus, Trash2, Minus, MessageSquare } from "lucide-react";
+import { Gift, RefreshCw, Users, Clock, CheckCircle, XCircle, AlertCircle, Search, Edit2, Save, X, ArrowUpDown, ArrowUp, ArrowDown, User, DollarSign, Calendar, Mail, Phone, Bell, BookOpen, ShoppingBag, FileText, Plus, Trash2, Minus, MessageSquare, Download } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,6 +49,23 @@ interface PaginatedResponse<T> {
 type StatusFilter = "all" | "new" | "engaged" | "at_risk" | "lapsed" | "needs_attention" | "converted";
 type SortField = "student" | "offer" | "amount" | "purchaseDate" | "expires" | "classes" | "lastClass" | "status" | "conversion";
 type SortDirection = "asc" | "desc";
+type PeriodFilter = "last_week" | "last_30" | "last_90" | "last_180" | "last_365" | "all_time";
+
+function getPeriodDateRange(period: PeriodFilter): { since: Date | null; label: string } {
+  const now = new Date();
+  switch (period) {
+    case "last_week": return { since: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000), label: "Last 7 days" };
+    case "last_30": return { since: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000), label: "Last 30 days" };
+    case "last_90": return { since: new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000), label: "Last 90 days" };
+    case "last_180": return { since: new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000), label: "Last 6 months" };
+    case "last_365": return { since: new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000), label: "Last year" };
+    case "all_time": return { since: null, label: "All time" };
+  }
+}
+
+function formatDateShort(date: Date): string {
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
 
 function formatDate(dateString: string | null | undefined): string {
   if (!dateString) return "—";
@@ -674,6 +691,7 @@ export default function IntroOffers() {
   };
   
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(getInitialFilter);
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>("last_90");
   const [searchTerm, setSearchTerm] = useState("");
   const [sortField, setSortField] = useState<SortField>("purchaseDate");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
@@ -711,7 +729,10 @@ export default function IntroOffers() {
   });
 
   const offers = offersData?.data || [];
+  const { since: periodSince } = getPeriodDateRange(periodFilter);
   const filteredOffers = offers.filter(offer => {
+    if (periodSince && new Date(offer.purchaseDate) < periodSince) return false;
+
     const fullName = `${offer.firstName} ${offer.lastName}`.toLowerCase();
     const matchesSearch = !searchTerm || 
       fullName.includes(searchTerm.toLowerCase()) ||
@@ -725,6 +746,10 @@ export default function IntroOffers() {
     }
     return offer.memberStatus === statusFilter;
   });
+
+  const dateRangeText = periodSince
+    ? `${formatDateShort(periodSince)} - ${formatDateShort(new Date())}`
+    : "All time";
 
   const sortedOffers = [...filteredOffers].sort((a, b) => {
     let comparison = 0;
@@ -776,6 +801,59 @@ export default function IntroOffers() {
       : <ArrowDown className="w-3 h-3 ml-1" />;
   };
 
+  const handleExportCSV = () => {
+    const headers = ["Name", "Email", "Phone", "Offer", "Amount", "Purchase Date", "Expires", "Classes", "Last Class", "Stage", "Conversion Date"];
+    const rows = sortedOffers.map(o => [
+      `${o.firstName} ${o.lastName}`,
+      o.email || "",
+      o.phone || "",
+      o.offerName,
+      `$${parseFloat(o.purchaseAmount).toFixed(2)}`,
+      o.purchaseDate,
+      o.expirationDate || "",
+      o.classesAttendedSincePurchase.toString(),
+      o.lastAttendanceDate || "Never",
+      getStageLabel(o.memberStatus),
+      o.hasConverted ? (o.conversionDate || "Yes") : "",
+    ]);
+    const csv = [headers.join(","), ...rows.map(r => r.map(c => `"${c}"`).join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `intro-offers-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "Export complete", description: `Exported ${sortedOffers.length} records to CSV` });
+  };
+
+  const handleEmailAll = () => {
+    const emails = sortedOffers
+      .filter(o => o.email)
+      .map(o => o.email)
+      .filter((e, i, arr) => arr.indexOf(e) === i);
+    if (emails.length === 0) {
+      toast({ title: "No emails", description: "No email addresses found for the current filter", variant: "destructive" });
+      return;
+    }
+    const mailto = `mailto:?bcc=${emails.join(",")}`;
+    window.open(mailto, "_blank");
+    toast({ title: "Email All", description: `Opening email to ${emails.length} recipients` });
+  };
+
+  const handleSMSAll = () => {
+    const phones = sortedOffers
+      .filter(o => o.phone)
+      .map(o => o.phone!.replace(/\D/g, ""))
+      .filter((p, i, arr) => arr.indexOf(p) === i);
+    if (phones.length === 0) {
+      toast({ title: "No phone numbers", description: "No phone numbers found for the current filter", variant: "destructive" });
+      return;
+    }
+    toast({ title: "SMS All", description: `${phones.length} phone numbers copied to clipboard` });
+    navigator.clipboard.writeText(phones.join(", "));
+  };
+
   if (!statusData?.configured) {
     return (
       <div className="min-h-screen bg-background text-foreground font-sans">
@@ -802,50 +880,48 @@ export default function IntroOffers() {
       />
       
         <div className="flex-1 p-8 relative z-10">
-        <header className="flex justify-between items-center mb-8">
+        <header className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center">
-              <Gift className="w-6 h-6 text-purple-500" />
+            <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center">
+              <Gift className="w-5 h-5 text-purple-500" />
             </div>
-            <div>
-              <h1 className="font-display font-bold text-3xl" data-testid="text-intro-offers-title">Intro Offer Funnel</h1>
-              <p className="text-muted-foreground">Track and manage intro offer conversions</p>
-            </div>
+            <h1 className="font-display font-bold text-2xl" data-testid="text-intro-offers-title">Intro Offer Funnel</h1>
           </div>
-          <Button
-            onClick={() => refetch()}
-            disabled={isFetching}
-            variant="outline"
-            data-testid="button-refresh-offers"
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => refetch()}
+              disabled={isFetching}
+              variant="outline"
+              size="sm"
+              data-testid="button-refresh-offers"
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
+              Sync Members
+            </Button>
+          </div>
         </header>
 
-        <div className="glass-panel rounded-2xl p-6">
-          <div className="flex items-center justify-between gap-4 mb-6">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by name or offer..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-8"
-                data-testid="input-search-offers"
-              />
-              {searchTerm && (
-                <button
-                  onClick={() => setSearchTerm("")}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded"
-                  data-testid="button-clear-search"
-                >
-                  <X className="w-3 h-3 text-muted-foreground" />
-                </button>
-              )}
+        <div className="flex items-center justify-between gap-4 mb-6">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Period:</span>
             </div>
+            <Select value={periodFilter} onValueChange={(v) => setPeriodFilter(v as PeriodFilter)}>
+              <SelectTrigger className="w-40 h-9" data-testid="select-period-filter">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="last_week">Last 7 days</SelectItem>
+                <SelectItem value="last_30">Last 30 days</SelectItem>
+                <SelectItem value="last_90">Last 90 days</SelectItem>
+                <SelectItem value="last_180">Last 6 months</SelectItem>
+                <SelectItem value="last_365">Last year</SelectItem>
+                <SelectItem value="all_time">All time</SelectItem>
+              </SelectContent>
+            </Select>
             <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
-              <SelectTrigger className="w-48" data-testid="select-status-filter">
+              <SelectTrigger className="w-44 h-9" data-testid="select-status-filter">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
@@ -859,6 +935,52 @@ export default function IntroOffers() {
               </SelectContent>
             </Select>
           </div>
+          <div className="relative w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by name or email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 pr-8 h-9"
+              data-testid="input-search-offers"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded"
+                data-testid="button-clear-search"
+              >
+                <X className="w-3 h-3 text-muted-foreground" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="glass-panel rounded-2xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="font-semibold text-lg">Intro Offer Report</h2>
+              <p className="text-sm text-muted-foreground">Detailed intro offer buyer report with expiration tracking</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={handleExportCSV} data-testid="button-export-csv">
+                <Download className="w-4 h-4 mr-1.5" />
+                Export CSV
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleEmailAll} data-testid="button-email-all">
+                <Mail className="w-4 h-4 mr-1.5" />
+                Email All
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleSMSAll} data-testid="button-sms-all">
+                <MessageSquare className="w-4 h-4 mr-1.5" />
+                SMS All
+              </Button>
+            </div>
+          </div>
+
+          <p className="text-sm text-muted-foreground mb-4" data-testid="text-offer-count">
+            Showing {sortedOffers.length} intro offer buyers  ({dateRangeText})
+          </p>
 
           {offersLoading ? (
             <div className="text-center py-12">
