@@ -93,7 +93,27 @@ interface RawIntroOffer {
   notes?: string;
 }
 
+function calculateExpirationDate(purchaseDate: string, offerName: string): string | null {
+  if (!purchaseDate) return null;
+  try {
+    const purchase = new Date(purchaseDate);
+    if (isNaN(purchase.getTime())) return null;
+    const daysMatch = offerName.match(/(\d+)\s*days?/i);
+    const days = daysMatch ? parseInt(daysMatch[1], 10) : 30;
+    const expiration = new Date(purchase);
+    expiration.setDate(expiration.getDate() + days);
+    return expiration.toISOString();
+  } catch {
+    return null;
+  }
+}
+
 function normalizeIntroOffer(raw: RawIntroOffer): IntroOffer {
+  const purchaseDate = raw.purchaseDate || raw.purchase_date || "";
+  const offerName = raw.offerName || raw.offer_name || "";
+  const apiExpiration = raw.expirationDate || raw.expiration_date;
+  const expirationDate = apiExpiration || calculateExpirationDate(purchaseDate, offerName);
+
   return {
     id: raw.id,
     studentId: raw.studentId || raw.student_id || "",
@@ -101,10 +121,10 @@ function normalizeIntroOffer(raw: RawIntroOffer): IntroOffer {
     lastName: raw.lastName || raw.last_name || "",
     email: raw.email,
     phone: raw.phone,
-    offerName: raw.offerName || raw.offer_name || "",
+    offerName,
     offerCategory: raw.offerCategory || raw.offer_category || "",
     purchaseAmount: raw.purchaseAmount || raw.purchase_amount || "0",
-    purchaseDate: raw.purchaseDate || raw.purchase_date || "",
+    purchaseDate,
     classesAttendedSincePurchase: raw.classesAttendedSincePurchase ?? raw.classes_attended_since_purchase ?? 0,
     lastAttendanceDate: raw.lastAttendanceDate || raw.last_attendance_date,
     daysSinceLastAttendance: raw.daysSinceLastAttendance ?? raw.days_since_last_attendance,
@@ -113,7 +133,7 @@ function normalizeIntroOffer(raw: RawIntroOffer): IntroOffer {
     conversionDate: raw.conversionDate || raw.conversion_date,
     conversionType: raw.conversionType || raw.conversion_type,
     memberStatus: raw.memberStatus || raw.member_status || "unknown",
-    expirationDate: raw.expirationDate || raw.expiration_date,
+    expirationDate,
     conversionAmount: raw.conversionAmount || raw.conversion_amount,
     notes: raw.notes,
   };
