@@ -1625,7 +1625,7 @@ export type InsertNotificationGroup = typeof notificationGroups.$inferInsert;
 export const introOfferReminders = pgTable("intro_offer_reminders", {
   id: serial("id").primaryKey(),
   offerId: text("offer_id").notNull(),
-  tenantId: integer("tenant_id"),
+  tenantId: text("tenant_id"),
   title: text("title").notNull(),
   description: text("description"),
   completed: boolean("completed").default(false),
@@ -1642,7 +1642,7 @@ export type InsertIntroOfferReminder = typeof introOfferReminders.$inferInsert;
 
 export const introOfferCommunications = pgTable("intro_offer_communications", {
   id: serial("id").primaryKey(),
-  tenantId: integer("tenant_id"),
+  tenantId: text("tenant_id"),
   offerId: text("offer_id").notNull(),
   studentId: text("student_id").notNull(),
   channel: text("channel").notNull(),
