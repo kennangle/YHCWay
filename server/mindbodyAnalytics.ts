@@ -7,6 +7,8 @@ const INTRO_OFFERS_CACHE_KEY = "mindbody:intro-offers:all";
 const INTRO_OFFERS_CACHE_TTL = 600;
 let lastFullFetchTime: string | null = null;
 let backgroundSyncInFlight = false;
+let fullFetchInFlight = false;
+let fullFetchPromise: Promise<IntroOffer[]> | null = null;
 
 interface IntroOffer {
   id: string;
@@ -150,14 +152,21 @@ async function makeRequest<T>(endpoint: string, options: RequestInit = {}): Prom
   return response.json();
 }
 
+function getDefault90DaysSince(): string {
+  const d = new Date();
+  d.setDate(d.getDate() - 90);
+  return d.toISOString();
+}
+
 async function fetchAllIntroOffersFromApi(since?: string): Promise<IntroOffer[]> {
   const pageSize = 100;
   const allData: IntroOffer[] = [];
   let currentOffset = 0;
+  const effectiveSince = since || getDefault90DaysSince();
 
   while (true) {
     const queryParams = new URLSearchParams();
-    if (since) queryParams.append("since", since);
+    queryParams.append("since", effectiveSince);
     queryParams.append("limit", pageSize.toString());
     queryParams.append("offset", currentOffset.toString());
 
@@ -177,6 +186,26 @@ async function fetchAllIntroOffersFromApi(since?: string): Promise<IntroOffer[]>
   }
 
   return allData;
+}
+
+async function doFullFetch(since?: string): Promise<IntroOffer[]> {
+  if (fullFetchInFlight && fullFetchPromise) {
+    console.log("[IntroOffers] Full fetch already in progress, waiting for it...");
+    return fullFetchPromise;
+  }
+  fullFetchInFlight = true;
+  fullFetchPromise = fetchAllIntroOffersFromApi(since)
+    .then(offers => {
+      setCache(INTRO_OFFERS_CACHE_KEY, offers, INTRO_OFFERS_CACHE_TTL);
+      lastFullFetchTime = new Date().toISOString();
+      console.log(`[IntroOffers] Cached ${offers.length} offers`);
+      return offers;
+    })
+    .finally(() => {
+      fullFetchInFlight = false;
+      fullFetchPromise = null;
+    });
+  return fullFetchPromise;
 }
 
 export async function getIntroOffers(params: {
@@ -199,10 +228,7 @@ export async function getIntroOffers(params: {
     }
   } else {
     console.log(`[IntroOffers] ${params.forceRefresh ? 'Force refresh' : 'No cache'}: fetching all offers from API`);
-    allOffers = await fetchAllIntroOffersFromApi(params.since);
-    setCache(INTRO_OFFERS_CACHE_KEY, allOffers, INTRO_OFFERS_CACHE_TTL);
-    lastFullFetchTime = new Date().toISOString();
-    console.log(`[IntroOffers] Cached ${allOffers.length} offers`);
+    allOffers = await doFullFetch(params.since);
   }
 
   let filtered = allOffers;
@@ -221,6 +247,16 @@ export async function getIntroOffers(params: {
       offset,
     },
   };
+}
+
+export function startBackgroundSync(): { status: string } {
+  const cached = getCached<IntroOffer[]>(INTRO_OFFERS_CACHE_KEY);
+  if (fullFetchInFlight) {
+    return { status: "already_syncing" };
+  }
+  invalidateIntroOffersCache();
+  doFullFetch().catch(err => console.error("[IntroOffers] Background full sync failed:", err.message));
+  return { status: "started" };
 }
 
 async function fetchNewOffersInBackground() {

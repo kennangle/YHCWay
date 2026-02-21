@@ -25,7 +25,7 @@ import { getTypeformForms, getTypeformForm, createTypeformForm, updateTypeformFo
 import { sendInvitationEmail, getTemplateTypes, getDefaultTemplate, sendTaskAssignedNotification, sendYHCTimeLinkChangeNotification } from "./email";
 import { appleCalendarConnectSchema, slackPreferencesUpdateSchema, slackDmPreferencesUpdateSchema, emailTemplateSchema, updateNotificationPrefsSchema, createTimeEntrySchema, updateTimeEntrySchema, createDailyHubEntrySchema, createPinnedAnnouncementSchema, DailyHubSection } from "@shared/schema";
 import { broadcastToUsers, generateWsAuthToken } from "./websocket";
-import { getIntroOffers, getIntroOfferSummary, updateIntroOffer, getStudents, isMindbodyAnalyticsConfigured, getOfferCommunications, pushCommunication, invalidateIntroOffersCache } from "./mindbodyAnalytics";
+import { getIntroOffers, getIntroOfferSummary, updateIntroOffer, getStudents, isMindbodyAnalyticsConfigured, getOfferCommunications, pushCommunication, invalidateIntroOffersCache, startBackgroundSync } from "./mindbodyAnalytics";
 import { generateEmailReplySuggestions, summarizeEmail, summarizeEmailThread, summarizeMeetingTranscript } from "./ai-email";
 import { extractTasksFromContent, generateDailyBriefing, generateMeetingPrep, smartSearch, draftEmail, analyzeCalendar, prioritizeTasks } from "./ai-assistant";
 import { isQrTigerConfigured, createDynamicQRCode, createStaticQRCode, listQRCodes, getQRCodeAnalytics, deleteQRCode } from "./qr-tiger";
@@ -500,6 +500,19 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error fetching intro offers:", error);
       res.status(500).json({ error: "Failed to fetch intro offers" });
+    }
+  });
+
+  app.post('/api/mindbody-analytics/intro-offers/sync', isAuthenticated, async (req: any, res) => {
+    try {
+      if (!isMindbodyAnalyticsConfigured()) {
+        return res.status(400).json({ error: "Mindbody Analytics is not configured" });
+      }
+      const result = startBackgroundSync();
+      res.json(result);
+    } catch (error) {
+      console.error("Error starting sync:", error);
+      res.status(500).json({ error: "Failed to start sync" });
     }
   });
 

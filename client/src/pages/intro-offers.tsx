@@ -722,13 +722,9 @@ export default function IntroOffers() {
       if (statusFilter !== "all" && statusFilter !== "needs_attention") {
         params.append("status", statusFilter);
       }
-      if (forceRefresh) {
-        params.append("refresh", "true");
-      }
       const res = await fetch(`/api/mindbody-analytics/intro-offers?${params}`, { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch intro offers");
       const data = await res.json();
-      if (forceRefresh) setForceRefresh(false);
       return data;
     },
     enabled: statusData?.configured,
@@ -896,9 +892,30 @@ export default function IntroOffers() {
           </div>
           <div className="flex items-center gap-2">
             <Button
-              onClick={() => {
-                setForceRefresh(true);
-                setTimeout(() => refetch(), 50);
+              onClick={async () => {
+                try {
+                  const res = await fetch("/api/mindbody-analytics/intro-offers/sync", {
+                    method: "POST",
+                    credentials: "include",
+                  });
+                  if (!res.ok) throw new Error("Sync failed");
+                  const data = await res.json();
+                  if (data.status === "already_syncing") {
+                    toast({ title: "Sync already in progress", description: "Please wait a moment and refresh." });
+                  } else {
+                    toast({ title: "Sync started", description: "Fetching latest data from Mindbody. This may take a minute." });
+                  }
+                  setTimeout(() => {
+                    setForceRefresh(prev => !prev);
+                    refetch();
+                  }, 15000);
+                  setTimeout(() => {
+                    setForceRefresh(prev => !prev);
+                    refetch();
+                  }, 45000);
+                } catch (err) {
+                  toast({ title: "Sync failed", description: "Could not start sync. Please try again.", variant: "destructive" });
+                }
               }}
               disabled={isFetching}
               variant="outline"
