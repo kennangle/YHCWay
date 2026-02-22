@@ -58,13 +58,13 @@ export const navigationTabs: NavTab[] = [
     icon: LayoutDashboard,
     href: "/dashboard",
     items: [
+      { id: "scoreboard", icon: BarChart3, label: "Scoreboard", href: "/scoreboard", allowedRoles: ['admin', 'user'] },
       { id: "mailbox", icon: Mail, label: "Mailbox", href: "/inbox", allowedRoles: ['admin', 'user', 'staff'] },
       { id: "calendar", icon: Calendar, label: "Calendar", href: "/calendar", allowedRoles: ['admin', 'user', 'staff'] },
       { id: "daily-hub", icon: ClipboardList, label: "Daily Hub", href: "/daily-hub", allowedRoles: ['admin', 'user', 'staff'] },
       { id: "intro-offers", icon: Gift, label: "Intro Offer Funnel", href: "/intro-offers", allowedRoles: ['admin', 'user'] },
       { id: "projects", icon: FolderKanban, label: "Projects", href: "/projects", allowedRoles: ['admin', 'user', 'staff'] },
       { id: "tasks", icon: ListTodo, label: "Tasks", href: "/tasks", allowedRoles: ['admin', 'user', 'staff'] },
-      { id: "scoreboard", icon: BarChart3, label: "Scoreboard", href: "/scoreboard", allowedRoles: ['admin', 'user'] },
     ],
   },
   {
