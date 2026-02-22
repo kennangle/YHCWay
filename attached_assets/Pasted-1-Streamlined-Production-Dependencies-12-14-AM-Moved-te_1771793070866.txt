@@ -1,0 +1,35 @@
+1. Streamlined Production Dependencies (12:14 AM)
+Moved testing and typing packages (vitest, @types/*) to devDependencies
+Optimized project dependencies and environment configuration
+Reduced production bundle footprint
+2. Fixed Critical tenant_id Type Mismatch (12:52 AM)
+Bug Fix: tenant_id columns in intro_offer_communications and intro_offer_reminders tables were defined as integer but needed to be text to match UUID-format tenant IDs
+Changed column types from integer() to text() in shared/schema.ts
+Pushed schema changes to database
+3. Published to Production (1:10 AM)
+Deployed tenant ID fix and dependency optimization
+4. Cleaned Up & State Reset (1:33 AM – 1:42 AM)
+Removed unused generated files
+Reset agent state
+Updated environment variables
+Session 2: Afternoon (5:31 PM – 10:19 PM UTC / 9:31 AM – 2:19 PM PST)
+5. Updated Environment & Replit Configurations (5:31 PM)
+Environment variable and configuration updates
+6. Published to Production (5:31 PM)
+7. Background Sync for Intro Offers (8:56 PM)
+Performance Fix: "Sync Members" button was making a synchronous HTTP request that downloaded all 2,232 records, causing connection timeouts in production
+Implemented background sync — button now fires off the sync and returns immediately
+Added concurrent fetch guard (fullFetchInFlight + fullFetchPromise) to prevent duplicate downloads
+Frontend shows toast notifications and auto-refreshes after 15 and 45 seconds
+Files: intro-offers.tsx (+31 lines), mindbodyAnalytics.ts (+46 lines), routes.ts (+15 lines) — 79 insertions, 13 deletions
+8. Limited Imports to Last 90 Days (8:59 PM)
+Changed API fetch to only pull intro offers from the last 90 days
+Result: Reduced from 2,232 records (23 API pages) to 208 records (1 API page)
+Massive performance improvement — nearly instant loading
+9. Published to Production (8:59 PM)
+10. Calculated Missing Expiration Dates (9:05 PM)
+Bug Fix: The mbanalytics API returns null for expirationDate on all records
+Added calculateExpirationDate() function that derives expiration from purchase date + offer duration (parses days from offer name, defaults to 30)
+All 208 offers now show correct expiration dates
+Files: mindbodyAnalytics.ts — 23 insertions, 3 deletions
+11. Published to Production (10:19 PM)
