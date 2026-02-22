@@ -470,11 +470,13 @@ export default function TimeTrackingPage() {
                       <Textarea
                         id="notes"
                         value={formData.notes}
-                        onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                        onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value.slice(0, 3000) }))}
                         placeholder="Add any notes about this entry..."
+                        maxLength={3000}
                         className="bg-muted/50 min-h-[80px]"
                         data-testid="input-notes"
                       />
+                      <p className="text-xs text-muted-foreground text-right mt-1">{formData.notes?.length || 0}/3000</p>
                     </div>
 
                     {!currentUserEmployee && (
