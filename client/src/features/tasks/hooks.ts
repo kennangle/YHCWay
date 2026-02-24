@@ -158,7 +158,11 @@ export function useToggleTaskCompletion(projectId: number) {
           const tasks = next.tasksByColumn[key];
           const idx = tasks.findIndex((t) => t.id === taskId);
           if (idx !== -1) {
-            tasks[idx].isCompleted = completed;
+            if (completed) {
+              tasks.splice(idx, 1);
+            } else {
+              tasks[idx].isCompleted = false;
+            }
             break;
           }
         }
@@ -174,6 +178,7 @@ export function useToggleTaskCompletion(projectId: number) {
 
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: projectKeys.board(projectId) });
+      qc.invalidateQueries({ queryKey: ["archivedTasks", projectId] });
       if (data.asanaError) {
         console.warn("Asana sync failed:", data.asanaError);
       }

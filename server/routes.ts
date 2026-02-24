@@ -5690,6 +5690,13 @@ export async function registerRoutes(
         completedAt: completed ? new Date() : null,
       });
       
+      // Auto-archive when completing, auto-unarchive when uncompleting
+      if (completed) {
+        await storage.archiveTask(taskId);
+      } else {
+        await storage.unarchiveTask(taskId);
+      }
+      
       // Sync to Asana if task has asanaTaskId
       let asanaSynced = false;
       let asanaError: string | null = null;
@@ -5706,10 +5713,12 @@ export async function registerRoutes(
         }
       }
       
+      const finalTask = await storage.getTask(taskId);
       res.json({
-        task: updatedTask,
+        task: finalTask || updatedTask,
         asanaSynced,
         asanaError,
+        autoArchived: completed,
       });
     } catch (error: any) {
       console.error("Error toggling task completion:", error);
