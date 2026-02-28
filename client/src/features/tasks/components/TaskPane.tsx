@@ -166,9 +166,10 @@ export function TaskPane({ taskId, projectId, onClose }: TaskPaneProps) {
 
   if (!task) {
     return (
-      <div className="w-[500px] max-w-[90vw] flex-shrink-0 bg-white flex flex-col h-[80vh] items-center justify-center">
-        <p className="text-gray-500">Task not found</p>
-        <Button variant="ghost" onClick={onClose} className="mt-2" data-testid="button-close-pane-notfound">
+      <div className="w-[500px] max-w-[90vw] flex-shrink-0 bg-white flex flex-col h-[80vh] items-center justify-center p-6 text-center">
+        <p className="text-gray-500 font-medium">Task not found</p>
+        <p className="text-gray-400 text-sm mt-1">This task may have been deleted or archived. Check the Archived drawer to find it.</p>
+        <Button variant="ghost" onClick={onClose} className="mt-3" data-testid="button-close-pane-notfound">
           Close
         </Button>
       </div>
