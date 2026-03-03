@@ -86,12 +86,16 @@ export function TaskPane({ taskId, projectId, onClose }: TaskPaneProps) {
     },
   });
 
-  // Deduplicate users by ID to prevent duplicate entries in dropdowns
+  // Deduplicate users by ID and email to prevent duplicate entries in dropdowns
   const users = useMemo(() => {
-    const seen = new Set<string>();
+    const seenIds = new Set<string>();
+    const seenEmails = new Set<string>();
     return usersRaw.filter(user => {
-      if (seen.has(user.id)) return false;
-      seen.add(user.id);
+      if (seenIds.has(user.id)) return false;
+      const emailKey = (user.email || "").toLowerCase();
+      if (emailKey && seenEmails.has(emailKey)) return false;
+      seenIds.add(user.id);
+      if (emailKey) seenEmails.add(emailKey);
       return true;
     });
   }, [usersRaw]);
