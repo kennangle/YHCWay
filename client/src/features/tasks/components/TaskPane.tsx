@@ -1,5 +1,5 @@
-import { useState, useMemo, useRef } from "react";
-import { X, CheckCircle2, Circle, Calendar as CalendarIcon, User, Flag, FolderOpen, Repeat, ChevronDown, Users, Plus, Trash2, Archive, ArchiveRestore, Paperclip, FileText, Image, Download, Loader2 } from "lucide-react";
+import { useState, useMemo, useRef, useEffect } from "react";
+import { X, CheckCircle2, Circle, Calendar as CalendarIcon, User, Flag, FolderOpen, Repeat, ChevronDown, Users, Plus, Trash2, Archive, ArchiveRestore, Paperclip, FileText, Image, Download, Loader2, Pencil, Check } from "lucide-react";
 import { useTask, useTaskProjects, useUpdateTask, useTaskCollaborators, useAddTaskCollaborator, useRemoveTaskCollaborator, useArchiveTask, useUnarchiveTask, useTaskAttachments, useUploadAttachment, useDeleteAttachment } from "../hooks";
 import { StoriesFeed } from "./StoriesFeed";
 import { CommentComposer } from "./CommentComposer";
@@ -63,7 +63,12 @@ export function TaskPane({ taskId, projectId, onClose }: TaskPaneProps) {
   const [showAddCollaborator, setShowAddCollaborator] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [deletingAttachmentId, setDeletingAttachmentId] = useState<number | null>(null);
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editingDescription, setEditingDescription] = useState(false);
+  const [editDescription, setEditDescription] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
   
   const { data: task, isLoading } = useTask(taskId);
   const { data: taskProjects = [] } = useTaskProjects(taskId);
@@ -198,9 +203,40 @@ export function TaskPane({ taskId, projectId, onClose }: TaskPaneProps) {
         </button>
 
         <div className="flex-1 min-w-0">
-          <h2 className={`text-lg font-semibold ${task.isCompleted ? "line-through text-gray-400" : "text-gray-900"}`}>
-            {task.title}
-          </h2>
+          {editingTitle ? (
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              if (editTitle.trim() && editTitle.trim() !== task.title) {
+                updateTask.mutate({ taskId, data: { title: editTitle.trim() } });
+              }
+              setEditingTitle(false);
+            }} className="flex items-center gap-1">
+              <input
+                ref={titleInputRef}
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                onBlur={() => {
+                  if (editTitle.trim() && editTitle.trim() !== task.title) {
+                    updateTask.mutate({ taskId, data: { title: editTitle.trim() } });
+                  }
+                  setEditingTitle(false);
+                }}
+                onKeyDown={(e) => { if (e.key === "Escape") setEditingTitle(false); }}
+                className="text-lg font-semibold text-gray-900 bg-transparent border-b-2 border-primary outline-none w-full"
+                autoFocus
+                data-testid="input-edit-title"
+              />
+            </form>
+          ) : (
+            <h2
+              className={`text-lg font-semibold cursor-pointer hover:bg-gray-50 rounded px-1 -mx-1 ${task.isCompleted ? "line-through text-gray-400" : "text-gray-900"}`}
+              onClick={() => { setEditTitle(task.title); setEditingTitle(true); }}
+              title="Click to edit title"
+              data-testid="text-task-title"
+            >
+              {task.title}
+            </h2>
+          )}
         </div>
 
         <div className="flex items-center gap-1">
@@ -393,12 +429,70 @@ export function TaskPane({ taskId, projectId, onClose }: TaskPaneProps) {
             </div>
           )}
 
-          {task.description && (
-            <div className="space-y-2">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
               <p className="text-xs font-medium text-gray-500 uppercase">Description</p>
-              <p className="text-sm text-gray-700 whitespace-pre-wrap">{task.description}</p>
+              {!editingDescription && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 text-xs"
+                  onClick={() => { setEditDescription(task.description || ""); setEditingDescription(true); }}
+                  data-testid="button-edit-description"
+                >
+                  <Pencil className="w-3 h-3 mr-1" />
+                  {task.description ? "Edit" : "Add"}
+                </Button>
+              )}
             </div>
-          )}
+            {editingDescription ? (
+              <div>
+                <textarea
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  rows={4}
+                  className="w-full text-sm text-gray-700 border rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-primary/50 resize-y"
+                  placeholder="Add a description..."
+                  autoFocus
+                  data-testid="textarea-edit-description"
+                />
+                <div className="flex justify-end gap-2 mt-1">
+                  <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setEditingDescription(false)} data-testid="button-cancel-description">
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => {
+                      updateTask.mutate({ taskId, data: { description: editDescription.trim() || null } });
+                      setEditingDescription(false);
+                    }}
+                    data-testid="button-save-description"
+                  >
+                    <Check className="w-3 h-3 mr-1" />
+                    Save
+                  </Button>
+                </div>
+              </div>
+            ) : task.description ? (
+              <p
+                className="text-sm text-gray-700 whitespace-pre-wrap cursor-pointer hover:bg-gray-50 rounded p-1 -m-1"
+                onClick={() => { setEditDescription(task.description || ""); setEditingDescription(true); }}
+                title="Click to edit description"
+                data-testid="text-task-description"
+              >
+                {task.description}
+              </p>
+            ) : (
+              <p
+                className="text-sm text-gray-400 italic cursor-pointer hover:bg-gray-50 rounded p-1 -m-1"
+                onClick={() => { setEditDescription(""); setEditingDescription(true); }}
+                data-testid="text-no-description"
+              >
+                Click to add a description...
+              </p>
+            )}
+          </div>
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
