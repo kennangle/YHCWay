@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Gift, RefreshCw, Users, Clock, CheckCircle, XCircle, AlertCircle, Search, Edit2, Save, X, ArrowUpDown, ArrowUp, ArrowDown, User, DollarSign, Calendar, Mail, Phone, Bell, BookOpen, ShoppingBag, FileText, Plus, Trash2, Minus, MessageSquare, Download } from "lucide-react";
+import { Gift, RefreshCw, Users, Clock, CheckCircle, XCircle, AlertCircle, Search, Edit2, Save, X, ArrowUpDown, ArrowUp, ArrowDown, User, DollarSign, Calendar, Mail, Phone, Bell, BookOpen, ShoppingBag, FileText, Plus, Trash2, Minus, MessageSquare, Download, Send, ChevronDown } from "lucide-react";
 import generatedBg from "@assets/generated_images/warm_orange_glassmorphism_background.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { ComposeEmailModal } from "@/components/compose-email-modal";
+import { RichTextEditor } from "@/components/rich-text-editor";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface IntroOffer {
@@ -315,8 +316,122 @@ interface Communication {
   syncStatus?: string;
 }
 
+function InlineCompose({ offer, mode, onClose, onSent }: { offer: IntroOffer; mode: "email" | "custom-email" | "sms"; onClose: () => void; onSent: () => void }) {
+  const [subject, setSubject] = useState(mode === "email" ? `Following up - ${offer.offerName}` : "");
+  const [body, setBody] = useState("");
+  const [sending, setSending] = useState(false);
+  const toAddress = mode === "sms" ? (offer.phone || "") : (offer.email || "");
+
+  const handleSend = async () => {
+    const plainText = body.replace(/<[^>]*>/g, "").trim();
+    if (!plainText && mode !== "sms") {
+      toast({ title: "Please enter a message", variant: "destructive" });
+      return;
+    }
+    setSending(true);
+    try {
+      if (mode === "sms") {
+        const cleaned = (offer.phone || "").replace(/\D/g, "");
+        window.open(`https://voice.google.com/u/0/messages?phoneNo=${cleaned}`, "_blank");
+        await fetch(`/api/mindbody-analytics/intro-offers/${offer.id}/communications`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            studentId: offer.studentId,
+            channel: "sms",
+            direction: "outbound",
+            recipientAddress: offer.phone,
+            status: "initiated",
+            body: body.replace(/<[^>]*>/g, ""),
+          }),
+        });
+        toast({ title: "SMS opened in Google Voice" });
+      } else {
+        const res = await fetch("/api/gmail/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ to: offer.email, subject, body }),
+        });
+        if (!res.ok) throw new Error("Failed to send email");
+        await fetch(`/api/mindbody-analytics/intro-offers/${offer.id}/communications`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            studentId: offer.studentId,
+            channel: "email",
+            direction: "outbound",
+            subject,
+            recipientAddress: offer.email,
+            status: "sent",
+          }),
+        });
+        toast({ title: "Email sent", description: `To: ${offer.email}` });
+      }
+      onSent();
+      onClose();
+    } catch (err: any) {
+      toast({ title: "Failed to send", description: err.message, variant: "destructive" });
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const modeLabel = mode === "email" ? "Email" : mode === "custom-email" ? "Custom Email" : "Text Message";
+  const modeColor = mode === "sms" ? "border-green-300 bg-green-50/30" : "border-blue-300 bg-blue-50/30";
+
+  return (
+    <div className={`border rounded-lg p-3 mb-3 ${modeColor}`} data-testid="inline-compose">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          {mode === "sms" ? <MessageSquare className="w-4 h-4 text-green-600" /> : <Mail className="w-4 h-4 text-blue-600" />}
+          <span className="font-medium text-sm">{modeLabel}</span>
+        </div>
+        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onClose} data-testid="button-close-compose">
+          <X className="w-3.5 h-3.5" />
+        </Button>
+      </div>
+
+      <div className="text-xs text-muted-foreground mb-2">
+        To: <span className="font-medium text-foreground">{toAddress}</span>
+      </div>
+
+      {mode !== "sms" && (
+        <Input
+          placeholder="Subject"
+          value={subject}
+          onChange={(e) => setSubject(e.target.value)}
+          className="mb-2 text-sm"
+          data-testid="input-compose-subject"
+        />
+      )}
+
+      <RichTextEditor
+        value={body}
+        onChange={setBody}
+        placeholder={mode === "sms" ? "Draft your text message..." : "Write your email..."}
+        minHeight={mode === "sms" ? "100px" : "150px"}
+      />
+
+      <div className="flex justify-end gap-2 mt-2">
+        <Button variant="outline" size="sm" onClick={onClose} data-testid="button-cancel-compose">
+          Cancel
+        </Button>
+        <Button size="sm" onClick={handleSend} disabled={sending} data-testid="button-send-compose">
+          {sending ? <RefreshCw className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Send className="w-3.5 h-3.5 mr-1.5" />}
+          {mode === "sms" ? "Open in Google Voice" : "Send"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function CommunicationsTimeline({ offer, onComposeEmail }: { offer: IntroOffer; onComposeEmail?: (offer: IntroOffer) => void }) {
   const queryClient = useQueryClient();
+  const [composeMode, setComposeMode] = useState<"email" | "custom-email" | "sms" | null>(null);
+
   const { data: communications = [], isLoading } = useQuery<Communication[]>({
     queryKey: ["communications", offer.id],
     queryFn: async () => {
@@ -369,10 +484,8 @@ function CommunicationsTimeline({ offer, onComposeEmail }: { offer: IntroOffer; 
         <div className="flex items-center gap-2">
           <Button
             size="sm"
-            variant="outline"
-            onClick={() => {
-              if (onComposeEmail) onComposeEmail(offer);
-            }}
+            variant={composeMode === "email" ? "default" : "outline"}
+            onClick={() => setComposeMode(composeMode === "email" ? null : "email")}
             disabled={!offer.email}
             data-testid="button-compose-from-comms"
           >
@@ -381,35 +494,23 @@ function CommunicationsTimeline({ offer, onComposeEmail }: { offer: IntroOffer; 
           </Button>
           <Button
             size="sm"
-            variant="outline"
-            onClick={async () => {
-              if (offer.phone) {
-                const cleaned = offer.phone.replace(/\D/g, "");
-                window.open(`https://voice.google.com/u/0/messages?phoneNo=${cleaned}`, "_blank");
-                try {
-                  await fetch(`/api/mindbody-analytics/intro-offers/${offer.id}/communications`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    credentials: "include",
-                    body: JSON.stringify({
-                      studentId: offer.studentId,
-                      channel: "sms",
-                      direction: "outbound",
-                      recipientAddress: offer.phone,
-                      status: "initiated",
-                    }),
-                  });
-                  queryClient.invalidateQueries({ queryKey: ["communications", offer.id] });
-                } catch (err) {
-                  console.error("Failed to log SMS communication:", err);
-                }
-              }
-            }}
+            variant={composeMode === "custom-email" ? "default" : "outline"}
+            onClick={() => setComposeMode(composeMode === "custom-email" ? null : "custom-email")}
+            disabled={!offer.email}
+            data-testid="button-custom-email-from-comms"
+          >
+            <Edit2 className="w-3.5 h-3.5 mr-1.5" />
+            Custom Email
+          </Button>
+          <Button
+            size="sm"
+            variant={composeMode === "sms" ? "default" : "outline"}
+            onClick={() => setComposeMode(composeMode === "sms" ? null : "sms")}
             disabled={!offer.phone}
             data-testid="button-sms-from-comms"
           >
             <MessageSquare className="w-3.5 h-3.5 mr-1.5" />
-            SMS
+            Text
           </Button>
         </div>
         <Button
@@ -424,6 +525,15 @@ function CommunicationsTimeline({ offer, onComposeEmail }: { offer: IntroOffer; 
         </Button>
       </div>
 
+      {composeMode && (
+        <InlineCompose
+          offer={offer}
+          mode={composeMode}
+          onClose={() => setComposeMode(null)}
+          onSent={() => queryClient.invalidateQueries({ queryKey: ["communications", offer.id] })}
+        />
+      )}
+
       {isLoading ? (
         <div className="text-center py-6 text-muted-foreground">
           <RefreshCw className="w-5 h-5 mx-auto mb-2 animate-spin opacity-30" />
@@ -433,7 +543,7 @@ function CommunicationsTimeline({ offer, onComposeEmail }: { offer: IntroOffer; 
         <div className="text-center py-6 text-muted-foreground">
           <MessageSquare className="w-6 h-6 mx-auto mb-2 opacity-30" />
           <p className="text-sm">No communications recorded yet</p>
-          <p className="text-xs mt-1">Send an email or SMS to start tracking</p>
+          <p className="text-xs mt-1">Click Email, Custom Email, or Text above to start</p>
         </div>
       ) : (
         <div className="space-y-2 max-h-[300px] overflow-y-auto">
