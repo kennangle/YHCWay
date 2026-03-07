@@ -157,7 +157,7 @@ export function UnifiedSidebar() {
       defaultCollapsed: true,
       items: [
         { icon: Dumbbell, label: "NetGym", href: "https://netgym.com", tourId: "nav-netgym", isExternal: true },
-        { icon: BarChart3, label: "Mindbody Analytics", href: "https://mindbodyanalytics.com", tourId: "nav-mindbody-analytics", isExternal: true },
+        { icon: BarChart3, label: "mbanalytics", href: "https://mbanalytics.ai", tourId: "nav-mindbody-analytics", isExternal: true },
       ],
     },
   ];

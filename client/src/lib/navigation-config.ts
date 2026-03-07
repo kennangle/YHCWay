@@ -102,7 +102,7 @@ export const navigationTabs: NavTab[] = [
     allowedRoles: ['admin', 'user'],
     items: [
       { id: "netgym", icon: Dumbbell, label: "NetGym", href: "https://netgym.com", isExternal: true, allowedRoles: ['admin', 'user'] },
-      { id: "mindbody", icon: BarChart3, label: "Mindbody Analytics", href: "https://mindbodyanalytics.com", isExternal: true, allowedRoles: ['admin', 'user'] },
+      { id: "mindbody", icon: BarChart3, label: "mbanalytics", href: "https://mbanalytics.ai", isExternal: true, allowedRoles: ['admin', 'user'] },
     ],
   },
   {
