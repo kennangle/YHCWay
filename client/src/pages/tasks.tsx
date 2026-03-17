@@ -344,7 +344,7 @@ export default function Tasks() {
 
   const handleDownloadCSV = async () => {
     try {
-      const res = await fetch("/api/tasks/export/csv", { credentials: "include" });
+      const res = await fetch("/api/v2/tasks/export/csv", { credentials: "include" });
       if (!res.ok) throw new Error("Failed to export tasks");
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
@@ -394,7 +394,7 @@ export default function Tasks() {
         return row;
       });
       
-      const res = await fetch("/api/tasks/import/csv", {
+      const res = await fetch("/api/v2/tasks/import/csv", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
