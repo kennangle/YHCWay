@@ -24,7 +24,7 @@ router.get("/connect", asyncHandler(async (req: any, res: any) => {
   }
   const label = req.query.label as string | undefined;
   const state = signOAuthState({ userId, label });
-  const authUrl = getGmailAuthUrl(state);
+  const authUrl = await getGmailAuthUrl(state);
   res.json({ authUrl });
 }));
 

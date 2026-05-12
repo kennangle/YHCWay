@@ -10,7 +10,7 @@ const GMAIL_SCOPES = [
 ];
 
 // OAuth state signing for CSRF protection
-const getStateSecret = () => process.env.SESSION_SECRET || process.env.REPL_ID || 'default-gmail-oauth-secret';
+const getStateSecret = () => process.env.SESSION_SECRET || 'default-gmail-oauth-secret';
 
 export function signOAuthState(data: { userId: string; label?: string }): string {
   const payload = JSON.stringify(data);
@@ -40,7 +40,7 @@ export function verifyOAuthState(state: string): { userId: string; label?: strin
   }
 }
 
-function getOAuth2Client() {
+async function getOAuth2Client() {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   
@@ -48,30 +48,17 @@ function getOAuth2Client() {
     throw new Error('Google OAuth credentials not configured');
   }
   
-  // Use environment-specific redirect URI
-  // Priority: APP_URL > REPLIT_DEV_DOMAIN > REPL_SLUG fallback
-  let redirectUri: string;
-  
-  if (process.env.APP_URL) {
-    // Use custom domain if configured (production)
-    redirectUri = `${process.env.APP_URL}/api/gmail/callback`;
-  } else if (process.env.REPLIT_DEV_DOMAIN) {
-    // Development environment
-    redirectUri = `https://${process.env.REPLIT_DEV_DOMAIN}/api/gmail/callback`;
-  } else if (process.env.REPL_SLUG && process.env.REPL_OWNER) {
-    // Fallback for Replit deployment
-    redirectUri = `https://${process.env.REPL_SLUG}--${process.env.REPL_OWNER.toLowerCase()}.replit.app/api/gmail/callback`;
-  } else {
-    redirectUri = 'http://localhost:5000/api/gmail/callback';
-  }
+  const { getAppBaseUrl } = await import("./utils/appUrl");
+  const baseUrl = process.env.APP_URL || getAppBaseUrl();
+  const redirectUri = `${baseUrl}/api/gmail/callback`;
   
   console.log('[Gmail OAuth] Using redirect URI:', redirectUri);
   
   return new google.auth.OAuth2(clientId, clientSecret, redirectUri);
 }
 
-export function getGmailAuthUrl(state: string): string {
-  const oauth2Client = getOAuth2Client();
+export async function getGmailAuthUrl(state: string): Promise<string> {
+  const oauth2Client = await getOAuth2Client();
   
   return oauth2Client.generateAuthUrl({
     access_type: 'offline',
@@ -82,7 +69,7 @@ export function getGmailAuthUrl(state: string): string {
 }
 
 export async function handleGmailCallback(code: string, userId: string, label?: string): Promise<{ email: string; isNew: boolean }> {
-  const oauth2Client = getOAuth2Client();
+  const oauth2Client = await getOAuth2Client();
   
   const { tokens } = await oauth2Client.getToken(code);
   
@@ -144,14 +131,14 @@ export async function getGmailClientForUser(userId: string, accountId?: number) 
     throw new Error('Gmail not connected');
   }
   
-  const oauth2Client = getOAuth2Client();
-  
+  const oauth2Client = await getOAuth2Client();
+
   oauth2Client.setCredentials({
     access_token: account.accessToken,
     refresh_token: account.refreshToken,
     expiry_date: account.expiresAt?.getTime(),
   });
-  
+
   // Check if token needs refresh
   if (account.expiresAt && new Date(account.expiresAt).getTime() < Date.now()) {
     try {
@@ -189,7 +176,7 @@ export async function getGmailClientsForUser(userId: string): Promise<Array<{ ac
   for (const account of accounts) {
     if (!account.accessToken) continue;
     
-    const oauth2Client = getOAuth2Client();
+    const oauth2Client = await getOAuth2Client();
     oauth2Client.setCredentials({
       access_token: account.accessToken,
       refresh_token: account.refreshToken,

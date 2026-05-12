@@ -9,8 +9,13 @@ import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
 import { ADMIN_EMAIL } from "@shared/schema";
 
+const REPLIT_AUTH_AVAILABLE = !!process.env.REPL_ID;
+
 const getOidcConfig = memoize(
   async () => {
+    if (!REPLIT_AUTH_AVAILABLE) {
+      throw new Error("Replit Auth not available on this deployment — REPL_ID is not set");
+    }
     return await client.discovery(
       new URL(process.env.ISSUER_URL ?? "https://replit.com/oidc"),
       process.env.REPL_ID!
@@ -56,13 +61,13 @@ function updateUserSession(
 async function upsertUser(claims: any) {
   const email = claims["email"];
   const userId = claims["sub"];
-  
+
   const existingUser = await storage.getUser(userId);
   const isAdmin = email === ADMIN_EMAIL ? true : (existingUser?.isAdmin ?? false);
-  
+
   // Auto-approve admin users, keep existing status for others
   const approvalStatus = isAdmin ? "approved" : (existingUser?.approvalStatus ?? "pending");
-  
+
   await storage.upsertUser({
     id: userId,
     email: email,
@@ -79,6 +84,21 @@ export async function setupAuth(app: Express) {
   app.use(getSession());
   app.use(passport.initialize());
   app.use(passport.session());
+
+  if (!REPLIT_AUTH_AVAILABLE) {
+    console.warn("[replitAuth] REPL_ID not set — Replit Auth routes will return 501");
+
+    app.get("/api/login", (_req, res) => {
+      res.status(501).json({ error: "Replit Auth not available on this deployment" });
+    });
+    app.get("/api/callback", (_req, res) => {
+      res.status(501).json({ error: "Replit Auth not available on this deployment" });
+    });
+    app.get("/api/logout", (_req, res) => {
+      res.status(501).json({ error: "Replit Auth not available on this deployment" });
+    });
+    return;
+  }
 
   const config = await getOidcConfig();
 

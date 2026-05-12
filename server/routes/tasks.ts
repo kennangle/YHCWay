@@ -6,6 +6,7 @@ import { createTaskSchema, updateTaskSchema, createCommentSchema, addCollaborato
 import { sendTaskAssignedNotification } from "../email";
 import { updateAsanaTaskCompletion } from "../asana";
 import { requireTenant } from "../tenantMiddleware";
+import { getAppBaseUrl } from "../utils/appUrl";
 
 const router = Router();
 
@@ -130,7 +131,7 @@ router.patch("/:id", asyncHandler(async (req: any, res: any) => {
     }).catch(err => console.error("Failed to create task notification:", err));
     
     if (assignee?.email && (prefs?.emailTaskAssigned !== false)) {
-      const baseUrl = process.env.REPL_SLUG ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co` : 'http://localhost:5000';
+      const baseUrl = getAppBaseUrl();
       const taskUrl = `${baseUrl}/projects/${task.projectId}`;
       
       sendTaskAssignedNotification(

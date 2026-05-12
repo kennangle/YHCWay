@@ -1,6 +1,7 @@
 // Zoom OAuth integration for meeting management
 import crypto from 'crypto';
 import { storage } from './storage';
+import { getAppBaseUrl } from './utils/appUrl';
 
 const ZOOM_SCOPES = [
   'meeting:read:list_meetings',
@@ -10,9 +11,9 @@ const ZOOM_SCOPES = [
 ];
 
 const getStateSecret = () => {
-  const secret = process.env.SESSION_SECRET || process.env.REPL_ID;
+  const secret = process.env.SESSION_SECRET;
   if (!secret) {
-    throw new Error('SESSION_SECRET or REPL_ID must be configured for Zoom OAuth');
+    throw new Error('SESSION_SECRET must be configured for Zoom OAuth');
   }
   return secret;
 };
@@ -46,15 +47,8 @@ export function verifyOAuthState(state: string): { userId: string } | null {
 }
 
 function getRedirectUri(): string {
-  if (process.env.APP_URL) {
-    return `${process.env.APP_URL}/api/zoom/callback`;
-  } else if (process.env.REPLIT_DEV_DOMAIN) {
-    return `https://${process.env.REPLIT_DEV_DOMAIN}/api/zoom/callback`;
-  } else if (process.env.REPL_SLUG && process.env.REPL_OWNER) {
-    return `https://${process.env.REPL_SLUG}--${process.env.REPL_OWNER.toLowerCase()}.replit.app/api/zoom/callback`;
-  } else {
-    return 'http://localhost:5000/api/zoom/callback';
-  }
+  const baseUrl = process.env.APP_URL || getAppBaseUrl();
+  return `${baseUrl}/api/zoom/callback`;
 }
 
 export function getZoomAuthUrl(state: string): string {

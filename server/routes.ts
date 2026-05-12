@@ -23,6 +23,7 @@ import { isAppleCalendarConnected, testAppleCalendarConnection, saveAppleCalenda
 import { isAsanaConnected, getMyTasks, getProjects, getUpcomingTasks, isUserAsanaConnected, getUserMyTasks, getUserProjects, getUserUpcomingTasks, getAsanaProjectsForImport, getProjectSections, getProjectTasksForImport, updateAsanaTaskCompletion } from "./asana";
 import { getTypeformForms, getTypeformForm, createTypeformForm, updateTypeformForm, deleteTypeformForm, getTypeformResponses, isTypeformConfigured } from "./typeform";
 import { sendInvitationEmail, getTemplateTypes, getDefaultTemplate, sendTaskAssignedNotification, sendYHCTimeLinkChangeNotification } from "./email";
+import { getAppBaseUrl } from "./utils/appUrl";
 import { appleCalendarConnectSchema, slackPreferencesUpdateSchema, slackDmPreferencesUpdateSchema, emailTemplateSchema, updateNotificationPrefsSchema, createTimeEntrySchema, updateTimeEntrySchema, createDailyHubEntrySchema, createPinnedAnnouncementSchema, DailyHubSection } from "@shared/schema";
 import { broadcastToUsers, generateWsAuthToken } from "./websocket";
 import { getIntroOffers, getIntroOfferSummary, updateIntroOffer, getStudents, isMindbodyAnalyticsConfigured, getOfferCommunications, pushCommunication, invalidateIntroOffersCache, startBackgroundSync } from "./mindbodyAnalytics";
@@ -1508,7 +1509,7 @@ export async function registerRoutes(
       const label = req.query.label as string | undefined;
       // Create signed state for CSRF protection
       const state = signOAuthState({ userId, label });
-      const authUrl = getGmailAuthUrl(state);
+      const authUrl = await getGmailAuthUrl(state);
       res.json({ authUrl });
     } catch (error: any) {
       console.error("Error generating Gmail auth URL:", error);
@@ -5613,7 +5614,7 @@ export async function registerRoutes(
           const project = task.projectId ? await storage.getProject(task.projectId) : null;
           const projectName = project?.name || 'No Project';
           const assignerName = req.user.firstName || req.user.email?.split('@')[0] || 'Someone';
-          const baseUrl = process.env.REPL_SLUG ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co` : 'http://localhost:5000';
+          const baseUrl = getAppBaseUrl();
           const taskUrl = `${baseUrl}/projects/${task.projectId}`;
           
           // Send email notification (async, don't block response)

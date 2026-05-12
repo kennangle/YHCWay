@@ -81,20 +81,8 @@ export async function setupAuth(app: Express) {
   );
 
   if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
-    // For deployed apps, use APP_URL environment variable or auto-detect
-    let baseUrl: string;
-    if (process.env.APP_URL) {
-      // User-configured production URL (recommended for deployed apps)
-      baseUrl = process.env.APP_URL;
-    } else if (process.env.REPLIT_DEV_DOMAIN) {
-      // Development environment
-      baseUrl = `https://${process.env.REPLIT_DEV_DOMAIN}`;
-    } else if (process.env.REPL_SLUG && process.env.REPL_OWNER) {
-      // Fallback for production (may not always match actual URL)
-      baseUrl = `https://${process.env.REPL_SLUG}--${process.env.REPL_OWNER.toLowerCase()}.replit.app`;
-    } else {
-      baseUrl = "http://localhost:5000";
-    }
+    const { getAppBaseUrl } = await import("./utils/appUrl");
+    const baseUrl = process.env.APP_URL || getAppBaseUrl();
     
     console.log("Google OAuth callback URL:", `${baseUrl}/api/auth/google/callback`);
     
