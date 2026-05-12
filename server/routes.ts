@@ -6331,7 +6331,7 @@ export async function registerRoutes(
   // TASK ATTACHMENT ROUTES
   // =============================================================================
 
-  const { ObjectStorageService } = await import("./replit_integrations/object_storage");
+  const { ObjectStorageService } = await import("./services/objectStorage");
   const taskAttachmentStorage = new ObjectStorageService();
 
   app.get("/api/tasks/:id/attachments", isAuthenticated, async (req: any, res) => {
